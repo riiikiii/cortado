@@ -5,18 +5,18 @@
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#2b6b68">
   <title>Kafka with Java</title>
   <style>
 :root{
-  --bg:#f3f9f8; --surface:#ffffff; --surface-2:#e8f4f2; --surface-3:#d7ede9;
-  --ink:#05302d; --text:#1b3b38; --muted:#56716e; --line:#cde4e0;
-  --t900:#042f2e; --t800:#115e59; --t700:#0f766e; --t600:#0d9488; --t500:#14b8a6;
-  --t400:#2dd4bf; --t300:#5eead4; --t200:#99f6e4; --t100:#ccfbf1; --t50:#f0fdfa;
-  --coral:#d4553a; --coral-bg:#fdf1ed; --coral-line:#f3c7ba;
-  --code-bg:#052624; --code-text:#d9f7f2; --code-line:#0e3d3a;
-  --link:#0f766e;
-  --shadow:0 1px 2px rgba(4,47,46,.06), 0 6px 20px rgba(4,47,46,.07);
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
   --radius:14px;
   --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
@@ -24,12 +24,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#031b1a; --surface:#062725; --surface-2:#0a3431; --surface-3:#0f413d;
-    --ink:#e8fffb; --text:#cfeee9; --muted:#8db3ae; --line:#16504b;
-    --coral:#ff8a6b; --coral-bg:#2a1714; --coral-line:#5a2a20;
-    --code-bg:#021413; --code-line:#0c2f2c;
-    --link:#5eead4;
-    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
   }
 }
 *{box-sizing:border-box}
@@ -39,23 +39,23 @@ body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:v
 a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 ::selection{background:var(--t200); color:var(--t900)}
 button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
-header#title-block-header{position:relative; overflow:hidden; margin:0; color:#eafffb; background:radial-gradient(1200px 500px at 85% -10%, rgba(94,234,212,.35), transparent 60%), linear-gradient(140deg,#031f1e 0%, #0b4a46 45%, #0f766e 80%, #14b8a6 120%); padding:calc(48px + env(safe-area-inset-top)) max(22px, calc(50vw - 380px)) 42px; display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center}
-header#title-block-header .net{position:absolute; inset:0; opacity:.22; pointer-events:none; width:100%; height:100%}
+header#title-block-header{position:relative; overflow:hidden; margin:0; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-pour.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(48px + env(safe-area-inset-top)) max(22px, calc(50vw - 380px)) 42px; display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center}
+header#title-block-header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 header#title-block-header > div, header#title-block-header > figure{position:relative}
 h1.title{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; color:#fff; margin:0 0 14px}
-.subtitle{font-size:19px; color:#d3f6f0; line-height:1.5; max-width:38ch; margin:0 0 22px}
+.subtitle{font-size:19px; color:#ece0d4; line-height:1.5; max-width:38ch; margin:0 0 22px}
 .download,button{display:inline-block; font:650 14.5px/1.4 var(--sans); cursor:pointer; border-radius:10px; padding:10px 16px; border:1px solid rgba(255,255,255,.22)}
 .download{background:var(--t300); color:var(--t900); border-color:var(--t300); text-decoration:none}
 .download:hover{background:var(--t200)}
-button{background:rgba(255,255,255,.1); color:#eafffb}
+button{background:rgba(255,255,255,.1); color:#fbf6f0}
 button:hover{background:rgba(255,255,255,.18)}
-header#title-block-header figure{margin:0; background:rgba(3,31,30,.55); padding:18px 20px; border-radius:14px; border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(6px)}
+header#title-block-header figure{margin:0; background:rgba(20,14,11,.66); padding:18px 20px; border-radius:14px; border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(6px)}
 header#title-block-header figcaption{font:700 12.5px/1.3 var(--mono); text-transform:uppercase; letter-spacing:.1em; color:var(--t200); margin-bottom:12px}
 .row{display:flex; gap:6px}
-.cell{flex:1; text-align:center; padding:7px 0; border:1px solid rgba(255,255,255,.22); border-radius:8px; font-family:var(--mono); font-size:14px; color:#eafffb}
+.cell{flex:1; text-align:center; padding:7px 0; border:1px solid rgba(255,255,255,.22); border-radius:8px; font-family:var(--mono); font-size:14px; color:#fbf6f0}
 .done{background:var(--t300); color:var(--t900); border-color:var(--t300); font-weight:700}
-.next{background:#fde68a; color:#422006; border-color:#fde68a; font-weight:700}
-.status{font-size:14px; color:#d3f6f0; min-height:2.8em; margin:12px 0; line-height:1.45}
+.next{background:#f2c97d; color:#422006; border-color:#f2c97d; font-weight:700}
+.status{font-size:14px; color:#ece0d4; min-height:2.8em; margin:12px 0; line-height:1.45}
 .steps{display:flex; gap:8px; flex-wrap:wrap}
 .steps button{font-size:13.5px; padding:7px 12px}
 .layout{max-width:740px; margin:0 auto; padding:28px 22px 96px}
@@ -92,24 +92,26 @@ pre.sourceCode{margin:0}
 pre > code.sourceCode{white-space:pre; position:relative}
 pre > code.sourceCode > span{line-height:1.6}
 .snippet{margin:20px 0; border:1px solid var(--code-line); border-radius:12px; overflow:hidden; background:var(--code-bg); color:var(--code-text); box-shadow:var(--shadow)}
-.bar{display:flex; align-items:center; justify-content:space-between; background:#073532; color:#8fd9cd; font:600 12.5px var(--mono); padding:6px 12px 6px 14px; border-bottom:1px solid var(--code-line)}
-@media (prefers-color-scheme: dark){ .bar{background:#06201f} }
-.bar button{font:600 12.5px var(--sans); padding:5px 11px; border-radius:8px; color:#cffaf2; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16)}
+.bar{display:flex; align-items:center; justify-content:space-between; background:#271e19; color:#a3c1ad; font:600 12.5px var(--mono); padding:6px 12px 6px 14px; border-bottom:1px solid var(--code-line)}
+@media (prefers-color-scheme: dark){ .bar{background:#16100e} }
+.bar button{font:600 12.5px var(--sans); padding:5px 11px; border-radius:8px; color:#f3e8dc; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16)}
 .snippet pre{margin:0; padding:14px 16px 16px; background:var(--code-bg); color:var(--code-text); overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:pre; line-height:1.6}
 .snippet code{font-size:13.4px; overflow-wrap:normal; background:none; border:0; padding:0; color:inherit}
-code span.kw,code span.cf,code span.ot,code span.im{color:#2dd4bf; font-weight:600}
-code span.dt,code span.fu,code span.ex,code span.va{color:#a7f3e6}
-code span.st,code span.ch,code span.vs,code span.ss,code span.sc{color:#fde68a}
-code span.co,code span.do,code span.an,code span.cv,code span.in,code span.wa{color:#6fa59d; font-style:italic}
-code span.at,code span.pp{color:#fca5a5}
-code span.dv,code span.fl,code span.bn,code span.cn{color:#fdba74}
-code span.bu{color:#5eead4}
-code span.op{color:#99f6e4}
+code span.kw,code span.cf,code span.ot,code span.im{color:#8cc7bc; font-weight:600}
+code span.dt,code span.fu,code span.ex,code span.va{color:#d6eee8}
+code span.st,code span.ch,code span.vs,code span.ss,code span.sc{color:#f2c97d}
+code span.co,code span.do,code span.an,code span.cv,code span.in,code span.wa{color:#9e8b7d; font-style:italic}
+code span.at,code span.pp{color:#f29e7e}
+code span.dv,code span.fl,code span.bn,code span.cn{color:#f0b37e}
+code span.bu{color:#a3c1ad}
+code span.op{color:#cbe0d5}
 code span.al,code span.er{color:#ff8a6b; font-weight:700}
 @media(max-width:850px){header#title-block-header{grid-template-columns:1fr; gap:24px; padding:36px 22px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto; transition:none !important}}
 @media print{body{font-size:11pt; background:white; color:black}.layout{max-width:100%; padding:0}.layout nav,.bar button,.steps,.download,header#title-block-header .net{display:none}header#title-block-header{display:block; color:#123; background:white; padding:0}h1.title,.subtitle{color:#123}figure{display:none}pre{white-space:pre-wrap!important}h2,h3{break-after:avoid}}
-  </style>
+  
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+</style>
 </head>
 <body>
 <header id="title-block-header">

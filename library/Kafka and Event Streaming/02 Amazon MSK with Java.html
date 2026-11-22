@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#2b6b68">
 <meta name="description" content="A practical Amazon MSK and Java guide covering Kafka fundamentals, private networking, IAM, producer and consumer configuration, and production operations.">
 <title>Amazon MSK with Java | Kafka field guide</title>
 <style>
 :root{
-  --bg:#f3f9f8; --surface:#ffffff; --surface-2:#e8f4f2; --surface-3:#d7ede9;
-  --ink:#05302d; --text:#1b3b38; --muted:#56716e; --line:#cde4e0;
-  --t900:#042f2e; --t800:#115e59; --t700:#0f766e; --t600:#0d9488; --t500:#14b8a6;
-  --t400:#2dd4bf; --t300:#5eead4; --t200:#99f6e4; --t100:#ccfbf1; --t50:#f0fdfa;
-  --coral:#d4553a; --coral-bg:#fdf1ed; --coral-line:#f3c7ba;
-  --code-bg:#052624; --code-text:#d9f7f2; --code-line:#0e3d3a;
-  --link:#0f766e;
-  --shadow:0 1px 2px rgba(4,47,46,.06), 0 6px 20px rgba(4,47,46,.07);
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
   --radius:14px;
   --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
@@ -24,12 +24,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#031b1a; --surface:#062725; --surface-2:#0a3431; --surface-3:#0f413d;
-    --ink:#e8fffb; --text:#cfeee9; --muted:#8db3ae; --line:#16504b;
-    --coral:#ff8a6b; --coral-bg:#2a1714; --coral-line:#5a2a20;
-    --code-bg:#021413; --code-line:#0c2f2c;
-    --link:#5eead4;
-    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
   }
 }
 *{box-sizing:border-box}
@@ -42,24 +42,24 @@ a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 .skip{position:absolute; z-index:2; left:.8rem; top:.8rem; transform:translateY(-200%); background:var(--surface); color:var(--ink); padding:.5rem 1rem; border-radius:8px}
 .skip:focus{transform:none}
 .wrap{max-width:760px; margin-inline:auto; padding-inline:22px}
-.mast{background:#031f1e; color:#c7f2eb; border-bottom:1px solid rgba(255,255,255,.12)}
+.mast{background:#19120f; color:#dfcfc0; border-bottom:1px solid rgba(255,255,255,.12)}
 .mast .wrap{display:flex; justify-content:space-between; gap:1rem; padding-block:.75rem; font-size:13px; letter-spacing:.12em; text-transform:uppercase; font-weight:700}
 .mast strong{color:var(--t300); font-weight:800}
-.hero{position:relative; overflow:hidden; color:#eafffb; background:radial-gradient(1200px 500px at 85% -10%, rgba(94,234,212,.35), transparent 60%), linear-gradient(140deg,#031f1e 0%, #0b4a46 45%, #0f766e 80%, #14b8a6 120%); padding:44px 0 42px}
-.hero .net{position:absolute; inset:0; opacity:.22; pointer-events:none; width:100%; height:100%}
+.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-pour.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:44px 0 42px}
+.hero .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .hero .wrap{position:relative; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(16rem,.95fr); gap:28px; align-items:center}
 h1,h2,h3{color:var(--ink); line-height:1.2}
 h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,52px); line-height:1.05; margin:0 0 14px; letter-spacing:-.01em; color:#fff}
-.lead{color:#d3f6f0; font-size:19px; line-height:1.55; margin:0 0 20px}
+.lead{color:#ece0d4; font-size:19px; line-height:1.55; margin:0 0 20px}
 .jump{display:inline-block; padding:10px 18px; color:var(--t900); background:var(--t300); border-radius:10px; text-decoration:none; font-weight:750; font-size:15px}
 .jump:hover{color:var(--t900); background:var(--t200)}
-.topology{margin:0; padding:16px 18px; border:1px solid rgba(255,255,255,.18); border-radius:14px; background:rgba(3,31,30,.55); backdrop-filter:blur(6px)}
+.topology{margin:0; padding:16px 18px; border:1px solid rgba(255,255,255,.18); border-radius:14px; background:rgba(20,14,11,.66); backdrop-filter:blur(6px)}
 .topology figcaption{font-size:12px; color:var(--t200); letter-spacing:.12em; text-transform:uppercase; margin:0 0 10px; font-weight:800}
 .route{list-style:none; margin:0; padding:0}
 .route li{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:8px 12px; color:#f0fcf9}
 .route li+li{margin-top:8px}
 .route strong{display:block; line-height:1.3; color:#fff; font-size:14.5px}
-.route span{font-size:12.5px; color:#c7f2eb}
+.route span{font-size:12.5px; color:#dfcfc0}
 .layout{display:block; max-width:740px; padding:28px 22px 80px}
 nav{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
 nav h2{margin:0 0 12px; padding:0 0 10px; border-bottom:1px solid var(--line); font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink)}
@@ -94,9 +94,9 @@ td:first-child{min-width:8rem; font-weight:650; color:var(--ink)}
 code,kbd,pre{font-family:var(--mono)}
 :not(pre)>code,kbd{background:var(--surface-2); border:1px solid var(--line); padding:1px 6px; border-radius:6px; font-size:.86em; overflow-wrap:anywhere}
 .snippet{margin:20px 0; border-radius:12px; overflow:hidden; background:var(--code-bg); border:1px solid var(--code-line); color:var(--code-text); box-shadow:var(--shadow)}
-.snippet figcaption{display:flex; min-height:38px; justify-content:space-between; align-items:center; gap:.5rem; background:#073532; border-bottom:1px solid var(--code-line); padding:6px 12px 6px 14px; color:#8fd9cd; font-family:var(--mono); font-size:12.5px}
-@media (prefers-color-scheme: dark){ .snippet figcaption{background:#06201f} }
-.snippet button{font:600 12.5px var(--sans); color:#cffaf2; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:5px 11px; cursor:pointer}
+.snippet figcaption{display:flex; min-height:38px; justify-content:space-between; align-items:center; gap:.5rem; background:#271e19; border-bottom:1px solid var(--code-line); padding:6px 12px 6px 14px; color:#a3c1ad; font-family:var(--mono); font-size:12.5px}
+@media (prefers-color-scheme: dark){ .snippet figcaption{background:#16100e} }
+.snippet button{font:600 12.5px var(--sans); color:#f3e8dc; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:5px 11px; cursor:pointer}
 .snippet button:hover{background:rgba(255,255,255,.16)}
 pre{margin:0; padding:14px 16px 16px; overflow:auto; tab-size:4; font-size:13.4px; line-height:1.6}
 pre code{font:inherit; color:inherit}
@@ -115,6 +115,8 @@ footer .wrap{display:flex; justify-content:space-between; gap:1rem; max-width:74
 @media(max-width:760px){.hero .wrap{grid-template-columns:minmax(0,1fr)} .hero{padding:36px 0} .table td:first-child{min-width:6rem} th,td{padding:8px 10px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto; transition:none !important}}
 @media print{body{background:white;color:black;font-size:10pt}.wrap,.layout{max-width:100%}.hero,.mast{background:white;color:black}.hero .wrap{display:block}.hero{padding:.45rem 0}.lead,.mast strong{color:black}.topology,nav,.jump,.snippet button,footer a,.skip,.hero .net{display:none}section{border:0;padding:.35rem 0}h2,h3,figcaption{break-after:avoid}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:.4rem}.snippet,.snippet figcaption{background:#f4f4f4;color:black}.table{overflow:visible}tr{break-inside:avoid}a{color:black}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
 </style>
 </head>
 <body id="top">

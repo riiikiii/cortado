@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#2b6b68">
 <title>Kafka for Event-Driven Trading Systems</title>
 <style>
 :root{
-  --bg:#f3f9f8; --surface:#ffffff; --surface-2:#e8f4f2; --surface-3:#d7ede9;
-  --ink:#05302d; --text:#1b3b38; --muted:#56716e; --line:#cde4e0;
-  --t900:#042f2e; --t800:#115e59; --t700:#0f766e; --t600:#0d9488; --t500:#14b8a6;
-  --t400:#2dd4bf; --t300:#5eead4; --t200:#99f6e4; --t100:#ccfbf1; --t50:#f0fdfa;
-  --coral:#d4553a; --coral-bg:#fdf1ed; --coral-line:#f3c7ba;
-  --code-bg:#052624; --code-text:#d9f7f2; --code-line:#0e3d3a;
-  --link:#0f766e;
-  --shadow:0 1px 2px rgba(4,47,46,.06), 0 6px 20px rgba(4,47,46,.07);
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
   --radius:14px;
   --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
@@ -23,12 +23,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#031b1a; --surface:#062725; --surface-2:#0a3431; --surface-3:#0f413d;
-    --ink:#e8fffb; --text:#cfeee9; --muted:#8db3ae; --line:#16504b;
-    --coral:#ff8a6b; --coral-bg:#2a1714; --coral-line:#5a2a20;
-    --code-bg:#021413; --code-line:#0c2f2c;
-    --link:#5eead4;
-    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
   }
 }
 *{box-sizing:border-box}
@@ -38,14 +38,14 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 ::selection{background:var(--t200); color:var(--t900)}
 .wrap{max-width:740px; margin:0 auto; padding:0 22px}
-header.hero{position:relative; overflow:hidden; color:#eafffb; background:radial-gradient(1200px 500px at 85% -10%, rgba(94,234,212,.35), transparent 60%), linear-gradient(140deg,#031f1e 0%, #0b4a46 45%, #0f766e 80%, #14b8a6 120%); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
-header.hero .net{position:absolute; inset:0; opacity:.22; pointer-events:none; width:100%; height:100%}
+header.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-pour.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
+header.hero .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .hero-in{position:relative; max-width:760px; margin:0 auto}
 .tag{display:inline-flex; gap:8px; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--t200); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); padding:6px 12px; border-radius:999px; margin-bottom:14px}
 h1,h2,h3,h4{color:var(--ink); line-height:1.2}
 h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,7vw,54px); line-height:1.05; margin:4px 0 14px; letter-spacing:-.01em; color:#fff}
-.lede{font-size:20px; line-height:1.55; color:#d3f6f0; max-width:640px; margin:0 0 18px}
-.meta{margin:0; font-size:14px; color:#c7f2eb; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:8px 14px; display:inline-block}
+.lede{font-size:20px; line-height:1.55; color:#ece0d4; max-width:640px; margin:0 0 18px}
+.meta{margin:0; font-size:14px; color:#dfcfc0; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:8px 14px; display:inline-block}
 nav.toc{margin:28px 0 8px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow)}
 nav.toc summary{display:flex; justify-content:space-between; align-items:center; cursor:pointer; list-style:none; font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink)}
 nav.toc summary::-webkit-details-marker{display:none}
@@ -72,9 +72,9 @@ strong,b{color:var(--ink)}
 code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
 pre{position:relative; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; padding:42px 16px 16px; overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; max-width:100%; box-shadow:var(--shadow)}
 pre code{background:none; border:0; padding:0; font-family:var(--mono); font-size:13.4px; line-height:1.6; white-space:pre; overflow-wrap:normal; color:inherit}
-pre[data-lang]::before{content:attr(data-lang); position:absolute; top:0; left:0; right:0; padding:8px 80px 8px 14px; background:#073532; border-bottom:1px solid var(--code-line); font:600 12px/1.4 var(--mono); color:#8fd9cd; text-transform:uppercase; letter-spacing:.08em}
-@media (prefers-color-scheme: dark){ pre[data-lang]::before{background:#06201f} }
-pre button{position:absolute; top:4px; right:8px; font:600 12px var(--sans); color:#cffaf2; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:4px 10px; cursor:pointer; z-index:2}
+pre[data-lang]::before{content:attr(data-lang); position:absolute; top:0; left:0; right:0; padding:8px 80px 8px 14px; background:#271e19; border-bottom:1px solid var(--code-line); font:600 12px/1.4 var(--mono); color:#a3c1ad; text-transform:uppercase; letter-spacing:.08em}
+@media (prefers-color-scheme: dark){ pre[data-lang]::before{background:#16100e} }
+pre button{position:absolute; top:4px; right:8px; font:600 12px var(--sans); color:#f3e8dc; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:4px 10px; cursor:pointer; z-index:2}
 pre button:hover{background:rgba(255,255,255,.16)}
 .tw{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
 table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; min-width:520px}
@@ -86,7 +86,7 @@ td:first-child{font-weight:650; color:var(--ink)}
 .note{border-left:5px solid var(--t500)}
 .warn{border-left:5px solid var(--coral); background:var(--coral-bg); border-color:var(--coral-line)}
 .tip{border-left:5px solid var(--t800); background:linear-gradient(180deg,var(--t50),var(--surface))}
-@media (prefers-color-scheme: dark){ .tip{background:linear-gradient(180deg,#073330,var(--surface))} }
+@media (prefers-color-scheme: dark){ .tip{background:linear-gradient(180deg,#1f2e2c,var(--surface))} }
 .note b:first-child,.warn b:first-child,.tip b:first-child{display:block; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px}
 .note b:first-child{color:var(--t700)} .warn b:first-child{color:var(--coral)} .tip b:first-child{color:var(--t800)}
 @media (prefers-color-scheme: dark){ .note b:first-child{color:var(--t300)} .tip b:first-child{color:var(--t200)} }
@@ -107,6 +107,8 @@ ul.chk li::before{content:""; position:absolute; left:2px; top:.82em; width:16px
 footer{border-top:1px solid var(--line); margin-top:48px; padding:24px 0 40px; font-size:14.5px; color:var(--muted)}
 @media print{nav.toc,pre button{display:none} pre{white-space:pre-wrap}}
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
 </style>
 </head>
 <body>

@@ -1,13 +1,13 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="#0f766e"><title>Java Persistence | From object to row</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="#2b6b68"><title>Java Persistence | From object to row</title><style>
 :root{
-  --bg:#f3f9f8; --surface:#ffffff; --surface-2:#e8f4f2; --surface-3:#d7ede9;
-  --ink:#05302d; --text:#1b3b38; --muted:#56716e; --line:#cde4e0;
-  --t900:#042f2e; --t800:#115e59; --t700:#0f766e; --t600:#0d9488; --t500:#14b8a6;
-  --t400:#2dd4bf; --t300:#5eead4; --t200:#99f6e4; --t100:#ccfbf1; --t50:#f0fdfa;
-  --coral:#d4553a; --coral-bg:#fdf1ed; --coral-line:#f3c7ba;
-  --code-bg:#052624; --code-text:#d9f7f2; --code-line:#0e3d3a;
-  --link:#0f766e;
-  --shadow:0 1px 2px rgba(4,47,46,.06), 0 6px 20px rgba(4,47,46,.07);
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
   --radius:14px;
   --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
@@ -15,12 +15,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#031b1a; --surface:#062725; --surface-2:#0a3431; --surface-3:#0f413d;
-    --ink:#e8fffb; --text:#cfeee9; --muted:#8db3ae; --line:#16504b;
-    --coral:#ff8a6b; --coral-bg:#2a1714; --coral-line:#5a2a20;
-    --code-bg:#021413; --code-line:#0c2f2c;
-    --link:#5eead4;
-    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
   }
 }
 *{box-sizing:border-box}
@@ -30,19 +30,19 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
 ::selection{background:var(--t200); color:var(--t900)}
-header{position:relative; overflow:hidden; color:#eafffb; background:radial-gradient(1200px 500px at 85% -10%, rgba(94,234,212,.35), transparent 60%), linear-gradient(140deg,#031f1e 0%, #0b4a46 45%, #0f766e 80%, #14b8a6 120%)}
-header .net{position:absolute; inset:0; opacity:.22; pointer-events:none; width:100%; height:100%}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-cortado.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
 .mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
 .hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
 h1,h2,h3{color:var(--ink); line-height:1.2}
 h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
 h1 em{color:var(--t300); font-style:italic}
-.hero p{color:#d3f6f0; font-size:18.5px; line-height:1.55; margin:16px 0 0}
-.plate{background:rgba(3,31,30,.55); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
 .plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
 .plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
-.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#eafffb}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
 .trace:first-of-type{margin-top:10px}
 .trace b{color:var(--t300)}
 .shell{max-width:740px; margin:auto; padding:28px 22px 80px}
@@ -75,8 +75,8 @@ details{border:1px solid var(--line); border-radius:12px; background:var(--surfa
 summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
 details[open]>summary{margin-bottom:10px}
 .code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
-.code figcaption{background:#073532; color:#8fd9cd; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
-@media (prefers-color-scheme: dark){ .code figcaption{background:#06201f} }
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
 .code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
 .code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
 p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
@@ -98,18 +98,20 @@ p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(
 .meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
 .sim small{color:var(--muted)}
 .ref,.source{font-size:15px}
-.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#2dd4bf; font-weight:600}
-.code .s,.code .s1,.code .s2,.code .sa{color:#fde68a}
-.code .c,.code .c1,.code .cm{color:#6fa59d; font-style:italic}
-.code .mi,.code .m{color:#fdba74}
-.code .nd,.code .nf{color:#fca5a5}
-.code .nt{color:#2dd4bf}
-.code .na{color:#a7f3e6}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
 footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
 footer a{color:var(--link)}
 @media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
 @media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
 </style></head><body id="top"><header><svg class="net" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g stroke="#99f6e4" stroke-width="1" fill="none"><path d="M60 80 L190 140 L330 70 L470 150 L620 90 L760 170"/><path d="M190 140 L230 280 L380 320 L470 150 L560 300 L700 330"/><path d="M330 70 L380 320 M620 90 L560 300 M60 80 L100 250 L230 280"/></g><g fill="#ccfbf1"><circle cx="60" cy="80" r="5"/><circle cx="190" cy="140" r="7"/><circle cx="330" cy="70" r="5"/><circle cx="470" cy="150" r="8"/><circle cx="620" cy="90" r="5"/><circle cx="760" cy="170" r="6"/><circle cx="230" cy="280" r="6"/><circle cx="380" cy="320" r="5"/><circle cx="560" cy="300" r="7"/><circle cx="700" cy="330" r="5"/><circle cx="100" cy="250" r="4"/></g></svg><div class="head"><div class="mast"><span>Java engineering field guide</span><span>Persistence / PostgreSQL</span></div><div class="hero"><div><h1>Java persistence<br><em>from object to row</em></h1><p>Follow an order through JPA, Hibernate and Spring Data. Read the SQL it generates, book a fill atomically and see how the database resolves competing writes.</p></div><div class="plate"><small>Transaction trace · book 30 of 100</small><div class="trace"><b>JAVA</b><span>order.apply(30)</span></div><div class="trace"><b>FLUSH</b><span>INSERT execution_fill<br>UPDATE trade_order</span></div><div class="trace"><b>COMMIT</b><span>filled = 30 · remaining = 70</span></div></div></div></div></header><div class="shell"><nav class="menu" aria-label="Chapters"><div class="menu-title">Contents</div><div class="menu-grid"><div class="menu-group"><b>Foundations</b><a href="#layers">Where the SQL comes from</a><a href="#lab">Run a complete order booking</a><a href="#mapping">Design the mapping</a></div><div class="menu-group"><b>Working with data</b><a href="#context">Read the persistence context</a><a href="#queries">Choose a query by result shape</a><a href="#fetch">Make the cost of fetching visible</a></div><div class="menu-group"><b>Correctness</b><a href="#transactions">Draw the transaction boundary</a><a href="#locking">Handle two fills arriving together</a></div><div class="menu-group"><b>In production</b><a href="#operations">Tune from evidence</a><a href="#tests">Test the behaviour at the boundary</a></div><div class="menu-group"><b>Field reference</b><a href="#decisions">Choose the right abstraction</a></div></div></nav><main><section id="layers"><span class="tag">Foundations / 01</span><h2>Where the SQL comes from</h2><p class="deck">Trace one repository call through the Java stack.</p><p>An object-relational mapper (ORM) translates between an object graph and relational rows. The useful question when reading Java is <em>what work does this line cause, on which connection, and when?</em> A call can issue SQL immediately, queue a write, or return an object already in memory.</p><div class="scroll"><table><thead><tr><th>Layer</th><th>In the fill service</th><th>What it owns</th></tr></thead><tbody><tr><td>Spring Data JPA</td><td><code>orders.findById(id)</code></td><td>Repository implementation, derived query methods and paging conventions.</td></tr><tr><td>Jakarta Persistence (JPA)</td><td><code>EntityManager</code>, <code>@Entity</code></td><td>Standard contract for identity, mapping, queries and lifecycle.</td></tr><tr><td>Hibernate ORM</td><td>Persistence context and action queue</td><td>Implements JPA, tracks changes, generates dialect-specific SQL and chooses when to flush. EclipseLink is another provider.</td></tr><tr><td>JDBC + connection pool</td><td>PostgreSQL driver + HikariCP</td><td>The pool lends connections. JDBC sends statements and binds typed values.</td></tr><tr><td>PostgreSQL</td><td>Constraints, locks, plans and commits</td><td>Decides physical access paths, arbitrates concurrent writes and enforces data integrity.</td></tr></tbody></table></div><aside><strong>Coming from EF Core or SQLAlchemy</strong><p>Think of EntityManager as roughly analogous to DbContext or Session. A JPA persistence context gives one Java identity per entity key within its scope. A DataSource is closer to a connection factory or pool. It belongs at application scope.</p></aside><details><summary>Predict • Two find() calls for the same ID in one persistence context. How many objects?</summary><p>One managed instance. With an initially empty context, default locking and no second-level cache, expect one SELECT. A JPQL query can still execute SQL even when its result maps back to that same instance.</p></details></section><section id="lab"><span class="tag">Foundations / 02</span><h2>Run a complete order booking</h2><p class="deck">Start PostgreSQL, apply the migration and watch Hibernate book a fill.</p><p>The embedded project targets Java 21, Spring Boot 3.5.16 and PostgreSQL 17. Boot manages the ORM and driver versions. Install a JDK 21, Maven 3.6.3+ and Docker with Compose. Extract the project and run these commands from the directory containing pom.xml.</p><a class="download" download="orm-lab.zip" href="data:application/zip;base64,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Yi9zcmMvbWFpbi9yZXNvdXJjZXMvYXBwbGljYXRpb24ucHJvcGVydGllc1BLAQIUAxQAAAAIANtBdF1pAZPS7QAAACYCAAA2AAAAAAAAAAAAAACAAXYDAABvcm0tbGFiL3NyYy9tYWluL3Jlc291cmNlcy9kYi9taWdyYXRpb24vVjFfX29yZGVycy5zcWxQSwECFAMUAAAACADbQXRdKIAMTJMBAABsAwAAKwAAAAAAAAAAAAAAgAG3BAAAb3JtLWxhYi9zcmMvbWFpbi9qYXZhL2d1aWRlL1RyYWRlT3JkZXIuamF2YVBLAQIUAxQAAAAIANtBdF3Hd66W5QEAAOUDAAAuAAAAAAAAAAAAAACAAZMGAABvcm0tbGFiL3NyYy9tYWluL2phdmEvZ3VpZGUvRXhlY3V0aW9uRmlsbC5qYXZhUEsBAhQDFAAAAAgA20F0XUPfXk6FAAAAsgAAADAAAAAAAAAAAAAAAIABxAgAAG9ybS1sYWIvc3JjL21haW4vamF2YS9ndWlkZS9PcmRlclJlcG9zaXRvcnkuamF2YVBLAQIUAxQAAAAIANtBdF1n2ZseogEAAN8DAAAqAAAAAAAAAAAAAACAAZcJAABvcm0tbGFiL3NyYy9tYWluL2phdmEvZ3VpZGUvT3JkZXJCb29rLmphdmFQSwECFAMUAAAACADbQXRdPSt+gZoBAAAPAwAAJAAAAAAAAAAAAAAAgAGBCwAAb3JtLWxhYi9zcmMvbWFpbi9qYXZhL2d1aWRlL0xhYi5qYXZhUEsFBgAAAAAJAAkA/wIAAF0NAAAAAA==">↓ Download the Maven project</a><figure class="code"><figcaption>Terminal • local lab</figcaption><pre><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--wait
 mvn<span class="w"> </span>spring-boot:run
 docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>lab<span class="w"> </span>-d<span class="w"> </span>orders<span class="w"> </span>-c<span class="w">   </span><span class="s2">"select symbol, quantity, filled, version from trade_order;"</span>
