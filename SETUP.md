@@ -1,6 +1,6 @@
 # Cortado — setup
 
-Cortado is an installable web app (PWA) for reading a "vault": a Google Drive folder of HTML guides and Markdown notes. **Sync** downloads the whole folder into the app's storage, so everything works offline after that.
+Cortado is an installable web app (PWA) for reading a "vault" of HTML guides and Markdown notes. A vault is either the **library published with the site** from this repo's `library/` folder (no sign-in needed), or a **Google Drive folder**. **Sync** downloads the whole vault into the app's storage, so everything works offline after that.
 
 ## 1. Run it locally
 
@@ -9,11 +9,26 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. On localhost, **Try the sample vault** loads `sample-vault/` so you can try the app without Google. To use another local folder instead, set `DEV_VAULT_DIR` before you run `npm run dev`.
+Open http://localhost:5173. The dev server serves `library/` live, so the site library appears straight away. On localhost, **Try the sample vault** loads `sample-vault/` so you can try the app without Google. To use another local folder instead, set `DEV_VAULT_DIR` before you run `npm run dev`.
 
 Other commands: `npm test` (unit tests), `npm run build` and `npm run preview` (the production build at http://localhost:4173/cortado/).
 
-## 2. Create a Google OAuth client (one time)
+## 2. Publish lessons from the repo
+
+Everything in the `library/` folder is published with the site and opens in Cortado with no sign-in.
+
+- Put Markdown notes (`.md`) and standalone HTML guides (`.html`) in `library/`, with each guide's images, CSS and scripts beside it. Top-level folders become collections. Number files (`01 Intro.md`, `02 Basics.md`) to set the reading order.
+- Commit and push to `main`. The deploy copies the folder to `https://<you>.github.io/cortado/library/` and writes `library.json`, a list of every file with its checksum.
+- The first time someone opens Cortado, it adds the library as a vault and downloads it. After that, each time the library is opened while online, Cortado checks `library.json` and downloads only new or changed files, and removes deleted ones.
+- To change the name people see (it defaults to "Cortado Library"), add an Actions variable `LIBRARY_NAME` (step 4).
+- Hidden files and folders (names starting with `.`, such as `.obsidian`) aren't published.
+- Everything in `library/` is public: anyone with the site's address can read it. GitHub limits files to 100 MB and a Pages site to 1 GB.
+
+Google Drive vaults work alongside the library: tap the vault name at the top of the sidebar to switch, or to add a Drive folder. If someone removes the library, it stays removed on that device, and the same menu offers to add it back.
+
+## 3. Create a Google OAuth client (one time, optional)
+
+Skip this if the site library is all you need.
 
 Cortado signs in to Google with your own OAuth client, so your files only travel between Google and the device. Create it once:
 
@@ -28,7 +43,7 @@ Cortado signs in to Google with your own OAuth client, so your files only travel
    - **Authorised JavaScript origins:** `http://localhost:5173`, `http://localhost:4173`, `https://<your-github-username>.github.io`
    - **Authorised redirect URIs:** `http://localhost:5173/`, `http://localhost:4173/cortado/`, `https://<your-github-username>.github.io/cortado/`
 6. Copy the **Client ID**. It's public, not a secret. Give it to Cortado in either way:
-   - **Built in (recommended for a deployment):** set `VITE_GOOGLE_CLIENT_ID` in `.env.local` for local use, or as a GitHub Actions variable for the deployed site (step 3 below).
+   - **Built in (recommended for a deployment):** set `VITE_GOOGLE_CLIENT_ID` in `.env.local` for local use, or as a GitHub Actions variable for the deployed site (step 4 below).
    - **In the app:** if the build has no client ID, tapping **Continue with Google** opens a short setup guide. It shows the exact origin and redirect URI to add for that address, and you paste the client ID there. It's saved on that device only, and you can change or remove it in **Settings**.
 
 ### Signing in
@@ -43,18 +58,18 @@ While the OAuth app stays in **Testing**, only the test users you listed (up to 
 
 To let *any* Google account sign in you would publish the app to **In production**. Because Cortado needs `drive.readonly` (Google calls it a *restricted* scope), Google then requires its restricted-scope verification first. Cortado keeps all Drive data on the device and has no server, which is the set-up Google recommends for restricted scopes, but expect a review either way. The narrower `drive.file` scope can't be used instead: it only covers files a user picks one by one, not everything inside a chosen folder.
 
-## 3. Deploy to GitHub Pages
+## 4. Deploy to GitHub Pages
 
 1. Create a GitHub repo named `cortado` and push this folder to its `main` branch. If you use another repo name, the workflow sets the base path from the repo name automatically; update the OAuth URLs to match.
 2. **Settings → Pages → Build and deployment → Source:** choose **GitHub Actions**.
-3. **Settings → Secrets and variables → Actions → Variables:** add `VITE_GOOGLE_CLIENT_ID`.
+3. **Settings → Secrets and variables → Actions → Variables:** add `VITE_GOOGLE_CLIENT_ID` (for Google Drive), and optionally `LIBRARY_NAME`.
 4. Push. The `Deploy to GitHub Pages` workflow tests, builds and publishes the app to `https://<you>.github.io/cortado/`.
 
-## 4. Install on the iPad mini
+## 5. Install on the iPad mini
 
 1. Open `https://<you>.github.io/cortado/` in **Safari**.
 2. Tap **Share → Add to Home Screen**, then open Cortado from the home screen.
-3. Tap **Continue with Google**, sign in, browse to your folder, and choose **Use "…" as a vault**. The first sync starts straight away. To add more folders or accounts later, tap the vault name at the top of the sidebar.
+3. The site library opens and downloads by itself. To add a Google Drive folder too, tap the vault name → **Continue with Google**, sign in, browse to your folder, and choose **Use "…" as a vault**. The first sync starts straight away. To add more folders or accounts later, tap the vault name at the top of the sidebar.
 
 Tips:
 - **Library** (the house tab) shows your progress, a **Continue** card that picks up where you left off, and each top-level folder as a collection. Tap a collection to see its lessons in order.
@@ -70,6 +85,7 @@ Tips:
 
 - **Progress:** completed lessons and how far you've read are stored per vault on the device. **Settings → Reset** clears them.
 - **Search:** after each sync Cortado reads your notes and guides in the background to build a full-text index (files over 3 MB are skipped). It lives in memory, so nothing extra is stored.
+- **Site library:** `scripts/libraryPlugin.ts` publishes `library/` during the build. The library's files aren't part of the service worker's precache; like Drive files they're synced into IndexedDB, so they're stored once and only changed files download.
 - **Storage:** files go into IndexedDB on the device. Installed home-screen apps are exempt from Safari's 7-day storage clean-up, and the app asks for persistent storage too.
 - **Rendering:** a service worker serves vault files at `/cortado/vault/<vault>/<path>`, so HTML guides load as real pages. Their relative CSS, JS, images and links work, and scripts run. On iPad every browser uses WebKit (Safari's engine), so guides render as they would in Safari. External CDN scripts still need a connection; to make a guide work fully offline, keep its assets in the vault.
 - **Security note:** guides run with the same origin as the app, so a guide's script could read the app's local data. That's fine for your own guides, but don't add HTML from sources you don't trust to a vault.

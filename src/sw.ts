@@ -57,7 +57,7 @@ cleanupOutdatedCaches();
 if (manifest.some((e) => (typeof e === 'string' ? e : e.url).endsWith('index.html'))) {
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL(`${BASE}index.html`), {
-      denylist: [new RegExp(`^${BASE}vault/`), /^\/__dev-vault/],
+      denylist: [new RegExp(`^${BASE}(vault|library)/`), /^\/__dev-vault/],
     }),
   );
 }

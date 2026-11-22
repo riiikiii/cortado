@@ -203,7 +203,11 @@ function Sidebar() {
           )}
           <span className="vault-text">
             <span className="vault-title">{vault?.name ?? 'Cortado'}</span>
-            <span className="vault-sub">{vault ? (account?.email ?? (vault.provider === 'dev' ? 'Sample vault' : 'Google Drive')) : 'No vault yet'}</span>
+            <span className="vault-sub">
+              {vault
+                ? (account?.email ?? (vault.provider === 'dev' ? 'Sample vault' : vault.provider === 'site' ? 'Published with this site' : 'Google Drive'))
+                : 'No vault yet'}
+            </span>
           </span>
           <Icon name="chevron" size={14} className="rot90 muted" />
         </button>

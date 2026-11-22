@@ -820,6 +820,8 @@ details[open] > summary.callout-title::after { transform: rotate(90deg); }
 .vault-meta { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vault-icon, .folder-icon { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--fill); color: var(--muted); }
 .folder-icon { color: var(--accent); background: var(--accent-soft); }
+.vault-icon.site { color: var(--on-accent); background: linear-gradient(150deg, #a3603a, #5a3220 75%); }
+.site-offer { width: 100%; border: 1px dashed var(--border-strong); }
 .account-list { padding: 0 0 12px; display: flex; flex-direction: column; gap: 6px; }
 .account-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
 .account-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }

@@ -270,6 +270,7 @@ function EmptyVault({ name }: { name: string }) {
 
 function Welcome() {
   const accounts = useStore((s) => s.accounts);
+  const siteLibrary = useStore((s) => s.siteLibrary);
   const { openPicker } = useStore.getState();
   const signedIn = accounts.filter((a) => hasSession(a.id));
 
@@ -292,6 +293,11 @@ function Welcome() {
             </>
           ) : (
             <GoogleButton label="Continue with Google" />
+          )}
+          {siteLibrary && (
+            <button className="btn ghost" onClick={() => useStore.getState().addSiteLibrary()}>
+              <Icon name="book" size={18} /> Open {siteLibrary.name}
+            </button>
           )}
           {devAvailable && (
             <button
