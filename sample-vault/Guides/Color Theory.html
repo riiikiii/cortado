@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Color Theory</title>
+<link rel="stylesheet" href="assets/guide.css">
+</head>
+<body>
+<h1>Colour mixer</h1>
+<div class="card">
+  <label>Hue <input id="h" type="range" min="0" max="360" value="25" style="width:100%"></label>
+  <div id="swatch" style="height:140px;border-radius:12px;margin-top:12px"></div>
+  <p id="val"></p>
+</div>
+<div class="card"><a href="Interactive%20Sorting.html">← Sorting guide</a> · <a href="../Notes/Ideas.md">Ideas note</a></div>
+<script>
+  const h = document.getElementById('h'), s = document.getElementById('swatch'), v = document.getElementById('val');
+  const upd = () => { s.style.background = `hsl(${h.value} 60% 55%)`; v.textContent = `hsl(${h.value} 60% 55%)`; };
+  h.oninput = upd; upd();
+</script>
+</body>
+</html>

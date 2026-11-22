@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive Sorting</title>
+<link rel="stylesheet" href="assets/guide.css">
+</head>
+<body>
+<h1>Bubble sort, visualised</h1>
+<div class="card">
+  <p>This guide runs its own JavaScript. Press the button to watch the bars sort.</p>
+  <div id="bars"></div>
+  <p><button id="go">Sort</button> <span id="status">Ready</span></p>
+</div>
+<div class="card">
+  <img src="assets/diagram.svg" alt="diagram" style="max-width:100%">
+  <p>Next: <a href="Color%20Theory.html">Colour theory guide</a> ·
+     Back to <a href="../Welcome.md">Welcome note</a> ·
+     <a href="#bottom">Jump to bottom</a> ·
+     <a href="https://en.wikipedia.org/wiki/Bubble_sort">Wikipedia</a></p>
+</div>
+<div style="height:120vh"></div>
+<p id="bottom">Bottom of the guide.</p>
+<script>
+  const bars = document.getElementById('bars');
+  const status = document.getElementById('status');
+  let data = Array.from({ length: 24 }, () => 10 + Math.random() * 90);
+  const draw = () => { bars.innerHTML = data.map(v => `<div style="height:${v}%"></div>`).join(''); };
+  draw();
+  document.getElementById('go').onclick = async () => {
+    status.textContent = 'Sorting…';
+    for (let i = 0; i < data.length; i++)
+      for (let j = 0; j < data.length - i - 1; j++)
+        if (data[j] > data[j + 1]) { [data[j], data[j + 1]] = [data[j + 1], data[j]]; draw(); await new Promise(r => setTimeout(r, 15)); }
+    status.textContent = 'Sorted ✓';
+  };
+  window.__guideLoaded = true;
+</script>
+</body>
+</html>
