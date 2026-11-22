@@ -255,9 +255,6 @@ footer{max-width:740px; margin:0 auto; padding:30px 22px 120px; color:var(--mute
 @media (min-width:1100px){main,footer,.hero .hero-inner{margin-inline:auto}}
 .hero-inner,main,footer{overflow-wrap:anywhere}
 .chip{max-width:100%;white-space:normal}
-.reader-prompt{margin:0 0 18px;padding:10px 14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(255,255,255,.08);color:#fbf6f0}
-.reader-prompt summary{font-size:14px;font-weight:700;cursor:pointer}
-.reader-prompt p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
 
 /* Additional declarations used inline in the reference. */
 .intro-title{margin-top:36px}
@@ -311,7 +308,6 @@ figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: aut
   </svg>
   <div class="hero-inner">
     <h1>Event-driven Java on <em>Amazon MSK</em></h1>
-    <details class="reader-prompt" open><summary>Your prompt</summary><p>create a guide to learn Kafka and implement an event driven system with Java and AWS managed Kafka. Include the setup, configuration, code and how to manage it and the options for doing so. Explain concepts of working with Kafka and the abilities you can use</p></details>
     <p class="lede">An order for 100 shares receives fills of 40 and 60. The order screen shows 100 filled. Tomorrow a risk team wants the same events, and next month a developer needs to rebuild that screen after discovering a calculation error. Kafka can serve all three readers. The subtle part is what happens tonight when the order-screen service writes 40 to its database and crashes before it tells Kafka.</p>
     <div class="chips"><span class="chip">25–30 min read · setup extra</span></div>
   </div>
