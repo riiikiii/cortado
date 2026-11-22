@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { neighbours, readingOrder } from '../library/tree';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { LESSON_KINDS, neighbours, readingOrder } from '../library/tree';
 import { useStore } from '../state/store';
+import { isHidden, kindOf } from '../util/paths';
 import { Reader } from '../viewer/Reader';
 import { FileTree } from './FileTree';
 import { Home, NewTabPage } from './Home';
@@ -194,6 +195,9 @@ function Sidebar() {
   const { setPickerOpen, newTab, setQuickOpen, setSettingsOpen } = useStore.getState();
   const [filter, setFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
+  // Images, stylesheets, scripts and other files that aren't notes are hidden from the tree; the
+  // toggle only appears when there are some to show.
+  const others = useMemo(() => paths.filter((p) => !isHidden(p) && !LESSON_KINDS.has(kindOf(p))).length, [paths]);
 
   return (
     <>
@@ -240,7 +244,7 @@ function Sidebar() {
       )}
       <div className="sb-tree">
         {vault ? (
-          <FileTree filter={filter} showAll={showAll} />
+          <FileTree filter={filter} showAll={showAll && others > 0} />
         ) : (
           <div className="tree-empty">Your vault’s folders and files will appear here once you connect one.</div>
         )}
@@ -248,9 +252,13 @@ function Sidebar() {
       <div className="sb-foot">
         <SyncStatus />
         <div className="sb-foot-row">
-          <label className="toggle small muted">
-            <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> Show all files
-          </label>
+          {others > 0 ? (
+            <label className="toggle small muted" title="Images, stylesheets, scripts and other files that aren’t notes">
+              <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> Show {others} other {others === 1 ? 'file' : 'files'}
+            </label>
+          ) : (
+            <span />
+          )}
           <button className="icon-btn small" onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings">
             <Icon name="settings" size={18} />
           </button>
