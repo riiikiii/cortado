@@ -20,7 +20,7 @@ export default defineConfig(({ command, isPreview }) => ({
       injectRegister: false,
       devOptions: { enabled: true, type: 'module' },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,jpg,woff2}'],
         // The published library is synced into IndexedDB by the app, not precached.
         globIgnores: ['library/**'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
@@ -31,14 +31,14 @@ export default defineConfig(({ command, isPreview }) => ({
         description: 'Your guides and notes from Google Drive, beautifully readable and available offline.',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#1a1512',
+        background_color: '#f4d8b4',
         theme_color: '#1a1512',
         start_url: '.',
         scope: '.',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),

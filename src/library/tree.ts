@@ -112,5 +112,7 @@ export function startHere(order: string[]): string | undefined {
 /** Strip a leading "01 ", "1. ", "02-" style number so lesson titles read naturally. */
 export function lessonTitle(stem: string): { number?: string; title: string } {
   const m = /^(\d{1,3})(?:[.)_\-\s]+)(.+)$/.exec(stem);
-  return m ? { number: String(Number(m[1])), title: m[2] } : { title: stem };
+  if (!m) return { title: stem };
+  // "00 Start here" is an introduction rather than lesson zero.
+  return Number(m[1]) ? { number: String(Number(m[1])), title: m[2] } : { title: m[2] };
 }

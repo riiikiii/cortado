@@ -15,6 +15,7 @@ export function QuickSwitcher() {
   const paths = useStore((s) => s.paths);
   const recent = useStore((s) => s.recent);
   const docs = useStore((s) => s.docs);
+  const docTitles = useStore((s) => s.titles);
   const { setQuickOpen, openFile } = useStore.getState();
   const [query, setQuery] = useState('');
   const [sel, setSel] = useState(0);
@@ -27,11 +28,11 @@ export function QuickSwitcher() {
       const have = new Set(paths);
       return { titles: recent.filter((p) => have.has(p)).slice(0, 12).map((path) => ({ path })), text: [] as Row[] };
     }
-    const titles: Row[] = fuzzyFilter(query, files, (p) => p, 8).map((path) => ({ path }));
-    const shown = new Set(titles.map((t) => t.path));
+    const byTitle: Row[] = fuzzyFilter(query, files, (p) => `${docTitles[p] ?? ''} ${p}`, 8).map((path) => ({ path }));
+    const shown = new Set(byTitle.map((t) => t.path));
     const text: Row[] = docs ? searchDocs(docs.values(), query, 25).filter((h) => !shown.has(h.path)).map((h) => ({ path: h.path, snippet: h.snippet })) : [];
-    return { titles, text };
-  }, [query, files, recent, paths, docs]);
+    return { titles: byTitle, text };
+  }, [query, files, recent, paths, docs, docTitles]);
   const rows = [...titles, ...text];
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export function QuickSwitcher() {
         <Icon name={fileIcon(kind)} size={18} className={`ico kind-${kind}`} />
         <span className="switcher-text">
           <span className="switcher-line">
-            <span className="name">{stem(r.path)}</span>
+            <span className="name">{docTitles[r.path] ?? stem(r.path)}</span>
             <span className="dir">{dirName(r.path)}</span>
           </span>
           {r.snippet && (

@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import { hasSession } from '../auth/google';
 import { readingMinutes } from '../library/text';
 import { collections, lessonTitle, readingOrder, sections, startHere } from '../library/tree';
-import { lessonState, useStore, type Progress } from '../state/store';
+import { lessonState, useStore, useTitle, type Progress } from '../state/store';
 import { dirName, kindOf, stem } from '../util/paths';
+import beans from '../assets/espresso-beans.webp';
 import { GoogleButton } from './GoogleConnect';
+import { CupLogo } from './Logo';
 import { Avatar, coverStyle, fileIcon, Icon, ProgressRing, StatusDot } from './Icon';
 import { SyncStatus } from './SyncButton';
 
@@ -56,6 +58,7 @@ function Overview() {
   const progress = useStore((s) => s.progress);
   const recent = useStore((s) => s.recent);
   const docs = useStore((s) => s.docs);
+  const titles = useStore((s) => s.titles);
   const { openFile, goHome } = useStore.getState();
 
   const order = useMemo(() => readingOrder(paths), [paths]);
@@ -67,8 +70,8 @@ function Overview() {
 
   return (
     <div className="home-inner">
-      <header className="home-head">
-        <div>
+      <header className="hero" style={{ backgroundImage: `url(${beans})` }}>
+        <div className="hero-text">
           <div className="eyebrow">{greeting()}</div>
           <h1 className="home-title">{vault.name}</h1>
           <p className="home-sub">
@@ -77,7 +80,7 @@ function Overview() {
             {all.started > 0 && <> · {all.started} in progress</>}
           </p>
         </div>
-        <ProgressRing value={all.ratio} size={76} stroke={7} className="home-ring">
+        <ProgressRing value={all.ratio} size={84} stroke={7} className="home-ring">
           <strong>{Math.round(all.ratio * 100)}%</strong>
         </ProgressRing>
       </header>
@@ -89,7 +92,7 @@ function Overview() {
           </span>
           <span className="continue-text">
             <span className="eyebrow">{next.resume ? 'Continue where you left off' : all.done ? 'Up next' : 'Start here'}</span>
-            <span className="continue-title">{lessonTitle(stem(next.path)).title}</span>
+            <span className="continue-title">{titles[next.path] ?? lessonTitle(stem(next.path)).title}</span>
             <span className="continue-meta">
               {dirName(next.path) || vault.name}
               {docs?.get(next.path) && <> · {readingMinutes(docs.get(next.path)!.words)} min read</>}
@@ -210,7 +213,8 @@ function LessonRow({ path, showDir, highlight }: { path: string; showDir?: boole
   const openFile = useStore((s) => s.openFile);
   const kind = kindOf(path);
   const state = lessonState(p);
-  const { number, title } = lessonTitle(stem(path));
+  const { number } = lessonTitle(stem(path));
+  const title = useTitle(path);
   return (
     <li>
       <button
@@ -243,9 +247,7 @@ function EmptyVault({ name }: { name: string }) {
   return (
     <div className="welcome">
       <div className="welcome-card">
-        <span className="welcome-icon">
-          <Icon name={running ? 'sync' : 'book'} size={30} className={running ? 'spin' : ''} />
-        </span>
+        <CupLogo size={96} animated={running} />
         <h2>{name}</h2>
         {running ? (
           <>
@@ -277,8 +279,10 @@ function Welcome() {
   return (
     <div className="welcome">
       <div className="welcome-hero">
-        <div className="logo-mark" aria-hidden="true">
-          <span />
+        <div className="welcome-banner" style={{ backgroundImage: `url(${beans})` }}>
+          <span className="welcome-cup">
+            <CupLogo size={104} animated />
+          </span>
         </div>
         <h1>Cortado</h1>
         <p className="lede">Your guides and notes, beautifully readable and ready to learn from anywhere. Even offline.</p>

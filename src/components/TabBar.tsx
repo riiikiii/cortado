@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useStore, type Tab } from '../state/store';
-import { kindOf, stem } from '../util/paths';
+import { useStore, useTitle, type Tab } from '../state/store';
+import { kindOf } from '../util/paths';
 import { fileIcon, Icon } from './Icon';
+import { CupLogo } from './Logo';
 
 export function TabBar() {
   const tabs = useStore((s) => s.tabs);
@@ -25,7 +26,7 @@ export function TabBar() {
           title="Library home"
           onClick={() => useStore.getState().goHome(useStore.getState().activeTabId === null ? null : useStore.getState().homeFolder)}
         >
-          <Icon name="home" size={18} />
+          <CupLogo size={28} />
         </button>
         {tabs.map((t) => (
           <TabButton key={t.id} tab={t} active={t.id === activeTabId} onMenu={(x, y) => setMenu({ tab: t, x, y })} />
@@ -42,6 +43,7 @@ function TabButton({ tab, active, onMenu }: { tab: Tab; active: boolean; onMenu:
   const press = useRef<ReturnType<typeof setTimeout>>(undefined);
   const longPressed = useRef(false);
   const kind = kindOf(tab.path);
+  const title = useTitle(tab.path);
 
   return (
     <div
@@ -72,10 +74,10 @@ function TabButton({ tab, active, onMenu }: { tab: Tab; active: boolean; onMenu:
       onTouchMove={() => clearTimeout(press.current)}
     >
       <Icon name={done ? 'check-circle' : fileIcon(kind)} size={16} className={`ico ${done ? 'done' : `kind-${kind}`}`} />
-      <span className="tab-title">{stem(tab.path)}</span>
+      <span className="tab-title">{title}</span>
       <button
         className="tab-close"
-        aria-label={`Close ${stem(tab.path)}`}
+        aria-label={`Close ${title}`}
         onClick={(e) => {
           e.stopPropagation();
           closeTab(tab.id);

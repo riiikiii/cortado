@@ -1,5 +1,4 @@
 import { TEXT_SIZES, usePrefs, type ReadFont, type ReadWidth, type ThemePref } from '../state/prefs';
-import { Icon } from './Icon';
 
 const THEMES: { id: ThemePref; label: string }[] = [
   { id: 'system', label: 'Auto' },
@@ -58,19 +57,33 @@ export function Appearance({ compact }: { compact?: boolean }) {
         />
       </div>
 
-      <div className="pref-row">
+      <div className="pref-row stacked">
         <span className="pref-label">Line width</span>
         <Segmented<ReadWidth>
           value={p.width}
           onChange={(width) => p.set({ width })}
           options={[
-            { id: 'narrow', label: <Icon name="minus" size={14} /> },
-            { id: 'medium', label: 'Normal' },
-            { id: 'wide', label: <Icon name="plus" size={14} /> },
+            { id: 'narrow', label: <WidthLabel lines={[10, 8, 10]} text="Narrow" /> },
+            { id: 'medium', label: <WidthLabel lines={[14, 11, 14]} text="Normal" /> },
+            { id: 'wide', label: <WidthLabel lines={[18, 15, 18]} text="Wide" /> },
           ]}
         />
       </div>
     </div>
+  );
+}
+
+/** A label with little text lines that get longer with the setting, so the choice is visible. */
+function WidthLabel({ lines, text }: { lines: number[]; text: string }) {
+  return (
+    <span className="width-label">
+      <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true">
+        {lines.map((w, i) => (
+          <rect key={i} x={(20 - w) / 2} y={1 + i * 5} width={w} height="2" rx="1" fill="currentColor" />
+        ))}
+      </svg>
+      {text}
+    </span>
   );
 }
 

@@ -10,14 +10,14 @@ import {
   type ResumeIntent,
 } from '../auth/google';
 import { extractText, type DocText } from '../library/text';
-import { isLesson } from '../library/tree';
+import { isLesson, lessonTitle } from '../library/tree';
 import { devProvider } from '../providers/dev';
 import { driveFor } from '../providers/gdrive';
 import { SITE_VAULT_ID, siteProvider, type SiteLibraryInfo } from '../providers/site';
 import type { VaultProvider } from '../providers/types';
 import { db, deleteVaultData, type ProviderKind, type Vault } from '../storage/db';
 import { syncVault, type SyncProgress, type SyncResult } from '../sync/sync';
-import { kindOf } from '../util/paths';
+import { kindOf, stem } from '../util/paths';
 
 export interface Tab {
   id: string;
@@ -59,6 +59,8 @@ interface State {
   progress: Record<string, Progress>;
   /** Text of every note and guide, for search and reading times. Null until built. */
   docs: Map<string, DocText> | null;
+  /** Each document's own title (first heading or <title>), cached per vault so it shows at once. */
+  titles: Record<string, string>;
   /** The collection shown on the home screen, or null for the overview. */
   homeFolder: string | null;
   accounts: GoogleAccount[];
@@ -104,6 +106,7 @@ const ACTIVE_KEY = 'cortado.activeVault';
 const tabsKey = (vaultId: string) => `cortado.tabs.${vaultId}`;
 const recentKey = (vaultId: string) => `cortado.recent.${vaultId}`;
 const progressKey = (vaultId: string) => `cortado.progress.${vaultId}`;
+const titlesKey = (vaultId: string) => `cortado.titles.${vaultId}`;
 // Set when someone removes the site library, so it isn't added back on the next launch.
 const SITE_REMOVED_KEY = 'cortado.siteLibraryRemoved';
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -156,7 +159,11 @@ export const useStore = create<State>((set, get) => {
       if (run !== indexRun) return;
       await new Promise((r) => setTimeout(r, 0));
     }
-    if (run === indexRun && get().activeVaultId === vaultId) set({ docs });
+    if (run !== indexRun || get().activeVaultId !== vaultId) return;
+    const titles: Record<string, string> = {};
+    for (const d of docs.values()) if (d.title !== stem(d.path)) titles[d.path] = d.title;
+    set({ docs, titles });
+    localStorage.setItem(titlesKey(vaultId), JSON.stringify(titles));
   }
 
   return {
@@ -170,6 +177,7 @@ export const useStore = create<State>((set, get) => {
     recent: [],
     progress: {},
     docs: null,
+    titles: {},
     homeFolder: null,
     accounts: [],
     sidebarOpen: typeof window !== 'undefined' ? !isNarrow() : true,
@@ -201,7 +209,7 @@ export const useStore = create<State>((set, get) => {
       indexRun++;
       if (!id) {
         localStorage.removeItem(ACTIVE_KEY);
-        set({ activeVaultId: null, paths: [], tabs: [], activeTabId: null, mru: [], recent: [], progress: {}, docs: null, homeFolder: null });
+        set({ activeVaultId: null, paths: [], tabs: [], activeTabId: null, mru: [], recent: [], progress: {}, docs: null, titles: {}, homeFolder: null });
         return;
       }
       localStorage.setItem(ACTIVE_KEY, id);
@@ -220,6 +228,7 @@ export const useStore = create<State>((set, get) => {
         activeTabId,
         mru: activeTabId ? [activeTabId] : [],
         recent: readJSON<string[]>(recentKey(id), []),
+        titles: readJSON<Record<string, string>>(titlesKey(id), {}),
         progress: readJSON<Record<string, Progress>>(progressKey(id), {}),
         homeFolder: null,
       });
@@ -252,7 +261,7 @@ export const useStore = create<State>((set, get) => {
     async removeVault(id) {
       if (get().vaults.find((v) => v.id === id)?.provider === 'site') localStorage.setItem(SITE_REMOVED_KEY, '1');
       await deleteVaultData(id);
-      for (const key of [tabsKey(id), recentKey(id), progressKey(id)]) localStorage.removeItem(key);
+      for (const key of [tabsKey(id), recentKey(id), progressKey(id), titlesKey(id)]) localStorage.removeItem(key);
       const vaults = get().vaults.filter((v) => v.id !== id);
       set({ vaults });
       if (get().activeVaultId === id) await get().setActiveVault(vaults[0]?.id ?? null);
@@ -470,6 +479,17 @@ useStore.subscribe((s, prev) => {
   if (s.recent !== prev.recent) localStorage.setItem(recentKey(s.activeVaultId), JSON.stringify(s.recent));
   if (s.progress !== prev.progress) localStorage.setItem(progressKey(s.activeVaultId), JSON.stringify(s.progress));
 });
+
+/** A lesson's display title: its own heading or <title>, else the file name without its number. */
+export function useTitle(path: string): string {
+  const title = useStore((s) => s.titles[path]);
+  return title ?? lessonTitle(stem(path)).title;
+}
+
+/** The same, outside React. */
+export function titleOf(path: string): string {
+  return useStore.getState().titles[path] ?? lessonTitle(stem(path)).title;
+}
 
 /** Status of a lesson for badges and lists. */
 export function lessonState(p: Progress | undefined): 'done' | 'started' | 'new' {

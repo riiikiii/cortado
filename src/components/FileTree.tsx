@@ -1,8 +1,8 @@
 import { memo, useMemo, useState } from 'react';
 import { buildTree, flatten, LESSON_KINDS, type TreeNode } from '../library/tree';
-import { lessonState, useStore, type Progress } from '../state/store';
+import { lessonState, useStore, useTitle, type Progress } from '../state/store';
 import { fuzzyFilter } from '../util/fuzzy';
-import { baseName, dirName, isHidden, kindOf, stem } from '../util/paths';
+import { baseName, dirName, isHidden, kindOf } from '../util/paths';
 import { fileIcon, Icon, StatusDot } from './Icon';
 
 const EXPANDED_KEY = 'cortado.expanded';
@@ -102,6 +102,7 @@ function FileRow({ path, depth, active, showDir, progress }: { path: string; dep
   const kind = kindOf(path);
   const lesson = LESSON_KINDS.has(kind);
   const state = lessonState(progress);
+  const title = useTitle(path);
   return (
     <li role="treeitem">
       <button
@@ -116,7 +117,7 @@ function FileRow({ path, depth, active, showDir, progress }: { path: string; dep
       >
         <Icon name={fileIcon(kind)} size={17} className={`ico kind-${kind}`} />
         <span className="label">
-          {kind === 'md' || kind === 'html' ? stem(path) : baseName(path)}
+          {kind === 'md' || kind === 'html' ? title : baseName(path)}
           {showDir && dirName(path) && <span className="dir">{dirName(path)}</span>}
         </span>
         {lesson && state !== 'new' && <StatusDot state={state} ratio={progress?.ratio} size={15} />}

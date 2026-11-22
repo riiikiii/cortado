@@ -8,7 +8,9 @@ import { Avatar, Icon } from './Icon';
 import { QuickSwitcher } from './QuickSwitcher';
 import { SettingsSheet } from './SettingsSheet';
 import { SyncButton, SyncStatus } from './SyncButton';
+import { CupTile } from './Logo';
 import { TabBar } from './TabBar';
+import { ToolbarSlot } from './toolbarSlot';
 import { VaultPicker } from './VaultPicker';
 
 const WIDE = 900; // iPad mini landscape is 1133pt wide, portrait 744pt
@@ -40,6 +42,7 @@ export function AppShell() {
   const toast = useStore((s) => s.toast);
   const { setSidebarOpen, setQuickOpen } = useStore.getState();
   const [width, setWidth] = useState(() => Number(localStorage.getItem(WIDTH_KEY)) || 300);
+  const [slot, setSlot] = useState<HTMLDivElement | null>(null);
 
   // Rotating to portrait hides the slide-over; rotating to landscape docks it again.
   const firstWide = useRef(true);
@@ -144,26 +147,29 @@ export function AppShell() {
             <Icon name="sidebar" />
           </button>
           <TabBar />
+          <div className="topbar-actions" ref={setSlot} />
           <button className="icon-btn" onClick={() => setQuickOpen(true)} aria-label="Search" title="Search (⌘K)">
             <Icon name="search" />
           </button>
         </header>
-        <div className="viewer-stack">
-          {vault &&
-            tabs
-              .filter((t) => live.has(t.id))
-              .map((t) => (
-                <div key={t.id} className={`viewer ${t.id === activeTabId ? 'active' : ''}`}>
-                  <Reader tab={t} vaultId={vault.id} />
-                </div>
-              ))}
-          {!activeTabId && (
-            <div className="viewer active home-view">
-              <Home />
-            </div>
-          )}
-          {overlay && !sidebarOpen && <div className="edge-swipe" {...edgeHandlers} />}
-        </div>
+        <ToolbarSlot.Provider value={slot}>
+          <div className="viewer-stack">
+            {vault &&
+              tabs
+                .filter((t) => live.has(t.id))
+                .map((t) => (
+                  <div key={t.id} className={`viewer ${t.id === activeTabId ? 'active' : ''}`}>
+                    <Reader tab={t} vaultId={vault.id} active={t.id === activeTabId} />
+                  </div>
+                ))}
+            {!activeTabId && (
+              <div className="viewer active home-view">
+                <Home />
+              </div>
+            )}
+            {overlay && !sidebarOpen && <div className="edge-swipe" {...edgeHandlers} />}
+          </div>
+        </ToolbarSlot.Provider>
       </main>
 
       <QuickSwitcher />
@@ -197,9 +203,7 @@ function Sidebar() {
           {account ? (
             <Avatar name={account.name} photo={account.photo} size={30} />
           ) : (
-            <span className="mini-logo" aria-hidden="true">
-              <span />
-            </span>
+            <CupTile size={34} />
           )}
           <span className="vault-text">
             <span className="vault-title">{vault?.name ?? 'Cortado'}</span>
