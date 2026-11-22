@@ -45,7 +45,7 @@ a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 .mast{background:#19120f; color:#dfcfc0; border-bottom:1px solid rgba(255,255,255,.12)}
 .mast .wrap{display:flex; justify-content:space-between; gap:1rem; padding-block:.75rem; font-size:13px; letter-spacing:.12em; text-transform:uppercase; font-weight:700}
 .mast strong{color:var(--t300); font-weight:800}
-.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-pour.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:44px 0 42px}
+.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-moka.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:44px 0 42px}
 .hero .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .hero .wrap{position:relative; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(16rem,.95fr); gap:28px; align-items:center}
 h1,h2,h3{color:var(--ink); line-height:1.2}
@@ -117,6 +117,49 @@ footer .wrap{display:flex; justify-content:space-between; gap:1rem; max-width:74
 @media print{body{background:white;color:black;font-size:10pt}.wrap,.layout{max-width:100%}.hero,.mast{background:white;color:black}.hero .wrap{display:block}.hero{padding:.45rem 0}.lead,.mast strong{color:black}.topology,nav,.jump,.snippet button,footer a,.skip,.hero .net{display:none}section{border:0;padding:.35rem 0}h2,h3,figcaption{break-after:avoid}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:.4rem}.snippet,.snippet figcaption{background:#f4f4f4;color:black}.table{overflow:visible}tr{break-inside:avoid}a{color:black}}
 
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Unified Coffee + Cambridge Blue/Teal syntax highlighting */
+pre .hljs-keyword, pre .hljs-selector-tag, pre .hljs-built_in, pre .hljs-template-tag { color: #8cc7bc; font-weight: 600; }
+pre .hljs-title, pre .hljs-type, pre .hljs-title.class_, pre .hljs-class { color: #d6eee8; }
+pre .hljs-title.function_ { color: #a3c1ad; }
+pre .hljs-function { color: inherit; }
+pre .hljs-string, pre .hljs-regexp, pre .hljs-template-variable, pre .hljs-char.escape_ { color: #f2c97d; }
+pre .hljs-comment, pre .hljs-doctag, pre .hljs-quote { color: #9e8b7d; font-style: italic; }
+pre .hljs-meta, pre .hljs-meta .hljs-keyword, pre .hljs-symbol, pre .hljs-variable, pre .hljs-variable.language_, pre .hljs-params, pre .hljs-subst { color: #f29e7e; }
+pre .hljs-number, pre .hljs-literal, pre .hljs-bullet { color: #f0b37e; }
+pre .hljs-attr, pre .hljs-attribute, pre .hljs-property, pre .hljs-name, pre .hljs-section, pre .hljs-tag, pre .hljs-selector-class, pre .hljs-selector-id, pre .hljs-selector-attr, pre .hljs-selector-pseudo, pre .hljs-link { color: #a3c1ad; }
+pre .hljs-operator, pre .hljs-punctuation { color: #cbe0d5; }
+pre .hljs-addition { color: #a3c1ad; background: rgba(163, 193, 173, .14); }
+pre .hljs-deletion { color: #ee8c68; background: rgba(238, 140, 104, .14); }
+pre .hljs-emphasis { font-style: italic; }
+pre .hljs-strong { font-weight: 700; }
+@media print {
+  pre [class*="hljs-"] { color: #1f1713 !important; background: none !important; }
+}
+/* End syntax highlighting */
+/* End syntax highlighting */
+/* End syntax highlighting */
 </style>
 </head>
 <body id="top">
@@ -224,57 +267,57 @@ footer .wrap{display:flex; justify-content:space-between; gap:1rem; max-width:74
 <p>For cross-VPC or cross-account access, use a supported private network path. With MSK managed multi-VPC private connectivity on supported Provisioned clusters, enable the correct authentication scheme, authorize the connection in the cluster policy, create the managed VPC connection and use the VPC connectivity bootstrap string and its returned ports. Cross-account access also requires the relevant principal permissions. Keep the endpoint returned for your network path intact.</p>
 <h3>Get the private IAM bootstrap brokers</h3>
 <figure class="snippet"><figcaption>Bash · AWS CLI</figcaption>
-<pre tabindex="0"><code>AWS_REGION=&#x27;us-east-1&#x27;
-CLUSTER_ARN=&#x27;arn:aws:kafka:us-east-1:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&#x27;
+<pre tabindex="0"><code><span class="hljs-attr">AWS_REGION</span>=<span class="hljs-string">&#x27;us-east-1&#x27;</span>
+<span class="hljs-attr">CLUSTER_ARN</span>=<span class="hljs-string">&#x27;arn:aws:kafka:us-east-1:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&#x27;</span>
 
-MSK_BOOTSTRAP=$(aws kafka get-bootstrap-brokers \
-  --region &quot;$AWS_REGION&quot; --cluster-arn &quot;$CLUSTER_ARN&quot; \
-  --query BootstrapBrokerStringSaslIam --output text)
-export MSK_BOOTSTRAP
-printf &#x27;%s\n&#x27; &quot;$MSK_BOOTSTRAP&quot;
+<span class="hljs-attr">MSK_BOOTSTRAP</span>=<span class="hljs-subst">$(</span><span class="hljs-built_in">aws</span> kafka get-bootstrap-brokers <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--region</span> <span class="hljs-string">&quot;<span class="hljs-variable">$AWS_REGION</span>&quot;</span> <span class="hljs-attr">--cluster-arn</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CLUSTER_ARN</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--query</span> BootstrapBrokerStringSaslIam <span class="hljs-attr">--output</span> text)
+<span class="hljs-built_in">export</span> MSK_BOOTSTRAP
+<span class="hljs-built_in">printf</span> <span class="hljs-string">&#x27;%s\n&#x27;</span> <span class="hljs-string">&quot;<span class="hljs-variable">$MSK_BOOTSTRAP</span>&quot;</span>
 </code></pre></figure>
 <p>Run this from the client shell if it has <code>kafka:GetBootstrapBrokers</code>, or execute it under an operator principal and set <code>MSK_BOOTSTRAP</code> on the client from the returned value. A missing value or <code>None</code> usually means the selected cluster, listener or network path does not expose that field. In the console, the cluster’s client information shows the available endpoints.</p>
 <h3>Set up the lab role</h3>
 <p>AWS API calls such as fetching connection information use the <code>kafka:</code> namespace. Kafka wire operations use <code>kafka-cluster:</code>. Attach the following combined policy to the IAM role whose credentials the Java client will use. Replace <code>REGION</code>, <code>ACCOUNT_ID</code> and <code>CLUSTER_UUID</code>, and replace <code>orders-lab</code> if you named the cluster differently. The UUID is the entire final segment in the cluster ARN. This template uses the commercial AWS partition.</p>
 <figure class="snippet"><figcaption>IAM policy · replace the ARN placeholders</figcaption>
-<pre tabindex="0"><code>{
-  &quot;Version&quot;: &quot;2012-10-17&quot;,
-  &quot;Statement&quot;: [
-    {
-      &quot;Effect&quot;: &quot;Allow&quot;,
-      &quot;Action&quot;: [
-        &quot;kafka:GetBootstrapBrokers&quot;
-      ],
-      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&quot;
-    },
-    {
-      &quot;Effect&quot;: &quot;Allow&quot;,
-      &quot;Action&quot;: [
-        &quot;kafka-cluster:Connect&quot;,
-        &quot;kafka-cluster:WriteDataIdempotently&quot;
-      ],
-      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&quot;
-    },
-    {
-      &quot;Effect&quot;: &quot;Allow&quot;,
-      &quot;Action&quot;: [
-        &quot;kafka-cluster:CreateTopic&quot;,
-        &quot;kafka-cluster:DescribeTopic&quot;,
-        &quot;kafka-cluster:WriteData&quot;,
-        &quot;kafka-cluster:ReadData&quot;
-      ],
-      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:topic/orders-lab/CLUSTER_UUID/orders.v1&quot;
-    },
-    {
-      &quot;Effect&quot;: &quot;Allow&quot;,
-      &quot;Action&quot;: [
-        &quot;kafka-cluster:DescribeGroup&quot;,
-        &quot;kafka-cluster:AlterGroup&quot;
-      ],
-      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:group/orders-lab/CLUSTER_UUID/orders-demo-v1&quot;
-    }
-  ]
-}
+<pre tabindex="0"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;Version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2012-10-17&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;Statement&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;Effect&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Allow&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">&quot;kafka:GetBootstrapBrokers&quot;</span>
+      <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Resource&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;arn:aws:kafka:REGION:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&quot;</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;Effect&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Allow&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">&quot;kafka-cluster:Connect&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">&quot;kafka-cluster:WriteDataIdempotently&quot;</span>
+      <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Resource&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;arn:aws:kafka:REGION:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&quot;</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;Effect&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Allow&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">&quot;kafka-cluster:CreateTopic&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">&quot;kafka-cluster:DescribeTopic&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">&quot;kafka-cluster:WriteData&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">&quot;kafka-cluster:ReadData&quot;</span>
+      <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Resource&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;arn:aws:kafka:REGION:ACCOUNT_ID:topic/orders-lab/CLUSTER_UUID/orders.v1&quot;</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;Effect&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Allow&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">&quot;kafka-cluster:DescribeGroup&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">&quot;kafka-cluster:AlterGroup&quot;</span>
+      <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Resource&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;arn:aws:kafka:REGION:ACCOUNT_ID:group/orders-lab/CLUSTER_UUID/orders-demo-v1&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
 </code></pre></figure>
 <p>The combined role keeps the exercise short. In production, assign separate roles to topic provisioning, publishing and each consuming application. Scope permissions to the required topics and consumer-group IDs. For the sample idempotent producer, grant <code>WriteDataIdempotently</code> on the cluster ARN and <code>WriteData</code> on the topic ARN. Transactional producers require additional permissions on transactional-ID ARNs. Kafka ACL APIs may coexist on a cluster, while authorization of IAM identities uses IAM policies.</p>
 <p>The Amazon MSK IAM authentication library uses the AWS credential provider chain. Attach a workload role, or use short-lived development credentials via a configured AWS profile on a client with private reachability. Give the Java process a working credential source and confirm the identity with <code>aws sts get-caller-identity</code> in the same environment when STS is reachable. A profile backed by IAM Identity Center may need <code>aws sso login --profile YOUR_PROFILE</code> and the matching profile selected.</p>
@@ -285,220 +328,220 @@ printf &#x27;%s\n&#x27; &quot;$MSK_BOOTSTRAP&quot;
 <h2>Build and run the Java lab</h2>
 <p>Create a Maven project directory with the two files below. The example pins Kafka Java clients <code>4.2.2</code> and Amazon MSK IAM authentication <code>2.3.8</code>. The same entry point can create and describe the topic, send one event, or run a consumer.</p>
 <figure class="snippet"><figcaption>pom.xml</figcaption>
-<pre tabindex="0"><code>&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;
-         xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
-  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
-  &lt;groupId&gt;example&lt;/groupId&gt;
-  &lt;artifactId&gt;msk-java-lab&lt;/artifactId&gt;
-  &lt;version&gt;1.0.0&lt;/version&gt;
-  &lt;properties&gt;
-    &lt;maven.compiler.release&gt;17&lt;/maven.compiler.release&gt;
-    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
-  &lt;/properties&gt;
-  &lt;dependencies&gt;
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.apache.kafka&lt;/groupId&gt;
-      &lt;artifactId&gt;kafka-clients&lt;/artifactId&gt;
-      &lt;version&gt;4.2.2&lt;/version&gt;
-    &lt;/dependency&gt;
-    &lt;dependency&gt;
-      &lt;groupId&gt;software.amazon.msk&lt;/groupId&gt;
-      &lt;artifactId&gt;aws-msk-iam-auth&lt;/artifactId&gt;
-      &lt;version&gt;2.3.8&lt;/version&gt;
-    &lt;/dependency&gt;
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
-      &lt;artifactId&gt;slf4j-simple&lt;/artifactId&gt;
-      &lt;version&gt;1.7.36&lt;/version&gt;
-      &lt;scope&gt;runtime&lt;/scope&gt;
-    &lt;/dependency&gt;
-  &lt;/dependencies&gt;
-  &lt;build&gt;
-    &lt;plugins&gt;
-      &lt;plugin&gt;
-        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-        &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
-        &lt;version&gt;3.14.1&lt;/version&gt;
-      &lt;/plugin&gt;
-    &lt;/plugins&gt;
-  &lt;/build&gt;
-&lt;/project&gt;
+<pre tabindex="0"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">&quot;http://maven.apache.org/POM/4.0.0&quot;</span>
+         <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>msk-java-lab<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">properties</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">maven.compiler.release</span>&gt;</span>17<span class="hljs-tag">&lt;/<span class="hljs-name">maven.compiler.release</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">project.build.sourceEncoding</span>&gt;</span>UTF-8<span class="hljs-tag">&lt;/<span class="hljs-name">project.build.sourceEncoding</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">properties</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.apache.kafka<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>kafka-clients<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>4.2.2<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>software.amazon.msk<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>aws-msk-iam-auth<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.3.8<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.slf4j<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>slf4j-simple<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.7.36<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>runtime<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">build</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">plugins</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">plugin</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>maven-compiler-plugin<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>3.14.1<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">plugin</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">plugins</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">build</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span>
 </code></pre></figure>
 <figure class="snippet"><figcaption>src/main/java/example/MskLab.java</figcaption>
-<pre tabindex="0"><code>package example;
+<pre tabindex="0"><code><span class="hljs-keyword">package</span> example;
 
-import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.clients.consumer.CloseOptions;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.errors.TopicExistsException;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.admin.<span class="hljs-type">Admin</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.admin.<span class="hljs-type">NewTopic</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.admin.<span class="hljs-type">TopicDescription</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.consumer.<span class="hljs-type">CloseOptions</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.consumer.<span class="hljs-type">ConsumerRecord</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.consumer.<span class="hljs-type">ConsumerRecords</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.consumer.<span class="hljs-type">KafkaConsumer</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.producer.<span class="hljs-type">KafkaProducer</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.producer.<span class="hljs-type">ProducerRecord</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.clients.producer.<span class="hljs-type">RecordMetadata</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.common.errors.<span class="hljs-type">TopicExistsException</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.common.serialization.<span class="hljs-type">StringDeserializer</span>;
+<span class="hljs-keyword">import</span> org.apache.kafka.common.serialization.<span class="hljs-type">StringSerializer</span>;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+<span class="hljs-keyword">import</span> java.time.<span class="hljs-type">Duration</span>;
+<span class="hljs-keyword">import</span> java.time.<span class="hljs-type">Instant</span>;
+<span class="hljs-keyword">import</span> java.util.<span class="hljs-type">List</span>;
+<span class="hljs-keyword">import</span> java.util.<span class="hljs-type">Properties</span>;
+<span class="hljs-keyword">import</span> java.util.<span class="hljs-variable">UUID</span>;
+<span class="hljs-keyword">import</span> java.util.concurrent.<span class="hljs-type">CountDownLatch</span>;
+<span class="hljs-keyword">import</span> java.util.concurrent.<span class="hljs-type">ExecutionException</span>;
+<span class="hljs-keyword">import</span> java.util.concurrent.<span class="hljs-type">TimeUnit</span>;
+<span class="hljs-keyword">import</span> java.util.concurrent.atomic.<span class="hljs-type">AtomicBoolean</span>;
 
-public final class MskLab {
-    private static final String TOPIC = &quot;orders.v1&quot;;
-    private static final String GROUP = &quot;orders-demo-v1&quot;;
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">MskLab</span> {
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">TOPIC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;orders.v1&quot;</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">GROUP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;orders-demo-v1&quot;</span>;
 
-    public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new IllegalArgumentException(&quot;Run with create, describe, produce, or consume&quot;);
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> <span class="hljs-type">Exception</span> {
+        <span class="hljs-keyword">if</span> (args.length != <span class="hljs-number">1</span>) {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;Run with create, describe, produce, or consume&quot;</span>);
         }
-        switch (args[0]) {
-            case &quot;create&quot; -&gt; createTopic();
-            case &quot;describe&quot; -&gt; describeTopic();
-            case &quot;produce&quot; -&gt; produce();
-            case &quot;consume&quot; -&gt; consume();
-            default -&gt; throw new IllegalArgumentException(&quot;Unknown command: &quot; + args[0]);
+        <span class="hljs-keyword">switch</span> (args[<span class="hljs-number">0</span>]) {
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;create&quot;</span> -&gt; createTopic();
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;describe&quot;</span> -&gt; describeTopic();
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;produce&quot;</span> -&gt; produce();
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;consume&quot;</span> -&gt; consume();
+            <span class="hljs-keyword">default</span> -&gt; <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;Unknown command: &quot;</span> + args[<span class="hljs-number">0</span>]);
         }
     }
 
-    private static boolean localMode() {
-        return &quot;local&quot;.equals(System.getenv(&quot;KAFKA_MODE&quot;));
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">localMode</span><span class="hljs-params">()</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;local&quot;</span>.<span class="hljs-title function_">equals</span>(<span class="hljs-type">System</span>.<span class="hljs-title function_">getenv</span>(<span class="hljs-string">&quot;KAFKA_MODE&quot;</span>));
     }
 
-    private static Properties common(String clientId) {
-        Properties p = new Properties();
-        p.put(&quot;client.id&quot;, clientId);
-        if (localMode()) {
-            p.put(&quot;bootstrap.servers&quot;, &quot;localhost:9092&quot;);
-            p.put(&quot;security.protocol&quot;, &quot;PLAINTEXT&quot;);
-            return p;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Properties</span> <span class="hljs-title function_">common</span><span class="hljs-params">(String clientId)</span> {
+        <span class="hljs-type">Properties</span> <span class="hljs-variable">p</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Properties</span>();
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;client.id&quot;</span>, clientId);
+        <span class="hljs-keyword">if</span> (localMode()) {
+            p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;bootstrap.servers&quot;</span>, <span class="hljs-string">&quot;localhost:9092&quot;</span>);
+            p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;security.protocol&quot;</span>, <span class="hljs-string">&quot;PLAINTEXT&quot;</span>);
+            <span class="hljs-keyword">return</span> p;
         }
 
-        String bootstrap = System.getenv(&quot;MSK_BOOTSTRAP&quot;);
-        if (bootstrap == null || bootstrap.isBlank()) {
-            throw new IllegalArgumentException(&quot;Set MSK_BOOTSTRAP to the IAM bootstrap brokers&quot;);
+        <span class="hljs-type">String</span> <span class="hljs-variable">bootstrap</span> <span class="hljs-operator">=</span> <span class="hljs-type">System</span>.<span class="hljs-title function_">getenv</span>(<span class="hljs-string">&quot;MSK_BOOTSTRAP&quot;</span>);
+        <span class="hljs-keyword">if</span> (bootstrap == <span class="hljs-literal">null</span> || bootstrap.<span class="hljs-title function_">isBlank</span>()) {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;Set MSK_BOOTSTRAP to the IAM bootstrap brokers&quot;</span>);
         }
-        p.put(&quot;bootstrap.servers&quot;, bootstrap);
-        p.put(&quot;security.protocol&quot;, &quot;SASL_SSL&quot;);
-        p.put(&quot;sasl.mechanism&quot;, &quot;AWS_MSK_IAM&quot;);
-        p.put(&quot;sasl.jaas.config&quot;, &quot;software.amazon.msk.auth.iam.IAMLoginModule required;&quot;);
-        p.put(&quot;sasl.client.callback.handler.class&quot;,
-              &quot;software.amazon.msk.auth.iam.IAMClientCallbackHandler&quot;);
-        return p;
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;bootstrap.servers&quot;</span>, bootstrap);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;security.protocol&quot;</span>, <span class="hljs-string">&quot;SASL_SSL&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;sasl.mechanism&quot;</span>, <span class="hljs-string">&quot;AWS_MSK_IAM&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;sasl.jaas.config&quot;</span>, <span class="hljs-string">&quot;software.amazon.msk.auth.iam.IAMLoginModule required;&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;sasl.client.callback.handler.class&quot;</span>,
+              <span class="hljs-string">&quot;software.amazon.msk.auth.iam.IAMClientCallbackHandler&quot;</span>);
+        <span class="hljs-keyword">return</span> p;
     }
 
-    private static void createTopic() throws Exception {
-        short replicas = (short) (localMode() ? 1 : 3);
-        try (Admin admin = Admin.create(common(&quot;orders-lab-admin&quot;))) {
-            try {
-                admin.createTopics(List.of(new NewTopic(TOPIC, 3, replicas)))
-                     .all().get(30, TimeUnit.SECONDS);
-                System.out.println(&quot;Created &quot; + TOPIC);
-            } catch (ExecutionException failure) {
-                if (!(failure.getCause() instanceof TopicExistsException)) {
-                    throw failure;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">createTopic</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> <span class="hljs-type">Exception</span> {
+        <span class="hljs-type">short</span> <span class="hljs-variable">replicas</span> <span class="hljs-operator">=</span> (<span class="hljs-type">short</span>) (localMode() ? <span class="hljs-number">1</span> : <span class="hljs-number">3</span>);
+        <span class="hljs-keyword">try</span> (<span class="hljs-type">Admin</span> <span class="hljs-variable">admin</span> <span class="hljs-operator">=</span> <span class="hljs-type">Admin</span>.<span class="hljs-title function_">create</span>(common(<span class="hljs-string">&quot;orders-lab-admin&quot;</span>))) {
+            <span class="hljs-keyword">try</span> {
+                admin.<span class="hljs-title function_">createTopics</span>(<span class="hljs-type">List</span>.<span class="hljs-title function_">of</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">NewTopic</span>(<span class="hljs-variable">TOPIC</span>, <span class="hljs-number">3</span>, replicas)))
+                     .<span class="hljs-title function_">all</span>().<span class="hljs-title function_">get</span>(<span class="hljs-number">30</span>, <span class="hljs-type">TimeUnit</span>.<span class="hljs-variable">SECONDS</span>);
+                <span class="hljs-type">System</span>.out.<span class="hljs-title function_">println</span>(<span class="hljs-string">&quot;Created &quot;</span> + <span class="hljs-variable">TOPIC</span>);
+            } <span class="hljs-keyword">catch</span> (<span class="hljs-type">ExecutionException</span> failure) {
+                <span class="hljs-keyword">if</span> (!(failure.<span class="hljs-title function_">getCause</span>() <span class="hljs-keyword">instanceof</span> <span class="hljs-type">TopicExistsException</span>)) {
+                    <span class="hljs-keyword">throw</span> failure;
                 }
-                System.out.println(TOPIC + &quot; already exists. Verify its settings with describe.&quot;);
+                <span class="hljs-type">System</span>.out.<span class="hljs-title function_">println</span>(<span class="hljs-variable">TOPIC</span> + <span class="hljs-string">&quot; already exists. Verify its settings with describe.&quot;</span>);
             }
         }
     }
 
-    private static void describeTopic() throws Exception {
-        try (Admin admin = Admin.create(common(&quot;orders-lab-admin&quot;))) {
-            TopicDescription topic = admin.describeTopics(List.of(TOPIC))
-                .topicNameValues().get(TOPIC).get(30, TimeUnit.SECONDS);
-            topic.partitions().forEach(partition -&gt; System.out.printf(
-                &quot;%s partition=%d replicas=%d inSync=%d%n&quot;, TOPIC, partition.partition(),
-                partition.replicas().size(), partition.isr().size()));
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">describeTopic</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> <span class="hljs-type">Exception</span> {
+        <span class="hljs-keyword">try</span> (<span class="hljs-type">Admin</span> <span class="hljs-variable">admin</span> <span class="hljs-operator">=</span> <span class="hljs-type">Admin</span>.<span class="hljs-title function_">create</span>(common(<span class="hljs-string">&quot;orders-lab-admin&quot;</span>))) {
+            <span class="hljs-type">TopicDescription</span> <span class="hljs-variable">topic</span> <span class="hljs-operator">=</span> admin.<span class="hljs-title function_">describeTopics</span>(<span class="hljs-type">List</span>.<span class="hljs-title function_">of</span>(<span class="hljs-variable">TOPIC</span>))
+                .<span class="hljs-title function_">topicNameValues</span>().<span class="hljs-title function_">get</span>(<span class="hljs-variable">TOPIC</span>).<span class="hljs-title function_">get</span>(<span class="hljs-number">30</span>, <span class="hljs-type">TimeUnit</span>.<span class="hljs-variable">SECONDS</span>);
+            topic.<span class="hljs-title function_">partitions</span>().<span class="hljs-title function_">forEach</span>(partition -&gt; <span class="hljs-type">System</span>.out.<span class="hljs-title function_">printf</span>(
+                <span class="hljs-string">&quot;%s partition=%d replicas=%d inSync=%d%n&quot;</span>, <span class="hljs-variable">TOPIC</span>, partition.<span class="hljs-title function_">partition</span>(),
+                partition.<span class="hljs-title function_">replicas</span>().<span class="hljs-title function_">size</span>(), partition.<span class="hljs-title function_">isr</span>().<span class="hljs-title function_">size</span>()));
         }
     }
 
-    private static void produce() throws Exception {
-        Properties p = common(&quot;orders-lab-producer&quot;);
-        p.put(&quot;key.serializer&quot;, StringSerializer.class.getName());
-        p.put(&quot;value.serializer&quot;, StringSerializer.class.getName());
-        p.put(&quot;acks&quot;, &quot;all&quot;);
-        p.put(&quot;enable.idempotence&quot;, &quot;true&quot;);
-        p.put(&quot;compression.type&quot;, &quot;zstd&quot;);
-        p.put(&quot;linger.ms&quot;, &quot;5&quot;);
-        p.put(&quot;request.timeout.ms&quot;, &quot;10000&quot;);
-        p.put(&quot;delivery.timeout.ms&quot;, &quot;30000&quot;);
-        p.put(&quot;max.block.ms&quot;, &quot;15000&quot;);
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">produce</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> <span class="hljs-type">Exception</span> {
+        <span class="hljs-type">Properties</span> <span class="hljs-variable">p</span> <span class="hljs-operator">=</span> common(<span class="hljs-string">&quot;orders-lab-producer&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;key.serializer&quot;</span>, <span class="hljs-type">StringSerializer</span>.class.<span class="hljs-title function_">getName</span>());
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;value.serializer&quot;</span>, <span class="hljs-type">StringSerializer</span>.class.<span class="hljs-title function_">getName</span>());
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;acks&quot;</span>, <span class="hljs-string">&quot;all&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;enable.idempotence&quot;</span>, <span class="hljs-string">&quot;true&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;compression.type&quot;</span>, <span class="hljs-string">&quot;zstd&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;linger.ms&quot;</span>, <span class="hljs-string">&quot;5&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;request.timeout.ms&quot;</span>, <span class="hljs-string">&quot;10000&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;delivery.timeout.ms&quot;</span>, <span class="hljs-string">&quot;30000&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;max.block.ms&quot;</span>, <span class="hljs-string">&quot;15000&quot;</span>);
 
-        String key = &quot;order-1042&quot;;
-        String eventId = UUID.randomUUID().toString();
-        String payload = &quot;&quot;&quot;
+        <span class="hljs-type">String</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;order-1042&quot;</span>;
+        <span class="hljs-type">String</span> <span class="hljs-variable">eventId</span> <span class="hljs-operator">=</span> <span class="hljs-variable">UUID</span>.<span class="hljs-title function_">randomUUID</span>().<span class="hljs-title function_">toString</span>();
+        <span class="hljs-type">String</span> <span class="hljs-variable">payload</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;&quot;
             {&quot;eventId&quot;:&quot;%s&quot;,&quot;eventType&quot;:&quot;OrderPlaced&quot;,&quot;schemaVersion&quot;:1,
              &quot;orderId&quot;:&quot;%s&quot;,&quot;occurredAt&quot;:&quot;%s&quot;}
-            &quot;&quot;&quot;.formatted(eventId, key, Instant.now()).replace(&quot;\n&quot;, &quot;&quot;);
+            &quot;&quot;&quot;</span>.<span class="hljs-title function_">formatted</span>(eventId, key, <span class="hljs-type">Instant</span>.<span class="hljs-title function_">now</span>()).<span class="hljs-title function_">replace</span>(<span class="hljs-string">&quot;\n&quot;</span>, <span class="hljs-string">&quot;&quot;</span>);
 
-        try (KafkaProducer&lt;String, String&gt; producer = new KafkaProducer&lt;&gt;(p)) {
-            RecordMetadata result = producer.send(new ProducerRecord&lt;&gt;(TOPIC, key, payload)).get();
-            System.out.printf(&quot;Published event=%s %s-%d offset=%d%n&quot;, eventId,
-                              result.topic(), result.partition(), result.offset());
+        <span class="hljs-keyword">try</span> (<span class="hljs-type">KafkaProducer</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">String</span>&gt; <span class="hljs-variable">producer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">KafkaProducer</span>&lt;&gt;(p)) {
+            <span class="hljs-type">RecordMetadata</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> producer.<span class="hljs-title function_">send</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ProducerRecord</span>&lt;&gt;(<span class="hljs-variable">TOPIC</span>, key, payload)).<span class="hljs-title function_">get</span>();
+            <span class="hljs-type">System</span>.out.<span class="hljs-title function_">printf</span>(<span class="hljs-string">&quot;Published event=%s %s-%d offset=%d%n&quot;</span>, eventId,
+                              result.<span class="hljs-title function_">topic</span>(), result.<span class="hljs-title function_">partition</span>(), result.<span class="hljs-title function_">offset</span>());
         }
     }
 
-    private static void consume() {
-        Properties p = common(&quot;orders-lab-consumer&quot;);
-        p.put(&quot;group.id&quot;, GROUP);
-        p.put(&quot;group.protocol&quot;, &quot;classic&quot;);
-        p.put(&quot;key.deserializer&quot;, StringDeserializer.class.getName());
-        p.put(&quot;value.deserializer&quot;, StringDeserializer.class.getName());
-        p.put(&quot;enable.auto.commit&quot;, &quot;false&quot;);
-        p.put(&quot;auto.offset.reset&quot;, &quot;earliest&quot;);
-        p.put(&quot;allow.auto.create.topics&quot;, &quot;false&quot;);
-        p.put(&quot;isolation.level&quot;, &quot;read_committed&quot;);
-        p.put(&quot;max.poll.records&quot;, &quot;100&quot;);
-        p.put(&quot;default.api.timeout.ms&quot;, &quot;10000&quot;);
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">consume</span><span class="hljs-params">()</span> {
+        <span class="hljs-type">Properties</span> <span class="hljs-variable">p</span> <span class="hljs-operator">=</span> common(<span class="hljs-string">&quot;orders-lab-consumer&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;group.id&quot;</span>, <span class="hljs-variable">GROUP</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;group.protocol&quot;</span>, <span class="hljs-string">&quot;classic&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;key.deserializer&quot;</span>, <span class="hljs-type">StringDeserializer</span>.class.<span class="hljs-title function_">getName</span>());
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;value.deserializer&quot;</span>, <span class="hljs-type">StringDeserializer</span>.class.<span class="hljs-title function_">getName</span>());
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;enable.auto.commit&quot;</span>, <span class="hljs-string">&quot;false&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;auto.offset.reset&quot;</span>, <span class="hljs-string">&quot;earliest&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;allow.auto.create.topics&quot;</span>, <span class="hljs-string">&quot;false&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;isolation.level&quot;</span>, <span class="hljs-string">&quot;read_committed&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;max.poll.records&quot;</span>, <span class="hljs-string">&quot;100&quot;</span>);
+        p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;default.api.timeout.ms&quot;</span>, <span class="hljs-string">&quot;10000&quot;</span>);
 
-        AtomicBoolean running = new AtomicBoolean(true);
-        CountDownLatch stopped = new CountDownLatch(1);
-        Thread shutdown = new Thread(() -&gt; {
-            running.set(false);
-            try {
-                stopped.await(20, TimeUnit.SECONDS);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
+        <span class="hljs-type">AtomicBoolean</span> <span class="hljs-variable">running</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">AtomicBoolean</span>(<span class="hljs-literal">true</span>);
+        <span class="hljs-type">CountDownLatch</span> <span class="hljs-variable">stopped</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">CountDownLatch</span>(<span class="hljs-number">1</span>);
+        <span class="hljs-type">Thread</span> <span class="hljs-variable">shutdown</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; {
+            running.<span class="hljs-title function_">set</span>(<span class="hljs-literal">false</span>);
+            <span class="hljs-keyword">try</span> {
+                stopped.<span class="hljs-title function_">await</span>(<span class="hljs-number">20</span>, <span class="hljs-type">TimeUnit</span>.<span class="hljs-variable">SECONDS</span>);
+            } <span class="hljs-keyword">catch</span> (<span class="hljs-type">InterruptedException</span> interrupted) {
+                <span class="hljs-type">Thread</span>.<span class="hljs-title function_">currentThread</span>().<span class="hljs-title function_">interrupt</span>();
             }
-        }, &quot;orders-consumer-shutdown&quot;);
-        Runtime.getRuntime().addShutdownHook(shutdown);
+        }, <span class="hljs-string">&quot;orders-consumer-shutdown&quot;</span>);
+        <span class="hljs-type">Runtime</span>.<span class="hljs-title function_">getRuntime</span>().<span class="hljs-title function_">addShutdownHook</span>(shutdown);
 
-        try {
-            KafkaConsumer&lt;String, String&gt; consumer = new KafkaConsumer&lt;&gt;(p);
-            try {
-                consumer.subscribe(List.of(TOPIC));
-                while (running.get()) {
-                    ConsumerRecords&lt;String, String&gt; batch = consumer.poll(Duration.ofMillis(500));
-                    for (ConsumerRecord&lt;String, String&gt; record : batch) {
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-type">KafkaConsumer</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">String</span>&gt; <span class="hljs-variable">consumer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">KafkaConsumer</span>&lt;&gt;(p);
+            <span class="hljs-keyword">try</span> {
+                consumer.<span class="hljs-title function_">subscribe</span>(<span class="hljs-type">List</span>.<span class="hljs-title function_">of</span>(<span class="hljs-variable">TOPIC</span>));
+                <span class="hljs-keyword">while</span> (running.<span class="hljs-title function_">get</span>()) {
+                    <span class="hljs-type">ConsumerRecords</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">String</span>&gt; <span class="hljs-variable">batch</span> <span class="hljs-operator">=</span> consumer.<span class="hljs-title function_">poll</span>(<span class="hljs-type">Duration</span>.<span class="hljs-title function_">ofMillis</span>(<span class="hljs-number">500</span>));
+                    <span class="hljs-keyword">for</span> (<span class="hljs-type">ConsumerRecord</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">String</span>&gt; record : batch) {
                         process(record);
                     }
-                    if (!batch.nextOffsets().isEmpty()) {
-                        consumer.commitSync(batch.nextOffsets());
+                    <span class="hljs-keyword">if</span> (!batch.<span class="hljs-title function_">nextOffsets</span>().<span class="hljs-title function_">isEmpty</span>()) {
+                        consumer.<span class="hljs-title function_">commitSync</span>(batch.<span class="hljs-title function_">nextOffsets</span>());
                     }
                 }
-            } finally {
-                consumer.close(CloseOptions.timeout(Duration.ofSeconds(5)));
+            } <span class="hljs-keyword">finally</span> {
+                consumer.<span class="hljs-title function_">close</span>(<span class="hljs-type">CloseOptions</span>.<span class="hljs-title function_">timeout</span>(<span class="hljs-type">Duration</span>.<span class="hljs-title function_">ofSeconds</span>(<span class="hljs-number">5</span>)));
             }
-        } finally {
-            stopped.countDown();
+        } <span class="hljs-keyword">finally</span> {
+            stopped.<span class="hljs-title function_">countDown</span>();
         }
     }
 
-    private static void process(ConsumerRecord&lt;String, String&gt; record) {
-        // Replace console output with a durable, idempotent business operation.
-        System.out.printf(&quot;Received %s-%d offset=%d key=%s value=%s%n&quot;,
-            record.topic(), record.partition(), record.offset(), record.key(), record.value());
-        if (System.out.checkError()) {
-            throw new IllegalStateException(&quot;Writing the demo output failed&quot;);
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">process</span><span class="hljs-params">(ConsumerRecord&lt;String, String&gt; record)</span> {
+        <span class="hljs-comment">// Replace console output with a durable, idempotent business operation.</span>
+        <span class="hljs-type">System</span>.out.<span class="hljs-title function_">printf</span>(<span class="hljs-string">&quot;Received %s-%d offset=%d key=%s value=%s%n&quot;</span>,
+            record.<span class="hljs-title function_">topic</span>(), record.<span class="hljs-title function_">partition</span>(), record.<span class="hljs-title function_">offset</span>(), record.<span class="hljs-title function_">key</span>(), record.<span class="hljs-title function_">value</span>());
+        <span class="hljs-keyword">if</span> (<span class="hljs-type">System</span>.out.<span class="hljs-title function_">checkError</span>()) {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(<span class="hljs-string">&quot;Writing the demo output failed&quot;</span>);
         }
     }
 }
@@ -506,25 +549,25 @@ public final class MskLab {
 <h3>Build, create the topic and send an event</h3>
 <p>In the project directory on the client host, run the commands below. In each new shell, set the same <code>MSK_BOOTSTRAP</code> value and credentials. The <code>create</code> command is safe to rerun for this topic and prints when it already exists. <code>describe</code> shows the expected three partitions and the replica and ISR counts.</p>
 <figure class="snippet"><figcaption>Bash · build and run</figcaption>
-<pre tabindex="0"><code>mvn -B -ntp compile org.apache.maven.plugins:maven-dependency-plugin:3.10.0:copy-dependencies
-CP=&#x27;target/classes:target/dependency/*&#x27;
+<pre tabindex="0"><code><span class="hljs-built_in">mvn</span> <span class="hljs-attr">-B</span> <span class="hljs-attr">-ntp</span> compile org.apache.maven.plugins:maven-dependency-plugin:3.10.0:copy-dependencies
+<span class="hljs-attr">CP</span>=<span class="hljs-string">&#x27;target/classes:target/dependency/*&#x27;</span>
 
-java -cp &quot;$CP&quot; example.MskLab create
-java -cp &quot;$CP&quot; example.MskLab describe
-java -cp &quot;$CP&quot; example.MskLab produce
-java -cp &quot;$CP&quot; example.MskLab consume
+<span class="hljs-built_in">java</span> -<span class="hljs-built_in">cp</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CP</span>&quot;</span> example.MskLab create
+<span class="hljs-built_in">java</span> -<span class="hljs-built_in">cp</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CP</span>&quot;</span> example.MskLab describe
+<span class="hljs-built_in">java</span> -<span class="hljs-built_in">cp</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CP</span>&quot;</span> example.MskLab produce
+<span class="hljs-built_in">java</span> -<span class="hljs-built_in">cp</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CP</span>&quot;</span> example.MskLab consume
 </code></pre></figure>
 <details open><summary>PowerShell equivalents</summary>
 <p>Get the same private IAM bootstrap endpoint from the console or CLI and set <code>$env:MSK_BOOTSTRAP</code> in each PowerShell session. Use a semicolon to separate Java classpath entries.</p>
 <figure class="snippet"><figcaption>PowerShell · build and run</figcaption>
-<pre tabindex="0"><code>$env:MSK_BOOTSTRAP = &#x27;REPLACE_WITH_PRIVATE_IAM_BOOTSTRAP_STRING&#x27;
-mvn -B -ntp compile org.apache.maven.plugins:maven-dependency-plugin:3.10.0:copy-dependencies
-$labClassPath = &#x27;target/classes;target/dependency/*&#x27;
+<pre tabindex="0"><code><span class="hljs-variable">$env:MSK_BOOTSTRAP</span> = <span class="hljs-string">&#x27;REPLACE_WITH_PRIVATE_IAM_BOOTSTRAP_STRING&#x27;</span>
+mvn <span class="hljs-literal">-B</span> <span class="hljs-literal">-ntp</span> compile org.apache.maven.plugins:maven<span class="hljs-literal">-dependency-plugin</span>:<span class="hljs-number">3.10</span>.<span class="hljs-number">0</span>:<span class="hljs-built_in">copy-dependencies</span>
+<span class="hljs-variable">$labClassPath</span> = <span class="hljs-string">&#x27;target/classes;target/dependency/*&#x27;</span>
 
-java -cp $labClassPath example.MskLab create
-java -cp $labClassPath example.MskLab describe
-java -cp $labClassPath example.MskLab produce
-java -cp $labClassPath example.MskLab consume
+java <span class="hljs-literal">-cp</span> <span class="hljs-variable">$labClassPath</span> example.MskLab create
+java <span class="hljs-literal">-cp</span> <span class="hljs-variable">$labClassPath</span> example.MskLab describe
+java <span class="hljs-literal">-cp</span> <span class="hljs-variable">$labClassPath</span> example.MskLab produce
+java <span class="hljs-literal">-cp</span> <span class="hljs-variable">$labClassPath</span> example.MskLab consume
 </code></pre></figure>
 </details>
 <h3>Check the result and try a restart</h3>
@@ -536,7 +579,7 @@ java -cp $labClassPath example.MskLab consume
 <details open><summary>Run locally with a disposable Kafka broker</summary>
 <p>For a local-only exercise with Docker, use the Apache Kafka image below. Leave the broker running in one terminal. In each lab terminal, run <code>export KAFKA_MODE=local</code> (Bash) or <code>$env:KAFKA_MODE='local'</code> (PowerShell), then run the same build and Java commands. The lab uses loopback, plaintext and one replica in this mode. Clear the variable before connecting to MSK (<code>unset KAFKA_MODE</code> or <code>Remove-Item Env:KAFKA_MODE</code>).</p>
 <figure class="snippet"><figcaption>Shell · local Kafka on loopback</figcaption>
-<pre tabindex="0"><code>docker run --rm --name kafka-lab -p 127.0.0.1:9092:9092 apache/kafka:4.2.2
+<pre tabindex="0"><code><span class="hljs-built_in">docker</span> run --<span class="hljs-built_in">rm</span> <span class="hljs-attr">--name</span> kafka-lab <span class="hljs-attr">-p</span> 127.0.0.1:9092:9092 apache/kafka:4.2.2
 </code></pre></figure>
 </details>
 <p class="source"><a href="https://kafka.apache.org/42/getting-started/quickstart/">Apache Kafka quickstart</a> · <a href="https://github.com/aws/aws-msk-iam-auth/releases/tag/v2.3.8">IAM plugin release</a> · <a href="https://kafka.apache.org/42/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">KafkaConsumer API</a></p>
@@ -577,44 +620,44 @@ java -cp $labClassPath example.MskLab consume
 <details open><summary>Apply a Provisioned configuration revision with the AWS CLI</summary>
 <p>Use an existing compatible configuration ARN and revision. Run the commands under an operator principal authorized to describe and update the cluster and inspect the resulting operation.</p>
 <figure class="snippet"><figcaption>Bash · apply and check a configuration revision</figcaption>
-<pre tabindex="0"><code>CONFIG_ARN=&#x27;REPLACE_WITH_MSK_CONFIGURATION_ARN&#x27;
-CONFIG_REVISION=1
+<pre tabindex="0"><code><span class="hljs-attr">CONFIG_ARN</span>=<span class="hljs-string">&#x27;REPLACE_WITH_MSK_CONFIGURATION_ARN&#x27;</span>
+<span class="hljs-attr">CONFIG_REVISION</span>=<span class="hljs-number">1</span>
 
-CLUSTER_VERSION=$(aws kafka describe-cluster-v2 --region &quot;$AWS_REGION&quot; \
-  --cluster-arn &quot;$CLUSTER_ARN&quot; --query &#x27;ClusterInfo.CurrentVersion&#x27; --output text)
+<span class="hljs-attr">CLUSTER_VERSION</span>=<span class="hljs-subst">$(</span><span class="hljs-built_in">aws</span> kafka describe-cluster-v2 <span class="hljs-attr">--region</span> <span class="hljs-string">&quot;<span class="hljs-variable">$AWS_REGION</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--cluster-arn</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CLUSTER_ARN</span>&quot;</span> <span class="hljs-attr">--query</span> <span class="hljs-string">&#x27;ClusterInfo.CurrentVersion&#x27;</span> <span class="hljs-attr">--output</span> text)
 
-OPERATION_ARN=$(aws kafka update-cluster-configuration --region &quot;$AWS_REGION&quot; \
-  --cluster-arn &quot;$CLUSTER_ARN&quot; --current-version &quot;$CLUSTER_VERSION&quot; \
-  --configuration-info &quot;Arn=$CONFIG_ARN,Revision=$CONFIG_REVISION&quot; \
-  --query ClusterOperationArn --output text)
+<span class="hljs-attr">OPERATION_ARN</span>=<span class="hljs-subst">$(</span><span class="hljs-built_in">aws</span> kafka update-cluster-configuration <span class="hljs-attr">--region</span> <span class="hljs-string">&quot;<span class="hljs-variable">$AWS_REGION</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--cluster-arn</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CLUSTER_ARN</span>&quot;</span> <span class="hljs-attr">--current-version</span> <span class="hljs-string">&quot;<span class="hljs-variable">$CLUSTER_VERSION</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--configuration-info</span> <span class="hljs-string">&quot;Arn=<span class="hljs-variable">$CONFIG_ARN</span>,Revision=<span class="hljs-variable">$CONFIG_REVISION</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--query</span> ClusterOperationArn <span class="hljs-attr">--output</span> text)
 
-aws kafka describe-cluster-operation --region &quot;$AWS_REGION&quot; \
-  --cluster-operation-arn &quot;$OPERATION_ARN&quot; \
-  --query &#x27;ClusterOperationInfo.OperationState&#x27; --output text
+<span class="hljs-built_in">aws</span> kafka describe-cluster-operation <span class="hljs-attr">--region</span> <span class="hljs-string">&quot;<span class="hljs-variable">$AWS_REGION</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--cluster-operation-arn</span> <span class="hljs-string">&quot;<span class="hljs-variable">$OPERATION_ARN</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--query</span> <span class="hljs-string">&#x27;ClusterOperationInfo.OperationState&#x27;</span> <span class="hljs-attr">--output</span> text
 </code></pre></figure>
 </details>
 <p>For topic-specific settings, use supported Kafka Admin APIs such as <code>incrementalAlterConfigs</code> and grant the topic dynamic-configuration IAM actions to the administering role. For example, on a topic with supported delete retention, <code>retention.ms=604800000</code> sets seven days. Retention takes effect through segment cleanup. Confirm the actual configuration after applying it.</p>
 <details open><summary>Inspect lag or change retention with the Kafka CLI</summary>
 <p>Install the Kafka client tools and add the AWS IAM library’s <code>-all.jar</code> to their classpath. Save the properties below as <code>client.properties</code>. The sample role can inspect its named group. To alter and verify retention, use a topic administrator with <code>DescribeTopicDynamicConfiguration</code> and <code>AlterTopicDynamicConfiguration</code> on the topic, plus <code>Connect</code> on the cluster.</p>
 <figure class="snippet"><figcaption>client.properties · Kafka CLI authentication</figcaption>
-<pre tabindex="0"><code>security.protocol=SASL_SSL
-sasl.mechanism=AWS_MSK_IAM
-sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;
-sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler
+<pre tabindex="0"><code><span class="hljs-attr">security.protocol</span>=<span class="hljs-string">SASL_SSL</span>
+<span class="hljs-attr">sasl.mechanism</span>=<span class="hljs-string">AWS_MSK_IAM</span>
+<span class="hljs-attr">sasl.jaas.config</span>=<span class="hljs-string">software.amazon.msk.auth.iam.IAMLoginModule required;</span>
+<span class="hljs-attr">sasl.client.callback.handler.class</span>=<span class="hljs-string">software.amazon.msk.auth.iam.IAMClientCallbackHandler</span>
 </code></pre></figure>
 <figure class="snippet"><figcaption>Bash · from the Kafka client tools directory</figcaption>
-<pre tabindex="0"><code>export CLASSPATH=&#x27;/absolute/path/aws-msk-iam-auth-2.3.8-all.jar&#x27;
+<pre tabindex="0"><code><span class="hljs-built_in">export</span> CLASSPATH=<span class="hljs-string">&#x27;/absolute/path/aws-msk-iam-auth-2.3.8-all.jar&#x27;</span>
 
-bin/kafka-consumer-groups.sh --bootstrap-server &quot;$MSK_BOOTSTRAP&quot; \
-  --command-config client.properties --group orders-demo-v1 --describe
+<span class="hljs-built_in">bin/kafka-consumer-groups.sh</span> <span class="hljs-attr">--bootstrap-server</span> <span class="hljs-string">&quot;<span class="hljs-variable">$MSK_BOOTSTRAP</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--command-config</span> client.properties <span class="hljs-attr">--group</span> orders-demo-v1 <span class="hljs-attr">--describe</span>
 
-bin/kafka-configs.sh --bootstrap-server &quot;$MSK_BOOTSTRAP&quot; \
-  --command-config client.properties --entity-type topics --entity-name orders.v1 \
-  --alter --add-config retention.ms=604800000
+<span class="hljs-built_in">bin/kafka-configs.sh</span> <span class="hljs-attr">--bootstrap-server</span> <span class="hljs-string">&quot;<span class="hljs-variable">$MSK_BOOTSTRAP</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--command-config</span> client.properties <span class="hljs-attr">--entity-type</span> topics <span class="hljs-attr">--entity-name</span> orders.v1 <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--alter</span> <span class="hljs-attr">--add-config</span> retention.ms=604800000
 
-bin/kafka-configs.sh --bootstrap-server &quot;$MSK_BOOTSTRAP&quot; \
-  --command-config client.properties --entity-type topics --entity-name orders.v1 \
-  --describe
+<span class="hljs-built_in">bin/kafka-configs.sh</span> <span class="hljs-attr">--bootstrap-server</span> <span class="hljs-string">&quot;<span class="hljs-variable">$MSK_BOOTSTRAP</span>&quot;</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--command-config</span> client.properties <span class="hljs-attr">--entity-type</span> topics <span class="hljs-attr">--entity-name</span> orders.v1 <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--describe</span>
 </code></pre></figure>
 </details>
 <h3>Java client tuning</h3>

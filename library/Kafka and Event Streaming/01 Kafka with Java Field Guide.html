@@ -111,6 +111,49 @@ code span.al,code span.er{color:#ff8a6b; font-weight:700}
 @media print{body{font-size:11pt; background:white; color:black}.layout{max-width:100%; padding:0}.layout nav,.bar button,.steps,.download,header#title-block-header .net{display:none}header#title-block-header{display:block; color:#123; background:white; padding:0}h1.title,.subtitle{color:#123}figure{display:none}pre{white-space:pre-wrap!important}h2,h3{break-after:avoid}}
   
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Unified Coffee + Cambridge Blue/Teal syntax highlighting */
+pre .hljs-keyword, pre .hljs-selector-tag, pre .hljs-built_in, pre .hljs-template-tag { color: #8cc7bc; font-weight: 600; }
+pre .hljs-title, pre .hljs-type, pre .hljs-title.class_, pre .hljs-class { color: #d6eee8; }
+pre .hljs-title.function_ { color: #a3c1ad; }
+pre .hljs-function { color: inherit; }
+pre .hljs-string, pre .hljs-regexp, pre .hljs-template-variable, pre .hljs-char.escape_ { color: #f2c97d; }
+pre .hljs-comment, pre .hljs-doctag, pre .hljs-quote { color: #9e8b7d; font-style: italic; }
+pre .hljs-meta, pre .hljs-meta .hljs-keyword, pre .hljs-symbol, pre .hljs-variable, pre .hljs-variable.language_, pre .hljs-params, pre .hljs-subst { color: #f29e7e; }
+pre .hljs-number, pre .hljs-literal, pre .hljs-bullet { color: #f0b37e; }
+pre .hljs-attr, pre .hljs-attribute, pre .hljs-property, pre .hljs-name, pre .hljs-section, pre .hljs-tag, pre .hljs-selector-class, pre .hljs-selector-id, pre .hljs-selector-attr, pre .hljs-selector-pseudo, pre .hljs-link { color: #a3c1ad; }
+pre .hljs-operator, pre .hljs-punctuation { color: #cbe0d5; }
+pre .hljs-addition { color: #a3c1ad; background: rgba(163, 193, 173, .14); }
+pre .hljs-deletion { color: #ee8c68; background: rgba(238, 140, 104, .14); }
+pre .hljs-emphasis { font-style: italic; }
+pre .hljs-strong { font-weight: 700; }
+@media print {
+  pre [class*="hljs-"] { color: #1f1713 !important; background: none !important; }
+}
+/* End syntax highlighting */
+/* End syntax highlighting */
+/* End syntax highlighting */
 </style>
 </head>
 <body>
@@ -895,14 +938,14 @@ where that file is accessible to the CLI process.</p>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> <span class="kw">new</span> java<span class="op">.</span><span class="fu">io</span><span class="op">.</span><span class="fu">UncheckedIOException</span><span class="op">(</span><span class="st">"Cannot read Kafka client configuration"</span><span class="op">,</span> ex<span class="op">);</span></span>
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-</div><div class="snippet"><div class="bar"><span>PROPERTIES</span><button type="button">Copy</button></div><pre class="properties"><code># Example shape for a cluster configured for mutual TLS.
-bootstrap.servers=broker-a.example:9093,broker-b.example:9093
-security.protocol=SSL
-ssl.truststore.type=PKCS12
-ssl.truststore.location=/run/secrets/kafka-trust.p12
-ssl.keystore.type=PKCS12
-ssl.keystore.location=/run/secrets/kafka-client.p12
-# Supply the store/key passwords in the protected runtime configuration.</code></pre>
+</div><div class="snippet"><div class="bar"><span>PROPERTIES</span><button type="button">Copy</button></div><pre class="properties"><code><span class="hljs-comment"># Example shape for a cluster configured for mutual TLS.</span>
+<span class="hljs-attr">bootstrap.servers</span>=<span class="hljs-string">broker-a.example:9093,broker-b.example:9093</span>
+<span class="hljs-attr">security.protocol</span>=<span class="hljs-string">SSL</span>
+<span class="hljs-attr">ssl.truststore.type</span>=<span class="hljs-string">PKCS12</span>
+<span class="hljs-attr">ssl.truststore.location</span>=<span class="hljs-string">/run/secrets/kafka-trust.p12</span>
+<span class="hljs-attr">ssl.keystore.type</span>=<span class="hljs-string">PKCS12</span>
+<span class="hljs-attr">ssl.keystore.location</span>=<span class="hljs-string">/run/secrets/kafka-client.p12</span>
+<span class="hljs-comment"># Supply the store/key passwords in the protected runtime configuration.</span></code></pre>
 </div><p>For a SASL-authenticated cluster, follow its mechanism-specific
 settings (for example SASL_SSL with SCRAM or a cloud identity provider).
 A client-side properties change requires a matching broker listener,

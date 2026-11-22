@@ -139,6 +139,49 @@
     }
   
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Unified Coffee + Cambridge Blue/Teal syntax highlighting */
+pre .hljs-keyword, pre .hljs-selector-tag, pre .hljs-built_in, pre .hljs-template-tag { color: #8cc7bc; font-weight: 600; }
+pre .hljs-title, pre .hljs-type, pre .hljs-title.class_, pre .hljs-class { color: #d6eee8; }
+pre .hljs-title.function_ { color: #a3c1ad; }
+pre .hljs-function { color: inherit; }
+pre .hljs-string, pre .hljs-regexp, pre .hljs-template-variable, pre .hljs-char.escape_ { color: #f2c97d; }
+pre .hljs-comment, pre .hljs-doctag, pre .hljs-quote { color: #9e8b7d; font-style: italic; }
+pre .hljs-meta, pre .hljs-meta .hljs-keyword, pre .hljs-symbol, pre .hljs-variable, pre .hljs-variable.language_, pre .hljs-params, pre .hljs-subst { color: #f29e7e; }
+pre .hljs-number, pre .hljs-literal, pre .hljs-bullet { color: #f0b37e; }
+pre .hljs-attr, pre .hljs-attribute, pre .hljs-property, pre .hljs-name, pre .hljs-section, pre .hljs-tag, pre .hljs-selector-class, pre .hljs-selector-id, pre .hljs-selector-attr, pre .hljs-selector-pseudo, pre .hljs-link { color: #a3c1ad; }
+pre .hljs-operator, pre .hljs-punctuation { color: #cbe0d5; }
+pre .hljs-addition { color: #a3c1ad; background: rgba(163, 193, 173, .14); }
+pre .hljs-deletion { color: #ee8c68; background: rgba(238, 140, 104, .14); }
+pre .hljs-emphasis { font-style: italic; }
+pre .hljs-strong { font-weight: 700; }
+@media print {
+  pre [class*="hljs-"] { color: #1f1713 !important; background: none !important; }
+}
+/* End syntax highlighting */
+/* End syntax highlighting */
+/* End syntax highlighting */
 </style>
 </head>
 <body id="top">
@@ -212,12 +255,12 @@
           <li>Open a new PowerShell window. Run the verification commands below. Make sure your editor saves <code>.tf</code> files with that extension, since some Windows editors append <code>.txt</code> by default.</li>
         </ol>
         <h3>macOS</h3>
-        <figure class="code"><figcaption>macOS · Homebrew</figcaption><pre><code>brew tap hashicorp/tap
-brew install hashicorp/tap/terraform</code></pre></figure>
+        <figure class="code"><figcaption>macOS · Homebrew</figcaption><pre><code><span class="hljs-built_in">brew</span> tap hashicorp/tap
+<span class="hljs-built_in">brew</span> install hashicorp/tap/terraform</code></pre></figure>
         <h3>Linux</h3>
         <p>Use the official package repository instructions for your distribution, or download and extract the matching Linux binary. For a user-local binary install, place the executable at <code>~/.local/bin/terraform</code>, give it execute permission with <code>chmod +x ~/.local/bin/terraform</code>, and make sure the directory is on your <code>PATH</code>.</p>
-        <figure class="code"><figcaption>Verify in any shell</figcaption><pre><code>terraform version
-terraform -help</code></pre></figure>
+        <figure class="code"><figcaption>Verify in any shell</figcaption><pre><code><span class="hljs-built_in">terraform</span> version
+<span class="hljs-built_in">terraform</span> -<span class="hljs-built_in">help</span></code></pre></figure>
         <p>If the terminal cannot locate Terraform, check <code>Get-Command terraform</code> in PowerShell or <code>command -v terraform</code> in Bash or Zsh. If a different version appears, use that path to find the earlier install. For manual downloads, use HashiCorp’s published checksums and signature verification instructions.</p>
         <p class="source"><a href="https://developer.hashicorp.com/terraform/install">Official downloads and package instructions</a> · <a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli">Install and verify Terraform</a></p>
       </section>
@@ -226,59 +269,59 @@ terraform -help</code></pre></figure>
         <h2>Your first Terraform project</h2>
         <p class="intro">In about 15 minutes you’ll create a record, change it, inspect its state, and tear it down. The project uses the built-in <code>terraform_data</code> resource and runs locally without cloud credentials, third-party providers, or cloud charges.</p>
         <h3>1. Write the configuration</h3>
-        <figure class="code"><figcaption>Create a project directory</figcaption><pre><code>mkdir terraform-lab
-cd terraform-lab</code></pre></figure>
+        <figure class="code"><figcaption>Create a project directory</figcaption><pre><code><span class="hljs-built_in">mkdir</span> terraform-lab
+<span class="hljs-built_in">cd</span> terraform-lab</code></pre></figure>
         <p>Create <code>main.tf</code> in that directory with the following contents.</p>
-        <figure class="code"><figcaption>main.tf · complete local lab</figcaption><pre><code class="hcl">terraform {
-  required_version = "&gt;= 1.10, &lt; 2.0"
+        <figure class="code"><figcaption>main.tf · complete local lab</figcaption><pre><code class="hcl"><span class="hljs-keyword">terraform</span> {
+  <span class="hljs-keyword">required_version</span> = <span class="hljs-string">"&gt;= 1.10, &lt; 2.0"</span>
 }
 
-variable "environment" {
-  description = "Environment for the release label."
-  type        = string
-  default     = "dev"
+<span class="hljs-keyword">variable</span> <span class="hljs-string">"environment"</span> {
+  <span class="hljs-attr">description</span> = <span class="hljs-string">"Environment for the release label."</span>
+  <span class="hljs-attr">type</span>        = <span class="hljs-type">string</span>
+  <span class="hljs-attr">default</span>     = <span class="hljs-string">"dev"</span>
 
-  validation {
-    condition     = contains(["dev", "stage", "prod"], var.environment)
-    error_message = "Use dev, stage, or prod."
+  <span class="hljs-keyword">validation</span> {
+    <span class="hljs-attr">condition</span>     = <span class="hljs-title function_">contains</span>([<span class="hljs-string">"dev"</span>, <span class="hljs-string">"stage"</span>, <span class="hljs-string">"prod"</span>], var.environment)
+    <span class="hljs-attr">error_message</span> = <span class="hljs-string">"Use dev, stage, or prod."</span>
   }
 }
 
-locals {
-  release = {
-    label = "atlas-${var.environment}"
-    owner = "platform"
+<span class="hljs-keyword">locals</span> {
+  <span class="hljs-attr">release</span> = {
+    <span class="hljs-attr">label</span> = <span class="hljs-string">"atlas-</span><span class="hljs-subst">${var.environment}</span><span class="hljs-string">"</span>
+    <span class="hljs-attr">owner</span> = <span class="hljs-string">"platform"</span>
   }
 }
 
-resource "terraform_data" "release" {
-  input = local.release
+<span class="hljs-keyword">resource</span> <span class="hljs-string">"terraform_data"</span> <span class="hljs-string">"release"</span> {
+  <span class="hljs-attr">input</span> = local.release
 }
 
-output "release_label" {
-  description = "Label stored in the release record."
-  value       = terraform_data.release.output.label
+<span class="hljs-keyword">output</span> <span class="hljs-string">"release_label"</span> {
+  <span class="hljs-attr">description</span> = <span class="hljs-string">"Label stored in the release record."</span>
+  <span class="hljs-attr">value</span>       = terraform_data.release.<span class="hljs-keyword">output</span>.label
 }</code></pre></figure>
         <h3>2. Initialize, plan, and apply</h3>
-        <figure class="code"><figcaption>Run from terraform-lab</figcaption><pre><code>terraform init
-terraform fmt
-terraform validate
-terraform plan -out=lab.tfplan
-terraform show lab.tfplan</code></pre></figure>
+        <figure class="code"><figcaption>Run from terraform-lab</figcaption><pre><code><span class="hljs-built_in">terraform</span> init
+<span class="hljs-built_in">terraform</span> <span class="hljs-built_in">fmt</span>
+<span class="hljs-built_in">terraform</span> validate
+<span class="hljs-built_in">terraform</span> plan <span class="hljs-attr">-out</span>=lab.tfplan
+<span class="hljs-built_in">terraform</span> show lab.tfplan</code></pre></figure>
         <p><code>init</code> initializes the working directory. <code>fmt</code> formats the file in place, and <code>validate</code> checks syntax and internal consistency. The first plan should say <strong>1 to add, 0 to change, 0 to destroy</strong>. The output derived from the resource can appear as <code>(known after apply)</code> while Terraform waits for the provider’s result.</p>
-        <figure class="code"><figcaption>Apply the reviewed plan and inspect the result</figcaption><pre><code>terraform apply lab.tfplan
-terraform output -raw release_label
-terraform state list
-terraform state show terraform_data.release
-terraform plan</code></pre></figure>
+        <figure class="code"><figcaption>Apply the reviewed plan and inspect the result</figcaption><pre><code><span class="hljs-built_in">terraform</span> apply lab.tfplan
+<span class="hljs-built_in">terraform</span> output <span class="hljs-attr">-raw</span> release_label
+<span class="hljs-built_in">terraform</span> state list
+<span class="hljs-built_in">terraform</span> state show terraform_data.release
+<span class="hljs-built_in">terraform</span> plan</code></pre></figure>
         <p>You should see <code>atlas-dev</code>, the address <code>terraform_data.release</code>, and then a plan with no changes. The built-in resource stores its data in the lab’s local <code>terraform.tfstate</code>. Passing a saved plan to <code>apply</code> counts as approval and runs without a confirmation prompt. Review it before applying.</p>
         <h3>3. Change an input and read the diff</h3>
         <p>Create <code>terraform.tfvars</code>. Terraform loads this filename automatically in the root module.</p>
-        <figure class="code"><figcaption>terraform.tfvars</figcaption><pre><code class="hcl">environment = "stage"</code></pre></figure>
-        <figure class="code"><figcaption>Preview and apply the stage change</figcaption><pre><code>terraform plan -out=stage.tfplan
-terraform show stage.tfplan
-terraform apply stage.tfplan
-terraform output -raw release_label</code></pre></figure>
+        <figure class="code"><figcaption>terraform.tfvars</figcaption><pre><code class="hcl"><span class="hljs-attr">environment</span> = <span class="hljs-string">"stage"</span></code></pre></figure>
+        <figure class="code"><figcaption>Preview and apply the stage change</figcaption><pre><code><span class="hljs-built_in">terraform</span> plan <span class="hljs-attr">-out</span>=stage.tfplan
+<span class="hljs-built_in">terraform</span> show stage.tfplan
+<span class="hljs-built_in">terraform</span> apply stage.tfplan
+<span class="hljs-built_in">terraform</span> output <span class="hljs-attr">-raw</span> release_label</code></pre></figure>
         <p>Expect <strong>1 to change</strong> and <code>atlas-stage</code>. Try <code>terraform plan -var=environment=qa</code> and confirm the variable validation error. Try <code>terraform plan -replace=terraform_data.release</code> to see what an explicit replacement looks like. Both exercises stop at planning.</p>
         <div class="table-wrap"><table class="plan-table">
           <thead><tr><th scope="col">Plan symbol</th><th scope="col">What it means</th><th scope="col">What to inspect</th></tr></thead>
@@ -291,10 +334,10 @@ terraform output -raw release_label</code></pre></figure>
         </table></div>
         <h3>4. Clean up</h3>
         <p>If you want to practise the address rename later, keep the lab running until you finish that exercise. Otherwise run these commands now. The apply should remove the one record and <code>terraform state list</code> should show no addresses. Delete the obsolete lab plan files from the folder afterwards.</p>
-        <figure class="code"><figcaption>Review and apply the lab destroy plan</figcaption><pre><code>terraform plan -destroy -out=cleanup.tfplan
-terraform show cleanup.tfplan
-terraform apply cleanup.tfplan
-terraform state list</code></pre></figure>
+        <figure class="code"><figcaption>Review and apply the lab destroy plan</figcaption><pre><code><span class="hljs-built_in">terraform</span> plan <span class="hljs-attr">-destroy</span> <span class="hljs-attr">-out</span>=cleanup.tfplan
+<span class="hljs-built_in">terraform</span> show cleanup.tfplan
+<span class="hljs-built_in">terraform</span> apply cleanup.tfplan
+<span class="hljs-built_in">terraform</span> state list</code></pre></figure>
         <p class="source"><a href="https://developer.hashicorp.com/terraform/language/resources/terraform-data">Built-in terraform_data resource</a> · <a href="https://developer.hashicorp.com/terraform/cli/commands/plan">Terraform plan reference</a></p>
       </section>
 
@@ -314,15 +357,15 @@ terraform state list</code></pre></figure>
         <p><strong>Input precedence in the local CLI.</strong> From lower priority to higher, Terraform uses variable defaults, <code>TF_VAR_*</code> environment variables, <code>terraform.tfvars</code>, <code>terraform.tfvars.json</code>, <code>*.auto.tfvars</code> and <code>*.auto.tfvars.json</code> in lexical order, then explicit <code>-var</code> and <code>-var-file</code> flags in the order provided. For named environment files such as <code>stage.tfvars</code>, supply <code>-var-file=stage.tfvars</code> when planning.</p>
         <h3>Give repeated resources stable keys</h3>
         <p><code>count</code> creates numbered instances such as <code>terraform_data.service[0]</code>. Use it when an index is the intended identity. <code>for_each</code> creates instances identified by a key, so removing <code>api</code> from the map below leaves <code>worker</code> at its existing address. The full set of keys must be known during planning.</p>
-        <figure class="code"><figcaption>Optional extension · add to the local lab before cleanup</figcaption><pre><code class="hcl">resource "terraform_data" "service" {
-  for_each = {
-    api    = 8080
-    worker = 9090
+        <figure class="code"><figcaption>Optional extension · add to the local lab before cleanup</figcaption><pre><code class="hcl"><span class="hljs-keyword">resource</span> <span class="hljs-string">"terraform_data"</span> <span class="hljs-string">"service"</span> {
+  <span class="hljs-keyword">for_each</span> = {
+    <span class="hljs-attr">api</span>    = <span class="hljs-number">8080</span>
+    <span class="hljs-attr">worker</span> = <span class="hljs-number">9090</span>
   }
 
-  input = {
-    name = each.key
-    port = each.value
+  <span class="hljs-attr">input</span> = {
+    <span class="hljs-attr">name</span> = each.key
+    <span class="hljs-attr">port</span> = each.value
   }
 }</code></pre></figure>
         <p>Run <code>terraform plan</code> and look for <code>terraform_data.service["api"]</code> and <code>terraform_data.service["worker"]</code>. In HCL, try a conditional like <code>var.environment == "prod" ? 3 : 1</code> or a list transformation like <code>[for name in ["api", "worker"] : upper(name)]</code>. Type constraints such as <code>list(string)</code> and <code>map(number)</code> catch shape errors at module boundaries.</p>
@@ -333,29 +376,29 @@ terraform state list</code></pre></figure>
         <h2>Modules and versioning</h2>
         <p>Start with a single root module. Extract a child module when a group of resources forms a reusable unit with a clear contract, such as a network with subnet outputs. Every <code>.tf</code> file in a directory forms one module, so splitting a large file into <code>main.tf</code>, <code>variables.tf</code> and <code>outputs.tf</code> leaves resource addresses intact.</p>
         <p>In a new directory, create these two files. Run <code>terraform init</code>, <code>terraform validate</code> and <code>terraform plan</code> from the directory containing the root file. If you apply it, <code>terraform output -raw release_label</code> returns <code>atlas-dev</code>. Use a reviewed destroy plan to clean up.</p>
-        <figure class="code"><figcaption>main.tf · root module</figcaption><pre><code class="hcl">terraform {
-  required_version = "&gt;= 1.10, &lt; 2.0"
+        <figure class="code"><figcaption>main.tf · root module</figcaption><pre><code class="hcl"><span class="hljs-keyword">terraform</span> {
+  <span class="hljs-keyword">required_version</span> = <span class="hljs-string">"&gt;= 1.10, &lt; 2.0"</span>
 }
 
-module "release" {
-  source = "./modules/release"
-  label  = "atlas-dev"
+<span class="hljs-keyword">module</span> <span class="hljs-string">"release"</span> {
+  <span class="hljs-attr">source</span> = <span class="hljs-string">"./modules/release"</span>
+  <span class="hljs-attr">label</span>  = <span class="hljs-string">"atlas-dev"</span>
 }
 
-output "release_label" {
-  value = module.release.label
+<span class="hljs-keyword">output</span> <span class="hljs-string">"release_label"</span> {
+  <span class="hljs-attr">value</span> = <span class="hljs-keyword">module</span>.release.label
 }</code></pre></figure>
-        <figure class="code"><figcaption>modules/release/main.tf · child module</figcaption><pre><code class="hcl">variable "label" {
-  description = "Label to store for this release."
-  type        = string
+        <figure class="code"><figcaption>modules/release/main.tf · child module</figcaption><pre><code class="hcl"><span class="hljs-keyword">variable</span> <span class="hljs-string">"label"</span> {
+  <span class="hljs-attr">description</span> = <span class="hljs-string">"Label to store for this release."</span>
+  <span class="hljs-attr">type</span>        = <span class="hljs-type">string</span>
 }
 
-resource "terraform_data" "this" {
-  input = var.label
+<span class="hljs-keyword">resource</span> <span class="hljs-string">"terraform_data"</span> <span class="hljs-string">"this"</span> {
+  <span class="hljs-attr">input</span> = var.label
 }
 
-output "label" {
-  value = terraform_data.this.output
+<span class="hljs-keyword">output</span> <span class="hljs-string">"label"</span> {
+  <span class="hljs-attr">value</span> = terraform_data.this.<span class="hljs-keyword">output</span>
 }</code></pre></figure>
         <ul>
           <li><strong>Terraform CLI.</strong> <code>required_version</code> declares compatible Terraform versions. Pin an exact CLI version in CI so colleagues and automation use a known runtime.</li>
@@ -372,75 +415,75 @@ output "label" {
         <aside class="note"><p><strong>Windows on Arm.</strong> If Terraform reports an incompatible provider for <code>windows_arm64</code>, use the Windows AMD64 Terraform CLI on Windows 11 on Arm. Run <code>terraform version</code> to confirm it reports <code>windows_amd64</code> before initializing the AWS example. Provider releases list their supported platforms separately from the Terraform CLI. <a href="https://learn.microsoft.com/en-us/windows/arm/apps-on-arm-x86-emulation">Microsoft’s x64 emulation documentation</a></p></aside>
         <h3>Verify your identity</h3>
         <p>Install AWS CLI v2 and use your organization’s approved login. The commands below assume an IAM Identity Center profile named <code>sandbox</code>. If you need to create that profile, start with <code>aws configure sso --profile sandbox</code>.</p>
-        <figure class="code"><figcaption>PowerShell · select the sandbox profile</figcaption><pre><code>aws sso login --profile sandbox
-$env:AWS_PROFILE = "sandbox"
-aws sts get-caller-identity</code></pre></figure>
-        <figure class="code"><figcaption>Bash or Zsh · select the sandbox profile</figcaption><pre><code>aws sso login --profile sandbox
-export AWS_PROFILE=sandbox
-aws sts get-caller-identity</code></pre></figure>
+        <figure class="code"><figcaption>PowerShell · select the sandbox profile</figcaption><pre><code>aws sso login <span class="hljs-literal">--profile</span> sandbox
+<span class="hljs-variable">$env:AWS_PROFILE</span> = <span class="hljs-string">&quot;sandbox&quot;</span>
+aws sts <span class="hljs-built_in">get-caller</span><span class="hljs-literal">-identity</span></code></pre></figure>
+        <figure class="code"><figcaption>Bash or Zsh · select the sandbox profile</figcaption><pre><code><span class="hljs-built_in">aws</span> sso login <span class="hljs-attr">--profile</span> sandbox
+<span class="hljs-built_in">export</span> AWS_PROFILE=sandbox
+<span class="hljs-built_in">aws</span> sts get-caller-identity</code></pre></figure>
         <p>Check the returned <code>Account</code> and <code>Arn</code> against your intended account and role. The provider below also checks the account ID. The role needs permissions to create, read, tag, configure and delete the lab bucket.</p>
         <h3>Declare the bucket and its access controls</h3>
         <p>In a directory separate from the local lab, save the following as <code>main.tf</code>. Replace both sample values in <code>terraform.tfvars</code>. Choose a unique S3 name using lowercase letters, digits, and hyphens, such as <code>atlas-tf-</code> followed by your account ID and a random suffix. Keep it under 64 characters and consult AWS for the full naming rules.</p>
-        <figure class="code"><figcaption>main.tf · complete AWS example</figcaption><pre><code class="hcl">terraform {
-  required_version = "&gt;= 1.10, &lt; 2.0"
+        <figure class="code"><figcaption>main.tf · complete AWS example</figcaption><pre><code class="hcl"><span class="hljs-keyword">terraform</span> {
+  <span class="hljs-keyword">required_version</span> = <span class="hljs-string">"&gt;= 1.10, &lt; 2.0"</span>
 
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~&gt; 6.0"
+  <span class="hljs-keyword">required_providers</span> {
+    <span class="hljs-attr">aws</span> = {
+      <span class="hljs-attr">source</span>  = <span class="hljs-string">"hashicorp/aws"</span>
+      <span class="hljs-attr">version</span> = <span class="hljs-string">"~&gt; 6.0"</span>
     }
   }
 }
 
-variable "aws_account_id" {
-  description = "Sandbox account ID returned by STS."
-  type        = string
+<span class="hljs-keyword">variable</span> <span class="hljs-string">"aws_account_id"</span> {
+  <span class="hljs-attr">description</span> = <span class="hljs-string">"Sandbox account ID returned by STS."</span>
+  <span class="hljs-attr">type</span>        = <span class="hljs-type">string</span>
 }
 
-variable "bucket_name" {
-  description = "Unique name for the lab bucket."
-  type        = string
+<span class="hljs-keyword">variable</span> <span class="hljs-string">"bucket_name"</span> {
+  <span class="hljs-attr">description</span> = <span class="hljs-string">"Unique name for the lab bucket."</span>
+  <span class="hljs-attr">type</span>        = <span class="hljs-type">string</span>
 }
 
-provider "aws" {
-  region              = "eu-west-2"
-  allowed_account_ids = [var.aws_account_id]
+<span class="hljs-keyword">provider</span> <span class="hljs-string">"aws"</span> {
+  <span class="hljs-attr">region</span>              = <span class="hljs-string">"eu-west-2"</span>
+  <span class="hljs-attr">allowed_account_ids</span> = [var.aws_account_id]
 }
 
-resource "aws_s3_bucket" "lab" {
-  bucket = var.bucket_name
+<span class="hljs-keyword">resource</span> <span class="hljs-string">"aws_s3_bucket"</span> <span class="hljs-string">"lab"</span> {
+  <span class="hljs-attr">bucket</span> = var.bucket_name
 
-  tags = {
-    Purpose = "terraform-learning"
+  <span class="hljs-attr">tags</span> = {
+    <span class="hljs-attr">Purpose</span> = <span class="hljs-string">"terraform-learning"</span>
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "lab" {
-  bucket                  = aws_s3_bucket.lab.id
-  block_public_acls       = true
-  ignore_public_acls      = true
-  block_public_policy     = true
-  restrict_public_buckets = true
+<span class="hljs-keyword">resource</span> <span class="hljs-string">"aws_s3_bucket_public_access_block"</span> <span class="hljs-string">"lab"</span> {
+  <span class="hljs-attr">bucket</span>                  = aws_s3_bucket.lab.id
+  <span class="hljs-attr">block_public_acls</span>       = <span class="hljs-literal">true</span>
+  <span class="hljs-attr">ignore_public_acls</span>      = <span class="hljs-literal">true</span>
+  <span class="hljs-attr">block_public_policy</span>     = <span class="hljs-literal">true</span>
+  <span class="hljs-attr">restrict_public_buckets</span> = <span class="hljs-literal">true</span>
 }
 
-output "bucket_name" {
-  value = aws_s3_bucket.lab.id
+<span class="hljs-keyword">output</span> <span class="hljs-string">"bucket_name"</span> {
+  <span class="hljs-attr">value</span> = aws_s3_bucket.lab.id
 }</code></pre></figure>
-        <figure class="code"><figcaption>terraform.tfvars · replace both sample values</figcaption><pre><code class="hcl">aws_account_id = "123456789012"
-bucket_name    = "atlas-tf-123456789012-a1b2c3"</code></pre></figure>
+        <figure class="code"><figcaption>terraform.tfvars · replace both sample values</figcaption><pre><code class="hcl"><span class="hljs-attr">aws_account_id</span> = <span class="hljs-string">"123456789012"</span>
+<span class="hljs-attr">bucket_name</span>    = <span class="hljs-string">"atlas-tf-123456789012-a1b2c3"</span></code></pre></figure>
         <p>Use a region allowed by your sandbox. The example uses <code>eu-west-2</code> (London). The reference to <code>aws_s3_bucket.lab.id</code> makes Terraform create the bucket before it configures public-access blocking.</p>
-        <figure class="code"><figcaption>Initialize the provider and inspect the cloud plan</figcaption><pre><code>terraform init
-terraform fmt
-terraform validate
-terraform plan -out=aws.tfplan
-terraform show aws.tfplan</code></pre></figure>
+        <figure class="code"><figcaption>Initialize the provider and inspect the cloud plan</figcaption><pre><code><span class="hljs-built_in">terraform</span> init
+<span class="hljs-built_in">terraform</span> <span class="hljs-built_in">fmt</span>
+<span class="hljs-built_in">terraform</span> validate
+<span class="hljs-built_in">terraform</span> plan <span class="hljs-attr">-out</span>=aws.tfplan
+<span class="hljs-built_in">terraform</span> show aws.tfplan</code></pre></figure>
         <p>Expect two resources to add and check the bucket name and all four public-access settings. If you choose to create them, run <code>terraform apply aws.tfplan</code> and then <code>terraform output -raw bucket_name</code>. A fresh <code>terraform plan</code> should show no changes once the bucket settings are in sync.</p>
         <h3>Remove the sandbox resources</h3>
         <p>Keep the bucket empty. From the same directory and profile, preview deletion and confirm both addresses belong to this lab. Apply the destroy plan, then verify the empty state list and confirm the bucket is gone through the AWS console. If the bucket contains objects, deletion can fail. Inspect them before removing data.</p>
-        <figure class="code"><figcaption>Review and apply the AWS cleanup plan</figcaption><pre><code>terraform plan -destroy -out=aws-cleanup.tfplan
-terraform show aws-cleanup.tfplan
-terraform apply aws-cleanup.tfplan
-terraform state list</code></pre></figure>
+        <figure class="code"><figcaption>Review and apply the AWS cleanup plan</figcaption><pre><code><span class="hljs-built_in">terraform</span> plan <span class="hljs-attr">-destroy</span> <span class="hljs-attr">-out</span>=aws-cleanup.tfplan
+<span class="hljs-built_in">terraform</span> show aws-cleanup.tfplan
+<span class="hljs-built_in">terraform</span> apply aws-cleanup.tfplan
+<span class="hljs-built_in">terraform</span> state list</code></pre></figure>
         <p class="source"><a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html">AWS CLI SSO</a> · <a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs">AWS provider</a> · <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">S3 bucket naming rules</a> · <a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block">Bucket public-access block resource</a></p>
       </section>
 
@@ -451,26 +494,26 @@ terraform state list</code></pre></figure>
         <p>Use separate root configurations and state locations for environments that need different credentials or access controls. A CLI workspace gives one configuration multiple state snapshots under the same backend configuration. It can be useful for temporary copies of a stack. HCP Terraform workspaces are a different concept. They can bundle state, variables, permissions and run settings.</p>
         <h3>Example remote backend on S3</h3>
         <p>Create the state bucket separately with versioning, encryption, and restricted IAM permissions. Substitute its name and use a distinct <code>key</code> for each stack. This example uses S3 lockfiles. Review the backend docs for the permissions on the state object and its <code>.tflock</code> file. The backend has its own authentication, which runs during <code>init</code> and is separate from provider setup.</p>
-        <figure class="code"><figcaption>backend.tf · example for a shared root module</figcaption><pre><code class="hcl">terraform {
-  backend "s3" {
-    bucket       = "replace-with-your-state-bucket"
-    key          = "platform/dev/terraform.tfstate"
-    region       = "eu-west-2"
-    encrypt      = true
-    use_lockfile = true
+        <figure class="code"><figcaption>backend.tf · example for a shared root module</figcaption><pre><code class="hcl"><span class="hljs-keyword">terraform</span> {
+  <span class="hljs-keyword">backend</span> <span class="hljs-string">"s3"</span> {
+    <span class="hljs-attr">bucket</span>       = <span class="hljs-string">"replace-with-your-state-bucket"</span>
+    <span class="hljs-attr">key</span>          = <span class="hljs-string">"platform/dev/terraform.tfstate"</span>
+    <span class="hljs-attr">region</span>       = <span class="hljs-string">"eu-west-2"</span>
+    <span class="hljs-attr">encrypt</span>      = <span class="hljs-literal">true</span>
+    <span class="hljs-attr">use_lockfile</span> = <span class="hljs-literal">true</span>
   }
 }</code></pre></figure>
         <p>Backend blocks take literal settings and cannot reference <code>var.*</code> or <code>local.*</code>. Keep credentials in your environment or workload identity. For an existing stack, pause writers, take a protected backup, and use <code>terraform init -migrate-state</code> to copy state to the new backend. Verify the target with <code>terraform state list</code> and a fresh plan before resuming applies. <code>init -reconfigure</code> refreshes the backend settings without copying the previous state. For an existing S3 setup with DynamoDB locking, consult the migration guidance because that locking method is deprecated.</p>
         <aside class="note warning"><p><strong>State and plan files can contain secrets.</strong> <code>sensitive = true</code> redacts normal human-readable output. Values can still be stored in state and saved plans, and some output commands can reveal them. Use short-lived credentials, tightly restrict access to state and plan artifacts, and keep both out of Git. Ephemeral values (Terraform 1.10+) and provider write-only arguments (1.11+) can keep supported values out of state and plans.</p></aside>
-        <figure class="code"><figcaption>.gitignore · baseline for a Terraform repository</figcaption><pre><code>.terraform/
-*.tfstate
-*.tfstate.*
-*.tfplan
-*.tfplan.json
-crash.log
-crash.*.log
-*.tfvars
-*.tfvars.json</code></pre></figure>
+        <figure class="code"><figcaption>.gitignore · baseline for a Terraform repository</figcaption><pre><code><span class="hljs-section">.terraform/</span>
+<span class="hljs-meta">*</span><span class="hljs-string">.tfstate</span>
+<span class="hljs-meta">*</span><span class="hljs-string">.tfstate.</span><span class="hljs-meta">*</span>
+<span class="hljs-meta">*</span><span class="hljs-string">.tfplan</span>
+<span class="hljs-meta">*</span><span class="hljs-string">.tfplan.json</span>
+<span class="hljs-string">crash.log</span>
+<span class="hljs-string">crash.</span><span class="hljs-meta">*</span><span class="hljs-string">.log</span>
+<span class="hljs-meta">*</span><span class="hljs-string">.tfvars</span>
+<span class="hljs-meta">*</span><span class="hljs-string">.tfvars.json</span></code></pre></figure>
         <p>Commit the <code>.tf</code> sources, test files, and any generated <code>.terraform.lock.hcl</code>. The ignore example assumes variable files may contain secrets. Teams can track deliberate non-secret files by name or publish sanitized <code>.tfvars.example</code> templates. Store any saved plan under a restricted path and expire it when the run ends.</p>
         <p class="source"><a href="https://developer.hashicorp.com/terraform/language/backend">Backend configuration</a> · <a href="https://developer.hashicorp.com/terraform/language/backend/s3">S3 backend and locking</a> · <a href="https://developer.hashicorp.com/terraform/cli/workspaces">CLI workspaces</a> · <a href="https://developer.hashicorp.com/terraform/language/manage-sensitive-data">Sensitive and ephemeral values</a></p>
       </section>
@@ -481,20 +524,20 @@ crash.*.log
         <p>Drift is a difference between what Terraform expects and what exists, for example when a tag changes in the cloud console. Start with a normal <code>terraform plan</code>. If the configuration is still correct, review the change that restores it. If the live change is intentional, update HCL and plan again. Use <code>terraform plan -refresh-only</code> to preview updates to state and root outputs that reflect live objects. Applying a refresh-only plan records the observation. Update the configuration too if you want later normal plans to preserve the live change.</p>
         <h3>Adopt an existing resource</h3>
         <p>Find the provider’s import ID format and check that the object has no other Terraform owner. In the intended root module, declare a resource that matches the existing object and add an <code>import</code> block. The following example belongs in a properly configured AWS root for a bucket you already own.</p>
-        <figure class="code"><figcaption>imports.tf · example for an existing S3 bucket</figcaption><pre><code class="hcl">resource "aws_s3_bucket" "adopted" {
-  bucket = "your-existing-bucket"
+        <figure class="code"><figcaption>imports.tf · example for an existing S3 bucket</figcaption><pre><code class="hcl"><span class="hljs-keyword">resource</span> <span class="hljs-string">"aws_s3_bucket"</span> <span class="hljs-string">"adopted"</span> {
+  <span class="hljs-attr">bucket</span> = <span class="hljs-string">"your-existing-bucket"</span>
 }
 
-import {
-  to = aws_s3_bucket.adopted
-  id = "your-existing-bucket"
+<span class="hljs-keyword">import</span> {
+  <span class="hljs-attr">to</span> = aws_s3_bucket.adopted
+  <span class="hljs-attr">id</span> = <span class="hljs-string">"your-existing-bucket"</span>
 }</code></pre></figure>
         <p>Review the import plan and reconcile any unwanted changes before applying. Some attributes, such as tags, may need to be represented in HCL to preserve their live values. Separate resources that manage bucket features have their own addresses and import rules. A follow-up normal plan should show no changes when the complete intended configuration matches the live settings.</p>
         <h3>Rename an address without replacing the object</h3>
         <p>If you kept the local lab running, rename the resource’s second label from <code>"release"</code> to <code>"record"</code> and change the existing output reference to <code>terraform_data.record.output.label</code>. Add the following block, then run <code>terraform plan</code>. Look for a move with zero resource creations or deletions. Apply a reviewed plan, check <code>terraform state list</code> and clean up using the lab’s destroy workflow.</p>
-        <figure class="code"><figcaption>moved.tf · preserve the existing state binding</figcaption><pre><code class="hcl">moved {
-  from = terraform_data.release
-  to   = terraform_data.record
+        <figure class="code"><figcaption>moved.tf · preserve the existing state binding</figcaption><pre><code class="hcl"><span class="hljs-keyword">moved</span> {
+  <span class="hljs-attr">from</span> = terraform_data.release
+  <span class="hljs-attr">to</span>   = terraform_data.record
 }</code></pre></figure>
         <p>Keep the move in shared code while any consumers still need that upgrade path. To hand management of an object to someone else while keeping it live, use a <code>removed</code> block with <code>lifecycle { destroy = false }</code> and review the plan. Removing a managed resource block by itself usually plans destruction. Make address and ownership changes with one writer and an explicit handoff.</p>
         <p class="source"><a href="https://developer.hashicorp.com/terraform/cli/commands/plan#planning-modes">Plan modes</a> · <a href="https://developer.hashicorp.com/terraform/language/import">Configuration-driven import</a> · <a href="https://developer.hashicorp.com/terraform/language/modules/develop/refactoring">Declarative moves</a> · <a href="https://developer.hashicorp.com/terraform/language/state/remove">Remove resources from state</a></p>
@@ -504,27 +547,27 @@ import {
         <h2>Tests and team workflow</h2>
         <h3>Test configuration behavior</h3>
         <p>In the original lab, save this file as <code>tests/release.tftest.hcl</code> and run <code>terraform test</code> from the root. If you completed the rename exercise, change the assertion to use <code>terraform_data.record</code>. The assertion checks the planned <code>input</code>, which is already known. A provider-computed <code>output</code> may only be available after apply.</p>
-        <figure class="code"><figcaption>tests/release.tftest.hcl · assertions for the local lab</figcaption><pre><code class="hcl">run "formats_stage_label" {
-  command = plan
+        <figure class="code"><figcaption>tests/release.tftest.hcl · assertions for the local lab</figcaption><pre><code class="hcl"><span class="hljs-keyword">run</span> <span class="hljs-string">"formats_stage_label"</span> {
+  <span class="hljs-attr">command</span> = plan
 
   variables {
-    environment = "stage"
+    <span class="hljs-attr">environment</span> = <span class="hljs-string">"stage"</span>
   }
 
-  assert {
-    condition     = terraform_data.release.input.label == "atlas-stage"
-    error_message = "The stage release label should be atlas-stage."
+  <span class="hljs-keyword">assert</span> {
+    <span class="hljs-attr">condition</span>     = terraform_data.release.input.label == <span class="hljs-string">"atlas-stage"</span>
+    <span class="hljs-attr">error_message</span> = <span class="hljs-string">"The stage release label should be atlas-stage."</span>
   }
 }
 
-run "rejects_unknown_environment" {
-  command = plan
+<span class="hljs-keyword">run</span> <span class="hljs-string">"rejects_unknown_environment"</span> {
+  <span class="hljs-attr">command</span> = plan
 
   variables {
-    environment = "qa"
+    <span class="hljs-attr">environment</span> = <span class="hljs-string">"qa"</span>
   }
 
-  expect_failures = [var.environment]
+  <span class="hljs-attr">expect_failures</span> = [var.environment]
 }</code></pre></figure>
         <p><code>terraform validate</code> checks configuration consistency. <code>terraform test</code> checks behavior expressed as assertions. Tests default to apply unless you specify <code>command = plan</code>. Apply-mode tests can create infrastructure and incur cost. Run those in an isolated test account or use provider mocks where they fit your goal. Check cleanup if a real test fails.</p>
         <h3>Move a change from pull request to apply</h3>
@@ -642,21 +685,6 @@ run "rejects_unknown_environment" {
         }, 2000);
       });
       caption.append(button);
-
-      if (!code.classList.contains('hcl')) continue;
-      const tokens = /(#.*$)|("(?:\\.|[^"\\])*")|\b(terraform|required_providers|resource|data|variable|validation|locals|output|provider|module|moved|import|removed|backend|lifecycle|run|assert|true|false)\b/gm;
-      const highlighted = document.createDocumentFragment();
-      let position = 0;
-      for (const match of source.matchAll(tokens)) {
-        highlighted.append(source.slice(position, match.index));
-        const token = document.createElement('span');
-        token.className = match[1] ? 'comment' : match[2] ? 'string' : 'keyword';
-        token.textContent = match[0];
-        highlighted.append(token);
-        position = match.index + match[0].length;
-      }
-      highlighted.append(source.slice(position));
-      code.replaceChildren(highlighted);
     }
   </script>
 </body>

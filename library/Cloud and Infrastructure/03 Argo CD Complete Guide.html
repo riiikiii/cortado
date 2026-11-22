@@ -38,7 +38,7 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 ::selection{background:var(--t200); color:var(--t900)}
 .wrap{max-width:740px; margin:0 auto; padding:0 22px}
-header.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-beans.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
+header.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-espresso-pull.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
 header.hero .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .hero-in{position:relative; max-width:760px; margin:0 auto}
 .tag{display:inline-flex; gap:8px; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--t200); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); padding:6px 12px; border-radius:999px; margin-bottom:14px}
@@ -109,6 +109,49 @@ footer{border-top:1px solid var(--line); margin-top:48px; padding:24px 0 40px; f
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
 
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Unified Coffee + Cambridge Blue/Teal syntax highlighting */
+pre .hljs-keyword, pre .hljs-selector-tag, pre .hljs-built_in, pre .hljs-template-tag { color: #8cc7bc; font-weight: 600; }
+pre .hljs-title, pre .hljs-type, pre .hljs-title.class_, pre .hljs-class { color: #d6eee8; }
+pre .hljs-title.function_ { color: #a3c1ad; }
+pre .hljs-function { color: inherit; }
+pre .hljs-string, pre .hljs-regexp, pre .hljs-template-variable, pre .hljs-char.escape_ { color: #f2c97d; }
+pre .hljs-comment, pre .hljs-doctag, pre .hljs-quote { color: #9e8b7d; font-style: italic; }
+pre .hljs-meta, pre .hljs-meta .hljs-keyword, pre .hljs-symbol, pre .hljs-variable, pre .hljs-variable.language_, pre .hljs-params, pre .hljs-subst { color: #f29e7e; }
+pre .hljs-number, pre .hljs-literal, pre .hljs-bullet { color: #f0b37e; }
+pre .hljs-attr, pre .hljs-attribute, pre .hljs-property, pre .hljs-name, pre .hljs-section, pre .hljs-tag, pre .hljs-selector-class, pre .hljs-selector-id, pre .hljs-selector-attr, pre .hljs-selector-pseudo, pre .hljs-link { color: #a3c1ad; }
+pre .hljs-operator, pre .hljs-punctuation { color: #cbe0d5; }
+pre .hljs-addition { color: #a3c1ad; background: rgba(163, 193, 173, .14); }
+pre .hljs-deletion { color: #ee8c68; background: rgba(238, 140, 104, .14); }
+pre .hljs-emphasis { font-style: italic; }
+pre .hljs-strong { font-weight: 700; }
+@media print {
+  pre [class*="hljs-"] { color: #1f1713 !important; background: none !important; }
+}
+/* End syntax highlighting */
+/* End syntax highlighting */
+/* End syntax highlighting */
 </style>
 </head>
 <body>
@@ -179,32 +222,32 @@ footer{border-top:1px solid var(--line); margin-top:48px; padding:24px 0 40px; f
 <h2>Core concepts</h2>
 <h3>Application</h3>
 <p>The unit of deployment: one or more <b>sources</b> (where manifests come from) mapped to one <b>destination</b> (a cluster and namespace), owned by a <b>project</b>.</p>
-<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: pricing-api-prod
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io   # delete workloads when the app is deleted
-spec:
-  project: pricing
-  source:
-    repoURL: https://github.com/acme/platform-config.git
-    targetRevision: main
-    path: apps/pricing-api/overlays/prod
-  destination:
-    server: https://kubernetes.default.svc     # or: name: prod-eu-west-1
-    namespace: pricing
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-    retry:
-      limit: 5
-      backoff: { duration: 10s, factor: 2, maxDuration: 3m }</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">argoproj.io/v1alpha1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Application</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-api-prod</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">argocd</span>
+  <span class="hljs-attr">finalizers:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">resources-finalizer.argocd.argoproj.io</span>   <span class="hljs-comment"># delete workloads when the app is deleted</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">project:</span> <span class="hljs-string">pricing</span>
+  <span class="hljs-attr">source:</span>
+    <span class="hljs-attr">repoURL:</span> <span class="hljs-string">https://github.com/acme/platform-config.git</span>
+    <span class="hljs-attr">targetRevision:</span> <span class="hljs-string">main</span>
+    <span class="hljs-attr">path:</span> <span class="hljs-string">apps/pricing-api/overlays/prod</span>
+  <span class="hljs-attr">destination:</span>
+    <span class="hljs-attr">server:</span> <span class="hljs-string">https://kubernetes.default.svc</span>     <span class="hljs-comment"># or: name: prod-eu-west-1</span>
+    <span class="hljs-attr">namespace:</span> <span class="hljs-string">pricing</span>
+  <span class="hljs-attr">syncPolicy:</span>
+    <span class="hljs-attr">automated:</span>
+      <span class="hljs-attr">prune:</span> <span class="hljs-literal">true</span>
+      <span class="hljs-attr">selfHeal:</span> <span class="hljs-literal">true</span>
+    <span class="hljs-attr">syncOptions:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">CreateNamespace=true</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">ServerSideApply=true</span>
+    <span class="hljs-attr">retry:</span>
+      <span class="hljs-attr">limit:</span> <span class="hljs-number">5</span>
+      <span class="hljs-attr">backoff:</span> { <span class="hljs-attr">duration:</span> <span class="hljs-string">10s</span>, <span class="hljs-attr">factor:</span> <span class="hljs-number">2</span>, <span class="hljs-attr">maxDuration:</span> <span class="hljs-string">3m</span> }</code></pre>
 <h3>The two statuses</h3>
 <p>Every application carries two independent statuses. Reading them separately is the single most useful habit.</p>
 <div class="tw"><table>
@@ -232,31 +275,31 @@ spec:
 <h2>Installing and deploying a first application</h2>
 <h3>Install</h3>
 <p>Two supported routes: the upstream manifests, or the community Helm chart (<code>argo/argo-cd</code>). Pin a version in both cases. Use the HA manifests for anything shared.</p>
-<pre data-lang="bash"><code>kubectl create namespace argocd
-kubectl apply -n argocd --server-side --force-conflicts \
-  -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.6.0/manifests/install.yaml
-# HA variant: .../manifests/ha/install.yaml  (needs 3+ nodes)
+<pre data-lang="bash"><code><span class="hljs-built_in">kubectl</span> create namespace argocd
+<span class="hljs-built_in">kubectl</span> apply <span class="hljs-attr">-n</span> argocd <span class="hljs-attr">--server-side</span> <span class="hljs-attr">--force-conflicts</span> <span class="hljs-operator">\</span>
+  <span class="hljs-attr">-f</span> https://raw.githubusercontent.com/argoproj/argo-cd/v3.6.0/manifests/install.yaml
+<span class="hljs-comment"># HA variant: .../manifests/ha/install.yaml  (needs 3+ nodes)</span>
 
-# or with Helm
-helm repo add argo https://argoproj.github.io/argo-helm
-helm install argocd argo/argo-cd -n argocd --create-namespace -f values.yaml</code></pre>
+<span class="hljs-comment"># or with Helm</span>
+<span class="hljs-built_in">helm</span> repo add argo https://argoproj.github.io/argo-helm
+<span class="hljs-built_in">helm</span> install argocd argo/argo-cd <span class="hljs-attr">-n</span> argocd <span class="hljs-attr">--create-namespace</span> <span class="hljs-attr">-f</span> values.yaml</code></pre>
 <h3>Log in</h3>
-<pre data-lang="bash"><code>argocd admin initial-password -n argocd          # one-time admin password
-kubectl -n argocd port-forward svc/argocd-server 8080:443 &amp;
-argocd login localhost:8080 --username admin --insecure
-argocd account update-password</code></pre>
+<pre data-lang="bash"><code><span class="hljs-built_in">argocd</span> admin initial-password <span class="hljs-attr">-n</span> argocd          <span class="hljs-comment"># one-time admin password</span>
+<span class="hljs-built_in">kubectl</span> <span class="hljs-attr">-n</span> argocd port-forward svc/argocd-server 8080:443 &amp;
+<span class="hljs-built_in">argocd</span> login localhost:8080 <span class="hljs-attr">--username</span> admin <span class="hljs-attr">--insecure</span>
+<span class="hljs-built_in">argocd</span> account update-password</code></pre>
 <p>For real use, expose <code>argocd-server</code> through an Ingress or Gateway with TLS, configure SSO, then disable the admin account.</p>
 <h3>Create an app three ways</h3>
-<pre data-lang="bash"><code># 1. CLI
-argocd app create guestbook \
-  --repo https://github.com/argoproj/argocd-example-apps.git \
-  --path guestbook --revision HEAD \
-  --dest-server https://kubernetes.default.svc --dest-namespace guestbook \
-  --sync-option CreateNamespace=true
+<pre data-lang="bash"><code><span class="hljs-comment"># 1. CLI</span>
+<span class="hljs-built_in">argocd</span> app create guestbook <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--repo</span> https://github.com/argoproj/argocd-example-apps.git <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--path</span> guestbook <span class="hljs-attr">--revision</span> HEAD <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--dest-server</span> https://kubernetes.default.svc <span class="hljs-attr">--dest-namespace</span> guestbook <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--sync-option</span> CreateNamespace=<span class="hljs-literal">true</span>
 
-argocd app diff guestbook        # what would change
-argocd app sync guestbook        # apply
-argocd app wait guestbook --health --timeout 180</code></pre>
+<span class="hljs-built_in">argocd</span> app diff guestbook        <span class="hljs-comment"># what would change</span>
+<span class="hljs-built_in">argocd</span> app <span class="hljs-built_in">sync</span> guestbook        <span class="hljs-comment"># apply</span>
+<span class="hljs-built_in">argocd</span> app <span class="hljs-built_in">wait</span> guestbook <span class="hljs-attr">--health</span> --<span class="hljs-built_in">timeout</span> 180</code></pre>
 <p>2. The UI: New App, fill in the same fields. Good for exploring, poor as a habit because nothing records the change.</p>
 <p>3. Declaratively: commit an <code>Application</code> manifest (as in the previous section) and let Argo CD manage it. This is the route to standardise on.</p>
 <div class="tip"><b>Bootstrap rule</b><p>Install Argo CD once by hand or with Terraform, then point it at a repo that contains its own configuration and every other Application. From then on, changes to Argo CD are pull requests too.</p></div>
@@ -275,18 +318,18 @@ argocd app wait guestbook --health --timeout 180</code></pre>
 </table></div>
 <h3>Helm chart from a registry with values from Git (multi-source)</h3>
 <p>The common real-world shape: a vendor or platform chart, and your values file kept in your config repo.</p>
-<pre data-lang="yaml"><code>spec:
-  sources:
-    - repoURL: https://charts.example.com
-      chart: pricing-api
-      targetRevision: 4.2.1
-      helm:
-        releaseName: pricing-api
-        valueFiles:
-          - $values/apps/pricing-api/values-prod.yaml
-    - repoURL: https://github.com/acme/platform-config.git
-      targetRevision: main
-      ref: values          # exposes this repo as $values</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">sources:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">repoURL:</span> <span class="hljs-string">https://charts.example.com</span>
+      <span class="hljs-attr">chart:</span> <span class="hljs-string">pricing-api</span>
+      <span class="hljs-attr">targetRevision:</span> <span class="hljs-number">4.2</span><span class="hljs-number">.1</span>
+      <span class="hljs-attr">helm:</span>
+        <span class="hljs-attr">releaseName:</span> <span class="hljs-string">pricing-api</span>
+        <span class="hljs-attr">valueFiles:</span>
+          <span class="hljs-bullet">-</span> <span class="hljs-string">$values/apps/pricing-api/values-prod.yaml</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">repoURL:</span> <span class="hljs-string">https://github.com/acme/platform-config.git</span>
+      <span class="hljs-attr">targetRevision:</span> <span class="hljs-string">main</span>
+      <span class="hljs-attr">ref:</span> <span class="hljs-string">values</span>          <span class="hljs-comment"># exposes this repo as $values</span></code></pre>
 <h3>Helm or Kustomize?</h3>
 <p>Use Helm when you are packaging something for others to configure, or consuming a third-party chart. Use Kustomize for your own services, where a shared base plus small per-environment patches is easier to review than a templated chart. Combining them (Kustomize inflating a Helm chart) works but makes diffs hard to reason about, so do it only when you need to patch a chart you do not own.</p>
 </section>
@@ -312,23 +355,23 @@ argocd app wait guestbook --health --timeout 180</code></pre>
 <span class="n">SyncFail<small>runs if sync fails</small></span>
 <span class="n">PreDelete / PostDelete<small>around app deletion</small></span>
 </div>
-<pre data-lang="yaml"><code>apiVersion: batch/v1
-kind: Job
-metadata:
-  generateName: db-migrate-
-  annotations:
-    argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation   # or HookSucceeded, HookFailed
-    argocd.argoproj.io/sync-wave: "-1"
-spec:
-  backoffLimit: 0
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: migrate
-          image: registry.example.com/pricing-api:1.42.0
-          args: ["migrate", "up"]</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">batch/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Job</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">generateName:</span> <span class="hljs-string">db-migrate-</span>
+  <span class="hljs-attr">annotations:</span>
+    <span class="hljs-attr">argocd.argoproj.io/hook:</span> <span class="hljs-string">PreSync</span>
+    <span class="hljs-attr">argocd.argoproj.io/hook-delete-policy:</span> <span class="hljs-string">BeforeHookCreation</span>   <span class="hljs-comment"># or HookSucceeded, HookFailed</span>
+    <span class="hljs-attr">argocd.argoproj.io/sync-wave:</span> <span class="hljs-string">&quot;-1&quot;</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">backoffLimit:</span> <span class="hljs-number">0</span>
+  <span class="hljs-attr">template:</span>
+    <span class="hljs-attr">spec:</span>
+      <span class="hljs-attr">restartPolicy:</span> <span class="hljs-string">Never</span>
+      <span class="hljs-attr">containers:</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">migrate</span>
+          <span class="hljs-attr">image:</span> <span class="hljs-string">registry.example.com/pricing-api:1.42.0</span>
+          <span class="hljs-attr">args:</span> [<span class="hljs-string">&quot;migrate&quot;</span>, <span class="hljs-string">&quot;up&quot;</span>]</code></pre>
 <div class="warn"><b>Hooks are not transactions</b><p>If a PreSync migration succeeds and the Sync phase then fails, nothing rolls the migration back. Make migrations backward compatible (expand, deploy, contract) so a failed or reverted rollout still runs against the new schema.</p></div>
 <h3>Sync options you will actually use</h3>
 <div class="tw"><table>
@@ -346,14 +389,14 @@ spec:
 <p>Most can also be set per resource with the annotation <code>argocd.argoproj.io/sync-options</code>. Two protective ones are worth knowing: <code>Prune=false</code> and <code>Delete=false</code> on resources that must never be removed automatically, such as PersistentVolumeClaims.</p>
 <h3>Sync windows</h3>
 <p>Defined on a project, sync windows allow or deny syncs on a cron schedule. Typical use: block automated production syncs during trading hours or a change freeze, while leaving manual sync available for emergencies.</p>
-<pre data-lang="yaml"><code>spec:
-  syncWindows:
-    - kind: deny
-      schedule: "0 7 * * 1-5"     # 07:00 Mon-Fri
-      duration: 10h
-      timeZone: Europe/London
-      applications: ["*-prod"]
-      manualSync: true            # humans can still override</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">syncWindows:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">kind:</span> <span class="hljs-string">deny</span>
+      <span class="hljs-attr">schedule:</span> <span class="hljs-string">&quot;0 7 * * 1-5&quot;</span>     <span class="hljs-comment"># 07:00 Mon-Fri</span>
+      <span class="hljs-attr">duration:</span> <span class="hljs-string">10h</span>
+      <span class="hljs-attr">timeZone:</span> <span class="hljs-string">Europe/London</span>
+      <span class="hljs-attr">applications:</span> [<span class="hljs-string">&quot;*-prod&quot;</span>]
+      <span class="hljs-attr">manualSync:</span> <span class="hljs-literal">true</span>            <span class="hljs-comment"># humans can still override</span></code></pre>
 </section>
 
 <section>
@@ -365,19 +408,19 @@ spec:
 <li><b>Use server-side apply and server-side diff.</b> The API server computes the result, including defaulting and admission webhooks, which removes whole classes of false diffs. Recent releases move further in this direction: 3.6 pairs server-side diff with server-side apply by default, so read the upgrade notes when you move to it.</li>
 <li><b>Ignore the difference explicitly</b>, per app or globally.</li>
 </ol>
-<pre data-lang="yaml"><code>spec:
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers: ["/spec/replicas"]
-    - group: admissionregistration.k8s.io
-      kind: MutatingWebhookConfiguration
-      jqPathExpressions: [".webhooks[].clientConfig.caBundle"]
-    - group: "*"
-      kind: "*"
-      managedFieldsManagers: ["kube-controller-manager"]
-  syncPolicy:
-    syncOptions: ["RespectIgnoreDifferences=true"]</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">ignoreDifferences:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">group:</span> <span class="hljs-string">apps</span>
+      <span class="hljs-attr">kind:</span> <span class="hljs-string">Deployment</span>
+      <span class="hljs-attr">jsonPointers:</span> [<span class="hljs-string">&quot;/spec/replicas&quot;</span>]
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">group:</span> <span class="hljs-string">admissionregistration.k8s.io</span>
+      <span class="hljs-attr">kind:</span> <span class="hljs-string">MutatingWebhookConfiguration</span>
+      <span class="hljs-attr">jqPathExpressions:</span> [<span class="hljs-string">&quot;.webhooks[].clientConfig.caBundle&quot;</span>]
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">group:</span> <span class="hljs-string">&quot;*&quot;</span>
+      <span class="hljs-attr">kind:</span> <span class="hljs-string">&quot;*&quot;</span>
+      <span class="hljs-attr">managedFieldsManagers:</span> [<span class="hljs-string">&quot;kube-controller-manager&quot;</span>]
+  <span class="hljs-attr">syncPolicy:</span>
+    <span class="hljs-attr">syncOptions:</span> [<span class="hljs-string">&quot;RespectIgnoreDifferences=true&quot;</span>]</code></pre>
 <p>System-wide rules go in <code>argocd-cm</code> under <code>resource.customizations.ignoreDifferences.&lt;group&gt;_&lt;kind&gt;</code>. Keep the list short and commented: every ignore rule is a place where Git is no longer the truth.</p>
 <div class="note"><b>Resources Argo CD ignores entirely</b><p>Since 3.0, high-churn resources such as Endpoints, EndpointSlices and Leases are excluded by default so they do not flood the controller. Adjust with <code>resource.exclusions</code> and <code>resource.inclusions</code> if you need them tracked.</p></div>
 </section>
@@ -386,20 +429,20 @@ spec:
 <h2>Health checks and resource actions</h2>
 <p>Argo CD has built-in health logic for core kinds (Deployment rollout complete, Service load balancer assigned, PVC bound, Ingress has an address) and for many popular CRDs. An application is as healthy as its least healthy resource.</p>
 <p>For your own CRDs, add a Lua health check so waves and <code>argocd app wait --health</code> behave correctly:</p>
-<pre data-lang="yaml"><code># argocd-cm
-data:
-  resource.customizations.health.streaming.acme.io_KafkaTopicClaim: |
-    hs = { status = "Progressing", message = "Waiting for reconciliation" }
+<pre data-lang="yaml"><code><span class="hljs-comment"># argocd-cm</span>
+<span class="hljs-attr">data:</span>
+  <span class="hljs-attr">resource.customizations.health.streaming.acme.io_KafkaTopicClaim:</span> <span class="hljs-string">|
+    hs = { status = &quot;Progressing&quot;, message = &quot;Waiting for reconciliation&quot; }
     if obj.status ~= nil and obj.status.conditions ~= nil then
       for _, c in ipairs(obj.status.conditions) do
-        if c.type == "Ready" and c.status == "True" then
-          hs.status = "Healthy"; hs.message = c.message
-        elseif c.type == "Ready" and c.status == "False" then
-          hs.status = "Degraded"; hs.message = c.message
+        if c.type == &quot;Ready&quot; and c.status == &quot;True&quot; then
+          hs.status = &quot;Healthy&quot;; hs.message = c.message
+        elseif c.type == &quot;Ready&quot; and c.status == &quot;False&quot; then
+          hs.status = &quot;Degraded&quot;; hs.message = c.message
         end
       end
     end
-    return hs</code></pre>
+    return hs</span></code></pre>
 <p><b>Resource actions</b> are Lua snippets exposed as buttons and CLI commands, for example restart a Deployment, or promote or abort an Argo Rollout. They mutate live state deliberately, so control them through RBAC (<code>applications, action/...</code>).</p>
 </section>
 
@@ -407,40 +450,40 @@ data:
 <h2>Projects, RBAC and SSO</h2>
 <h3>AppProject: the tenancy boundary</h3>
 <p>Never let teams use the built-in <code>default</code> project: it permits everything. Give each team or domain a project that states exactly what it can deploy and where.</p>
-<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: pricing
-  namespace: argocd
-spec:
-  description: Pricing team workloads
-  sourceRepos:
-    - https://github.com/acme/platform-config.git
-  destinations:
-    - { name: "prod-*", namespace: "pricing*" }
-    - { name: "dev-*",  namespace: "pricing*" }
-  clusterResourceWhitelist: []            # no cluster-scoped resources at all
-  namespaceResourceBlacklist:
-    - { group: "", kind: ResourceQuota }
-    - { group: "", kind: LimitRange }
-    - { group: networking.k8s.io, kind: NetworkPolicy }
-  roles:
-    - name: deployer
-      groups: ["acme:pricing-devs"]
-      policies:
-        - p, proj:pricing:deployer, applications, get,  pricing/*, allow
-        - p, proj:pricing:deployer, applications, sync, pricing/*, allow</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">argoproj.io/v1alpha1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">AppProject</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">pricing</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">argocd</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">description:</span> <span class="hljs-string">Pricing</span> <span class="hljs-string">team</span> <span class="hljs-string">workloads</span>
+  <span class="hljs-attr">sourceRepos:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">https://github.com/acme/platform-config.git</span>
+  <span class="hljs-attr">destinations:</span>
+    <span class="hljs-bullet">-</span> { <span class="hljs-attr">name:</span> <span class="hljs-string">&quot;prod-*&quot;</span>, <span class="hljs-attr">namespace:</span> <span class="hljs-string">&quot;pricing*&quot;</span> }
+    <span class="hljs-bullet">-</span> { <span class="hljs-attr">name:</span> <span class="hljs-string">&quot;dev-*&quot;</span>,  <span class="hljs-attr">namespace:</span> <span class="hljs-string">&quot;pricing*&quot;</span> }
+  <span class="hljs-attr">clusterResourceWhitelist:</span> []            <span class="hljs-comment"># no cluster-scoped resources at all</span>
+  <span class="hljs-attr">namespaceResourceBlacklist:</span>
+    <span class="hljs-bullet">-</span> { <span class="hljs-attr">group:</span> <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-attr">kind:</span> <span class="hljs-string">ResourceQuota</span> }
+    <span class="hljs-bullet">-</span> { <span class="hljs-attr">group:</span> <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-attr">kind:</span> <span class="hljs-string">LimitRange</span> }
+    <span class="hljs-bullet">-</span> { <span class="hljs-attr">group:</span> <span class="hljs-string">networking.k8s.io</span>, <span class="hljs-attr">kind:</span> <span class="hljs-string">NetworkPolicy</span> }
+  <span class="hljs-attr">roles:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">deployer</span>
+      <span class="hljs-attr">groups:</span> [<span class="hljs-string">&quot;acme:pricing-devs&quot;</span>]
+      <span class="hljs-attr">policies:</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-string">p,</span> <span class="hljs-string">proj:pricing:deployer,</span> <span class="hljs-string">applications,</span> <span class="hljs-string">get,</span>  <span class="hljs-string">pricing/*,</span> <span class="hljs-string">allow</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-string">p,</span> <span class="hljs-string">proj:pricing:deployer,</span> <span class="hljs-string">applications,</span> <span class="hljs-string">sync,</span> <span class="hljs-string">pricing/*,</span> <span class="hljs-string">allow</span></code></pre>
 <h3>RBAC</h3>
 <p>Policies live in <code>argocd-rbac-cm</code> in Casbin CSV form: <code>p, subject, resource, action, object, effect</code>. Groups come from your identity provider's claims.</p>
-<pre data-lang="yaml"><code>data:
-  policy.default: role:readonly
-  scopes: "[groups]"
-  policy.csv: |
+<pre data-lang="yaml"><code><span class="hljs-attr">data:</span>
+  <span class="hljs-attr">policy.default:</span> <span class="hljs-string">role:readonly</span>
+  <span class="hljs-attr">scopes:</span> <span class="hljs-string">&quot;[groups]&quot;</span>
+  <span class="hljs-attr">policy.csv:</span> <span class="hljs-string">|
     p, role:platform-admin, *, *, */*, allow
     p, role:release-manager, applications, sync,     */*-prod, allow
     p, role:release-manager, applications, action/*, */*-prod, allow
     g, acme:platform,         role:platform-admin
-    g, acme:release-managers, role:release-manager</code></pre>
+    g, acme:release-managers, role:release-manager</span></code></pre>
 <div class="warn"><b>3.x behaviour changes that surprise people</b><p>Since 3.0, <code>update</code> and <code>delete</code> on an application no longer imply the same rights on its child resources, and viewing pod logs needs an explicit <code>logs, get</code> permission. If roles were written for 2.x, re-test them.</p></div>
 <h3>Hardening the identity side</h3>
 <ul>
@@ -469,41 +512,41 @@ spec:
 <tr><td>OCI (3.6)</td><td>Artifact in a registry</td><td>Config shipped as OCI bundles instead of Git.</td></tr>
 <tr><td>Plugin / Cluster Decision Resource</td><td>Result of an external call</td><td>Custom placement logic.</td></tr>
 </table></div>
-<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: services
-  namespace: argocd
-spec:
-  goTemplate: true
-  goTemplateOptions: ["missingkey=error"]
-  generators:
-    - matrix:
-        generators:
-          - clusters:
-              selector:
-                matchLabels: { argocd.acme.io/tenant-workloads: "true" }
-          - git:
-              repoURL: https://github.com/acme/platform-config.git
-              revision: main
-              directories:
-                - path: "apps/*/overlays/{{ index .metadata.labels \"env\" }}"
-  template:
-    metadata:
-      name: "{{ index .path.segments 1 }}-{{ .name }}"
-    spec:
-      project: "{{ index .path.segments 1 }}"
-      source:
-        repoURL: https://github.com/acme/platform-config.git
-        targetRevision: main
-        path: "{{ .path.path }}"
-      destination:
-        name: "{{ .name }}"
-        namespace: "{{ index .path.segments 1 }}"
-      syncPolicy:
-        automated: { prune: true, selfHeal: true }
-  syncPolicy:
-    preserveResourcesOnDeletion: true</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">argoproj.io/v1alpha1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">ApplicationSet</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">services</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">argocd</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">goTemplate:</span> <span class="hljs-literal">true</span>
+  <span class="hljs-attr">goTemplateOptions:</span> [<span class="hljs-string">&quot;missingkey=error&quot;</span>]
+  <span class="hljs-attr">generators:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">matrix:</span>
+        <span class="hljs-attr">generators:</span>
+          <span class="hljs-bullet">-</span> <span class="hljs-attr">clusters:</span>
+              <span class="hljs-attr">selector:</span>
+                <span class="hljs-attr">matchLabels:</span> { <span class="hljs-attr">argocd.acme.io/tenant-workloads:</span> <span class="hljs-string">&quot;true&quot;</span> }
+          <span class="hljs-bullet">-</span> <span class="hljs-attr">git:</span>
+              <span class="hljs-attr">repoURL:</span> <span class="hljs-string">https://github.com/acme/platform-config.git</span>
+              <span class="hljs-attr">revision:</span> <span class="hljs-string">main</span>
+              <span class="hljs-attr">directories:</span>
+                <span class="hljs-bullet">-</span> <span class="hljs-attr">path:</span> <span class="hljs-string">&quot;apps/*/overlays/<span class="hljs-template-variable">{{ index .metadata.labels \&quot;env\&quot; }}</span>&quot;</span>
+  <span class="hljs-attr">template:</span>
+    <span class="hljs-attr">metadata:</span>
+      <span class="hljs-attr">name:</span> <span class="hljs-string">&quot;<span class="hljs-template-variable">{{ index .path.segments 1 }}</span>-<span class="hljs-template-variable">{{ .name }}</span>&quot;</span>
+    <span class="hljs-attr">spec:</span>
+      <span class="hljs-attr">project:</span> <span class="hljs-string">&quot;<span class="hljs-template-variable">{{ index .path.segments 1 }}</span>&quot;</span>
+      <span class="hljs-attr">source:</span>
+        <span class="hljs-attr">repoURL:</span> <span class="hljs-string">https://github.com/acme/platform-config.git</span>
+        <span class="hljs-attr">targetRevision:</span> <span class="hljs-string">main</span>
+        <span class="hljs-attr">path:</span> <span class="hljs-string">&quot;<span class="hljs-template-variable">{{ .path.path }}</span>&quot;</span>
+      <span class="hljs-attr">destination:</span>
+        <span class="hljs-attr">name:</span> <span class="hljs-string">&quot;<span class="hljs-template-variable">{{ .name }}</span>&quot;</span>
+        <span class="hljs-attr">namespace:</span> <span class="hljs-string">&quot;<span class="hljs-template-variable">{{ index .path.segments 1 }}</span>&quot;</span>
+      <span class="hljs-attr">syncPolicy:</span>
+        <span class="hljs-attr">automated:</span> { <span class="hljs-attr">prune:</span> <span class="hljs-literal">true</span>, <span class="hljs-attr">selfHeal:</span> <span class="hljs-literal">true</span> }
+  <span class="hljs-attr">syncPolicy:</span>
+    <span class="hljs-attr">preserveResourcesOnDeletion:</span> <span class="hljs-literal">true</span></code></pre>
 <div class="warn"><b>ApplicationSets can delete a lot, quickly</b><p>If a generator suddenly returns nothing (a renamed label, a broken path glob, an SCM API outage), the controller removes the generated Applications, and with the resources finalizer, their workloads. Protect yourself: set <code>preserveResourcesOnDeletion: true</code>, consider the <code>create-update</code> applications sync policy so the controller never deletes apps, and review ApplicationSet changes as carefully as production code.</p></div>
 <p><b>Progressive syncs</b> let an ApplicationSet roll a change through groups of apps in order (for example dev clusters, then one production region, then the rest) using a <code>RollingSync</code> strategy with label-matched steps. Version 3.6 added metrics and clearer failure conditions for these rollouts. Check the feature's maturity level for your version before depending on it.</p>
 </section>
@@ -517,17 +560,17 @@ spec:
 <li><b>Pin everything that reaches production.</b> Image digests or immutable tags, chart versions, remote Kustomize bases by commit SHA. <code>latest</code> and floating <code>HEAD</code> make rollbacks meaningless.</li>
 <li><b>Promotion is a pull request</b> that copies a known-good version from one environment's directory to the next.</li>
 </ul>
-<pre data-lang="text"><code>platform-config/
-  apps/
-    pricing-api/
-      base/                 deployment, service, hpa, kustomization.yaml
-      overlays/
-        dev/                kustomization.yaml  (image tag, replicas, config)
-        staging/
-        prod/
-  platform/                 ingress, cert-manager, external-secrets, monitoring
-  clusters/                 per-cluster values and cluster registration
-  argocd/                   projects, applicationsets, argocd config itself</code></pre>
+<pre data-lang="text"><code><span class="hljs-section">platform-config/</span>
+  <span class="hljs-section">apps/</span>
+    <span class="hljs-section">pricing-api/</span>
+      <span class="hljs-section">base/</span>                 <span class="hljs-comment">deployment, service, hpa, kustomization.yaml</span>
+      <span class="hljs-section">overlays/</span>
+        <span class="hljs-section">dev/</span>                <span class="hljs-comment">kustomization.yaml  (image tag, replicas, config)</span>
+        <span class="hljs-section">staging/</span>
+        <span class="hljs-section">prod/</span>
+  <span class="hljs-section">platform/</span>                 <span class="hljs-comment">ingress, cert-manager, external-secrets, monitoring</span>
+  <span class="hljs-section">clusters/</span>                 <span class="hljs-comment">per-cluster values and cluster registration</span>
+  <span class="hljs-section">argocd/</span>                   <span class="hljs-comment">projects, applicationsets, argocd config itself</span></code></pre>
 <h3>The rendered manifests pattern and the Source Hydrator</h3>
 <p>With Helm or Kustomize, the pull request shows a change to inputs (a values file), not to what will actually be applied. A chart upgrade can alter hundreds of lines that no reviewer sees. The rendered manifests pattern fixes this: render to plain YAML, commit the output to an environment-specific branch or path, and have Argo CD deploy only that.</p>
 <p>The <b>Source Hydrator</b> builds this into Argo CD. An application declares a <i>dry source</i> (the templates) and a <i>sync source</i> (where hydrated YAML is committed), and the commit-server pushes the rendered result. Recent releases have kept extending it, including hydrating to a separate repository and signing hydrated commits, which is marked alpha in 3.6. Treat it as a maturing feature: check the status for your version and trial it on non-critical apps first.</p>
@@ -569,23 +612,23 @@ spec:
 <section>
 <h2>Progressive delivery with Argo Rollouts</h2>
 <p>Argo CD applies a Deployment and Kubernetes does a rolling update: it does not judge whether the new version is any good. <b>Argo Rollouts</b> is a separate controller that replaces Deployment with a <code>Rollout</code> resource supporting canary and blue-green strategies, traffic shifting through an ingress or mesh, and automated analysis against metrics.</p>
-<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
-kind: Rollout
-metadata:
-  name: pricing-api
-spec:
-  replicas: 6
-  strategy:
-    canary:
-      steps:
-        - setWeight: 10
-        - pause: { duration: 5m }
-        - analysis:
-            templates: [{ templateName: error-rate-below-1pct }]
-        - setWeight: 50
-        - pause: { duration: 10m }
-  selector: { matchLabels: { app: pricing-api } }
-  template: { }   # the usual pod template goes here</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">argoproj.io/v1alpha1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Rollout</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-api</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">replicas:</span> <span class="hljs-number">6</span>
+  <span class="hljs-attr">strategy:</span>
+    <span class="hljs-attr">canary:</span>
+      <span class="hljs-attr">steps:</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">setWeight:</span> <span class="hljs-number">10</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">pause:</span> { <span class="hljs-attr">duration:</span> <span class="hljs-string">5m</span> }
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">analysis:</span>
+            <span class="hljs-attr">templates:</span> [{ <span class="hljs-attr">templateName:</span> <span class="hljs-string">error-rate-below-1pct</span> }]
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">setWeight:</span> <span class="hljs-number">50</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">pause:</span> { <span class="hljs-attr">duration:</span> <span class="hljs-string">10m</span> }
+  <span class="hljs-attr">selector:</span> { <span class="hljs-attr">matchLabels:</span> { <span class="hljs-attr">app:</span> <span class="hljs-string">pricing-api</span> } }
+  <span class="hljs-attr">template:</span> { }   <span class="hljs-comment"># the usual pod template goes here</span></code></pre>
 <p>Argo CD understands Rollout health: a paused canary shows as <code>Suspended</code>, and promote or abort are available as resource actions. Rollback remains a Git operation. If you abort a canary but leave the bad version in Git, the app is <code>Degraded</code> until you revert the commit.</p>
 </section>
 
@@ -593,10 +636,10 @@ spec:
 <h2>Notifications and observability</h2>
 <h3>Notifications</h3>
 <p>Triggers (conditions such as <code>on-sync-failed</code>, <code>on-health-degraded</code>, <code>on-deployed</code>) and templates are defined in <code>argocd-notifications-cm</code>. Apps or projects subscribe by annotation:</p>
-<pre data-lang="yaml"><code>metadata:
-  annotations:
-    notifications.argoproj.io/subscribe.on-sync-failed.slack: pricing-alerts
-    notifications.argoproj.io/subscribe.on-health-degraded.slack: pricing-alerts</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">annotations:</span>
+    <span class="hljs-attr">notifications.argoproj.io/subscribe.on-sync-failed.slack:</span> <span class="hljs-string">pricing-alerts</span>
+    <span class="hljs-attr">notifications.argoproj.io/subscribe.on-health-degraded.slack:</span> <span class="hljs-string">pricing-alerts</span></code></pre>
 <p>Useful beyond chat: post a commit status back to GitHub or GitLab, or call a webhook that records a deployment marker in your monitoring system.</p>
 <h3>Metrics worth alerting on</h3>
 <div class="tw"><table>
@@ -658,21 +701,21 @@ spec:
 <tr><td>Permission denied in UI or CLI</td><td>RBAC, including the 3.x sub-resource and logs changes.</td><td><code>argocd admin settings rbac can ROLE ACTION RESOURCE OBJECT</code> to test policies offline.</td></tr>
 </table></div>
 <h3>CLI cheat sheet</h3>
-<pre data-lang="bash"><code>argocd app list -o wide
-argocd app get APP --refresh              # --hard-refresh to drop cache
-argocd app diff APP                       # add --revision SHA to preview
-argocd app manifests APP --source git     # exactly what would be applied
-argocd app sync APP --prune --dry-run
-argocd app sync APP --resource apps:Deployment:pricing-api
-argocd app history APP
-argocd app rollback APP ID                # temporary: auto-sync must be off, Git still wins
-argocd app terminate-op APP
-argocd app set APP --sync-policy none     # pause automation during an incident
-argocd proj windows list PROJECT
-argocd cluster list
-argocd repo list
-kubectl -n argocd logs deploy/argocd-repo-server
-kubectl -n argocd logs sts/argocd-application-controller</code></pre>
+<pre data-lang="bash"><code><span class="hljs-built_in">argocd</span> app list <span class="hljs-attr">-o</span> wide
+<span class="hljs-built_in">argocd</span> app get APP <span class="hljs-attr">--refresh</span>              <span class="hljs-comment"># --hard-refresh to drop cache</span>
+<span class="hljs-built_in">argocd</span> app diff APP                       <span class="hljs-comment"># add --revision SHA to preview</span>
+<span class="hljs-built_in">argocd</span> app manifests APP --<span class="hljs-built_in">source</span> git     <span class="hljs-comment"># exactly what would be applied</span>
+<span class="hljs-built_in">argocd</span> app <span class="hljs-built_in">sync</span> APP <span class="hljs-attr">--prune</span> <span class="hljs-attr">--dry-run</span>
+<span class="hljs-built_in">argocd</span> app <span class="hljs-built_in">sync</span> APP <span class="hljs-attr">--resource</span> apps:Deployment:pricing-api
+<span class="hljs-built_in">argocd</span> app <span class="hljs-built_in">history</span> APP
+<span class="hljs-built_in">argocd</span> app rollback APP ID                <span class="hljs-comment"># temporary: auto-sync must be off, Git still wins</span>
+<span class="hljs-built_in">argocd</span> app terminate-op APP
+<span class="hljs-built_in">argocd</span> app <span class="hljs-built_in">set</span> APP <span class="hljs-attr">--sync-policy</span> none     <span class="hljs-comment"># pause automation during an incident</span>
+<span class="hljs-built_in">argocd</span> proj windows list PROJECT
+<span class="hljs-built_in">argocd</span> cluster list
+<span class="hljs-built_in">argocd</span> repo list
+<span class="hljs-built_in">kubectl</span> <span class="hljs-attr">-n</span> argocd logs deploy/argocd-repo-server
+<span class="hljs-built_in">kubectl</span> <span class="hljs-attr">-n</span> argocd logs sts/argocd-application-controller</code></pre>
 </section>
 
 <section>

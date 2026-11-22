@@ -38,7 +38,7 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 ::selection{background:var(--t200); color:var(--t900)}
 .wrap{max-width:740px; margin:0 auto; padding:0 22px}
-header.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-pour.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
+header.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-coldbrew.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
 header.hero .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .hero-in{position:relative; max-width:760px; margin:0 auto}
 .tag{display:inline-flex; gap:8px; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--t200); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); padding:6px 12px; border-radius:999px; margin-bottom:14px}
@@ -109,6 +109,49 @@ footer{border-top:1px solid var(--line); margin-top:48px; padding:24px 0 40px; f
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
 
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Unified Coffee + Cambridge Blue/Teal syntax highlighting */
+pre .hljs-keyword, pre .hljs-selector-tag, pre .hljs-built_in, pre .hljs-template-tag { color: #8cc7bc; font-weight: 600; }
+pre .hljs-title, pre .hljs-type, pre .hljs-title.class_, pre .hljs-class { color: #d6eee8; }
+pre .hljs-title.function_ { color: #a3c1ad; }
+pre .hljs-function { color: inherit; }
+pre .hljs-string, pre .hljs-regexp, pre .hljs-template-variable, pre .hljs-char.escape_ { color: #f2c97d; }
+pre .hljs-comment, pre .hljs-doctag, pre .hljs-quote { color: #9e8b7d; font-style: italic; }
+pre .hljs-meta, pre .hljs-meta .hljs-keyword, pre .hljs-symbol, pre .hljs-variable, pre .hljs-variable.language_, pre .hljs-params, pre .hljs-subst { color: #f29e7e; }
+pre .hljs-number, pre .hljs-literal, pre .hljs-bullet { color: #f0b37e; }
+pre .hljs-attr, pre .hljs-attribute, pre .hljs-property, pre .hljs-name, pre .hljs-section, pre .hljs-tag, pre .hljs-selector-class, pre .hljs-selector-id, pre .hljs-selector-attr, pre .hljs-selector-pseudo, pre .hljs-link { color: #a3c1ad; }
+pre .hljs-operator, pre .hljs-punctuation { color: #cbe0d5; }
+pre .hljs-addition { color: #a3c1ad; background: rgba(163, 193, 173, .14); }
+pre .hljs-deletion { color: #ee8c68; background: rgba(238, 140, 104, .14); }
+pre .hljs-emphasis { font-style: italic; }
+pre .hljs-strong { font-weight: 700; }
+@media print {
+  pre [class*="hljs-"] { color: #1f1713 !important; background: none !important; }
+}
+/* End syntax highlighting */
+/* End syntax highlighting */
+/* End syntax highlighting */
 </style>
 </head>
 <body>
@@ -202,23 +245,23 @@ footer{border-top:1px solid var(--line); margin-top:48px; padding:24px 0 40px; f
 <tr><td><code>delivery.timeout.ms</code></td><td>120000</td><td>Upper bound on send plus retries. Decide deliberately what the application does when it expires.</td></tr>
 <tr><td><code>transactional.id</code></td><td>unset</td><td>Set for exactly-once pipelines. Must be stable per logical producer instance.</td></tr>
 </table></div>
-<pre data-lang="java"><code>Properties p = new Properties();
-p.put("bootstrap.servers", "kafka-1:9093,kafka-2:9093,kafka-3:9093");
-p.put("key.serializer", StringSerializer.class.getName());
-p.put("value.serializer", KafkaAvroSerializer.class.getName());
-p.put("acks", "all");
-p.put("enable.idempotence", "true");
-p.put("linger.ms", "1");
-p.put("compression.type", "lz4");
-p.put("delivery.timeout.ms", "30000");
-p.put("client.id", "oms-order-events-1");
+<pre data-lang="java"><code><span class="hljs-type">Properties</span> <span class="hljs-variable">p</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Properties</span>();
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;bootstrap.servers&quot;</span>, <span class="hljs-string">&quot;kafka-1:9093,kafka-2:9093,kafka-3:9093&quot;</span>);
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;key.serializer&quot;</span>, <span class="hljs-type">StringSerializer</span>.class.<span class="hljs-title function_">getName</span>());
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;value.serializer&quot;</span>, <span class="hljs-type">KafkaAvroSerializer</span>.class.<span class="hljs-title function_">getName</span>());
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;acks&quot;</span>, <span class="hljs-string">&quot;all&quot;</span>);
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;enable.idempotence&quot;</span>, <span class="hljs-string">&quot;true&quot;</span>);
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;linger.ms&quot;</span>, <span class="hljs-string">&quot;1&quot;</span>);
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;compression.type&quot;</span>, <span class="hljs-string">&quot;lz4&quot;</span>);
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;delivery.timeout.ms&quot;</span>, <span class="hljs-string">&quot;30000&quot;</span>);
+p.<span class="hljs-title function_">put</span>(<span class="hljs-string">&quot;client.id&quot;</span>, <span class="hljs-string">&quot;oms-order-events-1&quot;</span>);
 
-try (KafkaProducer&lt;String, OrderEvent&gt; producer = new KafkaProducer&lt;&gt;(p)) {
-    ProducerRecord&lt;String, OrderEvent&gt; rec =
-        new ProducerRecord&lt;&gt;("orders.events.v1", event.getOrderId(), event);
-    rec.headers().add("correlation-id", correlationId.getBytes(UTF_8));
-    producer.send(rec, (meta, err) -&gt; {
-        if (err != null) onPublishFailure(event, err);   // never ignore this
+<span class="hljs-keyword">try</span> (<span class="hljs-type">KafkaProducer</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">OrderEvent</span>&gt; <span class="hljs-variable">producer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">KafkaProducer</span>&lt;&gt;(p)) {
+    <span class="hljs-type">ProducerRecord</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">OrderEvent</span>&gt; <span class="hljs-variable">rec</span> <span class="hljs-operator">=</span>
+        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ProducerRecord</span>&lt;&gt;(<span class="hljs-string">&quot;orders.events.v1&quot;</span>, event.<span class="hljs-title function_">getOrderId</span>(), event);
+    rec.<span class="hljs-title function_">headers</span>().<span class="hljs-title function_">add</span>(<span class="hljs-string">&quot;correlation-id&quot;</span>, correlationId.<span class="hljs-title function_">getBytes</span>(<span class="hljs-variable">UTF_8</span>));
+    producer.<span class="hljs-title function_">send</span>(rec, (meta, err) -&gt; {
+        <span class="hljs-keyword">if</span> (err != <span class="hljs-literal">null</span>) onPublishFailure(event, err);   <span class="hljs-comment">// never ignore this</span>
     });
 }</code></pre>
 <div class="warn"><b>The send is asynchronous</b><p><code>send()</code> returns before the broker has the record. If the process dies, records still in the client buffer are lost. If a business action depends on the event being durable (for example, "do not acknowledge the client until the order event is stored"), wait for the callback or future. If the event describes something that has already happened elsewhere, you need the outbox pattern or a local journal, covered later.</p></div>
@@ -228,13 +271,13 @@ try (KafkaProducer&lt;String, OrderEvent&gt; producer = new KafkaProducer&lt;&gt
 <h2>Consumers and groups</h2>
 <p>A consumer polls for batches of records, processes them, and commits the offset it has reached. Committed offsets are stored in Kafka per group, so a restarted or replacement consumer resumes from the last commit.</p>
 <h3>The poll loop and commits</h3>
-<pre data-lang="java"><code>consumer.subscribe(List.of("executions.v1"));
-while (running) {
-    ConsumerRecords&lt;String, Fill&gt; records = consumer.poll(Duration.ofMillis(100));
-    for (ConsumerRecord&lt;String, Fill&gt; r : records) {
-        handle(r);                         // must be idempotent
+<pre data-lang="java"><code>consumer.<span class="hljs-title function_">subscribe</span>(<span class="hljs-type">List</span>.<span class="hljs-title function_">of</span>(<span class="hljs-string">&quot;executions.v1&quot;</span>));
+<span class="hljs-keyword">while</span> (running) {
+    <span class="hljs-type">ConsumerRecords</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">Fill</span>&gt; <span class="hljs-variable">records</span> <span class="hljs-operator">=</span> consumer.<span class="hljs-title function_">poll</span>(<span class="hljs-type">Duration</span>.<span class="hljs-title function_">ofMillis</span>(<span class="hljs-number">100</span>));
+    <span class="hljs-keyword">for</span> (<span class="hljs-type">ConsumerRecord</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">Fill</span>&gt; r : records) {
+        handle(r);                         <span class="hljs-comment">// must be idempotent</span>
     }
-    consumer.commitSync();                 // commit AFTER processing: at-least-once
+    consumer.<span class="hljs-title function_">commitSync</span>();                 <span class="hljs-comment">// commit AFTER processing: at-least-once</span>
 }</code></pre>
 <div class="tw"><table>
 <tr><th>Commit strategy</th><th>Result</th></tr>
@@ -267,23 +310,23 @@ while (running) {
 </table></div>
 <h3>How transactions work</h3>
 <p>A transactional producer registers a <code>transactional.id</code> with a coordinator and receives an epoch. It writes records to any number of partitions, adds the consumer offsets it has processed, and commits. The coordinator writes commit markers so that <code>read_committed</code> consumers see all of the transaction or none of it. If a second instance starts with the same <code>transactional.id</code>, the epoch is bumped and the old instance is fenced: this is what stops a "zombie" from writing after it has been replaced.</p>
-<pre data-lang="java"><code>producer.initTransactions();
-while (running) {
-    ConsumerRecords&lt;String, Fill&gt; in = consumer.poll(Duration.ofMillis(50));
-    if (in.isEmpty()) continue;
-    producer.beginTransaction();
-    try {
-        for (ConsumerRecord&lt;String, Fill&gt; r : in) {
-            producer.send(new ProducerRecord&lt;&gt;("positions.deltas.v1", positionKey(r.value()), toDelta(r.value())));
+<pre data-lang="java"><code>producer.<span class="hljs-title function_">initTransactions</span>();
+<span class="hljs-keyword">while</span> (running) {
+    <span class="hljs-type">ConsumerRecords</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">Fill</span>&gt; <span class="hljs-variable">in</span> <span class="hljs-operator">=</span> consumer.<span class="hljs-title function_">poll</span>(<span class="hljs-type">Duration</span>.<span class="hljs-title function_">ofMillis</span>(<span class="hljs-number">50</span>));
+    <span class="hljs-keyword">if</span> (in.<span class="hljs-title function_">isEmpty</span>()) <span class="hljs-keyword">continue</span>;
+    producer.<span class="hljs-title function_">beginTransaction</span>();
+    <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">ConsumerRecord</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">Fill</span>&gt; r : in) {
+            producer.<span class="hljs-title function_">send</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ProducerRecord</span>&lt;&gt;(<span class="hljs-string">&quot;positions.deltas.v1&quot;</span>, positionKey(r.<span class="hljs-title function_">value</span>()), toDelta(r.<span class="hljs-title function_">value</span>())));
         }
-        producer.sendOffsetsToTransaction(nextOffsets(in), consumer.groupMetadata());
-        producer.commitTransaction();
-    } catch (ProducerFencedException | OutOfOrderSequenceException | AuthorizationException fatal) {
-        producer.close();                  // another instance has taken over: stop
-        throw fatal;
-    } catch (KafkaException retriable) {
-        producer.abortTransaction();
-        rewindToLastCommitted(consumer);   // reprocess the batch
+        producer.<span class="hljs-title function_">sendOffsetsToTransaction</span>(nextOffsets(in), consumer.<span class="hljs-title function_">groupMetadata</span>());
+        producer.<span class="hljs-title function_">commitTransaction</span>();
+    } <span class="hljs-keyword">catch</span> (<span class="hljs-type">ProducerFencedException</span> | <span class="hljs-type">OutOfOrderSequenceException</span> | <span class="hljs-type">AuthorizationException</span> fatal) {
+        producer.<span class="hljs-title function_">close</span>();                  <span class="hljs-comment">// another instance has taken over: stop</span>
+        <span class="hljs-keyword">throw</span> fatal;
+    } <span class="hljs-keyword">catch</span> (<span class="hljs-type">KafkaException</span> retriable) {
+        producer.<span class="hljs-title function_">abortTransaction</span>();
+        rewindToLastCommitted(consumer);   <span class="hljs-comment">// reprocess the batch</span>
     }
 }</code></pre>
 <h3>What exactly-once does not give you</h3>
@@ -332,23 +375,23 @@ while (running) {
 </table></div>
 <p>Name topics by domain and meaning, not by producing application: <code>&lt;domain&gt;.&lt;entity&gt;.&lt;kind&gt;.v&lt;major&gt;</code>. Create them through infrastructure as code with explicit partitions, replication and retention. Disable automatic topic creation.</p>
 <h3>Event shape</h3>
-<pre data-lang="json"><code>{
-  "eventId": "01JCQ8Z6T3M9X4K7Q2R5V8W1YB",
-  "eventType": "OrderPartiallyFilled",
-  "schemaVersion": 3,
-  "orderId": "ORD-20261115-000184",
-  "clOrdId": "ALGO7-55120",
-  "sequence": 7,
-  "instrumentId": "XLON:VOD",
-  "book": "EQ-ARB-01",
-  "side": "BUY",
-  "lastQty": 2500, "lastPx": "71.42", "cumQty": 7500, "leavesQty": 2500,
-  "execId": "XLON-9F3A77C1",
-  "venueTs": "2026-11-16T08:00:01.123456Z",
-  "gatewayRecvTs": "2026-11-16T08:00:01.123801Z",
-  "eventTs": "2026-11-16T08:00:01.124010Z",
-  "causationId": "01JCQ8Z6SZ...", "correlationId": "ORD-20261115-000184"
-}</code></pre>
+<pre data-lang="json"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;eventId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;01JCQ8Z6T3M9X4K7Q2R5V8W1YB&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;eventType&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;OrderPartiallyFilled&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;schemaVersion&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;orderId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ORD-20261115-000184&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;clOrdId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ALGO7-55120&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sequence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">7</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;instrumentId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;XLON:VOD&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;book&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;EQ-ARB-01&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;side&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;BUY&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;lastQty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2500</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;lastPx&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;71.42&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;cumQty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">7500</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;leavesQty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2500</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;execId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;XLON-9F3A77C1&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;venueTs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-11-16T08:00:01.123456Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;gatewayRecvTs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-11-16T08:00:01.123801Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;eventTs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-11-16T08:00:01.124010Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;causationId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;01JCQ8Z6SZ...&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;correlationId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ORD-20261115-000184&quot;</span>
+<span class="hljs-punctuation">}</span></code></pre>
 <ul>
 <li><b>Events are facts in the past tense</b> and carry enough data to be understood alone (event-carried state). Consumers should not have to call back to the producer.</li>
 <li><b>Prices and quantities are decimals</b>, as strings or scaled integers. Never binary floating point.</li>
@@ -411,25 +454,25 @@ while (running) {
 <tr><td>External database</td><td>Consumer writes state to Postgres or a key-value store, storing the consumed offset in the same transaction.</td><td>Queryable by anything. Exactly-once into the database.</td><td>Database latency on the processing path. The database becomes the scaling limit.</td></tr>
 </table></div>
 <h3>Kafka Streams: a position keeper</h3>
-<pre data-lang="java"><code>StreamsBuilder b = new StreamsBuilder();
+<pre data-lang="java"><code><span class="hljs-type">StreamsBuilder</span> <span class="hljs-variable">b</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StreamsBuilder</span>();
 
-KTable&lt;String, Position&gt; positions = b
-    .stream("executions.v1", Consumed.with(Serdes.String(), fillSerde))
-    .selectKey((orderId, fill) -&gt; fill.book() + "|" + fill.instrumentId())   // re-key
-    .groupByKey(Grouped.with(Serdes.String(), fillSerde))                     // repartition topic
-    .aggregate(
-        Position::flat,
-        (key, fill, pos) -&gt; pos.apply(fill),      // must ignore an execId it has already applied
-        Materialized.&lt;String, Position, KeyValueStore&lt;Bytes, byte[]&gt;&gt;as("positions-store")
-            .withValueSerde(positionSerde));
+<span class="hljs-type">KTable</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">Position</span>&gt; <span class="hljs-variable">positions</span> <span class="hljs-operator">=</span> b
+    .<span class="hljs-title function_">stream</span>(<span class="hljs-string">&quot;executions.v1&quot;</span>, <span class="hljs-type">Consumed</span>.<span class="hljs-title function_">with</span>(<span class="hljs-type">Serdes</span>.<span class="hljs-type">String</span>(), fillSerde))
+    .<span class="hljs-title function_">selectKey</span>((orderId, fill) -&gt; fill.<span class="hljs-title function_">book</span>() + <span class="hljs-string">&quot;|&quot;</span> + fill.<span class="hljs-title function_">instrumentId</span>())   <span class="hljs-comment">// re-key</span>
+    .<span class="hljs-title function_">groupByKey</span>(<span class="hljs-type">Grouped</span>.<span class="hljs-title function_">with</span>(<span class="hljs-type">Serdes</span>.<span class="hljs-type">String</span>(), fillSerde))                     <span class="hljs-comment">// repartition topic</span>
+    .<span class="hljs-title function_">aggregate</span>(
+        <span class="hljs-type">Position</span>::flat,
+        (key, fill, pos) -&gt; pos.<span class="hljs-title function_">apply</span>(fill),      <span class="hljs-comment">// must ignore an execId it has already applied</span>
+        <span class="hljs-type">Materialized</span>.&lt;<span class="hljs-type">String</span>, <span class="hljs-type">Position</span>, <span class="hljs-type">KeyValueStore</span>&lt;<span class="hljs-type">Bytes</span>, <span class="hljs-type">byte</span>[]&gt;&gt;as(<span class="hljs-string">&quot;positions-store&quot;</span>)
+            .<span class="hljs-title function_">withValueSerde</span>(positionSerde));
 
-positions.toStream().to("positions.v1", Produced.with(Serdes.String(), positionSerde));
+positions.<span class="hljs-title function_">toStream</span>().<span class="hljs-title function_">to</span>(<span class="hljs-string">&quot;positions.v1&quot;</span>, <span class="hljs-type">Produced</span>.<span class="hljs-title function_">with</span>(<span class="hljs-type">Serdes</span>.<span class="hljs-type">String</span>(), positionSerde));
 
-Properties cfg = new Properties();
-cfg.put(StreamsConfig.APPLICATION_ID_CONFIG, "position-keeper");
-cfg.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE_V2);
-cfg.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, 1);
-cfg.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 3);</code></pre>
+<span class="hljs-type">Properties</span> <span class="hljs-variable">cfg</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Properties</span>();
+cfg.<span class="hljs-title function_">put</span>(<span class="hljs-type">StreamsConfig</span>.<span class="hljs-variable">APPLICATION_ID_CONFIG</span>, <span class="hljs-string">&quot;position-keeper&quot;</span>);
+cfg.<span class="hljs-title function_">put</span>(<span class="hljs-type">StreamsConfig</span>.<span class="hljs-variable">PROCESSING_GUARANTEE_CONFIG</span>, <span class="hljs-type">StreamsConfig</span>.<span class="hljs-variable">EXACTLY_ONCE_V2</span>);
+cfg.<span class="hljs-title function_">put</span>(<span class="hljs-type">StreamsConfig</span>.<span class="hljs-variable">NUM_STANDBY_REPLICAS_CONFIG</span>, <span class="hljs-number">1</span>);
+cfg.<span class="hljs-title function_">put</span>(<span class="hljs-type">StreamsConfig</span>.<span class="hljs-variable">REPLICATION_FACTOR_CONFIG</span>, <span class="hljs-number">3</span>);</code></pre>
 <p>Things to know before relying on it:</p>
 <ul>
 <li><b>Joins need co-partitioning</b>: both sides keyed the same way with the same partition count.</li>
@@ -439,17 +482,17 @@ cfg.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 3);</code></pre>
 <li><b>Interactive queries</b> expose the local store over your own API, but an instance only holds its own partitions, so you need routing, and reads are eventually consistent.</li>
 </ul>
 <h3>Exactly-once into a database</h3>
-<pre data-lang="sql"><code>BEGIN;
-  -- skip if already applied (idempotency on the business key)
-  INSERT INTO applied_executions (exec_id) VALUES (:execId)
-    ON CONFLICT DO NOTHING;
-  -- only if the row above was inserted:
-  UPDATE positions SET qty = qty + :signedQty, cost = cost + :signedNotional
-    WHERE book = :book AND instrument_id = :instrumentId;
-  -- progress marker stored with the data
-  INSERT INTO consumer_offsets (topic, part, next_offset) VALUES (:t, :p, :o)
-    ON CONFLICT (topic, part) DO UPDATE SET next_offset = EXCLUDED.next_offset;
-COMMIT;</code></pre>
+<pre data-lang="sql"><code><span class="hljs-keyword">BEGIN</span>;
+  <span class="hljs-comment">-- skip if already applied (idempotency on the business key)</span>
+  <span class="hljs-keyword">INSERT INTO</span> applied_executions (exec_id) <span class="hljs-keyword">VALUES</span> (:execId)
+    <span class="hljs-keyword">ON</span> CONFLICT DO NOTHING;
+  <span class="hljs-comment">-- only if the row above was inserted:</span>
+  <span class="hljs-keyword">UPDATE</span> positions <span class="hljs-keyword">SET</span> qty <span class="hljs-operator">=</span> qty <span class="hljs-operator">+</span> :signedQty, cost <span class="hljs-operator">=</span> cost <span class="hljs-operator">+</span> :signedNotional
+    <span class="hljs-keyword">WHERE</span> book <span class="hljs-operator">=</span> :book <span class="hljs-keyword">AND</span> instrument_id <span class="hljs-operator">=</span> :instrumentId;
+  <span class="hljs-comment">-- progress marker stored with the data</span>
+  <span class="hljs-keyword">INSERT INTO</span> consumer_offsets (topic, part, next_offset) <span class="hljs-keyword">VALUES</span> (:t, :p, :o)
+    <span class="hljs-keyword">ON</span> CONFLICT (topic, part) DO <span class="hljs-keyword">UPDATE</span> <span class="hljs-keyword">SET</span> next_offset <span class="hljs-operator">=</span> EXCLUDED.next_offset;
+<span class="hljs-keyword">COMMIT</span>;</code></pre>
 <p>On start-up the consumer reads <code>consumer_offsets</code> and seeks to it, ignoring Kafka's committed offsets. State and progress can never disagree.</p>
 <h3>Practices that make state trustworthy</h3>
 <ul>

@@ -53,7 +53,7 @@ code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); bord
 .progress{position:absolute; left:0; bottom:-1px; height:3px; width:0; background:linear-gradient(90deg,var(--t500),var(--t300))}
 
 /* hero */
-.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-cortado.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:48px 24px 42px}
+.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-grinder.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:48px 24px 42px}
 .hero .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .hero-in{max-width:760px; margin:0 auto; position:relative}
 .hero h1{font-family:var(--serif); font-weight:700; font-size:clamp(38px,7.4vw,58px); line-height:1.05; letter-spacing:-.01em; margin:0 0 14px; color:#fff}
@@ -223,6 +223,51 @@ footer{border-top:1px solid var(--line); padding:24px 0 60px; font-size:14.5px; 
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
 
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Unified Coffee + Cambridge Blue/Teal syntax highlighting */
+pre .hljs-keyword, pre .hljs-selector-tag, pre .hljs-built_in, pre .hljs-template-tag { color: #8cc7bc; font-weight: 600; }
+pre .hljs-title, pre .hljs-type, pre .hljs-title.class_, pre .hljs-class { color: #d6eee8; }
+pre .hljs-title.function_ { color: #a3c1ad; }
+pre .hljs-function { color: inherit; }
+pre .hljs-string, pre .hljs-regexp, pre .hljs-template-variable, pre .hljs-char.escape_ { color: #f2c97d; }
+pre .hljs-comment, pre .hljs-doctag, pre .hljs-quote { color: #9e8b7d; font-style: italic; }
+pre .hljs-meta, pre .hljs-meta .hljs-keyword, pre .hljs-symbol, pre .hljs-variable, pre .hljs-variable.language_, pre .hljs-params, pre .hljs-subst { color: #f29e7e; }
+pre .hljs-number, pre .hljs-literal, pre .hljs-bullet { color: #f0b37e; }
+pre .hljs-attr, pre .hljs-attribute, pre .hljs-property, pre .hljs-name, pre .hljs-section, pre .hljs-tag, pre .hljs-selector-class, pre .hljs-selector-id, pre .hljs-selector-attr, pre .hljs-selector-pseudo, pre .hljs-link { color: #a3c1ad; }
+pre .hljs-operator, pre .hljs-punctuation { color: #cbe0d5; }
+pre .hljs-addition { color: #a3c1ad; background: rgba(163, 193, 173, .14); }
+pre .hljs-deletion { color: #ee8c68; background: rgba(238, 140, 104, .14); }
+pre .hljs-emphasis { font-style: italic; }
+pre .hljs-strong { font-weight: 700; }
+@media print {
+  pre [class*="hljs-"] { color: #1f1713 !important; background: none !important; }
+}
+/* End syntax highlighting */
+/* End syntax highlighting */
+/* End syntax highlighting */
+
+.code .w { color: inherit; }
 </style>
 </head>
 <body>
@@ -806,34 +851,34 @@ footer{border-top:1px solid var(--line); padding:24px 0 60px; font-size:14.5px; 
     <div class="panel p-lazy">
       <div class="count"><strong>41</strong><span>SQL statements</span></div>
       <div class="ticks" aria-hidden="true"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span><span style="--i:5"></span><span style="--i:6"></span><span style="--i:7"></span><span style="--i:8"></span><span style="--i:9"></span><span style="--i:10"></span><span style="--i:11"></span><span style="--i:12"></span><span style="--i:13"></span><span style="--i:14"></span><span style="--i:15"></span><span style="--i:16"></span><span style="--i:17"></span><span style="--i:18"></span><span style="--i:19"></span><span style="--i:20"></span><span style="--i:21"></span><span style="--i:22"></span><span style="--i:23"></span><span style="--i:24"></span><span style="--i:25"></span><span style="--i:26"></span><span style="--i:27"></span><span style="--i:28"></span><span style="--i:29"></span><span style="--i:30"></span><span style="--i:31"></span><span style="--i:32"></span><span style="--i:33"></span><span style="--i:34"></span><span style="--i:35"></span><span style="--i:36"></span><span style="--i:37"></span><span style="--i:38"></span><span style="--i:39"></span><span style="--i:40"></span></div>
-<pre>select c1_0.id, ..., c1_0.venue_id from concert c1_0
-select v1_0.id, v1_0.capacity, ... from venue v1_0 where v1_0.id=?   <i>-- venue 1</i>
-select v1_0.id, v1_0.capacity, ... from venue v1_0 where v1_0.id=?   <i>-- venue 2</i>
-<i>-- ... 37 more ...</i>
-select v1_0.id, v1_0.capacity, ... from venue v1_0 where v1_0.id=?   <i>-- venue 40</i></pre>
+<pre><span class="hljs-keyword">select</span> c1_0.id, ..., c1_0.venue_id <span class="hljs-keyword">from</span> concert c1_0
+<span class="hljs-keyword">select</span> v1_0.id, v1_0.capacity, ... <span class="hljs-keyword">from</span> venue v1_0 <span class="hljs-keyword">where</span> v1_0.id<span class="hljs-operator">=</span>?   <span class="hljs-comment">-- venue 1</span>
+<span class="hljs-keyword">select</span> v1_0.id, v1_0.capacity, ... <span class="hljs-keyword">from</span> venue v1_0 <span class="hljs-keyword">where</span> v1_0.id<span class="hljs-operator">=</span>?   <span class="hljs-comment">-- venue 2</span>
+<span class="hljs-comment">-- ... 37 more ...</span>
+<span class="hljs-keyword">select</span> v1_0.id, v1_0.capacity, ... <span class="hljs-keyword">from</span> venue v1_0 <span class="hljs-keyword">where</span> v1_0.id<span class="hljs-operator">=</span>?   <span class="hljs-comment">-- venue 40</span></pre>
       <p>Why 41 and not 101? The persistence context loads each venue once; concerts at the same venue share one object. It's still 40 network round trips that a single join would have avoided. Mapping <code>venue</code> as <code>EAGER</code> wouldn't help: a JPQL query fetches eager associations with these same extra selects, just earlier.</p>
     </div>
     <div class="panel p-join">
       <div class="count"><strong>1</strong><span>SQL statement</span></div>
       <div class="ticks" aria-hidden="true"><span style="--i:0"></span></div>
-<pre>select c1_0.id, ..., v1_0.id, v1_0.name, ...
-from concert c1_0 join venue v1_0 on v1_0.id=c1_0.venue_id</pre>
+<pre><span class="hljs-keyword">select</span> c1_0.id, ..., v1_0.id, v1_0.name, ...
+<span class="hljs-keyword">from</span> concert c1_0 <span class="hljs-keyword">join</span> venue v1_0 <span class="hljs-keyword">on</span> v1_0.id<span class="hljs-operator">=</span>c1_0.venue_id</pre>
       <p><code>select c from Concert c join fetch c.venue</code> loads the concerts and their venues in one statement. In Spring Data, <code>@EntityGraph(attributePaths = "venue")</code> does the same without writing JPQL. Best when you know the use case needs the association. Be careful join-fetching <em>collections</em> with paging; see below.</p>
     </div>
     <div class="panel p-batch">
       <div class="count"><strong>4</strong><span>SQL statements</span></div>
       <div class="ticks" aria-hidden="true"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span></div>
-<pre>select c1_0.id, ... from concert c1_0
-select v1_0.id, ... from venue v1_0 where v1_0.id = any (?)   <i>-- 16 ids</i>
-select v1_0.id, ... from venue v1_0 where v1_0.id = any (?)   <i>-- 16 ids</i>
-select v1_0.id, ... from venue v1_0 where v1_0.id = any (?)   <i>-- 8 ids</i></pre>
+<pre><span class="hljs-keyword">select</span> c1_0.id, ... <span class="hljs-keyword">from</span> concert c1_0
+<span class="hljs-keyword">select</span> v1_0.id, ... <span class="hljs-keyword">from</span> venue v1_0 <span class="hljs-keyword">where</span> v1_0.id <span class="hljs-operator">=</span> <span class="hljs-keyword">any</span> (?)   <span class="hljs-comment">-- 16 ids</span>
+<span class="hljs-keyword">select</span> v1_0.id, ... <span class="hljs-keyword">from</span> venue v1_0 <span class="hljs-keyword">where</span> v1_0.id <span class="hljs-operator">=</span> <span class="hljs-keyword">any</span> (?)   <span class="hljs-comment">-- 16 ids</span>
+<span class="hljs-keyword">select</span> v1_0.id, ... <span class="hljs-keyword">from</span> venue v1_0 <span class="hljs-keyword">where</span> v1_0.id <span class="hljs-operator">=</span> <span class="hljs-keyword">any</span> (?)   <span class="hljs-comment">-- 8 ids</span></pre>
       <p>With <code>hibernate.default_batch_fetch_size=16</code> (or <code>@BatchSize</code> on the association), touching one uninitialised venue loads up to 16 of them at once. On PostgreSQL, Hibernate passes the IDs as a single array parameter; on other databases it uses an <code>IN</code> list. It's a safety net that fixes N+1 everywhere without changing any queries. Many teams set it globally on day one.</p>
     </div>
     <div class="panel p-dto">
       <div class="count"><strong>1</strong><span>SQL statement</span></div>
       <div class="ticks" aria-hidden="true"><span style="--i:0"></span></div>
-<pre>select c1_0.title, v1_0.name
-from concert c1_0 join venue v1_0 on v1_0.id=c1_0.venue_id</pre>
+<pre><span class="hljs-keyword">select</span> c1_0.title, v1_0.name
+<span class="hljs-keyword">from</span> concert c1_0 <span class="hljs-keyword">join</span> venue v1_0 <span class="hljs-keyword">on</span> v1_0.id<span class="hljs-operator">=</span>c1_0.venue_id</pre>
       <p><code>select new com.example.ConcertLine(c.title, c.venue.name) from Concert c</code> fetches exactly two columns. No entities are created, nothing is dirty-checked, and the result can't trigger lazy loading later. For a read-only list this is the fastest option and usually the right one.</p>
     </div>
   </div>

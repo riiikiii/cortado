@@ -45,7 +45,7 @@ img,svg{max-width:100%}
 #progress{position:fixed; top:0; left:0; height:4px; width:0; z-index:60; background:linear-gradient(90deg,var(--t500),var(--t300)); box-shadow:0 0 8px rgba(163,193,173,.65); transition:width .1s linear}
 
 /* hero */
-.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-cortado.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
+.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-tasting-flight.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
 .hero .net{position:absolute; inset:0; display:none; pointer-events:none}
 .hero-inner{position:relative; max-width:760px; margin:0 auto}
 .kicker{display:inline-flex; gap:8px; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--t200); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); padding:6px 12px; border-radius:999px}
@@ -275,6 +275,27 @@ footer{max-width:740px; margin:0 auto; padding:30px 22px 120px; color:var(--mute
 
 .table-wrap{overflow-x:auto}.table-wrap table{min-width:0}.code pre{overflow-wrap:normal} details summary{cursor:pointer}
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
 </style>
 </head>
 <body>

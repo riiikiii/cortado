@@ -38,7 +38,7 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
 ::selection{background:var(--t200); color:var(--t900)}
 .wrap{max-width:740px; margin:0 auto; padding:0 22px}
-header.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-beans.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
+header.hero{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-roaster.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
 header.hero .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
 .hero-in{position:relative; max-width:760px; margin:0 auto}
 .tag{display:inline-flex; gap:8px; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--t200); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); padding:6px 12px; border-radius:999px; margin-bottom:14px}
@@ -109,6 +109,49 @@ footer{border-top:1px solid var(--line); margin-top:48px; padding:24px 0 40px; f
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
 
 .hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Unified Coffee + Cambridge Blue/Teal syntax highlighting */
+pre .hljs-keyword, pre .hljs-selector-tag, pre .hljs-built_in, pre .hljs-template-tag { color: #8cc7bc; font-weight: 600; }
+pre .hljs-title, pre .hljs-type, pre .hljs-title.class_, pre .hljs-class { color: #d6eee8; }
+pre .hljs-title.function_ { color: #a3c1ad; }
+pre .hljs-function { color: inherit; }
+pre .hljs-string, pre .hljs-regexp, pre .hljs-template-variable, pre .hljs-char.escape_ { color: #f2c97d; }
+pre .hljs-comment, pre .hljs-doctag, pre .hljs-quote { color: #9e8b7d; font-style: italic; }
+pre .hljs-meta, pre .hljs-meta .hljs-keyword, pre .hljs-symbol, pre .hljs-variable, pre .hljs-variable.language_, pre .hljs-params, pre .hljs-subst { color: #f29e7e; }
+pre .hljs-number, pre .hljs-literal, pre .hljs-bullet { color: #f0b37e; }
+pre .hljs-attr, pre .hljs-attribute, pre .hljs-property, pre .hljs-name, pre .hljs-section, pre .hljs-tag, pre .hljs-selector-class, pre .hljs-selector-id, pre .hljs-selector-attr, pre .hljs-selector-pseudo, pre .hljs-link { color: #a3c1ad; }
+pre .hljs-operator, pre .hljs-punctuation { color: #cbe0d5; }
+pre .hljs-addition { color: #a3c1ad; background: rgba(163, 193, 173, .14); }
+pre .hljs-deletion { color: #ee8c68; background: rgba(238, 140, 104, .14); }
+pre .hljs-emphasis { font-style: italic; }
+pre .hljs-strong { font-weight: 700; }
+@media print {
+  pre [class*="hljs-"] { color: #1f1713 !important; background: none !important; }
+}
+/* End syntax highlighting */
+/* End syntax highlighting */
+/* End syntax highlighting */
 </style>
 </head>
 <body>
@@ -154,24 +197,24 @@ footer{border-top:1px solid var(--line); margin-top:48px; padding:24px 0 40px; f
 <h2>Getting access to a cluster</h2>
 <h3>Human access to AWS</h3>
 <p>Use short-lived credentials from IAM Identity Center (SSO). Long-lived access keys on a laptop are the classic way credentials leak.</p>
-<pre data-lang="bash"><code>aws configure sso                       # once: creates a named profile
-aws sso login --profile dev
-export AWS_PROFILE=dev
-aws sts get-caller-identity             # always check who you are first</code></pre>
+<pre data-lang="bash"><code><span class="hljs-built_in">aws</span> configure sso                       <span class="hljs-comment"># once: creates a named profile</span>
+<span class="hljs-built_in">aws</span> sso login <span class="hljs-attr">--profile</span> dev
+<span class="hljs-built_in">export</span> AWS_PROFILE=dev
+<span class="hljs-built_in">aws</span> sts get-caller-identity             <span class="hljs-comment"># always check who you are first</span></code></pre>
 <h3>From AWS identity to Kubernetes permissions</h3>
 <p>EKS authenticates you with IAM, then maps your IAM principal to Kubernetes permissions. The current mechanism is <b>access entries</b>, managed through the EKS API. The older <code>aws-auth</code> ConfigMap is deprecated, so do not build new workflows on it.</p>
-<pre data-lang="bash"><code>aws eks update-kubeconfig --name dev-euw1 --region eu-west-1 --alias dev
-kubectl config get-contexts
-kubectl auth whoami
-kubectl auth can-i --list -n pricing
+<pre data-lang="bash"><code><span class="hljs-built_in">aws</span> eks update-kubeconfig <span class="hljs-attr">--name</span> dev-euw1 <span class="hljs-attr">--region</span> eu-west-1 --<span class="hljs-built_in">alias</span> dev
+<span class="hljs-built_in">kubectl</span> config get-contexts
+<span class="hljs-built_in">kubectl</span> auth <span class="hljs-built_in">whoami</span>
+<span class="hljs-built_in">kubectl</span> auth can-i <span class="hljs-attr">--list</span> <span class="hljs-attr">-n</span> pricing
 
-# platform side: grant a role edit rights in one namespace
-aws eks create-access-entry --cluster-name dev-euw1 \
-  --principal-arn arn:aws:iam::111122223333:role/pricing-devs
-aws eks associate-access-policy --cluster-name dev-euw1 \
-  --principal-arn arn:aws:iam::111122223333:role/pricing-devs \
-  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy \
-  --access-scope type=namespace,namespaces=pricing</code></pre>
+<span class="hljs-comment"># platform side: grant a role edit rights in one namespace</span>
+<span class="hljs-built_in">aws</span> eks create-access-entry <span class="hljs-attr">--cluster-name</span> dev-euw1 <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--principal-arn</span> arn:aws:iam::111122223333:role/pricing-devs
+<span class="hljs-built_in">aws</span> eks associate-access-policy <span class="hljs-attr">--cluster-name</span> dev-euw1 <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--principal-arn</span> arn:aws:iam::111122223333:role/pricing-devs <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--policy-arn</span> arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--access-scope</span> <span class="hljs-built_in">type</span>=namespace,namespaces=pricing</code></pre>
 <div class="tw"><table>
 <tr><th>Access policy</th><th>Roughly equals</th></tr>
 <tr><td><code>AmazonEKSClusterAdminPolicy</code></td><td><code>cluster-admin</code></td></tr>
@@ -195,18 +238,18 @@ aws eks associate-access-policy --cluster-name dev-euw1 \
 <tr><td>Permission boundary, SCP</td><td>Ceilings set by your organisation. They never grant, they only limit.</td></tr>
 </table></div>
 <p>Evaluation, simplified: an explicit <code>Deny</code> anywhere wins. Otherwise the action must be allowed by an identity or resource policy <i>and</i> fall inside every boundary and SCP. No matching allow means denied.</p>
-<pre data-lang="json"><code>{
-  "Version": "2012-10-17",
-  "Statement": [
-    { "Effect": "Allow",
-      "Action": ["s3:GetObject", "s3:PutObject"],
-      "Resource": "arn:aws:s3:::acme-pricing-snapshots/prod/*" },
-    { "Effect": "Allow",
-      "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::acme-pricing-snapshots",
-      "Condition": { "StringLike": { "s3:prefix": "prod/*" } } }
-  ]
-}</code></pre>
+<pre data-lang="json"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;Version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2012-10-17&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;Statement&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;Effect&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Allow&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;s3:GetObject&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;s3:PutObject&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Resource&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;arn:aws:s3:::acme-pricing-snapshots/prod/*&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;Effect&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Allow&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;s3:ListBucket&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Resource&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;arn:aws:s3:::acme-pricing-snapshots&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;Condition&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;StringLike&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;s3:prefix&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;prod/*&quot;</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
 <div class="note"><b>Reading AccessDenied</b><p>The error message names the principal, the action and usually the resource. Check all three against what you expected before changing a policy: very often the pod is simply not running as the role you think it is.</p></div>
 </section>
 
@@ -221,26 +264,26 @@ aws eks associate-access-policy --cluster-name dev-euw1 \
 <tr><td>Extras</td><td>Session tags (cluster, namespace, service account) usable in policies. Can chain to a role in another account.</td><td>Works on Fargate and on non-EKS clusters.</td></tr>
 <tr><td>Choose it</td><td>By default for new work on EC2-backed nodes.</td><td>On Fargate, or where it is already established.</td></tr>
 </table></div>
-<pre data-lang="bash"><code># Pod Identity
-aws eks create-pod-identity-association --cluster-name dev-euw1 \
-  --namespace pricing --service-account pricing-api \
-  --role-arn arn:aws:iam::111122223333:role/pricing-api</code></pre>
-<pre data-lang="json"><code>{ "Version": "2012-10-17",
-  "Statement": [{ "Effect": "Allow",
-    "Principal": { "Service": "pods.eks.amazonaws.com" },
-    "Action": ["sts:AssumeRole", "sts:TagSession"] }] }</code></pre>
-<pre data-lang="yaml"><code># IRSA
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: pricing-api
-  namespace: pricing
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::111122223333:role/pricing-api</code></pre>
+<pre data-lang="bash"><code><span class="hljs-comment"># Pod Identity</span>
+<span class="hljs-built_in">aws</span> eks create-pod-identity-association <span class="hljs-attr">--cluster-name</span> dev-euw1 <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--namespace</span> pricing <span class="hljs-attr">--service-account</span> pricing-api <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--role-arn</span> arn:aws:iam::111122223333:role/pricing-api</code></pre>
+<pre data-lang="json"><code><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;Version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2012-10-17&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;Statement&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;Effect&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Allow&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;Principal&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;Service&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;pods.eks.amazonaws.com&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;Action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;sts:AssumeRole&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;sts:TagSession&quot;</span><span class="hljs-punctuation">]</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span> <span class="hljs-punctuation">}</span></code></pre>
+<pre data-lang="yaml"><code><span class="hljs-comment"># IRSA</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">ServiceAccount</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-api</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">pricing</span>
+  <span class="hljs-attr">annotations:</span>
+    <span class="hljs-attr">eks.amazonaws.com/role-arn:</span> <span class="hljs-string">arn:aws:iam::111122223333:role/pricing-api</span></code></pre>
 <p>In both cases your code changes nothing. The AWS SDK's default credential chain finds the injected credentials and refreshes them. Do not construct clients with explicit keys, and do use a reasonably recent SDK.</p>
-<pre data-lang="bash"><code># debugging: which role is this pod really using?
-kubectl exec -n pricing deploy/pricing-api -- aws sts get-caller-identity
-kubectl describe pod -n pricing POD | grep -i -E "AWS_|serviceaccount"</code></pre>
+<pre data-lang="bash"><code><span class="hljs-comment"># debugging: which role is this pod really using?</span>
+<span class="hljs-built_in">kubectl</span> <span class="hljs-built_in">exec</span> <span class="hljs-attr">-n</span> pricing deploy/pricing-api -- aws sts get-caller-identity
+<span class="hljs-built_in">kubectl</span> describe pod <span class="hljs-attr">-n</span> pricing POD <span class="hljs-operator">|</span> <span class="hljs-built_in">grep</span> <span class="hljs-attr">-i</span> <span class="hljs-attr">-E</span> <span class="hljs-string">&quot;AWS_|serviceaccount&quot;</span></code></pre>
 <div class="warn"><b>Common mistakes</b><p>The Deployment does not set <code>serviceAccountName</code>, so the pod runs as <code>default</code>. The association or annotation was added after the pod started: restart it. The role's trust policy names a different namespace or service account. One role is shared by many services, so every service has every permission.</p></div>
 </section>
 
@@ -263,26 +306,26 @@ kubectl describe pod -n pricing POD | grep -i -E "AWS_|serviceaccount"</code></p
 <tr><td>Private access from another VPC or account</td><td>NLB plus a VPC endpoint service</td><td>PrivateLink.</td></tr>
 </table></div>
 <p>The <b>AWS Load Balancer Controller</b> (built into Auto Mode) turns these objects into load balancers. Use <b>IP target mode</b> so the balancer sends traffic straight to pod IPs, skipping an extra node hop.</p>
-<pre data-lang="yaml"><code>apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: pricing-api
-  namespace: pricing
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internal
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/healthcheck-path: /healthz
-    alb.ingress.kubernetes.io/group.name: internal-shared   # share one ALB across teams
-spec:
-  ingressClassName: alb
-  rules:
-    - host: pricing.dev.acme.internal
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend: { service: { name: pricing-api, port: { number: 80 } } }</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">networking.k8s.io/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Ingress</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-api</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">pricing</span>
+  <span class="hljs-attr">annotations:</span>
+    <span class="hljs-attr">alb.ingress.kubernetes.io/scheme:</span> <span class="hljs-string">internal</span>
+    <span class="hljs-attr">alb.ingress.kubernetes.io/target-type:</span> <span class="hljs-string">ip</span>
+    <span class="hljs-attr">alb.ingress.kubernetes.io/listen-ports:</span> <span class="hljs-string">&#x27;[{&quot;HTTPS&quot;:443}]&#x27;</span>
+    <span class="hljs-attr">alb.ingress.kubernetes.io/healthcheck-path:</span> <span class="hljs-string">/healthz</span>
+    <span class="hljs-attr">alb.ingress.kubernetes.io/group.name:</span> <span class="hljs-string">internal-shared</span>   <span class="hljs-comment"># share one ALB across teams</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">ingressClassName:</span> <span class="hljs-string">alb</span>
+  <span class="hljs-attr">rules:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">host:</span> <span class="hljs-string">pricing.dev.acme.internal</span>
+      <span class="hljs-attr">http:</span>
+        <span class="hljs-attr">paths:</span>
+          <span class="hljs-bullet">-</span> <span class="hljs-attr">path:</span> <span class="hljs-string">/</span>
+            <span class="hljs-attr">pathType:</span> <span class="hljs-string">Prefix</span>
+            <span class="hljs-attr">backend:</span> { <span class="hljs-attr">service:</span> { <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-api</span>, <span class="hljs-attr">port:</span> { <span class="hljs-attr">number:</span> <span class="hljs-number">80</span> } } }</code></pre>
 <p><b>ExternalDNS</b> usually creates the Route 53 record from the hostname, and ACM supplies the certificate. Each ALB costs money and takes minutes to create, so share them with ingress groups instead of one per service.</p>
 <h3>Zero-downtime deploys behind a load balancer</h3>
 <p>The load balancer and Kubernetes update on different clocks. Three settings close the gaps:</p>
@@ -309,9 +352,9 @@ spec:
 <tr><td><b>Fargate</b></td><td>One isolated micro-VM per pod, no nodes.</td><td>No DaemonSets, no EBS volumes, slower starts. Fits small or strongly isolated workloads.</td></tr>
 </table></div>
 <h3>What you control: requests, limits and scheduling</h3>
-<pre data-lang="yaml"><code>resources:
-  requests: { cpu: "500m", memory: "1Gi" }   # what the scheduler reserves, what you pay for
-  limits:   { memory: "1Gi" }                # memory limit = request; usually no CPU limit</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">resources:</span>
+  <span class="hljs-attr">requests:</span> { <span class="hljs-attr">cpu:</span> <span class="hljs-string">&quot;500m&quot;</span>, <span class="hljs-attr">memory:</span> <span class="hljs-string">&quot;1Gi&quot;</span> }   <span class="hljs-comment"># what the scheduler reserves, what you pay for</span>
+  <span class="hljs-attr">limits:</span>   { <span class="hljs-attr">memory:</span> <span class="hljs-string">&quot;1Gi&quot;</span> }                <span class="hljs-comment"># memory limit = request; usually no CPU limit</span></code></pre>
 <ul>
 <li><b>Requests drive everything</b>: scheduling, autoscaling and cost. Set them from measured usage, not guesses.</li>
 <li><b>Memory</b>: exceeding the limit gets the container OOM-killed. Set limit equal to request for predictable behaviour.</li>
@@ -321,19 +364,19 @@ spec:
 </ul>
 <h3>Surviving node churn</h3>
 <p>Nodes disappear: Spot interruptions, consolidation, upgrades, AMI rotation, hardware failure. Treat it as normal.</p>
-<pre data-lang="yaml"><code>apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata: { name: pricing-api, namespace: pricing }
-spec:
-  maxUnavailable: 1
-  selector: { matchLabels: { app: pricing-api } }
----
-# in the pod template
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: topology.kubernetes.io/zone
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector: { matchLabels: { app: pricing-api } }</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">policy/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">PodDisruptionBudget</span>
+<span class="hljs-attr">metadata:</span> { <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-api</span>, <span class="hljs-attr">namespace:</span> <span class="hljs-string">pricing</span> }
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">maxUnavailable:</span> <span class="hljs-number">1</span>
+  <span class="hljs-attr">selector:</span> { <span class="hljs-attr">matchLabels:</span> { <span class="hljs-attr">app:</span> <span class="hljs-string">pricing-api</span> } }
+<span class="hljs-meta">---</span>
+<span class="hljs-comment"># in the pod template</span>
+<span class="hljs-attr">topologySpreadConstraints:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">maxSkew:</span> <span class="hljs-number">1</span>
+    <span class="hljs-attr">topologyKey:</span> <span class="hljs-string">topology.kubernetes.io/zone</span>
+    <span class="hljs-attr">whenUnsatisfiable:</span> <span class="hljs-string">DoNotSchedule</span>
+    <span class="hljs-attr">labelSelector:</span> { <span class="hljs-attr">matchLabels:</span> { <span class="hljs-attr">app:</span> <span class="hljs-string">pricing-api</span> } }</code></pre>
 <ul>
 <li>Run at least two replicas, three for anything important, spread across zones.</li>
 <li>Define a PodDisruptionBudget. A PDB that allows zero disruptions (for example <code>minAvailable</code> equal to replicas) blocks node upgrades and makes you unpopular.</li>
@@ -360,25 +403,25 @@ topologySpreadConstraints:
 <li><b>Lifecycle policies</b> to expire old images, otherwise storage grows without bound.</li>
 <li><b>Pull-through cache</b> for public registries, to avoid rate limits and outages you do not control.</li>
 </ul>
-<pre data-lang="bash"><code>aws ecr get-login-password --region eu-west-1 | \
-  docker login --username AWS --password-stdin 111122223333.dkr.ecr.eu-west-1.amazonaws.com
+<pre data-lang="bash"><code><span class="hljs-built_in">aws</span> ecr get-login-password <span class="hljs-attr">--region</span> eu-west-1 <span class="hljs-operator">|</span> \
+  docker login <span class="hljs-attr">--username</span> AWS <span class="hljs-attr">--password-stdin</span> 111122223333.dkr.ecr.eu-west-1.amazonaws.com
 
-docker buildx build --platform linux/amd64,linux/arm64 \
-  -t 111122223333.dkr.ecr.eu-west-1.amazonaws.com/pricing-api:$(git rev-parse --short HEAD) \
-  --push .</code></pre>
+<span class="hljs-built_in">docker</span> buildx build <span class="hljs-attr">--platform</span> linux/amd64,linux/arm64 <span class="hljs-operator">\</span>
+  <span class="hljs-attr">-t</span> 111122223333.dkr.ecr.eu-west-1.amazonaws.com/pricing-api:$(git rev-parse <span class="hljs-attr">--short</span> HEAD) <span class="hljs-operator">\</span>
+  <span class="hljs-attr">--push</span> .</code></pre>
 <h3>CI without stored AWS keys</h3>
 <p>Let the pipeline assume a role through OIDC federation. No secrets to rotate, and the trust policy can restrict the role to one repository and branch.</p>
-<pre data-lang="yaml"><code># GitHub Actions
-permissions:
-  id-token: write
-  contents: read
-steps:
-  - uses: actions/checkout@v4
-  - uses: aws-actions/configure-aws-credentials@v4
-    with:
-      role-to-assume: arn:aws:iam::111122223333:role/gha-pricing-api-ecr-push
-      aws-region: eu-west-1
-  - uses: aws-actions/amazon-ecr-login@v2</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-comment"># GitHub Actions</span>
+<span class="hljs-attr">permissions:</span>
+  <span class="hljs-attr">id-token:</span> <span class="hljs-string">write</span>
+  <span class="hljs-attr">contents:</span> <span class="hljs-string">read</span>
+<span class="hljs-attr">steps:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">uses:</span> <span class="hljs-string">actions/checkout@v4</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">uses:</span> <span class="hljs-string">aws-actions/configure-aws-credentials@v4</span>
+    <span class="hljs-attr">with:</span>
+      <span class="hljs-attr">role-to-assume:</span> <span class="hljs-string">arn:aws:iam::111122223333:role/gha-pricing-api-ecr-push</span>
+      <span class="hljs-attr">aws-region:</span> <span class="hljs-string">eu-west-1</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">uses:</span> <span class="hljs-string">aws-actions/amazon-ecr-login@v2</span></code></pre>
 <h3>Deploying</h3>
 <div class="flow">
 <span class="n">CI<small>test, build, scan, push</small></span><span class="a">→</span>
@@ -388,8 +431,8 @@ steps:
 </div>
 <p>Prefer GitOps over pipelines that run <code>kubectl apply</code> or <code>helm upgrade</code>: the pipeline needs no cluster credentials, drift is visible, and rollback is a revert. AWS offers managed Argo CD as an EKS Capability if your platform team would rather not run it. Guide 1 in this series covers Argo CD in depth.</p>
 <p>Package with <b>Kustomize</b> for your own services (base plus per-environment overlays) or <b>Helm</b> when distributing a chart to others. Whichever you pick, render locally and validate before pushing:</p>
-<pre data-lang="bash"><code>kustomize build overlays/dev | kubectl apply --dry-run=server -f -
-kubectl diff -k overlays/dev</code></pre>
+<pre data-lang="bash"><code><span class="hljs-built_in">kustomize</span> build overlays/dev <span class="hljs-operator">|</span> <span class="hljs-built_in">kubectl</span> apply <span class="hljs-attr">--dry-run</span>=server <span class="hljs-attr">-f</span> -
+<span class="hljs-built_in">kubectl</span> diff <span class="hljs-attr">-k</span> overlays/dev</code></pre>
 </section>
 
 <section>
@@ -428,15 +471,15 @@ kubectl diff -k overlays/dev</code></pre>
 <tr><td>Secrets Store CSI Driver with the AWS provider</td><td>Mounts the secret as a file in the pod.</td><td>No Secret object needed. The app must read files and handle rotation.</td></tr>
 <tr><td>SDK call at start-up</td><td>The app reads Secrets Manager directly using its pod role.</td><td>Nothing stored in the cluster. Couples code to AWS and needs caching.</td></tr>
 </table></div>
-<pre data-lang="yaml"><code>apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata: { name: pricing-db, namespace: pricing }
-spec:
-  refreshInterval: 1h
-  secretStoreRef: { name: aws-secrets-manager, kind: ClusterSecretStore }
-  target: { name: pricing-db }
-  dataFrom:
-    - extract: { key: prod/pricing/db }</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">external-secrets.io/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">ExternalSecret</span>
+<span class="hljs-attr">metadata:</span> { <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-db</span>, <span class="hljs-attr">namespace:</span> <span class="hljs-string">pricing</span> }
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">refreshInterval:</span> <span class="hljs-string">1h</span>
+  <span class="hljs-attr">secretStoreRef:</span> { <span class="hljs-attr">name:</span> <span class="hljs-string">aws-secrets-manager</span>, <span class="hljs-attr">kind:</span> <span class="hljs-string">ClusterSecretStore</span> }
+  <span class="hljs-attr">target:</span> { <span class="hljs-attr">name:</span> <span class="hljs-string">pricing-db</span> }
+  <span class="hljs-attr">dataFrom:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">extract:</span> { <span class="hljs-attr">key:</span> <span class="hljs-string">prod/pricing/db</span> }</code></pre>
 <p>Prefer mounting secrets as files over environment variables for anything sensitive: env vars leak into crash dumps, debug endpoints and child processes. Plan for rotation: either reload on file change or restart on Secret change (tools such as Reloader do this).</p>
 </section>
 
@@ -463,15 +506,15 @@ spec:
 <tr><td>Intermittent timeouts to AWS services or other pods</td><td>DNS throttling, connection tracking exhaustion, security groups, network policy.</td><td>CoreDNS metrics, VPC flow logs.</td></tr>
 <tr><td><code>Evicted</code></td><td>Node under memory or disk pressure, often from pods with no requests or large <code>emptyDir</code> usage.</td><td>Node conditions, ephemeral storage requests.</td></tr>
 </table></div>
-<pre data-lang="bash"><code>kubectl get pods -n pricing -o wide
-kubectl describe pod -n pricing POD                     # read the Events section first
-kubectl logs -n pricing POD -c app --previous --tail=200
-kubectl get events -n pricing --sort-by=.lastTimestamp | tail -30
-kubectl top pod -n pricing --containers
-kubectl debug -n pricing -it POD --image=nicolaka/netshoot --target=app   # ephemeral debug container
-kubectl port-forward -n pricing svc/pricing-api 8080:80
-kubectl rollout status deploy/pricing-api -n pricing
-kubectl rollout undo deploy/pricing-api -n pricing      # emergency only: GitOps will revert it</code></pre>
+<pre data-lang="bash"><code><span class="hljs-built_in">kubectl</span> get pods <span class="hljs-attr">-n</span> pricing <span class="hljs-attr">-o</span> wide
+<span class="hljs-built_in">kubectl</span> describe pod <span class="hljs-attr">-n</span> pricing POD                     <span class="hljs-comment"># read the Events section first</span>
+<span class="hljs-built_in">kubectl</span> logs <span class="hljs-attr">-n</span> pricing POD <span class="hljs-attr">-c</span> app <span class="hljs-attr">--previous</span> --<span class="hljs-built_in">tail</span>=200
+<span class="hljs-built_in">kubectl</span> get events <span class="hljs-attr">-n</span> pricing <span class="hljs-attr">--sort-by</span>=.lastTimestamp <span class="hljs-operator">|</span> <span class="hljs-built_in">tail</span> -30
+<span class="hljs-built_in">kubectl</span> top pod <span class="hljs-attr">-n</span> pricing <span class="hljs-attr">--containers</span>
+<span class="hljs-built_in">kubectl</span> debug <span class="hljs-attr">-n</span> pricing <span class="hljs-attr">-it</span> POD <span class="hljs-attr">--image</span>=nicolaka/netshoot <span class="hljs-attr">--target</span>=app   <span class="hljs-comment"># ephemeral debug container</span>
+<span class="hljs-built_in">kubectl</span> port-forward <span class="hljs-attr">-n</span> pricing svc/pricing-api 8080:80
+<span class="hljs-built_in">kubectl</span> rollout status deploy/pricing-api <span class="hljs-attr">-n</span> pricing
+<span class="hljs-built_in">kubectl</span> rollout undo deploy/pricing-api <span class="hljs-attr">-n</span> pricing      <span class="hljs-comment"># emergency only: GitOps will revert it</span></code></pre>
 </section>
 
 <section>
@@ -488,12 +531,12 @@ kubectl rollout undo deploy/pricing-api -n pricing      # emergency only: GitOps
 <li>Cluster audit logs are on, and GuardDuty's EKS protections are enabled.</li>
 <li>The cluster API endpoint is private or restricted by CIDR.</li>
 </ul>
-<pre data-lang="yaml"><code>securityContext:                 # container level
-  runAsNonRoot: true
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-  capabilities: { drop: ["ALL"] }
-  seccompProfile: { type: RuntimeDefault }</code></pre>
+<pre data-lang="yaml"><code><span class="hljs-attr">securityContext:</span>                 <span class="hljs-comment"># container level</span>
+  <span class="hljs-attr">runAsNonRoot:</span> <span class="hljs-literal">true</span>
+  <span class="hljs-attr">allowPrivilegeEscalation:</span> <span class="hljs-literal">false</span>
+  <span class="hljs-attr">readOnlyRootFilesystem:</span> <span class="hljs-literal">true</span>
+  <span class="hljs-attr">capabilities:</span> { <span class="hljs-attr">drop:</span> [<span class="hljs-string">&quot;ALL&quot;</span>] }
+  <span class="hljs-attr">seccompProfile:</span> { <span class="hljs-attr">type:</span> <span class="hljs-string">RuntimeDefault</span> }</code></pre>
 </section>
 
 <section>
@@ -512,9 +555,9 @@ kubectl rollout undo deploy/pricing-api -n pricing      # emergency only: GitOps
 <li><b>Client libraries and operators</b> compatible with the new version.</li>
 <li><b>Images that run on the current node OS.</b> Amazon Linux 2 AMIs are no longer published for recent versions: nodes are Amazon Linux 2023 or Bottlerocket, with cgroup v2 and containerd 2.x. Very old runtimes and agents can break on that.</li>
 </ul>
-<pre data-lang="bash"><code>aws eks describe-cluster --name dev-euw1 --query cluster.version
-aws eks list-insights --cluster-name dev-euw1          # upgrade readiness findings
-kubectl get nodes -o wide                               # node versions during a rollout</code></pre>
+<pre data-lang="bash"><code><span class="hljs-built_in">aws</span> eks describe-cluster <span class="hljs-attr">--name</span> dev-euw1 <span class="hljs-attr">--query</span> cluster.version
+<span class="hljs-built_in">aws</span> eks list-insights <span class="hljs-attr">--cluster-name</span> dev-euw1          <span class="hljs-comment"># upgrade readiness findings</span>
+<span class="hljs-built_in">kubectl</span> get nodes <span class="hljs-attr">-o</span> wide                               <span class="hljs-comment"># node versions during a rollout</span></code></pre>
 </section>
 
 <section>
@@ -564,21 +607,21 @@ kubectl get nodes -o wide                               # node versions during a
 <li>Resource tags and labels for ownership and cost allocation.</li>
 </ul>
 <h3>AWS CLI and kubectl quick reference</h3>
-<pre data-lang="bash"><code>aws sts get-caller-identity
-aws eks list-clusters
-aws eks update-kubeconfig --name CLUSTER --alias ALIAS
-aws eks list-access-entries --cluster-name CLUSTER
-aws eks list-pod-identity-associations --cluster-name CLUSTER
-aws eks list-addons --cluster-name CLUSTER
-aws ecr describe-images --repository-name pricing-api --query 'sort_by(imageDetails,&amp;imagePushedAt)[-5:].imageTags'
-aws logs tail /aws/containerinsights/CLUSTER/application --follow
-aws elbv2 describe-target-health --target-group-arn ARN
+<pre data-lang="bash"><code><span class="hljs-built_in">aws</span> sts get-caller-identity
+<span class="hljs-built_in">aws</span> eks list-clusters
+<span class="hljs-built_in">aws</span> eks update-kubeconfig <span class="hljs-attr">--name</span> CLUSTER --<span class="hljs-built_in">alias</span> ALIAS
+<span class="hljs-built_in">aws</span> eks list-access-entries <span class="hljs-attr">--cluster-name</span> CLUSTER
+<span class="hljs-built_in">aws</span> eks list-pod-identity-associations <span class="hljs-attr">--cluster-name</span> CLUSTER
+<span class="hljs-built_in">aws</span> eks list-addons <span class="hljs-attr">--cluster-name</span> CLUSTER
+<span class="hljs-built_in">aws</span> ecr describe-images <span class="hljs-attr">--repository-name</span> pricing-api <span class="hljs-attr">--query</span> <span class="hljs-string">&#x27;sort_by(imageDetails,&amp;imagePushedAt)[-5:].imageTags&#x27;</span>
+<span class="hljs-built_in">aws</span> logs <span class="hljs-built_in">tail</span> /aws/containerinsights/CLUSTER/application <span class="hljs-attr">--follow</span>
+<span class="hljs-built_in">aws</span> elbv2 describe-target-health <span class="hljs-attr">--target-group-arn</span> ARN
 
-kubectl get deploy,po,svc,ing,hpa,pdb -n NAMESPACE
-kubectl get pod POD -o jsonpath='{.spec.serviceAccountName}'
-kubectl get nodes -L topology.kubernetes.io/zone,karpenter.sh/capacity-type,kubernetes.io/arch
-kubectl api-resources | grep -i -E "karpenter|eks.amazonaws"
-kubectl explain deployment.spec.strategy</code></pre>
+<span class="hljs-built_in">kubectl</span> get deploy,po,svc,ing,hpa,pdb <span class="hljs-attr">-n</span> NAMESPACE
+<span class="hljs-built_in">kubectl</span> get pod POD <span class="hljs-attr">-o</span> jsonpath=<span class="hljs-string">&#x27;{.spec.serviceAccountName}&#x27;</span>
+<span class="hljs-built_in">kubectl</span> get nodes <span class="hljs-attr">-L</span> topology.kubernetes.io/zone,karpenter.sh/capacity-type,kubernetes.io/arch
+<span class="hljs-built_in">kubectl</span> api-resources <span class="hljs-operator">|</span> <span class="hljs-built_in">grep</span> <span class="hljs-attr">-i</span> <span class="hljs-attr">-E</span> <span class="hljs-string">&quot;karpenter|eks.amazonaws&quot;</span>
+<span class="hljs-built_in">kubectl</span> explain deployment.spec.strategy</code></pre>
 </section>
 
 <footer>Part of a three-guide series: Argo CD, AWS and EKS for developers, Kafka for event-driven trading systems. Self-contained file: open in any browser, works offline.</footer>
