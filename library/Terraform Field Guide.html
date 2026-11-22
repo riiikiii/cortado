@@ -70,11 +70,12 @@
     .node.plan { background: #493568; }
     .node.applied { background: #263e37; color: #c9f5dd; border-color: #527b67; }
     .flow-label { color: #d5c9e7; text-align: center; font: .73rem/1.45 var(--mono); padding: .39rem 0; }
-    .layout { display: grid; grid-template-columns: minmax(195px, 228px) minmax(0, 850px); gap: clamp(2rem, 6vw, 6rem); align-items: start; padding: 3rem 0 5rem; }
-    .toc { position: sticky; top: 1.2rem; border-left: 2px solid var(--line); padding-left: .95rem; }
-    .toc p { margin: 0 0 .42rem; font-weight: 720; font-size: .86rem; }
-    .toc ul { list-style: none; padding: 0; margin: 0; }
-    .toc a { display: block; font-size: .86rem; padding: .26rem 0; color: var(--muted); line-height: 1.4; text-decoration: none; }
+    .layout { display: block; max-width: 850px; padding: 2rem 0 5rem; }
+    .toc { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: .65rem; padding: .95rem 1.15rem; background: var(--surface); margin: 0 0 2.25rem; }
+    .toc p { margin: 0 0 .5rem; font-weight: 720; font-size: .84rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+    .toc ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .15rem 1.2rem; }
+    .toc li + li { margin-top: 0; }
+    .toc a { display: block; font-size: .9rem; padding: .26rem 0; color: var(--muted); line-height: 1.4; text-decoration: none; }
     .toc a:hover, .toc a:focus-visible { text-decoration: underline; color: var(--accent); }
     section { scroll-margin-top: 1.3rem; }
     main > section + section { border-top: 1px solid var(--line); margin-top: 3.4rem; padding-top: 2.65rem; }
@@ -121,9 +122,7 @@
       .shell { width: min(100% - 2rem, 730px); }
       .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
       .model { width: min(100%, 470px); }
-      .layout { grid-template-columns: minmax(0, 1fr); gap: 2.15rem; padding-top: 1.5rem; }
-      .toc { position: static; border: 1px solid var(--line); border-radius: .65rem; padding: .75rem 1rem; background: var(--surface); }
-      .toc ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: .7rem; }
+      .layout { padding-top: 1.5rem; }
     }
     @media (max-width: 420px) {
       .grid { grid-template-columns: 1fr; }

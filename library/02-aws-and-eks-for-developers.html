@@ -10,23 +10,21 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:16px}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:1fr;gap:0}
-@media (min-width:1040px){.wrap{grid-template-columns:250px minmax(0,1fr);gap:48px}}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px}
 header.hero{border-bottom:1px solid var(--line);padding:44px 20px 32px;background:linear-gradient(180deg,var(--accent-soft),transparent)}
-.hero-in{max-width:1180px;margin:0 auto}
+.hero-in{max-width:880px;margin:0 auto}
 .tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px}
 h1,h2,h3{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.2;text-wrap:balance}
 h1{font-size:clamp(30px,5vw,46px);margin:0 0 12px;letter-spacing:-.01em}
 .lede{font-size:18px;color:var(--muted);max-width:760px;margin:0}
 .meta{margin-top:16px;font-size:13px;color:var(--muted)}
-nav.toc{font-size:14px;padding:24px 0}
-@media (min-width:1040px){nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:32px 0}}
-nav.toc summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--accent)}
-nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:t}
-nav.toc li{counter-increment:t}
-nav.toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line)}
-nav.toc a::before{content:counter(t) ". "}
-nav.toc a:hover,nav.toc a.on{color:var(--fg);border-left-color:var(--accent)}
+nav.toc{font-size:14px;margin:28px 0 4px;padding:16px 20px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+nav.toc summary{cursor:pointer;font-weight:700;padding:2px 0;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+nav.toc ol{list-style:none;margin:12px 0 0;padding:0;counter-reset:t;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:2px 18px;max-width:none}
+nav.toc li{counter-increment:t;margin:0}
+nav.toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line);border-radius:0 4px 4px 0}
+nav.toc a::before{content:counter(t) ". ";color:var(--accent);font-weight:600}
+nav.toc a:hover{color:var(--fg);border-left-color:var(--accent);background:var(--accent-soft)}
 main{padding:8px 0 80px;min-width:0;counter-reset:sec}
 section{padding-top:28px}
 h2{font-size:28px;margin:28px 0 12px;padding-top:20px;border-top:1px solid var(--line);counter-increment:sec}
@@ -76,7 +74,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:16px;font-si
 <p class="meta">Written November 2026. EKS moves quickly: check versions and pricing against AWS documentation before relying on a specific number.</p>
 </div></header>
 <div class="wrap">
-<nav class="toc"><details id="tocd"><summary>Contents</summary><ol id="toc"></ol></details></nav>
+<nav class="toc" aria-label="Contents"><details id="tocd" open><summary>Contents</summary><ol id="toc"></ol></details></nav>
 <main>
 <section>
 <h2>The mental model</h2>
@@ -543,27 +541,18 @@ kubectl explain deployment.spec.strategy</code></pre>
 </div>
 <script>
 (function(){
-var toc=document.getElementById('toc'),links=[];
+var toc=document.getElementById('toc');
 document.querySelectorAll('main h2').forEach(function(h,i){
   if(!h.id)h.id='s'+(i+1);
   var li=document.createElement('li'),a=document.createElement('a');
-  a.href='#'+h.id;a.textContent=h.textContent;li.appendChild(a);toc.appendChild(li);links.push(a);
+  a.href='#'+h.id;a.textContent=h.textContent;li.appendChild(a);toc.appendChild(li);
 });
-var d=document.getElementById('tocd'),mq=window.matchMedia('(min-width:1040px)');
-function setOpen(){d.open=mq.matches}setOpen();
-if(mq.addEventListener)mq.addEventListener('change',setOpen);
-toc.addEventListener('click',function(){if(!mq.matches)d.open=false});
 document.querySelectorAll('pre').forEach(function(p){
   var b=document.createElement('button');b.type='button';b.textContent='Copy';
   b.onclick=function(){var t=p.querySelector('code').innerText;
     if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)})}};
   p.appendChild(b);
 });
-if('IntersectionObserver' in window){
-  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){
-    links.forEach(function(l){l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'0px 0px -75% 0px'});
-  document.querySelectorAll('main h2').forEach(function(h){io.observe(h)});
-}
 })();
 </script>
 </body>
