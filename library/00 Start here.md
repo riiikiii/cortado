@@ -8,7 +8,7 @@ Welcome to your Cortado library. Everything here is published from the `library/
 ## Adding lessons
 
 1. Put Markdown notes (`.md`) or standalone HTML guides (`.html`) in `library/`. Keep a guide's images, stylesheets and scripts next to it, and link to them with relative paths.
-2. Each top-level folder becomes a **collection** on the Library screen.
+2. Group lessons into folders. They show in the sidebar, and lessons are read folder by folder.
 3. Number files to set the reading order: `01 Introduction.md`, `02 Basics.md`.
 4. Commit and push to `main`. The site redeploys in about a minute, and Cortado downloads only the files that changed the next time it's opened.
 

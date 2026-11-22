@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collections, lessonTitle, neighbours, readingOrder, sections, startHere } from './tree';
+import { lessonTitle, neighbours, readingOrder } from './tree';
 
 const paths = [
   'Welcome.md',
@@ -31,30 +31,6 @@ describe('library tree', () => {
     expect(neighbours(order, 'Welcome.md').next).toBe('Course/Extra/Deep dive.md');
     expect(neighbours(order, 'Notes/Ideas.md').next).toBeUndefined();
     expect(neighbours(order, 'missing.md')).toEqual({});
-  });
-
-  it('groups top-level folders into collections and loose files into Notes', () => {
-    const c = collections(paths);
-    expect(c.map((x) => [x.name, x.lessons.length])).toEqual([
-      ['Course', 4],
-      ['Notes', 1],
-      ['Other notes', 1],
-    ]);
-    expect(c[2].path).toBe('');
-  });
-
-  it('splits a collection into sections by sub-folder', () => {
-    expect(sections(paths, 'Course')).toEqual([
-      { path: 'Course/Extra', name: 'Extra', lessons: ['Course/Extra/Deep dive.md'] },
-      { path: 'Course', name: '', lessons: ['Course/1 Intro.html', 'Course/2 Basics.md', 'Course/10 Wrap up.md'] },
-    ]);
-    expect(sections(paths, '')).toEqual([{ path: '', name: '', lessons: ['Welcome.md'] }]);
-  });
-
-  it('starts at a top-level welcome note when there is one', () => {
-    expect(startHere(readingOrder(paths))).toBe('Welcome.md');
-    expect(startHere(['A/one.md', 'B/two.md'])).toBe('A/one.md');
-    expect(startHere([])).toBeUndefined();
   });
 
   it('pulls lesson numbers out of titles', () => {

@@ -13,6 +13,9 @@ export const isLesson = (path: string) => !isHidden(path) && LESSON_KINDS.has(ki
 
 const ENTRY = /^(0+[\s._-]*.*|welcome|read ?me|start here|start|index|introduction|intro|overview|about)$/i;
 
+/** A top-level Welcome, README, Index or "00 …" note: the natural place to start. */
+const isEntry = (p: string) => !p.includes('/') && ENTRY.test(p.slice(0, p.lastIndexOf('.')));
+
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 /** Folders first, then files, each in natural order ("2 Intro" before "10 Next"). */
@@ -58,55 +61,6 @@ export function neighbours(order: string[], path: string): { prev?: string; next
   const i = order.indexOf(path);
   if (i < 0) return {};
   return { prev: order[i - 1], next: order[i + 1] };
-}
-
-export interface Collection {
-  /** Folder path, or '' for the documents at the top of the vault. */
-  path: string;
-  name: string;
-  lessons: string[];
-}
-
-/**
- * Top-level folders become collections ("courses"). Documents sitting at the top of the vault
- * are grouped into one collection with an empty path. Collections with no lessons are dropped.
- */
-export function collections(paths: string[]): Collection[] {
-  const tree = buildTree(paths.filter(isLesson));
-  const out: Collection[] = [];
-  const loose: string[] = [];
-  for (const n of tree) {
-    if (n.children) out.push({ path: n.path, name: n.name, lessons: flatten(n.children) });
-    else loose.push(n.path);
-  }
-  if (loose.length) out.push({ path: '', name: 'Other notes', lessons: loose });
-  return out.filter((c) => c.lessons.length);
-}
-
-/** The lessons inside `folder` (recursively), grouped by the sub-folder they live in. */
-export function sections(paths: string[], folder: string): { path: string; name: string; lessons: string[] }[] {
-  const prefix = folder ? `${folder}/` : '';
-  const inside = paths.filter((p) => isLesson(p) && p.startsWith(prefix) && (folder || !p.includes('/')));
-  const groups = new Map<string, string[]>();
-  for (const p of readingOrder(inside)) {
-    const dir = dirName(p);
-    const list = groups.get(dir) ?? [];
-    list.push(p);
-    groups.set(dir, list);
-  }
-  return [...groups].map(([dir, lessons]) => ({
-    path: dir,
-    name: dir === folder ? '' : dir.slice(prefix.length),
-    lessons,
-  }));
-}
-
-/** A top-level Welcome, README, Index or "00 …" note: the natural place to start. */
-const isEntry = (p: string) => !p.includes('/') && ENTRY.test(p.slice(0, p.lastIndexOf('.')));
-
-/** Where a newcomer should begin: the welcome note if there is one, else the first lesson. */
-export function startHere(order: string[]): string | undefined {
-  return order.find(isEntry) ?? order[0];
 }
 
 /** Strip a leading "01 ", "1. ", "02-" style number so lesson titles read naturally. */
