@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0f766e">
+<title>Designing Java microservices with Spring Boot and Kafka</title>
+<style>
+:root{
+  --bg:#f3f9f8; --surface:#ffffff; --surface-2:#e8f4f2; --surface-3:#d7ede9;
+  --ink:#05302d; --text:#1b3b38; --muted:#56716e; --line:#cde4e0;
+  --t900:#042f2e; --t800:#115e59; --t700:#0f766e; --t600:#0d9488; --t500:#14b8a6;
+  --t400:#2dd4bf; --t300:#5eead4; --t200:#99f6e4; --t100:#ccfbf1; --t50:#f0fdfa;
+  --coral:#d4553a; --coral-bg:#fdf1ed; --coral-line:#f3c7ba;
+  --code-bg:#052624; --code-text:#d9f7f2; --code-line:#0e3d3a;
+  --link:#0f766e;
+  --shadow:0 1px 2px rgba(4,47,46,.06), 0 6px 20px rgba(4,47,46,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --svg-node:#ffffff; --svg-node-2:#e8f4f2; --svg-stroke:#0f766e; --svg-text:#05302d; --svg-muted:#56716e; --svg-accent:#14b8a6; --svg-db:#ccfbf1; --svg-warn:#d4553a;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#031b1a; --surface:#062725; --surface-2:#0a3431; --surface-3:#0f413d;
+    --ink:#e8fffb; --text:#cfeee9; --muted:#8db3ae; --line:#16504b;
+    --coral:#ff8a6b; --coral-bg:#2a1714; --coral-line:#5a2a20;
+    --code-bg:#021413; --code-line:#0c2f2c;
+    --link:#5eead4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --svg-node:#082f2d; --svg-node-2:#0b3936; --svg-stroke:#2dd4bf; --svg-text:#e8fffb; --svg-muted:#8db3ae; --svg-accent:#5eead4; --svg-db:#0f4a45; --svg-warn:#ff8a6b;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){ body{font-size:17px} }
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+img,svg{max-width:100%}
+::selection{background:var(--t200); color:var(--t900)}
+
+/* progress */
+#progress{position:fixed; top:0; left:0; height:4px; width:0; z-index:60; background:linear-gradient(90deg,var(--t500),var(--t300)); box-shadow:0 0 8px rgba(20,184,166,.6); transition:width .1s linear}
+
+/* hero */
+.hero{position:relative; overflow:hidden; color:#eafffb; background:radial-gradient(1200px 500px at 85% -10%, rgba(94,234,212,.35), transparent 60%), linear-gradient(140deg,#031f1e 0%, #0b4a46 45%, #0f766e 80%, #14b8a6 120%); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
+.hero .net{position:absolute; inset:0; opacity:.22; pointer-events:none}
+.hero-inner{position:relative; max-width:760px; margin:0 auto}
+.kicker{display:inline-flex; gap:8px; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--t200); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); padding:6px 12px; border-radius:999px}
+.hero h1{font-family:var(--serif); font-weight:700; font-size:clamp(38px,7.4vw,58px); line-height:1.05; margin:18px 0 14px; letter-spacing:-.01em; color:#fff}
+.hero h1 em{font-style:italic; color:var(--t300)}
+.hero p.lede{font-size:20px; line-height:1.55; color:#d3f6f0; max-width:620px; margin:0 0 22px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font-size:14px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); color:#eafffb; white-space:nowrap}
+
+/* layout */
+main{max-width:740px; margin:0 auto; padding:0 22px 120px}
+@media (min-width:1100px){ main{margin-left:max(320px, calc(50vw - 370px + 140px)); margin-right:auto} .hero-inner{margin-left:max(298px, calc(50vw - 380px + 140px))} }
+section{scroll-margin-top:16px}
+h2,h3,h4{color:var(--ink); line-height:1.2}
+h2{font-family:var(--serif); font-size:31px; margin:56px 0 12px; letter-spacing:-.005em}
+h2 .num{display:inline-block; font-family:var(--sans); font-size:14px; font-weight:800; letter-spacing:.06em; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 8px; vertical-align:6px; margin-right:10px}
+@media (prefers-color-scheme: dark){ h2 .num{background:var(--surface-3); color:var(--t300)} }
+h3{font-size:21px; margin:32px 0 8px}
+p{margin:0 0 16px}
+ul,ol{padding-left:1.25em; margin:0 0 16px}
+li{margin:5px 0}
+strong{color:var(--ink)}
+hr{border:0; border-top:1px solid var(--line); margin:40px 0}
+.lead{font-size:20px; color:var(--ink)}
+.small{font-size:15px; color:var(--muted)}
+code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; word-break:break-word}
+
+/* how to read + level map */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 22px; margin:22px 0}
+.legend{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 18px; margin-top:10px}
+.legend div{display:flex; gap:10px; align-items:flex-start; font-size:15.5px; line-height:1.4}
+.legend .ico{flex:0 0 28px; height:28px; border-radius:8px; display:grid; place-items:center; font-size:15px}
+@media (max-width:520px){ .legend{grid-template-columns:1fr} }
+.climb{list-style:none; padding:0; margin:26px 0 8px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; position:relative}
+.climb::before{content:""; position:absolute; left:10%; right:10%; top:27px; height:3px; background:linear-gradient(90deg,var(--t200),var(--t600)); border-radius:3px}
+.climb li{position:relative; text-align:center; margin:0}
+.climb a{display:block; text-decoration:none; color:var(--text); padding:0 2px; min-height:44px}
+.climb .dot{width:56px; height:56px; border-radius:50%; margin:0 auto 8px; display:grid; place-items:center; font-weight:800; font-size:20px; color:#fff; background:var(--t700); border:4px solid var(--bg); box-shadow:0 0 0 2px var(--t300); position:relative}
+.climb li:nth-child(1) .dot{background:#5fb8ab} .climb li:nth-child(2) .dot{background:#2a9d8f} .climb li:nth-child(3) .dot{background:#14867a} .climb li:nth-child(4) .dot{background:#0f6b62} .climb li:nth-child(5) .dot{background:linear-gradient(135deg,#042f2e,#0f766e); box-shadow:0 0 0 2px var(--t400), 0 0 16px rgba(45,212,191,.6)}
+.climb .lv{display:block; font-size:12px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--t700)}
+@media (prefers-color-scheme: dark){ .climb .lv{color:var(--t300)} }
+.climb .nm{display:block; font-weight:700; color:var(--ink); font-size:15.5px; line-height:1.2}
+.climb .mins{display:block; font-size:13px; color:var(--muted)}
+@media (max-width:560px){ .climb{grid-template-columns:1fr; gap:4px} .climb::before{left:27px; right:auto; top:28px; bottom:28px; width:3px; height:auto; background:linear-gradient(180deg,var(--t200),var(--t600))} .climb a{display:flex; gap:14px; align-items:center; text-align:left; padding:6px 0} .climb .dot{margin:0; flex:0 0 56px} }
+
+/* level banners */
+.level{margin:72px -22px 8px; padding:34px 22px 28px; color:#eafffb; position:relative; overflow:hidden; background:linear-gradient(135deg,#042f2e,#0f766e)}
+@media (min-width:784px){ .level{margin-left:0; margin-right:0; border-radius:20px} }
+.level::after{content:attr(data-n); position:absolute; right:-6px; top:-34px; font-family:var(--serif); font-size:180px; font-weight:700; line-height:1; color:rgba(255,255,255,.07)}
+.level .tag{font-size:13px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--t200)}
+.level h2{color:#fff; margin:6px 0 10px; font-size:34px}
+.level p{color:#d4f5ef; margin:0 0 10px; max-width:560px}
+.level ul{margin:8px 0 0; padding-left:0; list-style:none; display:flex; flex-wrap:wrap; gap:8px}
+.level li{margin:0; font-size:14.5px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); padding:5px 11px; border-radius:999px}
+.level.l1{background:linear-gradient(135deg,#0b4f49,#2a9d8f)} .level.l2{background:linear-gradient(135deg,#073d3a,#1a8a7d)} .level.l3{background:linear-gradient(135deg,#053532,#0f766e)} .level.l4{background:linear-gradient(135deg,#042b29,#0d645d)} .level.l5{background:radial-gradient(600px 300px at 90% 0%, rgba(94,234,212,.35), transparent 70%), linear-gradient(135deg,#021a19,#0b4a46)}
+
+/* callouts */
+.callout{border-radius:12px; padding:16px 18px 14px 18px; margin:22px 0; border:1px solid var(--line); background:var(--surface); position:relative; box-shadow:var(--shadow)}
+.callout .h{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px}
+.callout p:last-child, .callout ul:last-child{margin-bottom:0}
+.callout.model{border-left:5px solid var(--t500)} .callout.model .h{color:var(--t700)}
+.callout.tip{border-left:5px solid var(--t800); background:linear-gradient(180deg,var(--t50),var(--surface))} .callout.tip .h{color:var(--t800)}
+.callout.warn{border-left:5px solid var(--coral); background:var(--coral-bg); border-color:var(--coral-line)} .callout.warn .h{color:var(--coral)}
+.callout.try{border-left:5px solid var(--t400); background:var(--surface-2)} .callout.try .h{color:var(--t700)}
+@media (prefers-color-scheme: dark){ .callout.tip{background:linear-gradient(180deg,#073330,var(--surface))} .callout.model .h,.callout.try .h{color:var(--t300)} .callout.tip .h{color:var(--t200)} }
+.ico{display:inline-grid; place-items:center; width:24px; height:24px; border-radius:7px; font-size:13px; color:#fff}
+.ico.m{background:var(--t500)} .ico.t{background:var(--t800)} .ico.w{background:var(--coral)} .ico.y{background:var(--t600)}
+
+/* code */
+.code{margin:20px 0; border-radius:12px; overflow:hidden; background:var(--code-bg); border:1px solid var(--code-line); box-shadow:var(--shadow)}
+.code .bar{display:flex; justify-content:space-between; align-items:center; padding:6px 8px 6px 14px; background:#073532; border-bottom:1px solid var(--code-line); font-family:var(--mono); font-size:12.5px; color:#8fd9cd}
+@media (prefers-color-scheme: dark){ .code .bar{background:#06201f} }
+.code .bar button{font:600 12.5px var(--sans); color:#cffaf2; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:8px; padding:8px 12px; min-height:36px; cursor:pointer}
+.code pre{margin:0; padding:14px 16px 16px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-family:var(--mono); font-size:13.4px; line-height:1.6; color:var(--code-text); tab-size:4}
+.code pre code{background:none; border:0; padding:0; font-size:inherit; word-break:normal; color:inherit}
+.tk-k{color:#2dd4bf; font-weight:600} .tk-t{color:#a7f3e6} .tk-s{color:#fde68a} .tk-c{color:#6fa59d; font-style:italic} .tk-a{color:#fca5a5} .tk-n{color:#fdba74} .tk-y{color:#5eead4}
+
+/* tables */
+.table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; min-width:560px}
+th,td{padding:10px 12px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line)}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink)}
+
+/* figures */
+figure{margin:24px 0; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 12px 10px; box-shadow:var(--shadow)}
+figcaption{font-size:14.5px; color:var(--muted); padding:8px 6px 2px; line-height:1.45}
+figure svg{display:block; width:100%; height:auto}
+.s-node{fill:var(--svg-node); stroke:var(--svg-stroke); stroke-width:1.6}
+.s-node2{fill:var(--svg-node-2); stroke:var(--svg-stroke); stroke-width:1.2}
+.s-db{fill:var(--svg-db); stroke:var(--svg-stroke); stroke-width:1.4}
+.s-line{stroke:var(--svg-stroke); stroke-width:1.6; fill:none}
+.s-dash{stroke:var(--svg-accent); stroke-width:1.8; fill:none; stroke-dasharray:5 4}
+.s-warn{stroke:var(--svg-warn); stroke-width:1.8; fill:none; stroke-dasharray:5 4}
+.s-t{fill:var(--svg-text); font:600 13px var(--sans)}
+.s-tb{fill:var(--svg-text); font:800 14px var(--sans)}
+.s-tm{fill:var(--svg-muted); font:500 11.5px var(--sans)}
+.s-tw{fill:var(--svg-warn); font:700 11.5px var(--sans)}
+.s-ta{fill:var(--svg-accent); font:700 11.5px var(--sans)}
+.s-fill{fill:var(--svg-accent)}
+.s-bus{fill:var(--t700)}
+
+/* widgets */
+.widget{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 16px; margin:24px 0; box-shadow:var(--shadow)}
+.widget h4{margin:0 0 4px; font-size:17px; display:flex; gap:8px; align-items:center}
+.widget .sub{font-size:14.5px; color:var(--muted); margin:0 0 12px}
+.toggle{display:flex; gap:12px; align-items:flex-start; padding:10px 4px; border-top:1px solid var(--line); font-size:16px; line-height:1.4; cursor:pointer; min-height:44px}
+.toggle input{width:24px; height:24px; accent-color:var(--t600); flex:0 0 24px; margin:0}
+.verdict{margin-top:12px; padding:14px 16px; border-radius:12px; background:var(--t50); border:1px solid var(--t200); font-size:16px; line-height:1.5}
+@media (prefers-color-scheme: dark){ .verdict{background:var(--surface-2); border-color:var(--line)} }
+.verdict b{color:var(--t800)} @media (prefers-color-scheme: dark){ .verdict b{color:var(--t300)} }
+.range{margin:12px 0}
+.range label{display:flex; justify-content:space-between; font-size:15px; font-weight:600; color:var(--ink)}
+.range output{font-family:var(--mono); color:var(--t700); font-weight:700} @media (prefers-color-scheme: dark){ .range output{color:var(--t300)} }
+input[type=range]{width:100%; height:44px; accent-color:var(--t600); margin:0}
+.meter{height:16px; border-radius:999px; background:var(--surface-3); overflow:hidden; margin:8px 0 6px}
+.meter span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--t500),var(--coral)); border-radius:999px; transition:width .25s}
+.big{font-family:var(--serif); font-size:40px; font-weight:700; color:var(--ink); line-height:1.1}
+.btns{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 6px}
+.btn{font:650 15px var(--sans); border-radius:10px; padding:11px 16px; min-height:44px; border:1px solid var(--t600); background:var(--t700); color:#fff; cursor:pointer}
+.btn.ghost{background:transparent; color:var(--t700)} @media (prefers-color-scheme: dark){ .btn.ghost{color:var(--t300); border-color:var(--t400)} }
+.btn.bad{background:var(--coral); border-color:var(--coral)}
+.cb-state{display:inline-block; font:800 14px var(--sans); letter-spacing:.08em; padding:6px 12px; border-radius:999px; background:var(--t100); color:var(--t800)}
+.cb-state.open{background:var(--coral-bg); color:var(--coral); border:1px solid var(--coral-line)}
+.cb-state.half{background:#fff4d6; color:#8a5a00} @media (prefers-color-scheme: dark){ .cb-state{background:var(--surface-3); color:var(--t200)} .cb-state.half{background:#3a2d0a; color:#ffd27a} }
+.dots{display:flex; gap:6px; margin:10px 0}
+.dots i{width:22px; height:22px; border-radius:50%; background:var(--surface-3); border:1px solid var(--line)}
+.dots i.ok{background:var(--t500); border-color:var(--t600)} .dots i.ko{background:var(--coral); border-color:var(--coral)}
+.cb-node{transition:all .2s}
+.cb-node.on rect{fill:var(--t600); stroke:var(--t800)} .cb-node.on text{fill:#fff}
+.cb-node.on.openn rect{fill:var(--coral); stroke:var(--coral)}
+.cb-node.on.halfn rect{fill:#e0a800; stroke:#b58600}
+.log{font-size:14.5px; color:var(--muted); min-height:44px; margin:6px 0 0}
+
+/* checklist */
+.check{list-style:none; padding:0; margin:0}
+.check li{margin:0; border-top:1px solid var(--line)}
+.check label{display:flex; gap:12px; align-items:flex-start; padding:11px 4px; cursor:pointer; font-size:16px; line-height:1.4; min-height:44px}
+.check input{width:24px; height:24px; accent-color:var(--t600); flex:0 0 24px; margin:0}
+.check input:checked + span{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--t400)}
+.count{font-family:var(--mono); font-weight:700; color:var(--t700)} @media (prefers-color-scheme: dark){ .count{color:var(--t300)} }
+
+/* quiz */
+.q{border-top:1px solid var(--line); padding:16px 0 6px}
+.q:first-child{border-top:0; padding-top:2px}
+.q p.qt{font-weight:650; color:var(--ink); margin-bottom:10px}
+.q .opts{display:grid; gap:8px}
+.q button{font:500 16px var(--sans); text-align:left; padding:12px 14px; min-height:44px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); cursor:pointer; line-height:1.35}
+.q button.right{background:#dcfaf3; border-color:var(--t500); color:var(--t900)}
+.q button.wrong{background:var(--coral-bg); border-color:var(--coral); color:var(--coral)}
+@media (prefers-color-scheme: dark){ .q button.right{background:#0d4a43; color:#e8fffb} }
+.q .why{display:none; font-size:15.5px; margin:10px 0 6px; padding:10px 12px; border-radius:10px; background:var(--surface-2); border-left:4px solid var(--t500)}
+.q.done .why{display:block}
+.score{font-size:17px; font-weight:700; color:var(--ink); margin-top:12px}
+
+/* glossary */
+dl.gloss{display:grid; grid-template-columns:1fr; gap:0; margin:16px 0}
+dl.gloss div{padding:12px 0; border-top:1px solid var(--line)}
+dl.gloss dt{font-weight:750; color:var(--ink)}
+dl.gloss dd{margin:2px 0 0; font-size:16.5px}
+.sources li{font-size:15.5px; line-height:1.45; margin:8px 0}
+
+/* stack cards */
+.grid2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:20px 0}
+@media (max-width:560px){ .grid2{grid-template-columns:1fr} }
+.mini{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow)}
+.mini h4{margin:0 0 2px; font-size:16.5px}
+.mini .v{font-family:var(--mono); font-size:12.5px; color:var(--t700); font-weight:700} @media (prefers-color-scheme: dark){ .mini .v{color:var(--t300)} }
+.mini p{font-size:15px; margin:6px 0 0; line-height:1.45}
+
+/* honeycomb */
+.honey{display:grid; gap:6px; margin:18px auto; max-width:520px; text-align:center; font-size:15px; font-weight:650}
+.honey div{border-radius:10px; padding:10px; color:#fff}
+.honey .e2e{width:40%; margin:0 auto; background:var(--coral)}
+.honey .ct{width:70%; margin:0 auto; background:var(--t800)}
+.honey .it{width:100%; margin:0 auto; background:var(--t600); padding:18px 10px}
+.honey .ut{width:62%; margin:0 auto; background:var(--t400); color:var(--t900)}
+
+/* toc */
+#tocBtn{position:fixed; right:calc(16px + env(safe-area-inset-right)); bottom:calc(16px + env(safe-area-inset-bottom)); z-index:50; display:flex; align-items:center; gap:8px; font:700 15px var(--sans); color:#fff; background:var(--t800); border:1px solid var(--t600); border-radius:999px; padding:12px 18px; min-height:48px; box-shadow:0 8px 24px rgba(4,47,46,.35); cursor:pointer}
+#tocBtn .pct{font-family:var(--mono); font-size:13px; color:var(--t200)}
+#scrim{position:fixed; inset:0; background:rgba(2,20,19,.45); z-index:54; opacity:0; pointer-events:none; transition:opacity .2s}
+#scrim.show{opacity:1; pointer-events:auto}
+#toc{position:fixed; top:0; right:0; bottom:0; width:min(340px,88vw); z-index:55; background:var(--surface); border-left:1px solid var(--line); transform:translateX(105%); transition:transform .25s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom)); box-shadow:-10px 0 30px rgba(4,47,46,.18)}
+#toc.open{transform:none}
+#toc .th{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+#toc .th b{font-family:var(--serif); font-size:22px; color:var(--ink)}
+#toc .close{font:700 22px var(--sans); background:none; border:0; color:var(--muted); min-width:44px; min-height:44px; cursor:pointer}
+#toc .grp{font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:16px 0 4px} @media (prefers-color-scheme: dark){ #toc .grp{color:var(--t300)} }
+#toc a{display:flex; gap:10px; align-items:center; text-decoration:none; color:var(--text); font-size:15.5px; line-height:1.3; padding:9px 8px; border-radius:8px; min-height:44px}
+#toc a:hover,#toc a.cur{background:var(--surface-2); color:var(--ink)}
+#toc a .ck{flex:0 0 20px; height:20px; border-radius:50%; border:2px solid var(--line); display:grid; place-items:center; font-size:11px; color:#fff}
+#toc a.seen .ck{background:var(--t500); border-color:var(--t500)}
+@media (min-width:1100px){
+  #toc{left:0; right:auto; width:290px; transform:none; border-left:0; border-right:1px solid var(--line); box-shadow:none; background:var(--surface)}
+  #toc .close{display:none}
+  #tocBtn,#scrim{display:none}
+}
+footer{max-width:740px; margin:0 auto; padding:30px 22px 120px; color:var(--muted); font-size:14.5px; border-top:1px solid var(--line)}
+@media (min-width:1100px){ footer{margin-left:max(320px, calc(50vw - 370px + 140px))} }
+@media print{ #toc,#tocBtn,#scrim,#progress,.code .bar button{display:none} main{margin:0 auto} .level{break-inside:avoid} }
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
+
+
+/* Single-column lesson and verbatim reader prompt */
+@media (min-width:1100px){main,footer,.hero .hero-inner{margin-inline:auto}}
+.hero-inner,main,footer{overflow-wrap:anywhere}
+.chip{max-width:100%;white-space:normal}
+.reader-prompt{margin:0 0 18px;padding:10px 14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(255,255,255,.08);color:#eafffb}
+.reader-prompt summary{font-size:14px;font-weight:700;cursor:pointer}
+.reader-prompt p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Additional declarations used inline in the reference. */
+.intro-title{margin-top:36px}
+.compact-bottom{margin-bottom:6px}
+.inverted-label{fill:#e8fffb;font:700 13px var(--sans)}
+.faint-dash{stroke-dasharray:2 4; opacity:.6}
+.label-halo{paint-order:stroke;stroke:var(--surface);stroke-width:4px}
+.warn-stroke{stroke:var(--svg-warn)}
+.warn-fill{fill:var(--svg-warn)}
+.accent-dash{fill:none; stroke:var(--svg-accent); stroke-width:1.6; stroke-dasharray:6 4}
+.tight-paragraph{margin:4px 0 0}
+.no-margin{margin:0}
+.compact-heading{margin-bottom:4px}
+.teal-ramp{background:linear-gradient(90deg,var(--t400),var(--t700))}
+
+.table-wrap{overflow-x:auto}.table-wrap table{min-width:0}.code pre{overflow-wrap:normal} details summary{cursor:pointer}</style>
+</head>
+<body>
+<header class="hero">
+<svg class="net" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g stroke="#99f6e4" stroke-width="1" fill="none">
+      <path d="M60 80 L190 140 L330 70 L470 150 L620 90 L760 170"/>
+      <path d="M190 140 L230 280 L380 320 L470 150 L560 300 L700 330"/>
+      <path d="M330 70 L380 320 M620 90 L560 300 M60 80 L100 250 L230 280"/>
+    </g>
+    <g fill="#ccfbf1">
+      <circle cx="60" cy="80" r="5"/><circle cx="190" cy="140" r="7"/><circle cx="330" cy="70" r="5"/><circle cx="470" cy="150" r="8"/><circle cx="620" cy="90" r="5"/><circle cx="760" cy="170" r="6"/><circle cx="230" cy="280" r="6"/><circle cx="380" cy="320" r="5"/><circle cx="560" cy="300" r="7"/><circle cx="700" cy="330" r="5"/><circle cx="100" cy="250" r="4"/>
+    </g>
+  </svg>
+  <div class="hero-inner">
+    <h1>Designing Java microservices with <em>Spring Boot and Kafka</em></h1>
+    <details class="reader-prompt" open><summary>Your prompt</summary><p>create a really thourugh guide on how to make and deisgn microservices with java and spring boot and kafka.</p></details>
+    <p class="lede">Build a trade-booking service and a positions service. Follow their data through a commit, a crash and a replay.</p>
+    <div class="chips"><span class="chip">25–30 min with code and traces</span></div>
+  </div>
+</header>
+<main><p>A trader books 100 units of GILT10 into the ALPHA book. The booking screen receives a success response. A position query still returns zero. Both services can be correct. The interesting question is what evidence lets the trader distinguish a short delay from a lost booking, and what an engineer can safely do when the delay persists.</p>
+<p>Follow one immutable booking through two Spring Boot applications, two PostgreSQL databases and one Kafka topic. By the end you can draw the commit boundaries, implement both sides, predict the state after a crash, and choose a different design when a limit must hold synchronously. The embedded project contains the complete files behind the excerpts.</p>
+<div class="callout try"><div class="h">Companion project</div><p><a download="trade-booking-lab.zip" href="data:application/zip;base64,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eQIAAEwFAAAwAAAAAAAAAAAAAACkgfcEAABib29raW5nL3NyYy9tYWluL2phdmEvZXhhbXBsZS9ib29raW5nL1JlbGF5LmphdmFQSwECFAMUAAAACADkZHZdgfxzbbcDAABdCQAAMQAAAAAAAAAAAAAApIG+BwAAYm9va2luZy9zcmMvbWFpbi9qYXZhL2V4YW1wbGUvYm9va2luZy9UcmFkZXMuamF2YVBLAQIUAxQAAAAIAORkdl3w+LTSFgEAALoCAAAxAAAAAAAAAAAAAACkgcQLAABib29raW5nL3NyYy9tYWluL3Jlc291cmNlcy9hcHBsaWNhdGlvbi5wcm9wZXJ0aWVzUEsBAhQDFAAAAAgA5GR2XbNTi8PzAAAAvgEAADcAAAAAAAAAAAAAAKSBKQ0AAGJvb2tpbmcvc3JjL21haW4vcmVzb3VyY2VzL2RiL21pZ3JhdGlvbi9WMV9fYm9va2luZy5zcWxQSwECFAMUAAAACADkZHZdT3MP4LgAAAC6AQAADAAAAAAAAAAAAAAApIFxDgAAY29tcG9zZS55YW1sUEsBAhQDFAAAAAgA5GR2XVDpvl1yAQAAmgYAABEAAAAAAAAAAAAAAKSBUw8AAHBvc2l0aW9ucy9wb20ueG1sUEsBAhQDFAAAAAgA5GR2XQvAtDKgAAAAMgEAADoAAAAAAAAAAAAAAKSB9BAAAHBvc2l0aW9ucy9zcmMvbWFpbi9qYXZhL2V4YW1wbGUvcG9zaXRpb25zL0FwcGxpY2F0aW9uLmphdmFQSwECFAMUAAAACADkZHZdRB1DYqIEAABHDAAAOAAAAAAAAAAAAAAApIHsEQAAcG9zaXRpb25zL3NyYy9tYWluL2phdmEvZXhhbXBsZS9wb3NpdGlvbnMvUG9zaXRpb25zLmphdmFQSwECFAMUAAAACADkZHZdstR8bRsBAACkAgAAMwAAAAAAAAAAAAAApIHkFgAAcG9zaXRpb25zL3NyYy9tYWluL3Jlc291cmNlcy9hcHBsaWNhdGlvbi5wcm9wZXJ0aWVzUEsBAhQDFAAAAAgA5GR2XbHu2/h/AAAAyAAAADsAAAAAAAAAAAAAAKSBUBgAAHBvc2l0aW9ucy9zcmMvbWFpbi9yZXNvdXJjZXMvZGIvbWlncmF0aW9uL1YxX19wb3NpdGlvbnMuc3FsUEsBAhQDFAAAAAgAfGV2XbtE1GzmAQAADwMAAAgAAAAAAAAAAAAAAKSBKBkAAHNtb2tlLnNoUEsFBgAAAAAOAA4AoAQAADQbAAAAAA==">Download the two-service Java lab</a> · Maven projects, database migrations, Docker Compose and a smoke test. Open the saved HTML in a browser to use the embedded download.</p></div><section class="level l1" data-n="1" id="stage-1"><span class="tag">Service design</span><h2>Choose the boundary from the business rule</h2></section><p>Start with two promises. Booking remembers the terms accepted under a client-supplied trade ID. Positions answers how many units of an instrument a book holds across all accepted trades it has processed. The first promise is about one immutable instruction. The second is an aggregate across instructions. They have different write patterns, different failure costs and different definitions of “up to date”.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Comparison table"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Decision</th>
+<th>Booking</th>
+<th>Positions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Authority</td>
+<td>Accepted terms for a trade ID</td>
+<td>Materialised net units for a book and instrument</td>
+</tr>
+<tr class="even">
+<td>Write path</td>
+<td>Validated HTTP command</td>
+<td>Committed booking events</td>
+</tr>
+<tr class="odd">
+<td>Identity</td>
+<td>Trade ID for the command, event ID for publication</td>
+<td>Event ID for deduplication, book and instrument for the balance</td>
+</tr>
+<tr class="even">
+<td>If Kafka is down</td>
+<td>Accept while database and backlog capacity permit</td>
+<td>Serve the last applied value with an appropriate freshness policy</td>
+</tr>
+<tr class="odd">
+<td>Recovery evidence</td>
+<td>Trade row and pending publication</td>
+<td>Applied-event record, balance and group progress</td>
+</tr>
+</tbody>
+</table></div>
+<p>A <strong>bounded context</strong> gives a word a precise meaning within an area of the business. Here “position” means signed booked units. A settled holding would also depend on settlement events, and risk exposure might depend on multipliers, market data and currency conversion. Naming all three “position” and passing a shared ORM entity disguises material differences. Specify the unit, sign, lifecycle stage and effective time before publishing a shared contract.</p>
+<h3 id="decide-what-belongs-in-one-transaction">Decide what belongs in one transaction</h3>
+<p>Write down the condition that must hold at commit. For booking it is “exactly one set of accepted terms per trade ID, accompanied by a durable intention to publish”. PostgreSQL can enforce that within one database. For positions it is “every accepted event ID contributes its units once”. Another local transaction can enforce that. The business has agreed that the balance may lag. That agreement is what makes this split viable.</p>
+<p>Suppose the same team owns both capabilities, runs one release train and needs the balance to be current on every booking response. Two Java packages in one deployable with a local transaction may serve those constraints better. Separate processes earn their cost when an independent release, scaling decision, ownership boundary or failure boundary matters. You can start with modules, private tables and explicit Java interfaces, then extract the consumer when its query load or availability requirements diverge.</p>
+<figure><svg viewBox="0 0 330 248" role="img" aria-labelledby="flowdesc" style="max-width:460px;width:100%;display:block;margin:auto"><title id="flowdesc">The booking, relay and projection commit at different boundaries</title><rect x="8" y="0" width="314" height="48" rx="8" fill="#115e59"/><text x="165" y="20" text-anchor="middle" fill="white" font-size="15" font-weight="bold">Booking transaction</text><text x="165" y="37" text-anchor="middle" fill="white" font-size="12">Trade + pending event commit together</text><path d="M165 48 v12 m-4 -4 l4 4 4 -4" stroke="currentColor" fill="none"/><rect x="8" y="65" width="314" height="48" rx="8" fill="#155e75"/><text x="165" y="85" text-anchor="middle" fill="white" font-size="15" font-weight="bold">Outbox relay</text><text x="165" y="102" text-anchor="middle" fill="white" font-size="12">Publish using the stable event ID</text><path d="M165 113 v12 m-4 -4 l4 4 4 -4" stroke="currentColor" fill="none"/><rect x="8" y="130" width="314" height="48" rx="8" fill="#164e63"/><text x="165" y="150" text-anchor="middle" fill="white" font-size="15" font-weight="bold">Kafka partition</text><text x="165" y="167" text-anchor="middle" fill="white" font-size="12">Retain the record at a partition offset</text><path d="M165 178 v12 m-4 -4 l4 4 4 -4" stroke="currentColor" fill="none"/><rect x="8" y="195" width="314" height="48" rx="8" fill="#115e59"/><text x="165" y="215" text-anchor="middle" fill="white" font-size="15" font-weight="bold">Positions transaction</text><text x="165" y="232" text-anchor="middle" fill="white" font-size="12">Applied event ID + position commit together</text></svg><figcaption>Only the first and last boxes change business data. Between them, the relay can publish twice and the listener can receive twice.</figcaption></figure><h3 id="choose-a-communication-mechanism-for-each-interaction">Choose a communication mechanism for each interaction</h3>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Comparison table"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Interaction</th>
+<th>Mechanism</th>
+<th>What success establishes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Accept these trade terms</td>
+<td>HTTP PUT with a stable identity</td>
+<td>Booking committed locally. A timeout leaves the caller uncertain.</td>
+</tr>
+<tr class="even">
+<td>Announce an accepted booking</td>
+<td>Kafka event retained under a topic contract</td>
+<td>Independent groups can consume or replay within retention.</td>
+</tr>
+<tr class="odd">
+<td>Display net units</td>
+<td>HTTP GET to the positions read model</td>
+<td>Value observed at query time. Freshness requires additional evidence.</td>
+</tr>
+<tr class="even">
+<td>Reserve limited capacity</td>
+<td>Command to the owner of the limit</td>
+<td>Decision and reservation committed against authoritative capacity.</td>
+</tr>
+</tbody>
+</table></div>
+<p>If you know RabbitMQ, think of a Kafka consumer group as a group of workers sharing work. The analogy breaks at acknowledgement. Kafka retains a log independently of a group's progress. Recording an offset moves one group's restart point. Another group can read the same records, and resetting a group can deliberately revisit retained records. This is why adding an audit consumer needs a distinct group ID, while adding a second positions replica generally needs the same one. <a href="https://kafka.apache.org/40/design/design/">Kafka design</a></p>
+<h3 id="give-each-service-a-practical-shape">Give each service a practical shape</h3>
+<p>Keep HTTP and Kafka adapters thin. A controller validates the wire request and maps the result to a status. An application service owns the transaction and decides whether this command is new, repeated or conflicting. A listener decodes an event and calls a transactional projection bean. In the sample JDBC sits directly in these small classes so you can inspect the exact writes. Introduce a repository interface when a domain operation gains reusable persistence behaviour. An interface per table would add little here.</p>
+<p>Deploy the services from separate Maven projects. Give each its own Flyway migration history and database credentials. They may eventually share a managed PostgreSQL cluster while retaining distinct databases and roles. Sharing a cluster couples capacity, failover and maintenance windows. Letting one service join another's private tables adds a second coupling: a column rename now requires a coordinated deployment. A published event or query API gives the owning team a contract it can version.</p>
+<section class="level l2" data-n="2" id="stage-2"><span class="tag">Command handling</span><h2>Make a booking safe to repeat</h2></section><p>A lost HTTP response is a normal distributed-systems outcome. The client knows it sent a request and has no evidence of the outcome. Give it a stable trade ID before its first attempt. The API accepts a PUT to that resource. In this particular API the resource is immutable after creation: identical terms succeed on retry and changed terms produce a conflict. A correction needs a separately identifiable domain operation.</p>
+<div class="code"><div class="bar">Terminal · after starting the lab</div><pre tabindex="0" aria-label="Terminal · after starting the lab"><code>trade=http://localhost:8080/trades/11111111-1111-4111-8111-111111111111
+put() {
+  curl -sS -o /dev/null -w <span class="tk-s">&#x27;%{http_code}&#x27;</span> -X PUT <span class="tk-s">&quot;</span>$trade<span class="tk-s">&quot;</span> <span class="tk-s">\
+</span>    -H <span class="tk-s">&#x27;Content-Type: application/json&#x27;</span> <span class="tk-s">\
+</span>    -d <span class="tk-s">&quot;</span><span class="tk-s">{\&quot;book\&quot;:\&quot;ALPHA\&quot;,\&quot;instrument\&quot;:\&quot;GILT10\&quot;,\&quot;units\&quot;:</span>$1<span class="tk-s">}</span><span class="tk-s">&quot;</span>
+}
+put <span class="tk-n">100</span>; echo
+put <span class="tk-n">100</span>; echo
+put <span class="tk-n">99</span>; echo</code></pre></div><p>On a fresh database the expected sequence is <strong>201, 200, 409</strong>. The first request creates the trade, the second confirms the original terms, and the last tries to reuse the identity for a different quantity. Generating a fresh UUID on each retry would turn one human action into two valid trades. Scope client-provided IDs to an authorised tenant or upstream system in a multi-client API. An idempotency key is evidence of identity, never authority to read or write the underlying book.</p>
+<h3 id="let-the-database-arbitrate-simultaneous-requests">Let the database arbitrate simultaneous requests</h3>
+<div class="code"><div class="bar">Booking.accept · transactional method</div><pre tabindex="0" aria-label="Booking.accept · transactional method"><code><span class="tk-k">public</span> <span class="tk-k">boolean</span> accept(UUID id, Terms t) {
+        <span class="tk-k">if</span> (t.units() == <span class="tk-n">0</span>) {
+            <span class="tk-k">throw</span> <span class="tk-k">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+        <span class="tk-k">int</span> inserted = db.update(<span class="tk-s">&quot;&quot;&quot;
+</span><span class="tk-s">            INSERT INTO trade(id, book, instrument, units)
+            VALUES (?, ?, ?, ?) ON CONFLICT (id) DO NOTHING
+            </span><span class="tk-s">&quot;&quot;&quot;</span>, id, t.book(), t.instrument(), t.units());
+        <span class="tk-k">if</span> (inserted == <span class="tk-n">0</span>) {
+            Terms stored = db.queryForObject(<span class="tk-s">&quot;&quot;&quot;
+</span><span class="tk-s">                SELECT book, instrument, units FROM trade WHERE id = ?
+                </span><span class="tk-s">&quot;&quot;&quot;</span>, (r, i) -&gt; <span class="tk-k">new</span> Terms(r.getString(<span class="tk-n">1</span>),
+                     r.getString(<span class="tk-n">2</span>), r.getLong(<span class="tk-n">3</span>)), id);
+            <span class="tk-k">if</span> (!t.equals(stored)) {
+                <span class="tk-k">throw</span> <span class="tk-k">new</span> ResponseStatusException(HttpStatus.CONFLICT);
+            }
+            <span class="tk-k">return</span> <span class="tk-k">false</span>;
+        }
+        UUID eventId = UUID.randomUUID();
+        db.update(<span class="tk-s">&quot;&quot;&quot;
+</span><span class="tk-s">            INSERT INTO outbox(id, trade_id, payload)
+            SELECT ?, id, jsonb_build_object(
+              &#x27;eventId&#x27;, CAST(? AS uuid), &#x27;tradeId&#x27;, id,
+              &#x27;type&#x27;, &#x27;TradeBooked&#x27;, &#x27;schemaVersion&#x27;, 1,
+              &#x27;book&#x27;, book, &#x27;instrument&#x27;, instrument, &#x27;units&#x27;, units)
+            FROM trade WHERE id = ?
+            </span><span class="tk-s">&quot;&quot;&quot;</span>, eventId, eventId, id);
+        <span class="tk-k">return</span> <span class="tk-k">true</span>;
+    }</code></pre></div><p>Two simultaneous requests can both observe that a row is absent. A preliminary SELECT therefore cannot enforce uniqueness. The primary key makes concurrent inserts contend on the same identity. Under PostgreSQL's default Read Committed isolation, the losing insert can wait for the winner. Its subsequent SELECT obtains a fresh statement snapshot and sees the committed terms. If the winner rolls back, the competing insert can succeed. This reasoning assumes immutable rows and the shown isolation level. At stronger isolation levels be prepared to retry the whole transaction on a serialization failure. <a href="https://www.postgresql.org/docs/17/transaction-iso.html">PostgreSQL transaction isolation</a></p>
+<p>The outbox stores the exact integration payload alongside its immutable event ID. If the insert into the outbox fails, the transaction rolls back the trade as well. If the commit succeeds but the network drops the HTTP response, the client's repeat sees the accepted terms. The unique outbox trade ID is specific to this <strong>single-event lifecycle</strong>. A service that emits amendments needs an event identity per change and a uniqueness constraint such as (trade ID, aggregate revision).</p>
+<h3 id="what-spring-contributes">What Spring contributes</h3>
+<p>The controller receives a Spring-managed Booking bean through its constructor. The transaction interceptor surrounds the external call to its public accept method. JdbcTemplate participates using the transaction-bound connection. On successful return the interceptor attempts to commit before control returns to the controller. A failed commit must propagate as a failure. In the default proxy model, calling an annotated helper through this inside the same object bypasses the interceptor. Also check rollback rules for checked exceptions. The relay below explicitly requests rollback for them. <a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html">Spring transaction annotations</a></p>
+<p>JdbcTemplate makes the uniqueness and update semantics visible here. JPA is a good fit for a richer aggregate with relationships and optimistic locking. With JPA, managed entities can be flushed before commit, and a successful save call alone cannot establish that the transaction committed. Avoid serialising a managed entity as an event: lazy relationships, persistence-only fields and column changes would become accidental public API. Map explicitly from the accepted state to a small event.</p>
+<h3 id="design-the-wire-contract">Design the wire contract</h3>
+<div class="code"><div class="bar">Illustrative TradeBooked payload</div><pre tabindex="0" aria-label="Illustrative TradeBooked payload"><code>{
+  &quot;type&quot;: <span class="tk-s">&quot;TradeBooked&quot;</span>, &quot;schemaVersion&quot;: <span class="tk-n">1</span>,
+  &quot;eventId&quot;: <span class="tk-s">&quot;aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa&quot;</span>,
+  &quot;tradeId&quot;: <span class="tk-s">&quot;11111111-1111-4111-8111-111111111111&quot;</span>,
+  &quot;book&quot;: <span class="tk-s">&quot;ALPHA&quot;</span>, &quot;instrument&quot;: <span class="tk-s">&quot;GILT10&quot;</span>, &quot;units&quot;: <span class="tk-n">100</span>
+}</code></pre></div><p>The ID in the Kafka key is the trade ID. The UUID in eventId identifies this occurrence across every delivery. schemaVersion identifies the data shape. None of these is a Kafka offset. Topic, partition and offset identify one stored record; publishing the same event again creates a new record with the original event ID. Add correlation and causation IDs when a workflow crosses several services. They help explain a chain of events but have different uniqueness requirements.</p>
+<p>Use immutable past-tense facts for self-contained integration events. Including book, instrument and signed units lets positions process a booking while the booking API is unavailable. An ID-only notification reduces copied data, but a GET during processing can retrieve a later state or fail during an outage. Where event-time reconstruction matters, publish the facts required at that point in the lifecycle. For this example quantity is a signed integer number of instrument units. For fractional quantities specify decimal precision, scale, rounding and canonical wire representation explicitly.</p>
+<p>A schema change can compile cleanly in the producer and still corrupt a consumer. Adding an optional execution venue works when older readers tolerate unknown fields and newer readers handle historical records without it. Changing units from individual bonds to lots under the same field name would silently multiply exposures. Introduce a new field with explicit units or a versioned event, run old and new consumers against common fixtures, and retire the old contract after its replay horizon. A schema registry with compatibility checks can catch structural breaks. A fixture saying “two lots of 100 must become 200 units” catches the semantic one.</p>
+<section class="level l3" data-n="3" id="stage-3"><span class="tag">Publication and consumption</span><h2>Cross the database–Kafka boundary</h2></section><p>Consider the two obvious implementations. Send to Kafka first, then commit the trade: a database rollback leaves a booking event about a trade that never existed. Commit first, then send: a process crash between the statements leaves a real trade invisible to positions. An after-commit callback moves the timing but still relies on the process surviving. The outbox turns that volatile piece of work into a queryable database row. <a href="https://microservices.io/patterns/data/transactional-outbox.html">Transactional outbox pattern</a></p>
+<div class="code"><div class="bar">Relay.java · scheduled publication</div><pre tabindex="0" aria-label="Relay.java · scheduled publication"><code><span class="tk-a">@Scheduled</span>(fixedDelay = <span class="tk-n">100</span>)
+    <span class="tk-a">@Transactional</span>(rollbackFor = Exception.class)
+    <span class="tk-k">public</span> <span class="tk-k">void</span> publishOne() <span class="tk-k">throws</span> Exception {
+        <span class="tk-k">var</span> batch = db.query(<span class="tk-s">&quot;&quot;&quot;
+</span><span class="tk-s">            SELECT id, trade_id, payload::text FROM outbox
+            WHERE sent_at IS NULL ORDER BY created_at, id
+            LIMIT 1 FOR UPDATE SKIP LOCKED
+            </span><span class="tk-s">&quot;&quot;&quot;</span>, (r, i) -&gt; <span class="tk-k">new</span> Pending(r.getObject(<span class="tk-n">1</span>, UUID.class),
+                 r.getString(<span class="tk-n">2</span>), r.getString(<span class="tk-n">3</span>)));
+        <span class="tk-k">if</span> (batch.isEmpty()) <span class="tk-k">return</span>;
+        <span class="tk-k">var</span> e = batch.getFirst();
+        kafka.send(<span class="tk-s">&quot;</span><span class="tk-s">trade.booked.v1</span><span class="tk-s">&quot;</span>, e.key(), e.payload())
+             .get(<span class="tk-n">20</span>, TimeUnit.SECONDS);
+        db.update(<span class="tk-s">&quot;</span><span class="tk-s">UPDATE outbox SET sent_at=now() WHERE id=?</span><span class="tk-s">&quot;</span>, e.id());
+    }</code></pre></div><p>Each scheduled invocation takes one pending row, holds its lock while waiting for the Kafka acknowledgement, and marks the row sent within the same database transaction. A timeout has an ambiguous outcome. Leave the row pending so a later attempt can send the same event again. SKIP LOCKED allows another worker to select a different row. That can change publication order across concurrent workers, even if Kafka later appends their messages to the same partition. The lab has one booking per trade and sums integer deltas, so the final result tolerates this.</p>
+<p>The design buys simplicity at a cost. A broker delay ties up a database connection and a row lock. With a 100 ms fixed delay after each invocation, even instant sends cannot sustain more than about ten records per second per worker. Acknowledgement time adds to the interval. For higher rates, batch deliberately or use change data capture (CDC) to relay committed outbox inserts from PostgreSQL's write-ahead log. CDC shifts the load from polling to a connector with its own offsets, replication slot and operational recovery procedure. Monitor retained WAL during an outage, and verify how event IDs and keys emerge on the wire before switching relays.</p>
+<h3 id="decide-what-kafka-promises-to-the-producer">Decide what Kafka promises to the producer</h3>
+<p>The sample sets acks=all and enables producer idempotence. The acknowledgement concerns the partition's current in-sync replicas, subject to the topic's minimum in-sync replica setting. In the single-broker lab only one replica exists. A production example uses replication factor three, minimum in-sync replicas two and acks=all. With two in-sync replicas the write can proceed; with only one it must fail or retry. This availability cost protects the chosen durability threshold. Replication across suitable failure domains matters as much as the count. <a href="https://kafka.apache.org/40/configuration/producer-configs/">Producer configuration</a></p>
+<p>Producer idempotence handles certain transport retries by the producer. A restarted relay that deliberately sends an outbox row again makes a new application send. Both copies can be present and valid. Kafka transactions address a different boundary: a Kafka processor can atomically publish output records and advance input offsets, with downstream consumers configured for read_committed. An independent PostgreSQL transaction still needs its own recovery design. Spring's coordination of successive Kafka and database commits leaves a failure interval between them. <a href="https://docs.spring.io/spring-kafka/reference/3.3/kafka/transactions.html">Spring Kafka transactions</a></p>
+<h3 id="choose-the-partition-key-from-the-ordering-requirement">Choose the partition key from the ordering requirement</h3>
+<p>Kafka orders records by offset within a partition. With the same key bytes, stable partition count and consistent key-based partitioning, events for one trade reach one partition. Different trades contributing to ALPHA/GILT10 may be processed on different threads. The SQL update adds to the current stored balance atomically, so those increments compose even under concurrency. A Java read-modify-write sequence that reads 100 twice and then writes 110 and 120 loses one increment. The correct result after +10 and +20 is 130. <a href="https://www.postgresql.org/docs/17/sql-insert.html">PostgreSQL INSERT and ON CONFLICT</a></p>
+<p>A book/instrument key puts related position changes together, useful for a stateful computation such as running weighted-average cost. It can concentrate a busy book on one partition. A trade key spreads the work and preserves an individual trade's history, but a portfolio algorithm that depends on a prescribed ordering must establish that ordering separately. More partitions change the mapping of keys under typical hashing schemes. For an order-sensitive stream, plan a versioned topic migration, a cutover boundary and a reconciliation step before changing the partition count.</p>
+<h3 id="apply-each-event-once-in-the-read-model">Apply each event once in the read model</h3>
+<div class="code"><div class="bar">Projection.apply · transactional method</div><pre tabindex="0" aria-label="Projection.apply · transactional method"><code><span class="tk-k">public</span> <span class="tk-k">void</span> apply(Booked e) {
+        <span class="tk-k">int</span> first = db.update(<span class="tk-s">&quot;&quot;&quot;
+</span><span class="tk-s">            INSERT INTO consumed(event_id) VALUES (?)
+            ON CONFLICT (event_id) DO NOTHING
+            </span><span class="tk-s">&quot;&quot;&quot;</span>, e.eventId());
+        <span class="tk-k">if</span> (first == <span class="tk-n">0</span>) <span class="tk-k">return</span>;
+        db.update(<span class="tk-s">&quot;&quot;&quot;
+</span><span class="tk-s">            INSERT INTO position(book, instrument, units) VALUES (?, ?, ?)
+            ON CONFLICT (book, instrument) DO UPDATE
+            SET units = position.units + EXCLUDED.units
+            </span><span class="tk-s">&quot;&quot;&quot;</span>, e.book(), e.instrument(), e.units());
+    }</code></pre></div><p>The consumer inserts the event ID under a unique constraint. Only the transaction that inserts it can add the quantity. Both writes commit or roll back together. A process crash between the two SQL statements rolls back the first as well. If the same event arrives in parallel, one insert can wait for the other transaction's outcome. This costs an indexed insert per new event and storage proportional to event count. Pruning consumed IDs while older duplicate events can still enter the live projection reopens the double-counting window.</p>
+<p>Spring calls a synchronous record listener. It decodes the schema, verifies the key matches the payload, and invokes the separate transactional projection bean. The listener returns only after the database method has committed. The container then commits the next offset under RECORD acknowledgement with auto-commit disabled. BATCH, the usual container default, amortises offset commits across records returned by a poll and can repeat more work after failure. Both need deduplication. Dispatching to an executor and immediately returning would acknowledge progress while the write was still pending. <a href="https://docs.spring.io/spring-kafka/reference/3.3/kafka/receiving-messages/message-listener-container.html">Spring Kafka listener containers</a></p>
+<div class="callout model"><div class="h">Crash trace · partition 1</div><p>Assume the event at offset 41 carries +100, the previous balance is zero, and the group’s committed next offset is 41.</p></div>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Comparison table"><table><thead><tr><th>Moment</th><th>Durable positions state</th><th>Group next offset</th></tr></thead><tbody><tr><td>Listener receives offset 41</td><td>No consumed ID · 0</td><td>41</td></tr><tr><td>Database commits</td><td>ID recorded · 100</td><td>41</td></tr><tr><td>Process exits before offset commit</td><td>ID recorded · 100</td><td>41</td></tr><tr><td>Replacement receives 41 again</td><td>Unique conflict · still 100</td><td>41</td></tr><tr><td>Listener returns successfully</td><td>ID recorded · 100</td><td>42</td></tr></tbody></table></div><p>At the hardest boundary there are three different witnesses. PostgreSQL knows the event has affected the balance. Kafka knows where the group last committed. The consumer process briefly knows both operations are in progress, then loses that knowledge when it exits. The database uniqueness constraint supplies durable evidence on restart. A delivery counter might now read two even though the business balance increased exactly once. This claim is scoped to the local projection. Adding email or a broker instruction inside the listener introduces a new external side effect with its own identity and recovery requirements.</p>
+<section class="level l4" data-n="4" id="stage-4"><span class="tag">Implementation lab</span><h2>Run two services and inspect the evidence</h2></section><p>Download the embedded project near the title and extract it. Use a shell in the extracted directory with Java JDK 21, Maven 3.9.x, Docker Compose v2 and curl. The application dependencies come from Spring Boot 3.5.16 dependency management. The broker image is Apache Kafka 4.0.0 in single-node KRaft mode, and the SQL baseline is PostgreSQL 17. This is a pinned teaching baseline with loopback listeners, local credentials and a single Kafka replica. Initial dependency and container downloads require network access. <a href="https://docs.spring.io/spring-boot/3.5/reference/messaging/kafka.html">Spring Boot Kafka configuration</a> · <a href="https://kafka.apache.org/40/getting-started/quickstart/">Kafka quick start</a></p>
+<div class="code"><div class="bar">Terminal · infrastructure</div><pre tabindex="0" aria-label="Terminal · infrastructure"><code>docker compose up -d
+docker compose exec booking-db pg_isready -U lab -d booking
+docker compose exec positions-db pg_isready -U lab -d positions
+docker compose exec kafka /opt/kafka/bin/kafka-topics.sh <span class="tk-s">\
+</span>  --bootstrap-server localhost:9092 --create --if-not-exists <span class="tk-s">\
+</span>  --topic trade.booked.v1 --partitions <span class="tk-n">3</span> --replication-factor <span class="tk-n">1</span></code></pre></div><p>Wait for both databases to report “accepting connections” and for the topic creation command to succeed before starting the apps. If the broker is still starting, repeat the topic command. The if-not-exists option makes creation repeatable. The advertised localhost broker address suits host-run JVMs. Containerising those JVMs requires an internal listener advertised with a resolvable service name. A reachable bootstrap address alone is insufficient because the client subsequently connects to addresses from broker metadata.</p>
+<div class="code"><div class="bar">Start each process in its own terminal</div><pre tabindex="0" aria-label="Start each process in its own terminal"><code><span class="tk-c"># Terminal A, at the project root
+</span>mvn -f booking/pom.xml spring-boot:run
+
+<span class="tk-c"># Terminal B, at the project root
+</span>mvn -f positions/pom.xml spring-boot:run</code></pre></div><p>Each application runs its own migration on startup. The booking process listens on port 8080, its database on 5541. Positions listens on 8081, its database on 5542. Topics belong to infrastructure setup; start the listener after its input exists. Execute the PUT sequence above and query positions. For a fresh dataset the eventually expected answer is 100. Immediately after the first PUT it can still be zero. If it stays zero, inspect the boundaries in order.</p>
+<div class="code"><div class="bar">Terminal · inspect all three stores</div><pre tabindex="0" aria-label="Terminal · inspect all three stores"><code>curl -s http://localhost:8081/positions/ALPHA/GILT10
+docker compose exec booking-db psql -U lab -d booking <span class="tk-s">\
+</span>  -c <span class="tk-s">&#x27;SELECT trade_id,id,sent_at FROM outbox;&#x27;</span>
+docker compose exec kafka /opt/kafka/bin/kafka-consumer-groups.sh <span class="tk-s">\
+</span>  --bootstrap-server localhost:9092 --group positions-v1 --describe
+docker compose exec positions-db psql -U lab -d positions <span class="tk-s">\
+</span>  -c <span class="tk-s">&#x27;TABLE consumed;&#x27;</span> -c <span class="tk-s">&#x27;TABLE position;&#x27;</span></code></pre></div><p>A committed trade with a pending outbox row points upstream of the positions consumer. A sent row with growing group lag points downstream of publication. A zero lag snapshot by itself cannot explain a missing position: the producer may never have published, the group may have advanced past a bad record, or the query may select the wrong book. Compare the exact event ID and payload across boundaries. On a new empty projection the example GET returns zero for an unseen key. In a live trading UI, attach freshness and completeness metadata so that “zero confirmed” and “awaiting data” have distinct meanings.</p>
+<h3 id="rehearse-two-failures-without-timing-a-crash">Rehearse two failures without timing a crash</h3>
+<p>Stop the positions JVM, leave booking and Kafka running, and submit a second trade with a different ID and units of −25. The new booking should commit and the outbox should drain. Restart positions under the same group ID. The eventual balance becomes 75. This tests independent availability and catch-up. For an exact duplicate-publication rehearsal on this disposable lab, run the SQL below <strong>for the first trade only</strong>. It deliberately makes the relay resend its original event. The first trade's ID stays stable, a fresh Kafka offset appears and the eventual balance stays 75.</p>
+<div class="code"><div class="bar">Terminal · isolated lab only</div><pre tabindex="0" aria-label="Terminal · isolated lab only"><code>docker compose exec -T booking-db psql -U lab -d booking <span class="tk-s">&lt;&lt;&#x27;SQL&#x27;
+UPDATE outbox SET sent_at = NULL
+WHERE trade_id = &#x27;11111111-1111-4111-8111-111111111111&#x27;;
+SQL</span></code></pre></div><p>To test the more delicate database-commit/offset-commit interval, pause a debugger after projection.apply returns and before the listener returns, then terminate that process. Use a fresh booking and a fresh test environment so no earlier run obscures your evidence. On restart, look for redelivery at the original offset and an unchanged balance. This differs from the SQL rehearsal: the latter gives a <em>new offset with the same event ID</em>. Both should pass. They test two distinct duplicate paths.</p>
+<h3 id="make-failures-explicit-in-spring">Make failures explicit in Spring</h3>
+<p>The supplied project configures CommonContainerStoppingErrorHandler. On an exception the listener container stops; a JVM and its HTTP endpoint can remain alive. The record remains available for recovery under the chosen record acknowledgement mode. A stale read endpoint could still answer requests, so expose consumer-running state and data freshness to your readiness or serving policy. After correcting a transient cause, restart the listener or application. For an incompatible record, deploy a compatible reader or apply an audited recovery procedure before resuming. <a href="https://docs.spring.io/spring-kafka/reference/3.3/kafka/annotation-error-handling.html">Spring Kafka error handling</a></p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Comparison table"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Recovery option</th>
+<th>Consequence for progress</th>
+<th>Best fit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Stop the container</td>
+<td>Assigned work stalls until repair or reassignment</td>
+<td>Missing or misordered financial facts make a projection unsafe</td>
+</tr>
+<tr class="even">
+<td>Bounded blocking retry</td>
+<td>Delays work on the affected listener thread</td>
+<td>Short transient database or network errors</td>
+</tr>
+<tr class="odd">
+<td>Retry topic with backoff</td>
+<td>Other records can overtake the failed one</td>
+<td>Independent operations with tolerant ordering</td>
+</tr>
+<tr class="even">
+<td>Dead-letter topic</td>
+<td>Source consumption can advance after durable recovery publication</td>
+<td>Explicitly incomplete output with an owner for repair and redrive</td>
+</tr>
+</tbody>
+</table></div>
+<p>With a dead-letter topic, capture the original key, value, topic, partition, offset, event ID when decodable and failure category. Verify recovery publication succeeds before advancing the source offset. Define who can authorise a corrected payload, how the original is preserved and how the repair is reconciled. For an ordered sequence, parking revision 2 and applying revision 3 can make the resulting state invalid. A per-aggregate quarantine or a stopped partition may be the right cost. Retrying a schema error a hundred times spends capacity without changing the result.</p>
+<section class="level l5" data-n="5" id="stage-5"><span class="tag">Operating the design</span><h2>Scale, replay and change the system safely</h2></section><h3 id="size-for-recovery-as-well-as-traffic">Size for recovery as well as traffic</h3>
+<p>Suppose bookings arrive at 120 records/s and a fifteen-minute consumer outage accumulates 108,000 records. Recovering at 300 records/s while 120/s continue arriving drains the backlog at 180/s, or ten minutes. That is a capacity scenario, not a benchmark for the one-row relay. If a hot partition receives 80/s while its single worker sustains 70/s, aggregate headroom elsewhere cannot drain it. Track rates and lag by partition alongside end-to-end age, database contention and outbox age.</p>
+<p>With one topic, three partitions and an ordinary consumer group, at most three group members can actively own a partition at once. Two replicas each configured with listener concurrency two create four consumers; at least one has no partition for this topic. Increasing concurrency also increases competing database connections and row locks. A sudden rebalance can revisit work that finished just before ownership changed. Idempotency therefore matters during routine rollouts as much as during crashes.</p>
+<p>Set poll size and timeouts using observed tail latency. For sequential processing, 100 records at 250 ms each already occupy 25 seconds before retries, commits or pauses. max.poll.interval.ms bounds the time between polls in normal group operation. A slow batch can lose its assignment and amplify duplicates. Lower max.poll.records, shorten the blocking operation or add capacity along the slow path. Raising the interval alone also lengthens the time before the group detects some stuck consumers. <a href="https://kafka.apache.org/40/configuration/consumer-configs/">Consumer configuration</a></p>
+<h3 id="rebuild-a-projection-while-the-live-one-serves">Rebuild a projection while the live one serves</h3>
+<p>Imagine a defect that inverted the sign of a sell. The consumed table proves the event ran, so replaying it against the same database correctly does nothing. Build a shadow positions database with empty balances <strong>and</strong> empty consumed IDs. Start a new consumer group from earliest with the fixed code. A new group supplies an independent cursor; an empty target supplies an independent result. Reusing the old consumed table produces empty balances. Reusing old balances with a new consumed table doubles the totals.</p>
+<p>Capture a per-partition reference end offset at the start of verification. Consume to that boundary and reconcile against an equivalent source cut, or quiesce writes for a small exercise. The sum of signed units per book and instrument is an independent oracle for immutable bookings when taken at a matching cut. Comparing two live databases at unrelated instants can flag legitimate in-flight trades. Continue tailing, validate the catch-up and switch the read endpoint. Preserve the former projection briefly as a fallback, with a clear plan for its ongoing freshness.</p>
+<p>Earliest means the earliest <strong>retained</strong> record. If the first year has expired, a replay can catch up perfectly while reconstructing the wrong balance. Restore a trusted snapshot containing balances and corresponding per-partition next offsets, then replay the suffix under a deduplication policy that covers any overlap. If old duplicate logical events might be emitted anew, that snapshot also needs the relevant dedupe state or an equivalent revision guard. A compacted latest-value topic keyed by book does not preserve a full sequence of trade deltas. Decide which history is reconstructible before setting retention.</p>
+<h3 id="test-properties-that-matter-across-releases">Test properties that matter across releases</h3>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Comparison table"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Concrete test</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Domain and HTTP</td>
+<td>Same ID with identical and changed terms; simultaneous creates</td>
+<td>One trade, one outbox row, success on identical retry, conflict on changed terms</td>
+</tr>
+<tr class="even">
+<td>Database integration</td>
+<td>Throw after the consumed insert and before balance write</td>
+<td>Both writes disappear on rollback; a subsequent attempt applies once</td>
+</tr>
+<tr class="odd">
+<td>Kafka integration</td>
+<td>Restart after DB commit, publish duplicate at new offset, inject invalid payload</td>
+<td>Stable sum on duplicates; observable stopped consumer on invalid input</td>
+</tr>
+<tr class="even">
+<td>Contract</td>
+<td>Feed previous and candidate JSON fixtures to old and new readers</td>
+<td>Additive fields tolerated; incompatible units or missing keys rejected</td>
+</tr>
+<tr class="odd">
+<td>End to end</td>
+<td>Shut down Kafka, accept a booking, restore Kafka and wait</td>
+<td>Pending row appears, drains and eventually contributes once</td>
+</tr>
+</tbody>
+</table></div>
+<p>Use real PostgreSQL and Kafka in containerised integration tests. An in-memory database or mocked KafkaTemplate cannot demonstrate unique-index contention, broker acknowledgement or group recovery. Poll for observable outcomes with a deadline instead of sleeping a fixed number of milliseconds. Give each test its own topic/group and database state. Record the first missing transition when a timeout expires. A test saying “expected 100 but got 0” is far less diagnostic than one showing the event was pending in the outbox for the entire run.</p>
+<h3 id="deploy-database-and-event-changes-in-stages">Deploy database and event changes in stages</h3>
+<p>Ship one independently versioned image per service. Run one migration owner per database deployment or use Flyway's coordinated startup with tested lock behaviour. For a renamed column, first add the replacement as nullable, deploy writers that maintain both, backfill in bounded batches, verify parity, move reads and only later remove the old column. During a rolling deployment old and new code overlap. Exercise rollback against the expanded database. Destructive cleanup belongs after the rollback window.</p>
+<p>For Kafka, deploy tolerant consumers before a producer emits a new optional field. When a semantic break requires a new topic, identify which stream each projection reads during the transition. Subscribing to both while generating new IDs for the same economic booking defeats deduplication. Preserve logical event identity where it represents the same fact and reconcile counts and amounts by business key. Define an explicit cutover revision or source watermark.</p>
+<p>Use separate workload identities for the two services. Booking needs to produce to the booking topic; positions needs to read it and use its consumer group. Restrict database roles to the owned database, distinguish migration from runtime privileges and protect application and broker traffic in the deployed environment. Keep business authorisation at the command boundary, for example whether the authenticated user can book into ALPHA. Avoid publishing unnecessary counterparty or trader details on a broadly consumed topic. The lab's loopback setup has no application authentication.</p>
+<h3 id="diagnose-stale-positions-from-the-first-missing-fact">Diagnose stale positions from the first missing fact</h3>
+<p>Start from the trade ID on the caller's receipt. Confirm the accepted terms in booking, obtain the event ID from its outbox, then find the corresponding record and the consumer group's partition progress. Finally inspect the consumed identity and the position row. In a high-volume environment use structured correlation logs and a bounded diagnostic lookup rather than scanning the whole topic. Avoid logging entire payloads or using trade IDs as metric labels; the latter creates an unbounded set of time series.</p>
+<p>Set separate objectives for booking availability and projection freshness, for example a target fraction of accepted trades visible within five seconds under agreed load. Monitor the age of the <strong>oldest pending</strong> outbox entry, the time from acceptance to application, per-partition lag, consumer-running status and database lock waits. A median delay of 30 ms can hide one partition stalled for hours. An HTTP health endpoint can remain green while its Kafka listener has stopped. <a href="https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html">Spring Boot Actuator endpoints</a></p>
+<h3 id="transfer-case-enforce-a-1000-unit-limit">Transfer case: enforce a 1,000-unit limit</h3>
+<p>Change one requirement. ALPHA may hold at most 1,000 units of GILT10, and every new buy must pass the limit before acceptance. The projection shows 900. Two clients concurrently request +80. Both read 900, each computes 980, and both accept. The committed total becomes 1,060. Faster consumption or a book-based Kafka key reduces some timing gaps but leaves the pre-acceptance race intact. The design needs a single authority that can decide and record the reservation atomically.</p>
+<div class="code"><div class="bar">Design excerpt · reserve capacity in the owning database</div><pre tabindex="0" aria-label="Design excerpt · reserve capacity in the owning database"><code><span class="tk-c">-- Parameters: requested units, book, instrument, requested units.
+</span><span class="tk-c">-- Called inside the transaction that claims the unique command ID.
+</span><span class="tk-k">UPDATE</span> limit_usage
+<span class="tk-k">SET</span> used_units = used_units + ?
+<span class="tk-k">WHERE</span> book = ? <span class="tk-k">AND</span> instrument = ?
+  <span class="tk-k">AND</span> used_units + ? &lt;= max_units
+RETURNING used_units;</code></pre></div><p>Under the simple assumptions of one positive buy, one book and one instrument, the first transaction locks and updates the limit row from 900 to 980. Under Read Committed, the competing update waits, then PostgreSQL rechecks the predicate against 980. Adding another 80 would exceed 1,000, so zero rows update. Treat that result as a rejection. Persist the booking or reservation identity and its outcome in the same transaction so that a lost success response cannot reserve twice. A rejection policy must specify whether a retried identical command retains its first decision or may be re-evaluated after capacity changes.</p>
+<p>If another service owns capacity, use a saga: record the booking as pending, request a reservation under a durable operation ID, and transition to accepted on confirmation. A rejection moves it to rejected. If a later business step fails, request an idempotent release. A timeout after requesting a reservation is ambiguous; query or retry with the same operation ID before deciding to release or rebook. Persist workflow state and deadlines so a restarted coordinator resumes the same operation. Expose pending explicitly to the caller. Positions should consume the accepted fact only after the business rule has been satisfied.</p>
+<p>The reusable decision is to locate the write that makes the promise true. An asynchronous projection suits “show me the latest processed holdings”. A conditional reservation suits “never accept a buy that exceeds available capacity”. The same services and broker can support both, provided the API says which decision has actually committed.</p>
+<section class="sources"><h2>Reference and verification notes</h2><p>Documentation checked 22 November 2026. The links alongside each design decision lead to the underlying specifications and framework references. The numerical examples describe the stated workloads. HTTP responses and failure traces are expected outcomes. The Java services have not been built or run in this environment.</p></section></main>
+</body>
+</html>
