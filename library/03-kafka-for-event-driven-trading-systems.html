@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kafka for Event-Driven Trading Systems</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1c1e22;--muted:#5b616c;--line:#e2ddd2;--card:#ffffff;--code:#f1ede5;--accent:#5b3fb0;--accent-soft:#eeeafa;--warn:#b4541a;--ok:#2c7a4b}
+@media (prefers-color-scheme:dark){:root{--bg:#131519;--fg:#e7e4dd;--muted:#9ba1ab;--line:#2b2f37;--card:#1a1d23;--code:#0e1013;--accent:#a892ee;--accent-soft:#1f1a30;--warn:#e09055;--ok:#6cc08b}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:1fr;gap:0}
+@media (min-width:1040px){.wrap{grid-template-columns:250px minmax(0,1fr);gap:48px}}
+header.hero{border-bottom:1px solid var(--line);padding:44px 20px 32px;background:linear-gradient(180deg,var(--accent-soft),transparent)}
+.hero-in{max-width:1180px;margin:0 auto}
+.tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px}
+h1,h2,h3{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px);margin:0 0 12px;letter-spacing:-.01em}
+.lede{font-size:18px;color:var(--muted);max-width:760px;margin:0}
+.meta{margin-top:16px;font-size:13px;color:var(--muted)}
+nav.toc{font-size:14px;padding:24px 0}
+@media (min-width:1040px){nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:32px 0}}
+nav.toc summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--accent)}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:t}
+nav.toc li{counter-increment:t}
+nav.toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line)}
+nav.toc a::before{content:counter(t) ". "}
+nav.toc a:hover,nav.toc a.on{color:var(--fg);border-left-color:var(--accent)}
+main{padding:8px 0 80px;min-width:0;counter-reset:sec}
+section{padding-top:28px}
+h2{font-size:28px;margin:28px 0 12px;padding-top:20px;border-top:1px solid var(--line);counter-increment:sec}
+h2::before{content:counter(sec);display:inline-block;min-width:1.6em;color:var(--accent);font-variant-numeric:tabular-nums}
+h3{font-size:20px;margin:28px 0 8px}
+h4{font-size:15px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+p{margin:0 0 14px;max-width:780px}
+ul,ol{max-width:780px;padding-left:22px;margin:0 0 14px}
+li{margin:4px 0}
+a{color:var(--accent)}
+code{font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow:auto;margin:0 0 18px;max-width:100%}
+pre code{background:none;padding:0;font-size:13px;white-space:pre;overflow-wrap:normal}
+pre[data-lang]::before{content:attr(data-lang);position:absolute;top:6px;right:64px;font:11px ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+pre button{position:absolute;top:5px;right:6px;font:11px inherit;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:5px;padding:2px 8px;cursor:pointer}
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--accent-soft)}
+tr:last-child td{border-bottom:0}
+.note,.warn,.tip{border-left:4px solid var(--accent);background:var(--card);border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 18px;max-width:780px;box-shadow:0 0 0 1px var(--line)}
+.warn{border-left-color:var(--warn)}.tip{border-left-color:var(--ok)}
+.note b:first-child,.warn b:first-child,.tip b:first-child{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.warn b:first-child{color:var(--warn)}.tip b:first-child{color:var(--ok)}.note b:first-child{color:var(--accent)}
+.note p:last-child,.warn p:last-child,.tip p:last-child{margin-bottom:0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 18px;padding:16px;border:1px dashed var(--line);border-radius:8px;background:var(--card)}
+.flow .n{border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-size:13.5px;font-weight:600;background:var(--accent-soft);text-align:center}
+.flow .n small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.flow .a{color:var(--accent);font-weight:700}
+.flow .br{flex-basis:100%;height:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h4{margin:0 0 6px;color:var(--accent)}
+.card p,.card ul{font-size:14.5px;margin-bottom:0}
+ul.chk{list-style:none;padding-left:0}
+ul.chk li{padding-left:28px;position:relative}
+ul.chk li::before{content:"";position:absolute;left:2px;top:.35em;width:14px;height:14px;border:2px solid var(--accent);border-radius:4px}
+footer{border-top:1px solid var(--line);margin-top:48px;padding-top:16px;font-size:13px;color:var(--muted)}
+@media print{nav.toc{display:none}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-in">
+<span class="tag">Guide 3 of 3 - Streaming architecture</span>
+<h1>Kafka for Event-Driven Trading Systems</h1>
+<p class="lede">Kafka from first principles, then how to use it in trading: ordering, exactly-once, state, design patterns, latency, resilience, and the limits you must design around.</p>
+<p class="meta">Written November 2026 against Apache Kafka 4.4 (KRaft only). Config values are starting points, not universal answers: measure on your own workload.</p>
+</div></header>
+<div class="wrap">
+<nav class="toc"><details id="tocd"><summary>Contents</summary><ol id="toc"></ol></details></nav>
+<main>
+<section>
+<h2>Where Kafka fits in a trading stack</h2>
+<p>Kafka is a distributed, replicated, append-only log. Producers append records to topics, consumers read them in order at their own pace, and the data stays on disk for as long as you configure. That combination (durable, ordered, replayable, many independent readers) is why it has become the backbone for event-driven systems in finance.</p>
+<p>It is not a low-latency messaging bus. Being clear about that boundary is the most important design decision in this guide.</p>
+<div class="tw"><table>
+<tr><th>Zone</th><th>Latency budget</th><th>Typical technology</th><th>Kafka's role</th></tr>
+<tr><td>Tick-to-trade hot path: market data handlers, signal, order gateway, matching</td><td>Microseconds</td><td>Kernel bypass, shared memory, Aeron, Chronicle Queue, Disruptor-style ring buffers, FPGA</td><td>None in the path. Receives a copy asynchronously.</td></tr>
+<tr><td>Order and execution management, pre-trade risk state, smart routing decisions at human or algo-slice speed</td><td>Low milliseconds</td><td>In-memory services with a sequenced journal</td><td>Possible as the journal if single-digit milliseconds is acceptable. Often a downstream copy.</td></tr>
+<tr><td>Trade capture, positions, P&amp;L, intraday risk, limits, allocations, surveillance, compliance, booking, reporting</td><td>Milliseconds to seconds</td><td>Event-driven microservices, stream processors</td><td><b>The backbone.</b> This is Kafka's home.</td></tr>
+<tr><td>Analytics, research, data lake, end-of-day</td><td>Seconds to hours</td><td>Flink, Spark, warehouses, object storage</td><td>Source of record feeding everything.</td></tr>
+</table></div>
+<div class="flow">
+<span class="n">Venues / brokers<small>FIX, binary</small></span><span class="a">→</span>
+<span class="n">Gateways + OMS<small>hot path, in memory</small></span><span class="a">→</span>
+<span class="n">Kafka<small>orders, fills, market data</small></span><span class="a">→</span>
+<span class="n">Positions / P&amp;L / Risk<small>stateful consumers</small></span><span class="a">→</span>
+<span class="n">Ledger, reporting, surveillance, lake</span>
+</div>
+<h3>Why it earns its place</h3>
+<ul>
+<li><b>One ordered history</b> of orders and executions that every downstream system reads, instead of point-to-point feeds that each see a slightly different truth.</li>
+<li><b>Replay.</b> Rebuild a position service from the day's fills, re-run a risk model on yesterday's flow, reproduce an incident exactly.</li>
+<li><b>Decoupling.</b> A slow surveillance consumer cannot back-pressure the order flow. A new consumer can be added without touching producers.</li>
+<li><b>Audit.</b> An immutable, timestamped record of what happened and in what order.</li>
+</ul>
+</section>
+
+<section>
+<h2>Kafka fundamentals</h2>
+<div class="tw"><table>
+<tr><th>Concept</th><th>What it is</th><th>Why it matters</th></tr>
+<tr><td>Record</td><td>Key, value, headers, timestamp (millisecond resolution).</td><td>The key decides the partition, and therefore ordering.</td></tr>
+<tr><td>Topic</td><td>A named stream of records.</td><td>Unit of schema, retention and access control.</td></tr>
+<tr><td>Partition</td><td>An ordered, immutable log. A topic is one or more partitions.</td><td><b>Ordering exists only within a partition.</b> Partitions are also the unit of parallelism.</td></tr>
+<tr><td>Offset</td><td>The position of a record in a partition.</td><td>Consumers track progress by offset. Replay means seeking to an older offset.</td></tr>
+<tr><td>Broker</td><td>A server storing partitions.</td><td>Each partition has one leader broker and follower replicas.</td></tr>
+<tr><td>KRaft controllers</td><td>A Raft quorum holding cluster metadata.</td><td>Since Kafka 4.0 this is the only mode: ZooKeeper is gone.</td></tr>
+<tr><td>Consumer group</td><td>Consumers sharing a group id divide a topic's partitions among themselves.</td><td>Scaling and failover. Each partition is read by exactly one member of a group.</td></tr>
+<tr><td>Retention</td><td>Time or size based deletion, or log compaction.</td><td>Decides whether a topic is a stream of events or a table of latest values.</td></tr>
+</table></div>
+<h3>Delete versus compact</h3>
+<div class="tw"><table>
+<tr><th>Policy</th><th>Keeps</th><th>Use for</th></tr>
+<tr><td><code>cleanup.policy=delete</code></td><td>Everything, until it ages out by time or size.</td><td>Events: orders, fills, ticks.</td></tr>
+<tr><td><code>cleanup.policy=compact</code></td><td>At least the latest record for every key. A record with a null value (a tombstone) eventually removes the key.</td><td>Current state: positions, reference data, limits, last quote.</td></tr>
+<tr><td><code>compact,delete</code></td><td>Latest per key, within a time window.</td><td>State that should expire, such as intraday keys.</td></tr>
+</table></div>
+<p>Compaction runs in the background and never touches the active segment, so a reader of a compacted topic can still see several values for a key. It guarantees the latest value is retained, not that old ones are gone.</p>
+<h3>Tiered storage</h3>
+<p>Older log segments can be moved to object storage while recent data stays on broker disks. This makes long retention (months or years of order flow for replay) affordable and keeps brokers quick to recover. It does not apply to compacted topics, and reads from the remote tier are slower, so it suits history, not the live path.</p>
+</section>
+
+<section>
+<h2>Durability and replication</h2>
+<p>Each partition is replicated to several brokers. The leader accepts writes and followers fetch from it. Followers that are caught up form the in-sync replica set (ISR). A record is <b>committed</b>, and visible to consumers, once every in-sync replica has it.</p>
+<div class="tw"><table>
+<tr><th>Setting</th><th>Where</th><th>Trading-grade value</th><th>Effect</th></tr>
+<tr><td><code>replication.factor</code></td><td>Topic</td><td>3 (across three zones or racks)</td><td>Copies of each partition.</td></tr>
+<tr><td><code>min.insync.replicas</code></td><td>Topic or broker</td><td>2</td><td>With <code>acks=all</code>, a write succeeds only if this many replicas have it. Below that, producers get errors instead of silent risk.</td></tr>
+<tr><td><code>acks</code></td><td>Producer</td><td><code>all</code></td><td>Wait for the full ISR before acknowledging.</td></tr>
+<tr><td><code>unclean.leader.election.enable</code></td><td>Topic or broker</td><td><code>false</code></td><td>Never elect an out-of-date replica as leader. Prefers unavailability to data loss.</td></tr>
+<tr><td><code>broker.rack</code></td><td>Broker</td><td>Set to the zone</td><td>Spreads replicas across failure domains.</td></tr>
+</table></div>
+<p>With RF 3 and min ISR 2 you tolerate one broker (or zone) failure with no loss and no interruption beyond a leader election of a few seconds. A second failure makes the partition read-only until a replica returns. That is the right trade for order and trade data: stop accepting writes before risking divergence.</p>
+<div class="warn"><b>What "durable" really means</b><p>By default Kafka acknowledges a write when it is in the page cache of the in-sync replicas, not when it is fsynced. Durability comes from replication across independent machines. A simultaneous power loss of all replicas can lose recent records. That is why replicas must sit in separate failure domains, and why some firms keep a second independent record (a venue drop copy, or a local gateway journal) for the most critical flow.</p></div>
+</section>
+
+<section>
+<h2>Producers</h2>
+<p>A producer batches records per partition, optionally compresses the batch, and sends it to the partition leader. The settings below decide your latency, throughput and safety.</p>
+<div class="tw"><table>
+<tr><th>Setting</th><th>Default</th><th>Guidance for trading flows</th></tr>
+<tr><td><code>acks</code></td><td><code>all</code></td><td>Keep. Never <code>0</code> or <code>1</code> for orders, fills or positions.</td></tr>
+<tr><td><code>enable.idempotence</code></td><td><code>true</code></td><td>Keep. The broker de-duplicates retries using a producer id and sequence number, so retries cannot create duplicates or reorder within a partition.</td></tr>
+<tr><td><code>max.in.flight.requests.per.connection</code></td><td>5</td><td>Safe up to 5 with idempotence: order is preserved.</td></tr>
+<tr><td><code>linger.ms</code></td><td>5 since Kafka 4.0</td><td>How long to wait to fill a batch. <code>0</code> for lowest latency on thin flows, a few ms for throughput. Under load, batching often <i>lowers</i> tail latency.</td></tr>
+<tr><td><code>batch.size</code></td><td>16 KB</td><td>Raise (64 to 256 KB) for market data and high-volume topics.</td></tr>
+<tr><td><code>compression.type</code></td><td><code>none</code></td><td><code>lz4</code> or <code>zstd</code> for throughput and storage. Costs a little CPU, saves network and disk.</td></tr>
+<tr><td><code>delivery.timeout.ms</code></td><td>120000</td><td>Upper bound on send plus retries. Decide deliberately what the application does when it expires.</td></tr>
+<tr><td><code>transactional.id</code></td><td>unset</td><td>Set for exactly-once pipelines. Must be stable per logical producer instance.</td></tr>
+</table></div>
+<pre data-lang="java"><code>Properties p = new Properties();
+p.put("bootstrap.servers", "kafka-1:9093,kafka-2:9093,kafka-3:9093");
+p.put("key.serializer", StringSerializer.class.getName());
+p.put("value.serializer", KafkaAvroSerializer.class.getName());
+p.put("acks", "all");
+p.put("enable.idempotence", "true");
+p.put("linger.ms", "1");
+p.put("compression.type", "lz4");
+p.put("delivery.timeout.ms", "30000");
+p.put("client.id", "oms-order-events-1");
+
+try (KafkaProducer&lt;String, OrderEvent&gt; producer = new KafkaProducer&lt;&gt;(p)) {
+    ProducerRecord&lt;String, OrderEvent&gt; rec =
+        new ProducerRecord&lt;&gt;("orders.events.v1", event.getOrderId(), event);
+    rec.headers().add("correlation-id", correlationId.getBytes(UTF_8));
+    producer.send(rec, (meta, err) -&gt; {
+        if (err != null) onPublishFailure(event, err);   // never ignore this
+    });
+}</code></pre>
+<div class="warn"><b>The send is asynchronous</b><p><code>send()</code> returns before the broker has the record. If the process dies, records still in the client buffer are lost. If a business action depends on the event being durable (for example, "do not acknowledge the client until the order event is stored"), wait for the callback or future. If the event describes something that has already happened elsewhere, you need the outbox pattern or a local journal, covered later.</p></div>
+</section>
+
+<section>
+<h2>Consumers and groups</h2>
+<p>A consumer polls for batches of records, processes them, and commits the offset it has reached. Committed offsets are stored in Kafka per group, so a restarted or replacement consumer resumes from the last commit.</p>
+<h3>The poll loop and commits</h3>
+<pre data-lang="java"><code>consumer.subscribe(List.of("executions.v1"));
+while (running) {
+    ConsumerRecords&lt;String, Fill&gt; records = consumer.poll(Duration.ofMillis(100));
+    for (ConsumerRecord&lt;String, Fill&gt; r : records) {
+        handle(r);                         // must be idempotent
+    }
+    consumer.commitSync();                 // commit AFTER processing: at-least-once
+}</code></pre>
+<div class="tw"><table>
+<tr><th>Commit strategy</th><th>Result</th></tr>
+<tr><td>Auto-commit (the default)</td><td>Offsets are committed on a timer, regardless of whether processing finished. Can lose or duplicate. Turn it off for anything that matters.</td></tr>
+<tr><td>Commit after processing</td><td>At-least-once: a crash between processing and commit replays records. Requires idempotent handling.</td></tr>
+<tr><td>Commit before processing</td><td>At-most-once: a crash loses records. Rarely acceptable.</td></tr>
+<tr><td>Offsets stored with the result</td><td>Effectively exactly-once: commit the output and the offset atomically, either in a Kafka transaction or in the same database transaction as the state change.</td></tr>
+</table></div>
+<h3>Rebalancing</h3>
+<p>When members join, leave or time out, partitions are reassigned. During reassignment the affected partitions are not being processed, and stateful consumers may need to rebuild state. For a position or risk service this pause is a real latency event.</p>
+<ul>
+<li><b>Use the new consumer group protocol</b> (<code>group.protocol=consumer</code>, production-ready since 4.0). Assignment is computed on the broker and applied incrementally, so one member changing no longer stops the whole group. The classic protocol is on its way to deprecation.</li>
+<li><b>Static membership</b> (<code>group.instance.id</code>) lets a restarting instance reclaim its partitions without a rebalance, which is what you want for rolling deploys of stateful services.</li>
+<li><b>Stay inside <code>max.poll.interval.ms</code></b>. A handler that blocks too long gets the consumer evicted, its partitions reassigned, and the same slow record handed to the next member. Keep handlers fast, or reduce <code>max.poll.records</code>.</li>
+<li><b>Read only committed data</b> when upstream uses transactions: <code>isolation.level=read_committed</code>. The default is <code>read_uncommitted</code>.</li>
+</ul>
+<h3>Lag</h3>
+<p>Consumer lag (latest offset minus committed offset) is the primary health signal of an event-driven system. Lag measured in <i>time</i> ("this risk view is 4 seconds behind") is more meaningful to the business than lag in records. Alert on it, and decide what each service should do when it is behind: a risk check running on stale positions should know it is stale.</p>
+<h3>Share groups (queues)</h3>
+<p>Kafka 4.x adds share groups: several consumers read the same partition with per-record acknowledgement, redelivery, a delivery-count limit and, from 4.4, a dead-letter queue. This gives work-queue semantics without sizing partitions to consumer count. The price is <b>no ordering guarantee</b>, so use them for independent tasks (enrichment, notifications, report generation), never for order or fill processing.</p>
+</section>
+
+<section>
+<h2>Delivery guarantees and exactly-once</h2>
+<div class="tw"><table>
+<tr><th>Guarantee</th><th>How</th><th>Failure behaviour</th></tr>
+<tr><td>At-most-once</td><td>Commit, then process. Or <code>acks=0</code>.</td><td>Loss.</td></tr>
+<tr><td>At-least-once</td><td>Idempotent producer, <code>acks=all</code>, process then commit.</td><td>Duplicates on retry or rebalance. The normal baseline.</td></tr>
+<tr><td>Exactly-once (within Kafka)</td><td>Transactions: output records and consumed offsets commit atomically.</td><td>Neither loss nor duplicates for Kafka-to-Kafka processing.</td></tr>
+</table></div>
+<h3>How transactions work</h3>
+<p>A transactional producer registers a <code>transactional.id</code> with a coordinator and receives an epoch. It writes records to any number of partitions, adds the consumer offsets it has processed, and commits. The coordinator writes commit markers so that <code>read_committed</code> consumers see all of the transaction or none of it. If a second instance starts with the same <code>transactional.id</code>, the epoch is bumped and the old instance is fenced: this is what stops a "zombie" from writing after it has been replaced.</p>
+<pre data-lang="java"><code>producer.initTransactions();
+while (running) {
+    ConsumerRecords&lt;String, Fill&gt; in = consumer.poll(Duration.ofMillis(50));
+    if (in.isEmpty()) continue;
+    producer.beginTransaction();
+    try {
+        for (ConsumerRecord&lt;String, Fill&gt; r : in) {
+            producer.send(new ProducerRecord&lt;&gt;("positions.deltas.v1", positionKey(r.value()), toDelta(r.value())));
+        }
+        producer.sendOffsetsToTransaction(nextOffsets(in), consumer.groupMetadata());
+        producer.commitTransaction();
+    } catch (ProducerFencedException | OutOfOrderSequenceException | AuthorizationException fatal) {
+        producer.close();                  // another instance has taken over: stop
+        throw fatal;
+    } catch (KafkaException retriable) {
+        producer.abortTransaction();
+        rewindToLastCommitted(consumer);   // reprocess the batch
+    }
+}</code></pre>
+<h3>What exactly-once does not give you</h3>
+<ul>
+<li><b>It covers Kafka only.</b> A REST call, a FIX message to a venue, an email or a database write inside the loop is not part of the transaction. On retry it happens twice. External effects need their own idempotency key or the outbox pattern.</li>
+<li><b>It does not remove upstream duplicates.</b> If a venue resends an execution report, or a producer without idempotence retried, the duplicate is a legitimate record as far as Kafka is concerned. Business-level de-duplication (by execution id, by client order id) is still required.</li>
+<li><b>It costs latency.</b> <code>read_committed</code> consumers cannot read past the oldest open transaction, so end-to-end delay includes the transaction's duration. Short, frequent transactions keep this to a few milliseconds. A stalled producer blocks readers of those partitions until it commits or its transaction times out (<code>transaction.timeout.ms</code>).</li>
+<li><b>It costs throughput</b> at very small batch sizes because each commit is several round trips.</li>
+</ul>
+<div class="tip"><b>Rule of thumb</b><p>Make every consumer idempotent first. Add transactions where a duplicate or a gap in a Kafka-to-Kafka step would be a correctness problem (positions, ledgers, limit usage). Do not rely on transactions as a substitute for idempotency.</p></div>
+</section>
+
+<section>
+<h2>Ordering, keys and partitioning</h2>
+<p>Kafka guarantees order within a partition and nothing across partitions. The producer picks the partition by hashing the record key. So <b>the key is your ordering contract</b>: every record that must be seen in sequence relative to another must share a key.</p>
+<div class="tw"><table>
+<tr><th>Key</th><th>Guarantees</th><th>Good for</th><th>Problem</th></tr>
+<tr><td>Order id</td><td>All events of one order in sequence.</td><td>Order lifecycle, order state machines.</td><td>Fills for the same instrument or account arrive unordered relative to each other.</td></tr>
+<tr><td>Instrument</td><td>All activity in one instrument in sequence.</td><td>Market data, per-instrument books and signals.</td><td>Heavy skew: a few instruments dominate volume and create hot partitions.</td></tr>
+<tr><td>Account or book</td><td>All activity for one account in sequence.</td><td>Limits, margin, buying power.</td><td>Large accounts become hot keys.</td></tr>
+<tr><td>Book + instrument</td><td>Sequence per position.</td><td>Position keeping.</td><td>Account-level aggregates then need another step.</td></tr>
+</table></div>
+<p>No single key serves every consumer. The standard answer is to <b>re-key</b>: a small stage reads the stream keyed one way and writes it keyed another way to a new topic, which the next stage consumes. Kafka Streams does this automatically with repartition topics.</p>
+<h3>Rules that prevent subtle bugs</h3>
+<ul>
+<li><b>Changing the partition count breaks the key-to-partition mapping.</b> New records for a key land on a different partition, and ordering relative to old records is lost. Size for growth up front, and if you must change, migrate to a new topic.</li>
+<li><b>Do not use null keys</b> where order matters: they spread across partitions.</li>
+<li><b>All producers of a topic must use the same partitioner</b> and the same key serialisation. Clients in different languages have had different default hash functions.</li>
+<li><b>Global order needs a single partition.</b> That caps throughput at one partition's capacity (still tens of thousands of records per second or more) and one consumer per group. It is a legitimate choice for a low-volume sequenced stream, such as a firm-wide command log.</li>
+<li><b>Carry your own sequence.</b> Put a monotonic sequence number from the source (venue sequence, OMS event sequence) in the payload. It lets consumers detect gaps and duplicates, and re-order after a merge.</li>
+<li><b>Time is not order.</b> Kafka's timestamp has millisecond resolution and comes from the producer's clock by default. Carry the venue timestamp, the gateway receive timestamp and your own event timestamp in the payload at full precision.</li>
+</ul>
+<h3>Sizing partitions</h3>
+<p>Partitions set maximum consumer parallelism. More partitions mean more open files, longer leader elections and more end-to-end latency at the margin. Start from the required parallelism at peak (open, close, a volatility event), add headroom, and prefer a moderate number, for example 12 to 48 for busy topics, to hundreds. Test with peak-day replays, not averages.</p>
+<p><b>Hot keys</b> are handled by design, not by tuning: isolate the hot instrument on its own topic, sub-key where order allows (instrument plus venue), conflate market data before it reaches Kafka, or accept one busy partition and make its consumer fast.</p>
+</section>
+
+<section>
+<h2>Topic and event design</h2>
+<h3>Three kinds of topic</h3>
+<div class="tw"><table>
+<tr><th>Kind</th><th>Meaning</th><th>Example</th><th>Policy</th></tr>
+<tr><td>Command</td><td>A request to do something. May be rejected. One logical handler.</td><td><code>orders.commands.v1</code></td><td>Delete. Short retention is fine once audited elsewhere.</td></tr>
+<tr><td>Event</td><td>A fact that has happened. Immutable. Many consumers.</td><td><code>orders.events.v1</code>, <code>executions.v1</code></td><td>Delete, with long retention or tiered storage.</td></tr>
+<tr><td>State</td><td>The latest value for a key.</td><td><code>positions.v1</code>, <code>refdata.instruments.v1</code>, <code>risk.limits.v1</code></td><td>Compact.</td></tr>
+</table></div>
+<p>Name topics by domain and meaning, not by producing application: <code>&lt;domain&gt;.&lt;entity&gt;.&lt;kind&gt;.v&lt;major&gt;</code>. Create them through infrastructure as code with explicit partitions, replication and retention. Disable automatic topic creation.</p>
+<h3>Event shape</h3>
+<pre data-lang="json"><code>{
+  "eventId": "01JCQ8Z6T3M9X4K7Q2R5V8W1YB",
+  "eventType": "OrderPartiallyFilled",
+  "schemaVersion": 3,
+  "orderId": "ORD-20261115-000184",
+  "clOrdId": "ALGO7-55120",
+  "sequence": 7,
+  "instrumentId": "XLON:VOD",
+  "book": "EQ-ARB-01",
+  "side": "BUY",
+  "lastQty": 2500, "lastPx": "71.42", "cumQty": 7500, "leavesQty": 2500,
+  "execId": "XLON-9F3A77C1",
+  "venueTs": "2026-11-16T08:00:01.123456Z",
+  "gatewayRecvTs": "2026-11-16T08:00:01.123801Z",
+  "eventTs": "2026-11-16T08:00:01.124010Z",
+  "causationId": "01JCQ8Z6SZ...", "correlationId": "ORD-20261115-000184"
+}</code></pre>
+<ul>
+<li><b>Events are facts in the past tense</b> and carry enough data to be understood alone (event-carried state). Consumers should not have to call back to the producer.</li>
+<li><b>Prices and quantities are decimals</b>, as strings or scaled integers. Never binary floating point.</li>
+<li><b>Identifiers for idempotency</b>: a unique event id, the business ids (order, execution), and a per-entity sequence.</li>
+<li><b>Correlation and causation ids</b>, and trace context in headers, so one order can be followed across services.</li>
+</ul>
+<h3>Schemas and evolution</h3>
+<p>Use Avro or Protobuf with a schema registry, and enforce compatibility in CI. For long-lived event topics choose <code>FULL</code> or at least <code>BACKWARD</code> compatibility: new fields are optional with defaults, fields are never renamed or re-typed, enum values are only added with a safe default. A breaking change means a new topic version (<code>.v2</code>) and a migration, with both published for a period.</p>
+<p>Replay makes this stricter than in a request-response system: a consumer deployed next year must still read events written today. Upcasting old events on read is a normal part of an event-sourced codebase.</p>
+</section>
+
+<section>
+<h2>Reference flow: an order's life</h2>
+<div class="flow">
+<span class="n">Strategy / UI<small>NewOrder command</small></span><span class="a">→</span>
+<span class="n">OMS<small>validate, pre-trade risk</small></span><span class="a">→</span>
+<span class="n">Venue gateway<small>FIX out</small></span><span class="a">→</span>
+<span class="n">Venue</span>
+<span class="br"></span>
+<span class="n">Venue<small>execution reports</small></span><span class="a">→</span>
+<span class="n">Gateway<small>normalise, dedupe by ExecID</small></span><span class="a">→</span>
+<span class="n">executions.v1</span><span class="a">→</span>
+<span class="n">Position keeper<small>re-key by book+instrument</small></span><span class="a">→</span>
+<span class="n">positions.v1<small>compacted</small></span>
+<span class="br"></span>
+<span class="n">positions.v1 + md.quotes</span><span class="a">→</span>
+<span class="n">P&amp;L / risk<small>joins, aggregates</small></span><span class="a">→</span>
+<span class="n">risk.exposures.v1, risk.breaches.v1</span><span class="a">→</span>
+<span class="n">Limits feed back to OMS</span>
+</div>
+<h3>The central design choice: is Kafka in front of, or behind, the decision?</h3>
+<div class="tw"><table>
+<tr><th></th><th>Log first (Kafka as the sequencer)</th><th>Act first (Kafka as the record)</th></tr>
+<tr><td>Flow</td><td>The command is written to Kafka. The OMS consumes it in order, decides, and emits events.</td><td>The OMS decides in memory, sends to the venue, and publishes events afterwards.</td></tr>
+<tr><td>Strength</td><td>Deterministic: state is a pure function of the log. Replay and failover are straightforward. Nothing is acted on that is not recorded.</td><td>Lowest latency. The hot path does not wait on a broker.</td></tr>
+<tr><td>Weakness</td><td>Adds a durable Kafka write (milliseconds, with tail risk) to every order.</td><td>A crash between acting and publishing leaves the log missing a fact. Needs a local journal or outbox and reconciliation.</td></tr>
+<tr><td>Fits</td><td>Agency and care orders, allocations, booking, anything where a few milliseconds is fine.</td><td>Latency-sensitive execution. Kafka is then the downstream system of record, fed from the gateway's own journal.</td></tr>
+</table></div>
+<p>Many firms use both: a purpose-built sequenced journal (Aeron Cluster, a replicated in-memory log) for the hot path, bridged into Kafka in order, so that everything after the trade is event-driven on a complete and ordered stream.</p>
+<h3>Order state and idempotency</h3>
+<ul>
+<li>Model the order as an explicit state machine (New, PendingNew, Working, PartiallyFilled, Filled, PendingCancel, Cancelled, Rejected, Expired). Reject events that are invalid for the current state, and log them: they indicate reordering or loss.</li>
+<li><b>Commands are idempotent by client order id.</b> A retried NewOrder with the same id must not create a second order.</li>
+<li><b>Fills are idempotent by venue execution id.</b> Venues resend on reconnect, so de-duplicate at the gateway and again where money is counted.</li>
+<li><b>Corrections are new events.</b> A trade bust or price correction is a compensating event that references the original execution. Never edit or delete history.</li>
+<li><b>Pre-trade risk is checked in process</b> against in-memory limits and positions built from Kafka, not by a synchronous call through Kafka. Kafka keeps that in-memory state current.</li>
+</ul>
+</section>
+
+<section>
+<h2>Handling state</h2>
+<p>Events are easy. State (positions, open orders, limit usage, P&amp;L) is where event-driven systems become difficult. The questions to answer for every stateful service are: where does the state live, how is it rebuilt, how long does that take, and how do you know it is right.</p>
+<h3>Where state can live</h3>
+<div class="tw"><table>
+<tr><th>Option</th><th>How it works</th><th>Strength</th><th>Weakness</th></tr>
+<tr><td>In memory, rebuilt by replay</td><td>On start, read the event topic from a snapshot offset and fold events into state.</td><td>Fast reads, simple, deterministic.</td><td>Start-up time grows with history unless snapshots are taken.</td></tr>
+<tr><td>Compacted topic as the table</td><td>The service publishes its latest state per key. It, and others, reload from it.</td><td>Cheap recovery. Other services can materialise the same table.</td><td>Compaction is lazy. Loading is proportional to key count.</td></tr>
+<tr><td>Kafka Streams state store</td><td>Local RocksDB store, backed by a compacted changelog topic. Standby replicas keep warm copies.</td><td>State, changelog and offsets move together, with exactly-once. Joins and windows built in.</td><td>JVM only. Rebalances move state. Restoration can take minutes without standbys.</td></tr>
+<tr><td>Apache Flink</td><td>Operator state with periodic distributed checkpoints to object storage.</td><td>Large state, rich event-time processing, SQL.</td><td>A separate cluster to run. Recovery rewinds to the last checkpoint.</td></tr>
+<tr><td>External database</td><td>Consumer writes state to Postgres or a key-value store, storing the consumed offset in the same transaction.</td><td>Queryable by anything. Exactly-once into the database.</td><td>Database latency on the processing path. The database becomes the scaling limit.</td></tr>
+</table></div>
+<h3>Kafka Streams: a position keeper</h3>
+<pre data-lang="java"><code>StreamsBuilder b = new StreamsBuilder();
+
+KTable&lt;String, Position&gt; positions = b
+    .stream("executions.v1", Consumed.with(Serdes.String(), fillSerde))
+    .selectKey((orderId, fill) -&gt; fill.book() + "|" + fill.instrumentId())   // re-key
+    .groupByKey(Grouped.with(Serdes.String(), fillSerde))                     // repartition topic
+    .aggregate(
+        Position::flat,
+        (key, fill, pos) -&gt; pos.apply(fill),      // must ignore an execId it has already applied
+        Materialized.&lt;String, Position, KeyValueStore&lt;Bytes, byte[]&gt;&gt;as("positions-store")
+            .withValueSerde(positionSerde));
+
+positions.toStream().to("positions.v1", Produced.with(Serdes.String(), positionSerde));
+
+Properties cfg = new Properties();
+cfg.put(StreamsConfig.APPLICATION_ID_CONFIG, "position-keeper");
+cfg.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE_V2);
+cfg.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, 1);
+cfg.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 3);</code></pre>
+<p>Things to know before relying on it:</p>
+<ul>
+<li><b>Joins need co-partitioning</b>: both sides keyed the same way with the same partition count.</li>
+<li><b>Standby replicas</b> are what make failover fast. Without them a new owner replays the changelog before it can serve.</li>
+<li><b>Under exactly-once, a crash used to force a full store rebuild.</b> Kafka 4.4 introduces opt-in transactional state stores that replay only writes since the last commit, which shortens recovery considerably. It is new: test it before production.</li>
+<li><b>Changelog and repartition topics are real topics</b> with real cost. Monitor them, and set their replication to 3.</li>
+<li><b>Interactive queries</b> expose the local store over your own API, but an instance only holds its own partitions, so you need routing, and reads are eventually consistent.</li>
+</ul>
+<h3>Exactly-once into a database</h3>
+<pre data-lang="sql"><code>BEGIN;
+  -- skip if already applied (idempotency on the business key)
+  INSERT INTO applied_executions (exec_id) VALUES (:execId)
+    ON CONFLICT DO NOTHING;
+  -- only if the row above was inserted:
+  UPDATE positions SET qty = qty + :signedQty, cost = cost + :signedNotional
+    WHERE book = :book AND instrument_id = :instrumentId;
+  -- progress marker stored with the data
+  INSERT INTO consumer_offsets (topic, part, next_offset) VALUES (:t, :p, :o)
+    ON CONFLICT (topic, part) DO UPDATE SET next_offset = EXCLUDED.next_offset;
+COMMIT;</code></pre>
+<p>On start-up the consumer reads <code>consumer_offsets</code> and seeks to it, ignoring Kafka's committed offsets. State and progress can never disagree.</p>
+<h3>Practices that make state trustworthy</h3>
+<ul>
+<li><b>Deterministic handlers.</b> State must depend only on the events and their embedded timestamps. No wall-clock reads, no random numbers, no lookups to mutable external services inside the fold. Then replay gives the same answer, and two replicas agree.</li>
+<li><b>Snapshots.</b> Periodically persist state with the offset it corresponds to. Recovery is load snapshot, then replay the tail. Start-of-day positions plus intraday fills is the same pattern expressed in business terms.</li>
+<li><b>A catch-up gate.</b> On start, record the end offsets, consume up to them, and only then declare ready. A risk engine answering from half-loaded positions is worse than one that is down.</li>
+<li><b>Staleness is part of the state.</b> Expose "as of" offsets and timestamps with every view. Downstream checks can then refuse, widen limits conservatively or alert when inputs are behind.</li>
+<li><b>Reconcile continuously.</b> Compare derived positions with an independent source: the venue or prime broker drop copy, the books and records system. Event-driven state can drift through a bug or a missed correction, and reconciliation is how you find out the same day.</li>
+<li><b>Out-of-order and late events.</b> Across partitions and sources there is no order. Use source sequence numbers, buffer briefly where needed, and design aggregates so that a late fill or correction is applied as an adjustment instead of being dropped.</li>
+<li><b>Version the logic.</b> If the calculation changes, replaying old events through new code gives different history. Record which version produced each output, and decide explicitly whether to restate.</li>
+<li><b>Bound the state.</b> Expire closed orders, roll day-scoped keys with tombstones, and watch store size. Unbounded key growth is the slow failure of stateful stream processors.</li>
+</ul>
+</section>
+
+<section>
+<h2>Design patterns</h2>
+<div class="cards">
+<div class="card"><h4>Event sourcing</h4><p>The event log is the source of truth and state is derived. Natural for orders and positions: full audit and replay for free. Costs: schema evolution forever, and eventual consistency for readers.</p></div>
+<div class="card"><h4>CQRS</h4><p>One model handles commands and emits events. Separate read models (a blotter, a risk cube, a search index) are built from those events, each shaped for its queries.</p></div>
+<div class="card"><h4>Transactional outbox</h4><p>A service writes its state change and an outbox row in one database transaction. A relay (often Debezium CDC) publishes outbox rows to Kafka. Solves "update the database and publish" without distributed transactions.</p></div>
+<div class="card"><h4>Idempotent consumer</h4><p>Every handler tolerates seeing a record twice: de-duplicate on a business key, use upserts, or store offsets with results. The foundation everything else rests on.</p></div>
+<div class="card"><h4>Single writer</h4><p>Exactly one service instance owns and writes each entity or key. Removes concurrent-update conflicts. Kafka's partition assignment plus fencing enforces it.</p></div>
+<div class="card"><h4>Saga</h4><p>A multi-step business process (order, allocate, confirm, settle) as a chain of local steps with compensating actions. Choreographed through events, or orchestrated by a coordinator that owns the state machine.</p></div>
+<div class="card"><h4>Snapshot plus delta</h4><p>Publish a full state periodically and changes in between, with sequence numbers linking them. The standard market-data and position-feed shape. A compacted topic plus an event topic is the Kafka form.</p></div>
+<div class="card"><h4>Claim check</h4><p>Store a large payload (a risk report, a document) in object storage and send a reference through Kafka. Keeps records small and brokers fast.</p></div>
+</div>
+<h3>Errors, retries and dead letters</h3>
+<p>A record that cannot be processed (a "poison pill") blocks its partition if you retry forever, and breaks ordering if you skip it. Decide per topic:</p>
+<div class="tw"><table>
+<tr><th>Strategy</th><th>Ordering</th><th>Use when</th></tr>
+<tr><td>Retry in place with backoff, then halt and alert</td><td>Preserved</td><td>Order matters and gaps are unacceptable: fills into positions. A stopped partition is the correct outcome, with a human decision.</td></tr>
+<tr><td>Dead-letter topic: park the record and continue</td><td>Broken for that key</td><td>Records are independent, or the bad record can be repaired and re-applied as an adjustment.</td></tr>
+<tr><td>Retry topics with delays</td><td>Broken</td><td>Failures are transient and order is irrelevant: notifications, enrichment.</td></tr>
+<tr><td>Park the key: divert all later records for a failed key until it is fixed</td><td>Preserved per key</td><td>You need both progress and per-key order. More machinery.</td></tr>
+</table></div>
+<p>Distinguish <b>deserialisation and validation failures</b> (permanent: dead-letter with full context) from <b>dependency failures</b> (transient: retry, do not dead-letter a healthy record because a database was down).</p>
+<h3>Patterns to avoid</h3>
+<ul>
+<li><b>Request-reply over Kafka</b> for synchronous needs. Use gRPC or an in-process call, and let Kafka carry the resulting facts.</li>
+<li><b>Dual writes</b>: writing to a database and to Kafka separately and hoping both succeed.</li>
+<li><b>A shared "everything" topic</b> with mixed event types, keys and schemas.</li>
+<li><b>Using Kafka as a queryable database.</b> There is no lookup by key. Materialise a view.</li>
+</ul>
+</section>
+
+<section>
+<h2>Market data on Kafka</h2>
+<p>Kafka is a good distribution layer for market data to everything that does not need it in microseconds: risk, P&amp;L, analytics, surveillance, research capture. It is the wrong transport between a feed handler and a strategy.</p>
+<ul>
+<li><b>Normalise at the edge.</b> Feed handlers decode venue formats and publish a common schema, keyed by instrument, with venue sequence numbers and timestamps preserved.</li>
+<li><b>Separate topics by purpose and rate</b>: trades, top-of-book quotes, depth, and a conflated stream (for example, latest quote per instrument at a fixed interval). Most consumers want the conflated one.</li>
+<li><b>Last value cache</b>: a compacted topic keyed by instrument gives any late joiner the current quote for every instrument by reading it from the start.</li>
+<li><b>Throughput settings</b>: larger batches, a few milliseconds of linger, lz4 or zstd, compact binary encoding. Per-record overhead dominates with small ticks.</li>
+<li><b>Slow consumers</b> fall behind instead of slowing the producer. For pricing, old ticks are worthless: a lagging consumer should skip to the latest offset or switch to the conflated stream, and say so.</li>
+<li><b>Skew is extreme.</b> Opening and closing auctions, index rebalances and news produce bursts many times the average, concentrated in few instruments. Capacity-test with recorded peak days.</li>
+<li><b>Joins against trades</b> ("what was the mid when this fill happened") need event-time semantics and a bounded wait for late quotes. Versioned state stores or Flink temporal joins exist for this.</li>
+</ul>
+</section>
+
+<section>
+<h2>Latency and tuning</h2>
+<p>With <code>acks=all</code> and three replicas in one region, a well-run cluster typically delivers produce-to-consume latency in the low single-digit milliseconds at the median and tens of milliseconds at the 99th percentile, with occasional excursions into hundreds of milliseconds during leader elections, rebalances or garbage collection. Treat those as orders of magnitude and measure your own. The tail, not the median, is what decides where Kafka can sit.</p>
+<h3>Where the time goes</h3>
+<div class="tw"><table>
+<tr><th>Stage</th><th>Source of delay</th><th>Lever</th></tr>
+<tr><td>Producer</td><td>Waiting to batch, serialisation, compression</td><td><code>linger.ms</code>, <code>batch.size</code>, efficient serialisers</td></tr>
+<tr><td>Network to leader</td><td>Round trip, TLS</td><td>Same zone or region placement, connection reuse</td></tr>
+<tr><td>Replication</td><td>Followers fetching before the leader can acknowledge</td><td>Fast inter-broker network, healthy followers, <code>replica.fetch.wait.max.ms</code></td></tr>
+<tr><td>Broker</td><td>Request queueing, disk flush stalls, GC pauses</td><td>Enough brokers, fast disks, sized heap with page cache left free</td></tr>
+<tr><td>Consumer fetch</td><td>Waiting to fill a fetch</td><td><code>fetch.min.bytes=1</code>, low <code>fetch.max.wait.ms</code></td></tr>
+<tr><td>Transactions</td><td>Readers wait for the commit marker</td><td>Small, frequent transactions. For Streams, <code>commit.interval.ms</code></td></tr>
+<tr><td>Consumer processing</td><td>Your handler, downstream I/O, GC</td><td>Keep it in memory, batch external writes, profile it</td></tr>
+</table></div>
+<h3>Two profiles</h3>
+<div class="tw"><table>
+<tr><th>Setting</th><th>Low-latency, durable (orders, fills)</th><th>High-throughput (market data, logs)</th></tr>
+<tr><td><code>acks</code></td><td><code>all</code></td><td><code>all</code>, or <code>1</code> if loss of ticks is acceptable</td></tr>
+<tr><td><code>linger.ms</code></td><td>0 to 1</td><td>5 to 20</td></tr>
+<tr><td><code>batch.size</code></td><td>Default</td><td>128 KB or more</td></tr>
+<tr><td><code>compression.type</code></td><td><code>none</code> or <code>lz4</code></td><td><code>lz4</code> or <code>zstd</code></td></tr>
+<tr><td><code>fetch.min.bytes</code> / <code>fetch.max.wait.ms</code></td><td>1 / 10 to 50</td><td>Larger, for efficiency</td></tr>
+<tr><td><code>max.poll.records</code></td><td>Small, so commits are frequent</td><td>Large</td></tr>
+<tr><td>Partitions</td><td>Moderate</td><td>More, for parallelism</td></tr>
+</table></div>
+<ul>
+<li>Measure end-to-end with timestamps in the payload, and publish latency histograms per hop.</li>
+<li>Use separate clusters, or at least separate topics and quotas, for critical flow and bulk flow, so a replaying analytics job cannot starve order events.</li>
+<li>Co-locate clients and brokers. Cross-region produce with <code>acks=all</code> puts a wide-area round trip in every write.</li>
+<li>Tune the JVM of clients as carefully as brokers: a consumer's GC pause is latency too.</li>
+</ul>
+</section>
+
+<section>
+<h2>Failure modes and recovery</h2>
+<div class="tw"><table>
+<tr><th>Failure</th><th>What happens</th><th>Design response</th></tr>
+<tr><td>Broker dies</td><td>Leaders move to in-sync replicas within seconds. Producers and consumers retry transparently.</td><td>RF 3, min ISR 2, rack awareness. Clients configured with sensible timeouts.</td></tr>
+<tr><td>Two of three replicas unavailable</td><td>Writes with <code>acks=all</code> are rejected. Reads of committed data continue.</td><td>Decide in advance what the producing application does: buffer, shed, or stop trading.</td></tr>
+<tr><td>Consumer crashes</td><td>Its partitions are reassigned. Records since its last commit are redelivered.</td><td>Idempotent handlers, transactions, standby state.</td></tr>
+<tr><td>Consumer stalls (long GC, blocked call)</td><td>Evicted after <code>max.poll.interval.ms</code>. May wake up and continue as a zombie.</td><td>Fencing through transactions or a generation check before external effects.</td></tr>
+<tr><td>Producer crashes mid-transaction</td><td>The transaction aborts on timeout. Readers of those partitions wait until then.</td><td>Short transaction timeouts for latency-sensitive topics. Fast restart with the same <code>transactional.id</code>.</td></tr>
+<tr><td>Poison record</td><td>The partition's consumer loops or halts.</td><td>An explicit error policy per topic, as in the patterns section.</td></tr>
+<tr><td>Consumer falls behind retention</td><td>Unread records are deleted. The consumer resets according to <code>auto.offset.reset</code> and silently skips or re-reads.</td><td>Retention far above worst-case outage. Set <code>auto.offset.reset=none</code> for critical consumers so it fails loudly.</td></tr>
+<tr><td>Hot partition</td><td>One consumer saturates while others idle. Lag grows for the busiest instruments.</td><td>Key design, isolation of hot keys, faster per-record processing.</td></tr>
+<tr><td>Bad deploy writes wrong events</td><td>Wrong facts are now immutable and already consumed.</td><td>Compensating events, and the ability to rebuild downstream state from a corrected stream. Canary producers.</td></tr>
+<tr><td>Incompatible schema published</td><td>Consumers fail to deserialise.</td><td>Registry compatibility checks in CI and at produce time.</td></tr>
+<tr><td>Disk full or slow disk on a broker</td><td>The broker stalls or leaves the ISR. Latency spikes.</td><td>Disk and under-replication alerts, quotas, tiered storage.</td></tr>
+<tr><td>Whole site lost</td><td>Depends on the replication model, see next section.</td><td>A rehearsed failover runbook and reconciliation.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>Multi-site and disaster recovery</h2>
+<div class="tw"><table>
+<tr><th>Model</th><th>How</th><th>Data loss on site failure</th><th>Cost</th></tr>
+<tr><td>Stretch cluster</td><td>One cluster across three zones or nearby data centres, synchronous replication.</td><td>None for committed records.</td><td>Needs low, stable latency between sites. A third site for quorum. Every write pays the inter-site round trip.</td></tr>
+<tr><td>Active-passive mirroring</td><td>A second cluster fed asynchronously (MirrorMaker 2 or a vendor's cluster linking).</td><td>The replication lag: usually well under a second, never zero.</td><td>Failover is a procedure. Offsets differ between clusters and must be translated. Consumers may see duplicates or a small gap.</td></tr>
+<tr><td>Active-active mirroring</td><td>Both sites take writes and mirror to each other, with topic naming that prevents loops.</td><td>The lag, per site.</td><td>Consumers must merge two streams with no order between them. Conflicts are an application problem.</td></tr>
+</table></div>
+<p>For order and trade data the usual combination is a stretch cluster across zones within a metro area for zero-loss resilience, plus asynchronous mirroring to a distant region for disaster recovery, accepting a small recovery point that is closed by reconciliation against venue and broker records.</p>
+<h3>Failover is an application concern too</h3>
+<ul>
+<li>After an asynchronous failover, the surviving log may be missing the last moments of flow. Request resends from venues (FIX sequence reset and resend, drop copies) and reconcile open orders and positions before resuming.</li>
+<li>Stateful consumers must rebuild from the surviving cluster's data, not carry over state that reflects records the new cluster never received.</li>
+<li>Rehearse it. An untested failover is a hypothesis. Run it on a schedule, including failing back.</li>
+<li>Kafka is not a backup. Mirroring replicates mistakes instantly. Keep an independent archive of critical topics in immutable object storage.</li>
+</ul>
+</section>
+
+<section>
+<h2>Issues and limitations</h2>
+<div class="tw"><table>
+<tr><th>Limitation</th><th>Consequence in trading</th><th>Mitigation</th></tr>
+<tr><td>Ordering is per partition only</td><td>No global sequence across instruments, accounts or topics.</td><td>Key design, re-keying stages, source sequence numbers, a single-partition topic where a total order is essential.</td></tr>
+<tr><td>Millisecond latency with a long tail</td><td>Unsuitable for the tick-to-trade path.</td><td>Keep Kafka behind the hot path. Bridge from a low-latency journal.</td></tr>
+<tr><td>Head-of-line blocking</td><td>One slow or failing record delays everything behind it in the partition.</td><td>Fast handlers, an explicit error policy, isolation of slow work to separate consumers.</td></tr>
+<tr><td>Rebalances pause processing</td><td>Seconds of unprocessed fills during deploys or failures.</td><td>New group protocol, static membership, standby replicas, careful rolling deploys.</td></tr>
+<tr><td>Exactly-once stops at Kafka's edge</td><td>Duplicate external effects: orders, payments, messages.</td><td>Idempotency keys end to end, outbox, offsets stored with results.</td></tr>
+<tr><td>Partition count is effectively fixed</td><td>Growth planning errors are expensive.</td><td>Capacity-plan on peak days. Migrate through new topics.</td></tr>
+<tr><td>No lookup, no query, no secondary index</td><td>"Show me order X" cannot be answered from Kafka directly.</td><td>Materialised views in a database or state store.</td></tr>
+<tr><td>No per-message priority, delay or TTL</td><td>A cancel cannot overtake queued new orders in the same partition.</td><td>Separate topics by priority, with consumers that favour the urgent one. Keep queues short.</td></tr>
+<tr><td>Compaction is lazy and tombstones expire</td><td>Readers see superseded values. A consumer offline longer than the tombstone retention can miss a delete.</td><td>Treat compacted topics as "at least latest". Size <code>delete.retention.ms</code> above worst-case downtime.</td></tr>
+<tr><td>Large messages hurt</td><td>Memory pressure and latency spikes for everyone on the cluster.</td><td>Keep records small. Claim-check pattern for big payloads.</td></tr>
+<tr><td>Back-pressure is invisible</td><td>Producers never slow down. Problems appear as lag, later.</td><td>Lag alerting in time units. Staleness-aware consumers.</td></tr>
+<tr><td>Timestamps are milliseconds and producer-assigned</td><td>Insufficient for regulatory sequencing and latency analysis.</td><td>High-precision, synchronised timestamps inside the payload.</td></tr>
+<tr><td>Eventual consistency between services</td><td>The blotter, risk and ledger disagree for moments.</td><td>Make "as of" visible. Use synchronous checks where a hard guarantee is required, such as a limit that must never be breached.</td></tr>
+<tr><td>Immutability</td><td>Errors and personal data cannot simply be edited out.</td><td>Compensating events, retention limits, encryption with key deletion where erasure is required.</td></tr>
+<tr><td>Operational weight</td><td>Capacity, upgrades, security, monitoring and client-version sprawl need real expertise.</td><td>A managed service or a dedicated platform team. Standard client libraries and configurations.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>Security, audit and compliance</h2>
+<ul>
+<li><b>Authentication</b>: mutual TLS or SASL (OAuth bearer tokens, SCRAM). One identity per service, never shared.</li>
+<li><b>Authorisation</b>: ACLs per topic and consumer group, least privilege. Only the owning service may write to an event topic. Transactional ids and group ids are protected resources too.</li>
+<li><b>Encryption</b>: TLS in transit. Disk encryption at rest. Field-level encryption for client identifiers or personal data, which also gives you a route to erasure by deleting keys.</li>
+<li><b>Quotas</b> per client so a replay or runaway producer cannot affect order flow.</li>
+<li><b>Segregation</b>: separate clusters, or strictly separated topics and principals, across information barriers.</li>
+<li><b>Record keeping</b>: regimes such as MiFID II require order and transaction records to be retained for years, in a form that cannot be altered. Kafka's log supports the audit trail but should not be the only copy: archive critical topics to write-once storage with integrity checks, and make sure the archive can be replayed and queried.</li>
+<li><b>Clock discipline</b>: regulators expect business timestamps traceable to UTC at fine granularity. Synchronise hosts (PTP where needed) and stamp events at source.</li>
+<li><b>Lineage</b>: correlation and causation ids let you reconstruct, for any order, every decision and every system that touched it.</li>
+</ul>
+</section>
+
+<section>
+<h2>Operating and testing</h2>
+<h3>What to monitor</h3>
+<div class="tw"><table>
+<tr><th>Area</th><th>Signal</th><th>Why</th></tr>
+<tr><td>Cluster</td><td>Under-replicated and under-min-ISR partitions, offline partitions, active controller count</td><td>Durability and availability at risk.</td></tr>
+<tr><td>Cluster</td><td>ISR shrink and expand rate, leader election rate</td><td>Unstable brokers or network.</td></tr>
+<tr><td>Broker</td><td>Produce and fetch request latency (total, and by phase), request queue size, disk usage and I/O wait</td><td>Where latency is coming from.</td></tr>
+<tr><td>Producer</td><td>Record error and retry rate, request latency, buffer exhaustion, batch size</td><td>Producers struggling before brokers show it.</td></tr>
+<tr><td>Consumer</td><td>Lag in records and in time, rebalance rate, poll interval, commit latency</td><td>The health of every downstream view.</td></tr>
+<tr><td>Transactions</td><td>Open transaction age, abort rate</td><td>Blocked <code>read_committed</code> readers.</td></tr>
+<tr><td>Streams</td><td>Restoration time, state store size, standby lag, task failures</td><td>Recovery time and state growth.</td></tr>
+<tr><td>Business</td><td>End-to-end latency per hop, reconciliation breaks, dead-letter counts, sequence gaps</td><td>Whether the system is correct, not merely up.</td></tr>
+</table></div>
+<h3>Testing</h3>
+<ul>
+<li><b>Unit</b>: test stream topologies with <code>TopologyTestDriver</code>, and handlers as pure functions of events.</li>
+<li><b>Integration</b>: real brokers through Testcontainers, including the schema registry.</li>
+<li><b>Replay tests</b>: feed a recorded production day through a new build and compare outputs with the previous build. This is the highest-value test an event-driven trading system can have, and determinism is what makes it possible.</li>
+<li><b>Failure injection</b>: kill brokers, consumers and producers mid-transaction. Partition the network. Verify no loss and no duplicates in the business outputs, not just in Kafka.</li>
+<li><b>Peak load</b>: replay the busiest open and close on record at a multiple of real speed. Watch tail latency and lag.</li>
+<li><b>Contract tests</b>: schema compatibility as a build gate.</li>
+<li><b>Operational drills</b>: rolling upgrade, partition reassignment, full state rebuild, site failover, each timed.</li>
+</ul>
+<h3>Running it</h3>
+<p>Options range from self-managed (on machines, or on Kubernetes with the Strimzi operator) to managed services such as Amazon MSK and Confluent Cloud. Self-managing buys control over latency, placement and versions at the price of expertise. Either way: dedicate clusters to critical flow, automate topic and ACL management, keep client libraries current, and upgrade regularly.</p>
+</section>
+
+<section>
+<h2>Best practices and anti-patterns</h2>
+<ul class="chk">
+<li>Kafka sits behind the hot path, or in front only where milliseconds are acceptable.</li>
+<li>Critical topics: RF 3, min ISR 2, <code>acks=all</code>, idempotent producers, unclean election off, replicas in separate failure domains.</li>
+<li>The key of every topic is a documented ordering contract. Partition counts are sized for peak and not changed in place.</li>
+<li>Commands, events and state live in separate topics. Events are immutable, past-tense and self-describing.</li>
+<li>Schemas are registered, compatibility is enforced, money is decimal.</li>
+<li>Every consumer is idempotent on a business key. Transactions are added where gaps or duplicates between Kafka topics would be incorrect.</li>
+<li>External side effects use idempotency keys or an outbox. No dual writes.</li>
+<li>Every stateful service has a defined rebuild path, a measured recovery time, snapshots, a catch-up gate and an "as of" marker.</li>
+<li>Handlers are deterministic. Recorded days can be replayed through new builds.</li>
+<li>Derived state is reconciled against an independent source every day.</li>
+<li>Each topic has an explicit poison-record policy. Dead letters are monitored and owned.</li>
+<li>Lag is alerted on in time units. Stale consumers know they are stale.</li>
+<li>Source timestamps and sequence numbers are carried in the payload at full precision.</li>
+<li>Critical and bulk traffic are isolated by cluster or quota.</li>
+<li>Failover and full rebuild are rehearsed, timed and documented.</li>
+<li>Critical topics are archived to immutable storage independent of the cluster.</li>
+</ul>
+<div class="cards">
+<div class="card"><h4>Anti-patterns</h4><ul>
+<li>Kafka between market data and order placement in a latency-sensitive strategy.</li>
+<li>Auto-commit on a consumer that books trades.</li>
+<li>Assuming exactly-once covers the database or the venue.</li>
+<li>Null or random keys on ordered flows.</li>
+<li>Increasing partitions on a keyed topic in production.</li>
+<li>Retry topics on order-dependent flows.</li>
+<li>Skipping a bad fill to keep the pipeline moving, with no adjustment path.</li>
+</ul></div>
+<div class="card"><h4>More anti-patterns</h4><ul>
+<li>One giant topic for all event types.</li>
+<li>Synchronous request-reply tunnelled through topics.</li>
+<li>State that can only be rebuilt by replaying years of history.</li>
+<li>Floating-point prices.</li>
+<li>Wall-clock time inside aggregation logic.</li>
+<li>Treating mirroring as backup.</li>
+<li>Monitoring broker health but not consumer lag or reconciliation.</li>
+</ul></div>
+</div>
+</section>
+
+<section>
+<h2>Version notes for the 4.x line</h2>
+<div class="tw"><table>
+<tr><th>Change</th><th>What it means for you</th></tr>
+<tr><td>ZooKeeper removed (4.0)</td><td>KRaft is the only metadata mode. Clusters still on ZooKeeper must migrate on 3.9 before upgrading. Old tooling flags that pointed at ZooKeeper are gone.</td></tr>
+<tr><td>New consumer group protocol (4.0)</td><td>Broker-driven, incremental rebalances. Opt in with <code>group.protocol=consumer</code>. The classic protocol is being steered towards deprecation.</td></tr>
+<tr><td>Java baseline raised (4.0)</td><td>Brokers and tools need Java 17, clients and Streams Java 11. Very old clients and message formats are no longer supported.</td></tr>
+<tr><td>Stronger transaction protocol (4.0)</td><td>Server-side defences against hanging and zombie transactions. Upgrade clients to benefit fully.</td></tr>
+<tr><td><code>linger.ms</code> default is 5 (4.0)</td><td>Producers batch slightly by default. Set it explicitly on latency-critical producers.</td></tr>
+<tr><td>Share groups / queues (4.x)</td><td>Queue semantics with per-record acknowledgement. 4.4 adds dead-letter queues for them.</td></tr>
+<tr><td>Streams rebalance protocol (4.x)</td><td>Kafka Streams gains the same broker-side assignment as consumers, with broker-side custom assignors arriving in 4.4.</td></tr>
+<tr><td>Transactional state stores (4.4, opt-in)</td><td>Under exactly-once, recovery replays only uncommitted writes instead of rebuilding the store.</td></tr>
+<tr><td>Tiered storage refinements (4.3, 4.4)</td><td>Followers can bootstrap from the tiered offset, and uploads can be delayed to cut redundant storage.</td></tr>
+<tr><td>Deprecations heading for 5.0</td><td>The <code>streams-scala</code> module, old MirrorMaker metric names and the <code>broker.id</code> config are deprecated. Plan to move off them.</td></tr>
+</table></div>
+<p>Release cadence is roughly three feature releases a year. Read the upgrade notes for every version you cross, upgrade brokers before clients, and keep clients within a few versions of the brokers so that new protocol features and fixes actually apply to you.</p>
+</section>
+
+<footer>Part of a three-guide series: Argo CD, AWS and EKS for developers, Kafka for event-driven trading systems. Self-contained file: open in any browser, works offline.</footer>
+</main>
+</div>
+<script>
+(function(){
+var toc=document.getElementById('toc'),links=[];
+document.querySelectorAll('main h2').forEach(function(h,i){
+  if(!h.id)h.id='s'+(i+1);
+  var li=document.createElement('li'),a=document.createElement('a');
+  a.href='#'+h.id;a.textContent=h.textContent;li.appendChild(a);toc.appendChild(li);links.push(a);
+});
+var d=document.getElementById('tocd'),mq=window.matchMedia('(min-width:1040px)');
+function setOpen(){d.open=mq.matches}setOpen();
+if(mq.addEventListener)mq.addEventListener('change',setOpen);
+toc.addEventListener('click',function(){if(!mq.matches)d.open=false});
+document.querySelectorAll('pre').forEach(function(p){
+  var b=document.createElement('button');b.type='button';b.textContent='Copy';
+  b.onclick=function(){var t=p.querySelector('code').innerText;
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)})}};
+  p.appendChild(b);
+});
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){
+    links.forEach(function(l){l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'0px 0px -75% 0px'});
+  document.querySelectorAll('main h2').forEach(function(h){io.observe(h)});
+}
+})();
+</script>
+</body>
+</html>

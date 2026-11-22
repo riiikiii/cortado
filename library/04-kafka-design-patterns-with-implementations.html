@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kafka Design Patterns, Explained and Implemented</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1c1e22;--muted:#5b616c;--line:#e2ddd2;--card:#ffffff;--code:#f1ede5;--accent:#5b3fb0;--accent-soft:#eeeafa;--warn:#b4541a;--ok:#2c7a4b}
+@media (prefers-color-scheme:dark){:root{--bg:#131519;--fg:#e7e4dd;--muted:#9ba1ab;--line:#2b2f37;--card:#1a1d23;--code:#0e1013;--accent:#a892ee;--accent-soft:#1f1a30;--warn:#e09055;--ok:#6cc08b}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:1fr;gap:0}
+@media (min-width:1040px){.wrap{grid-template-columns:250px minmax(0,1fr);gap:48px}}
+header.hero{border-bottom:1px solid var(--line);padding:44px 20px 32px;background:linear-gradient(180deg,var(--accent-soft),transparent)}
+.hero-in{max-width:1180px;margin:0 auto}
+.tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px}
+h1,h2,h3{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px);margin:0 0 12px;letter-spacing:-.01em}
+.lede{font-size:18px;color:var(--muted);max-width:760px;margin:0}
+.meta{margin-top:16px;font-size:13px;color:var(--muted)}
+nav.toc{font-size:14px;padding:24px 0}
+@media (min-width:1040px){nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:32px 0}}
+nav.toc summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--accent)}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:t}
+nav.toc li{counter-increment:t}
+nav.toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line)}
+nav.toc a::before{content:counter(t) ". "}
+nav.toc a:hover,nav.toc a.on{color:var(--fg);border-left-color:var(--accent)}
+main{padding:8px 0 80px;min-width:0;counter-reset:sec}
+section{padding-top:28px}
+h2{font-size:28px;margin:28px 0 12px;padding-top:20px;border-top:1px solid var(--line);counter-increment:sec}
+h2::before{content:counter(sec);display:inline-block;min-width:1.6em;color:var(--accent);font-variant-numeric:tabular-nums}
+h3{font-size:20px;margin:28px 0 8px}
+h4{font-size:15px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+p{margin:0 0 14px;max-width:780px}
+ul,ol{max-width:780px;padding-left:22px;margin:0 0 14px}
+li{margin:4px 0}
+a{color:var(--accent)}
+code{font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow:auto;margin:0 0 18px;max-width:100%}
+pre code{background:none;padding:0;font-size:13px;white-space:pre;overflow-wrap:normal}
+pre[data-lang]::before{content:attr(data-lang);position:absolute;top:6px;right:64px;font:11px ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+pre button{position:absolute;top:5px;right:6px;font:11px inherit;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:5px;padding:2px 8px;cursor:pointer}
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--accent-soft)}
+tr:last-child td{border-bottom:0}
+.note,.warn,.tip{border-left:4px solid var(--accent);background:var(--card);border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 18px;max-width:780px;box-shadow:0 0 0 1px var(--line)}
+.warn{border-left-color:var(--warn)}.tip{border-left-color:var(--ok)}
+.note b:first-child,.warn b:first-child,.tip b:first-child{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.warn b:first-child{color:var(--warn)}.tip b:first-child{color:var(--ok)}.note b:first-child{color:var(--accent)}
+.note p:last-child,.warn p:last-child,.tip p:last-child{margin-bottom:0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 18px;padding:16px;border:1px dashed var(--line);border-radius:8px;background:var(--card)}
+.flow .n{border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-size:13.5px;font-weight:600;background:var(--accent-soft);text-align:center}
+.flow .n small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.flow .a{color:var(--accent);font-weight:700}
+.flow .br{flex-basis:100%;height:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h4{margin:0 0 6px;color:var(--accent)}
+.card p,.card ul{font-size:14.5px;margin-bottom:0}
+ul.chk{list-style:none;padding-left:0}
+ul.chk li{padding-left:28px;position:relative}
+ul.chk li::before{content:"";position:absolute;left:2px;top:.35em;width:14px;height:14px;border:2px solid var(--accent);border-radius:4px}
+footer{border-top:1px solid var(--line);margin-top:48px;padding-top:16px;font-size:13px;color:var(--muted)}
+@media print{nav.toc{display:none}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-in">
+<span class="tag">Guide 4 - Companion to guide 3</span>
+<h1>Kafka Design Patterns, Explained and Implemented</h1>
+<p class="lede">Eighteen patterns for event-driven trading systems. Each one with the problem it solves, how it works, a worked Java implementation, the pitfalls, and when to use it.</p>
+<p class="meta">Written November 2026 against Apache Kafka 4.4, Java 17+ and PostgreSQL. Examples are trimmed reference implementations: adapt, test and harden before production use.</p>
+</div></header>
+<div class="wrap">
+<nav class="toc"><details id="tocd"><summary>Contents</summary><ol id="toc"></ol></details></nav>
+<main>
+<section>
+<h2>How to use this guide</h2>
+<p>This is the companion to guide 3. Each pattern below has the same shape: the problem it solves, how it works, a worked implementation, the pitfalls, and when to use it. The examples share one small trading domain so that they can be read together.</p>
+<h3>Choosing a pattern</h3>
+<div class="tw"><table>
+<tr><th>If the problem is</th><th>Reach for</th></tr>
+<tr><td>The same record may be delivered twice</td><td>Idempotent consumer</td></tr>
+<tr><td>Update a database and publish an event, reliably</td><td>Transactional outbox</td></tr>
+<tr><td>Read from Kafka, write to Kafka, no gaps or duplicates</td><td>Transactional consume-transform-produce</td></tr>
+<tr><td>Read from Kafka, write to a database, exactly once</td><td>Offsets stored with state</td></tr>
+<tr><td>Full history, audit and replay of an entity</td><td>Event sourcing</td></tr>
+<tr><td>Several differently shaped query views of the same facts</td><td>CQRS read models</td></tr>
+<tr><td>Two instances must never act for the same entity</td><td>Single writer with fencing</td></tr>
+<tr><td>A consumer needs a different ordering key from the producer</td><td>Re-keying</td></tr>
+<tr><td>A business process spans several services</td><td>Saga</td></tr>
+<tr><td>Late joiners need current state, then live changes</td><td>Snapshot plus delta, last-value cache</td></tr>
+<tr><td>A service must not answer before its state is loaded</td><td>Catch-up gate</td></tr>
+<tr><td>Payloads are too large for Kafka</td><td>Claim check</td></tr>
+<tr><td>A record fails to process</td><td>Stop and retry, dead-letter topic, delayed retry topics, or park the key</td></tr>
+<tr><td>Urgent records must not queue behind bulk ones</td><td>Priority lanes</td></tr>
+</table></div>
+<h3>Shared domain and conventions</h3>
+<p>Examples use Java 17 or later with the plain <code>kafka-clients</code> library, Kafka Streams where it is the better tool, and PostgreSQL. They are trimmed to the essentials: serialisers, configuration loading, metrics and shutdown hooks are omitted. Treat them as reference implementations to adapt, not as a library.</p>
+<pre data-lang="java"><code>// Topics
+//   orders.commands.v1     key = orderId            commands, delete policy
+//   orders.events.v1       key = orderId            events, delete policy, long retention
+//   executions.v1          key = orderId            fills from venues
+//   positions.deltas.v1    key = book|instrumentId  position changes
+//   positions.snapshot.v1  key = book|instrumentId  latest position, compacted
+//   refdata.instruments.v1 key = instrumentId       compacted
+
+record Fill(String execId, String orderId, String book, String instrumentId,
+            Side side, long qty, BigDecimal px, long venueSeq, Instant venueTs) {
+    long signedQty() { return side == Side.BUY ? qty : -qty; }
+    String positionKey() { return book + "|" + instrumentId; }
+}
+enum Side { BUY, SELL }
+
+record Position(String book, String instrumentId, long qty, BigDecimal cost, long seq) {
+    static Position flat(String book, String instrumentId) {
+        return new Position(book, instrumentId, 0, BigDecimal.ZERO, 0);
+    }
+    Position apply(Fill f) {
+        BigDecimal notional = f.px().multiply(BigDecimal.valueOf(f.signedQty()));
+        return new Position(book, instrumentId, qty + f.signedQty(), cost.add(notional), seq + 1);
+    }
+}
+
+// Two failure categories used throughout
+class TransientException extends RuntimeException { }   // dependency down: retry
+class PermanentException extends RuntimeException { }   // bad record: retrying cannot help</code></pre>
+<p>Baseline client settings assumed everywhere: producers use <code>acks=all</code> with idempotence enabled, consumers use <code>enable.auto.commit=false</code>, and consumers of transactional topics use <code>isolation.level=read_committed</code>.</p>
+</section>
+
+<section>
+<h2>Idempotent consumer</h2>
+<h3>Problem</h3>
+<p>Kafka's normal guarantee is at-least-once. A consumer that crashes after processing but before committing sees the record again. Rebalances, producer-side resends from upstream systems and operator replays all cause redelivery. If applying a fill twice doubles a position, the system is wrong.</p>
+<h3>How it works</h3>
+<p>Make the effect of processing a record the same whether it happens once or several times. There are three techniques, in order of preference:</p>
+<ol>
+<li><b>Naturally idempotent operations</b>: set a value instead of adding to it, upsert by key.</li>
+<li><b>De-duplicate on a business identifier</b>: remember which execution ids have been applied, in the same transaction as the effect.</li>
+<li><b>Sequence high-water mark</b>: if each key carries a monotonic sequence, remember the last one applied and ignore anything at or below it.</li>
+</ol>
+<h3>Implementation: de-duplication table in the same transaction</h3>
+<pre data-lang="sql"><code>CREATE TABLE applied_executions (
+  exec_id     text PRIMARY KEY,
+  applied_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE positions (
+  book text, instrument_id text, qty bigint NOT NULL, cost numeric NOT NULL,
+  PRIMARY KEY (book, instrument_id)
+);</code></pre>
+<pre data-lang="java"><code>void apply(Connection db, Fill f) throws SQLException {
+    db.setAutoCommit(false);
+    try (var dedupe = db.prepareStatement(
+             "INSERT INTO applied_executions (exec_id) VALUES (?) ON CONFLICT DO NOTHING");
+         var upsert = db.prepareStatement("""
+             INSERT INTO positions (book, instrument_id, qty, cost) VALUES (?, ?, ?, ?)
+             ON CONFLICT (book, instrument_id)
+             DO UPDATE SET qty = positions.qty + EXCLUDED.qty, cost = positions.cost + EXCLUDED.cost""")) {
+
+        dedupe.setString(1, f.execId());
+        boolean firstTime = dedupe.executeUpdate() == 1;
+        if (firstTime) {                               // duplicate: skip the effect, still commit
+            upsert.setString(1, f.book());
+            upsert.setString(2, f.instrumentId());
+            upsert.setLong(3, f.signedQty());
+            upsert.setBigDecimal(4, f.px().multiply(BigDecimal.valueOf(f.signedQty())));
+            upsert.executeUpdate();
+        }
+        db.commit();
+    } catch (SQLException e) {
+        db.rollback();
+        throw e;
+    }
+}</code></pre>
+<h3>Implementation: sequence high-water mark</h3>
+<p>When the source assigns a gap-free sequence per key, no table of ids is needed. This also detects loss.</p>
+<pre data-lang="java"><code>final Map&lt;String, Long&gt; lastSeq = new HashMap&lt;&gt;();     // rebuilt with the state it guards
+
+void onDelta(String key, PositionDelta d) {
+    long last = lastSeq.getOrDefault(key, 0L);
+    if (d.seq() &lt;= last) return;                        // duplicate or replay: ignore
+    if (d.seq() != last + 1) throw new GapDetected(key, last, d.seq());   // loss: resync
+    applyDelta(key, d);
+    lastSeq.put(key, d.seq());
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li>The de-duplication record and the effect must commit atomically. A separate "have I seen this" lookup followed by a write is a race.</li>
+<li>Choose the identifier carefully. Kafka offsets identify a delivery, not a business fact: the same fill resent by a venue has a new offset. Use the execution id.</li>
+<li>The de-duplication store grows forever unless pruned. Keep ids for longer than any possible replay window (often a trading day plus margin) and delete older ones.</li>
+<li>Side effects outside the transaction (an email, a FIX message) are not covered. Give them their own idempotency key, or route them through an outbox.</li>
+</ul>
+<h3>Use when</h3>
+<p>Always. Every other pattern in this guide assumes consumers are idempotent.</p>
+</section>
+
+<section>
+<h2>Transactional outbox</h2>
+<h3>Problem</h3>
+<p>A service must change its own database and publish an event about it. Writing to both separately (a dual write) fails in the gap: the database commits and the publish fails, or the reverse. There is no transaction spanning a database and Kafka.</p>
+<h3>How it works</h3>
+<p>Write the event into an <i>outbox</i> table in the same local transaction as the state change. A separate relay reads the outbox and publishes to Kafka. The event is published if and only if the state change committed. Delivery is at-least-once, so consumers de-duplicate on the event id.</p>
+<div class="flow">
+<span class="n">Service<small>one DB transaction</small></span><span class="a">→</span>
+<span class="n">orders table + outbox table</span><span class="a">→</span>
+<span class="n">Relay<small>CDC or poller</small></span><span class="a">→</span>
+<span class="n">Kafka topic</span><span class="a">→</span>
+<span class="n">Consumers<small>dedupe on event id</small></span>
+</div>
+<h3>Implementation: the write side</h3>
+<pre data-lang="sql"><code>CREATE TABLE outbox (
+  id             uuid PRIMARY KEY,
+  aggregatetype  text NOT NULL,        -- routes to a topic, e.g. 'orders'
+  aggregateid    text NOT NULL,        -- becomes the Kafka key, e.g. the order id
+  type           text NOT NULL,        -- event type, e.g. 'OrderAccepted'
+  payload        jsonb NOT NULL,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);</code></pre>
+<pre data-lang="java"><code>void acceptOrder(Connection db, NewOrder cmd) throws SQLException {
+    db.setAutoCommit(false);
+    try (var order = db.prepareStatement(
+             "INSERT INTO orders (order_id, cl_ord_id, status, qty) VALUES (?, ?, 'ACCEPTED', ?)");
+         var outbox = db.prepareStatement(
+             "INSERT INTO outbox (id, aggregatetype, aggregateid, type, payload) VALUES (?, 'orders', ?, ?, ?::jsonb)")) {
+
+        order.setString(1, cmd.orderId());
+        order.setString(2, cmd.clOrdId());             // unique index makes the command idempotent
+        order.setLong(3, cmd.qty());
+        order.executeUpdate();
+
+        outbox.setObject(1, UUID.randomUUID());
+        outbox.setString(2, cmd.orderId());
+        outbox.setString(3, "OrderAccepted");
+        outbox.setString(4, json.write(new OrderAccepted(cmd.orderId(), cmd.clOrdId(), cmd.qty(), 1)));
+        outbox.executeUpdate();
+
+        db.commit();                                   // both rows or neither
+    } catch (SQLException e) {
+        db.rollback();
+        throw e;
+    }
+}</code></pre>
+<h3>Implementation: relay with change data capture</h3>
+<p>Debezium tails the database's write-ahead log, so events are published in commit order with no polling load. Its outbox event router turns each row into a record on a topic derived from <code>aggregatetype</code>, keyed by <code>aggregateid</code>.</p>
+<pre data-lang="json"><code>{
+  "name": "oms-outbox",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "oms-db", "database.port": "5432",
+    "database.user": "debezium", "database.password": "${file:/secrets/db:password}",
+    "database.dbname": "oms",
+    "topic.prefix": "oms",
+    "plugin.name": "pgoutput",
+    "table.include.list": "public.outbox",
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "transforms.outbox.route.by.field": "aggregatetype",
+    "transforms.outbox.route.topic.replacement": "${routedByValue}.events.v1",
+    "transforms.outbox.table.field.event.key": "aggregateid",
+    "transforms.outbox.table.field.event.payload": "payload",
+    "transforms.outbox.table.fields.additional.placement": "type:header:eventType"
+  }
+}</code></pre>
+<h3>Implementation: polling relay</h3>
+<p>Simpler to run where CDC is not available. Run exactly one active instance so that order is preserved.</p>
+<pre data-lang="java"><code>void relayOnce(Connection db, KafkaProducer&lt;String, String&gt; producer) throws Exception {
+    db.setAutoCommit(false);
+    List&lt;Future&lt;RecordMetadata&gt;&gt; acks = new ArrayList&lt;&gt;();
+    List&lt;UUID&gt; sent = new ArrayList&lt;&gt;();
+    try (var q = db.prepareStatement(
+            "SELECT id, aggregateid, type, payload FROM outbox ORDER BY created_at, id LIMIT 500 FOR UPDATE");
+         var rs = q.executeQuery()) {
+        while (rs.next()) {
+            var rec = new ProducerRecord&lt;&gt;("orders.events.v1", rs.getString("aggregateid"), rs.getString("payload"));
+            rec.headers().add("eventId", rs.getString("id").getBytes(UTF_8));
+            rec.headers().add("eventType", rs.getString("type").getBytes(UTF_8));
+            acks.add(producer.send(rec));
+            sent.add((UUID) rs.getObject("id"));
+        }
+    }
+    for (var ack : acks) ack.get(10, TimeUnit.SECONDS);    // all durable before deleting
+    try (var del = db.prepareStatement("DELETE FROM outbox WHERE id = ANY (?)")) {
+        del.setArray(1, db.createArrayOf("uuid", sent.toArray()));
+        del.executeUpdate();
+    }
+    db.commit();        // a crash before this re-sends the batch: duplicates, never loss
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Delivery is at-least-once.</b> Carry the outbox id as the event id and de-duplicate downstream.</li>
+<li><b>Ordering with a poller</b> depends on a single relay and a stable sort. Rows committed out of timestamp order by concurrent transactions can be published out of order across aggregates. Per-aggregate order holds if each aggregate has a single writer. CDC avoids the issue by following commit order.</li>
+<li><b>The outbox must be emptied or pruned.</b> With CDC, delete rows immediately after insert (the log still contains them) or prune on a schedule.</li>
+<li><b>Latency</b> is the relay's lag: milliseconds with CDC, the polling interval otherwise.</li>
+<li><b>CDC needs care</b>: a replication slot that is not consumed retains WAL and can fill the database disk. Monitor it.</li>
+</ul>
+<h3>Use when</h3>
+<p>The service's source of truth is a database and other services need to hear about changes. The mirror image, for consuming, is the inbox: the idempotent consumer table from the previous section.</p>
+</section>
+
+<section>
+<h2>Transactional consume-transform-produce</h2>
+<h3>Problem</h3>
+<p>A stage reads records from one topic, computes results and writes them to another. A crash between writing output and committing the input offset produces duplicates. A crash the other way round loses output.</p>
+<h3>How it works</h3>
+<p>A Kafka transaction makes the output records and the consumed offsets commit together. Downstream consumers using <code>read_committed</code> see the output only if the offsets moved too. A replacement instance with the same group is protected from a lingering predecessor by fencing.</p>
+<h3>Implementation</h3>
+<pre data-lang="java"><code>final class FillToDeltaStage implements Runnable, ConsumerRebalanceListener {
+    private final KafkaConsumer&lt;String, Fill&gt; consumer;       // read_committed, auto-commit off
+    private final KafkaProducer&lt;String, PositionDelta&gt; producer;   // transactional.id set, unique per instance
+    private volatile boolean running = true;
+
+    public void run() {
+        producer.initTransactions();                           // fences any previous holder of this id
+        consumer.subscribe(List.of("executions.v1"), this);
+        while (running) {
+            ConsumerRecords&lt;String, Fill&gt; batch = consumer.poll(Duration.ofMillis(50));
+            if (batch.isEmpty()) continue;
+
+            producer.beginTransaction();
+            try {
+                Map&lt;TopicPartition, OffsetAndMetadata&gt; next = new HashMap&lt;&gt;();
+                for (ConsumerRecord&lt;String, Fill&gt; r : batch) {
+                    Fill f = r.value();
+                    producer.send(new ProducerRecord&lt;&gt;("positions.deltas.v1", f.positionKey(), PositionDelta.of(f)));
+                    next.put(new TopicPartition(r.topic(), r.partition()), new OffsetAndMetadata(r.offset() + 1));
+                }
+                producer.sendOffsetsToTransaction(next, consumer.groupMetadata());
+                producer.commitTransaction();
+            } catch (ProducerFencedException | OutOfOrderSequenceException | AuthorizationException fatal) {
+                running = false;                               // we have been replaced: stop, do not abort
+                throw fatal;
+            } catch (KafkaException e) {
+                producer.abortTransaction();
+                rewind();                                      // reprocess from the last committed offsets
+            }
+        }
+    }
+
+    private void rewind() {
+        Map&lt;TopicPartition, OffsetAndMetadata&gt; committed = consumer.committed(consumer.assignment());
+        for (TopicPartition tp : consumer.assignment()) {
+            OffsetAndMetadata o = committed.get(tp);
+            if (o != null) consumer.seek(tp, o.offset()); else consumer.seekToBeginning(List.of(tp));
+        }
+    }
+
+    public void onPartitionsRevoked(Collection&lt;TopicPartition&gt; parts) { }   // nothing is buffered between polls
+    public void onPartitionsAssigned(Collection&lt;TopicPartition&gt; parts) { }
+}</code></pre>
+<p>In Kafka Streams the whole pattern is one setting, <code>processing.guarantee=exactly_once_v2</code>, which also covers state stores.</p>
+<h3>Pitfalls</h3>
+<ul>
+<li>The transformation must be free of external side effects. Anything outside Kafka runs again on retry.</li>
+<li>Output is invisible to <code>read_committed</code> readers until commit, so transaction duration is added to end-to-end latency. Commit per poll, with small polls, for latency-sensitive flows.</li>
+<li>One transaction per record is expensive. One transaction per batch is the normal unit.</li>
+<li>A poison record aborts the whole batch repeatedly. Combine with an error-handling pattern from later sections.</li>
+<li>Downstream consumers left on the default <code>read_uncommitted</code> will see aborted output.</li>
+</ul>
+<h3>Use when</h3>
+<p>A Kafka-to-Kafka step where a duplicate or a gap would be a correctness error: deriving position deltas, ledger postings, limit utilisation.</p>
+</section>
+
+<section>
+<h2>Offsets stored with state</h2>
+<h3>Problem</h3>
+<p>The consumer's output is a database, not a Kafka topic. Kafka transactions cannot include the database, so committing offsets to Kafka and committing data to the database are again two separate writes.</p>
+<h3>How it works</h3>
+<p>Stop using Kafka's committed offsets as the record of progress. Store the next offset to read in the database, in the same transaction as the data. On start or reassignment, seek to the stored offset. Data and progress can never disagree, which gives exactly-once into the database.</p>
+<h3>Implementation</h3>
+<pre data-lang="sql"><code>CREATE TABLE consumer_progress (
+  consumer text, topic text, part int, next_offset bigint NOT NULL,
+  PRIMARY KEY (consumer, topic, part)
+);</code></pre>
+<pre data-lang="java"><code>final class PositionSink implements ConsumerRebalanceListener {
+    private static final String NAME = "position-sink";
+    private final KafkaConsumer&lt;String, Fill&gt; consumer;
+    private final DataSource ds;
+
+    void run() throws SQLException {
+        consumer.subscribe(List.of("executions.v1"), this);
+        while (true) {
+            ConsumerRecords&lt;String, Fill&gt; batch = consumer.poll(Duration.ofMillis(100));
+            if (batch.isEmpty()) continue;
+            try (Connection db = ds.getConnection()) {
+                db.setAutoCommit(false);
+                try {
+                    for (TopicPartition tp : batch.partitions()) {
+                        List&lt;ConsumerRecord&lt;String, Fill&gt;&gt; recs = batch.records(tp);
+                        for (ConsumerRecord&lt;String, Fill&gt; r : recs) upsertPosition(db, r.value());
+                        saveProgress(db, tp, recs.get(recs.size() - 1).offset() + 1);
+                    }
+                    db.commit();                                // data and offsets together
+                } catch (SQLException e) {
+                    db.rollback();
+                    seekToStored(consumer.assignment());        // re-read the batch
+                }
+            }
+        }
+    }
+
+    public void onPartitionsAssigned(Collection&lt;TopicPartition&gt; parts) {
+        seekToStored(parts);                                    // the database decides where to start
+    }
+    public void onPartitionsRevoked(Collection&lt;TopicPartition&gt; parts) { }
+
+    private void seekToStored(Collection&lt;TopicPartition&gt; parts) {
+        try (Connection db = ds.getConnection();
+             var q = db.prepareStatement(
+                 "SELECT next_offset FROM consumer_progress WHERE consumer = ? AND topic = ? AND part = ?")) {
+            for (TopicPartition tp : parts) {
+                q.setString(1, NAME); q.setString(2, tp.topic()); q.setInt(3, tp.partition());
+                try (var rs = q.executeQuery()) {
+                    if (rs.next()) consumer.seek(tp, rs.getLong(1));
+                    else consumer.seekToBeginning(List.of(tp));
+                }
+            }
+        } catch (SQLException e) { throw new IllegalStateException(e); }
+    }
+
+    private void saveProgress(Connection db, TopicPartition tp, long next) throws SQLException {
+        try (var up = db.prepareStatement("""
+                INSERT INTO consumer_progress (consumer, topic, part, next_offset) VALUES (?, ?, ?, ?)
+                ON CONFLICT (consumer, topic, part) DO UPDATE SET next_offset = EXCLUDED.next_offset
+                WHERE consumer_progress.next_offset &lt; EXCLUDED.next_offset""")) {
+            up.setString(1, NAME); up.setString(2, tp.topic()); up.setInt(3, tp.partition()); up.setLong(4, next);
+            up.executeUpdate();
+        }
+    }
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li>Lag tooling that reads Kafka's committed offsets shows nothing useful. Either also commit to Kafka after the database commit, purely for monitoring, or export lag from the table.</li>
+<li>During a rebalance the previous owner may still be mid-transaction. The guarded update on <code>next_offset</code> stops a stale owner moving progress backwards, but for strict safety add fencing (the single-writer pattern below).</li>
+<li>Batch size sets the trade-off between throughput and how much is redone after a failure.</li>
+<li>Resetting a consumer now means editing a table, so build a small admin command for it.</li>
+</ul>
+<h3>Use when</h3>
+<p>Kafka into a transactional store: positions in Postgres, a ledger, a read model that must be exact. If the sink cannot hold offsets transactionally, fall back to the idempotent consumer.</p>
+</section>
+
+<section>
+<h2>Event sourcing</h2>
+<h3>Problem</h3>
+<p>Storing only current state throws away how it got there. For orders you need the full history for audit, for debugging and for rebuilding downstream views, and you need state to be reproducible.</p>
+<h3>How it works</h3>
+<p>The ordered list of events for an entity <i>is</i> its state. Two pure functions define the entity:</p>
+<ul>
+<li><code>decide(state, command)</code> returns the new events, or a rejection. It contains the business rules.</li>
+<li><code>evolve(state, event)</code> returns the next state. It contains no rules and never fails.</li>
+</ul>
+<p>Current state is the fold of <code>evolve</code> over the events. Handling a command means: load state, decide, append events. On Kafka, commands and events are keyed by order id and co-partitioned, so the instance that owns a command partition is the only writer of the matching event partition.</p>
+<h3>Implementation: the aggregate</h3>
+<pre data-lang="java"><code>sealed interface OrderCommand { String orderId(); }
+record NewOrder(String orderId, String clOrdId, String instrumentId, Side side, long qty) implements OrderCommand { }
+record CancelOrder(String orderId) implements OrderCommand { }
+record ReportFill(String orderId, String execId, long qty, BigDecimal px) implements OrderCommand { }
+
+sealed interface OrderEvent { String orderId(); long seq(); }
+record OrderAccepted(String orderId, String clOrdId, long qty, long seq) implements OrderEvent { }
+record OrderRejected(String orderId, String reason, long seq) implements OrderEvent { }
+record OrderFilled(String orderId, String execId, long lastQty, BigDecimal lastPx, long cumQty, long seq) implements OrderEvent { }
+record OrderCancelled(String orderId, long leavesQty, long seq) implements OrderEvent { }
+
+enum Status { NONE, WORKING, FILLED, CANCELLED, REJECTED }
+
+record OrderState(Status status, long qty, long cumQty, long seq, Set&lt;String&gt; execIds) {
+    static final OrderState EMPTY = new OrderState(Status.NONE, 0, 0, 0, Set.of());
+
+    OrderState evolve(OrderEvent e) {                   // no rules, no failures
+        return switch (e) {
+            case OrderAccepted a  -&gt; new OrderState(Status.WORKING, a.qty(), 0, a.seq(), Set.of());
+            case OrderRejected r  -&gt; new OrderState(Status.REJECTED, qty, cumQty, r.seq(), execIds);
+            case OrderFilled f    -&gt; new OrderState(f.cumQty() == qty ? Status.FILLED : Status.WORKING,
+                                         qty, f.cumQty(), f.seq(), plus(execIds, f.execId()));
+            case OrderCancelled c -&gt; new OrderState(Status.CANCELLED, qty, cumQty, c.seq(), execIds);
+        };
+    }
+
+    List&lt;OrderEvent&gt; decide(OrderCommand c) {           // all the rules
+        long next = seq + 1;
+        return switch (c) {
+            case NewOrder n when status != Status.NONE -&gt; List.of();            // duplicate command
+            case NewOrder n when n.qty() &lt;= 0 -&gt; List.of(new OrderRejected(n.orderId(), "bad quantity", next));
+            case NewOrder n -&gt; List.of(new OrderAccepted(n.orderId(), n.clOrdId(), n.qty(), next));
+            case ReportFill f when execIds.contains(f.execId()) -&gt; List.of();   // duplicate fill
+            case ReportFill f when status != Status.WORKING || cumQty + f.qty() &gt; qty -&gt;
+                throw new PermanentException();                                  // impossible: investigate
+            case ReportFill f -&gt; List.of(new OrderFilled(f.orderId(), f.execId(), f.qty(), f.px(), cumQty + f.qty(), next));
+            case CancelOrder x when status != Status.WORKING -&gt; List.of();      // nothing to cancel
+            case CancelOrder x -&gt; List.of(new OrderCancelled(x.orderId(), qty - cumQty, next));
+        };
+    }
+    private static Set&lt;String&gt; plus(Set&lt;String&gt; s, String v) { var n = new HashSet&lt;&gt;(s); n.add(v); return Set.copyOf(n); }
+}</code></pre>
+<h3>Implementation: the command handler</h3>
+<pre data-lang="java"><code>final class OrderCommandHandler implements ConsumerRebalanceListener {
+    private final KafkaConsumer&lt;String, OrderCommand&gt; commands;        // orders.commands.v1
+    private final KafkaProducer&lt;String, OrderEvent&gt; producer;          // transactional
+    private final Supplier&lt;KafkaConsumer&lt;String, OrderEvent&gt;&gt; eventReader;
+    private final Map&lt;Integer, Map&lt;String, OrderState&gt;&gt; stateByPartition = new HashMap&lt;&gt;();
+
+    public void onPartitionsAssigned(Collection&lt;TopicPartition&gt; parts) {
+        for (TopicPartition tp : parts)                               // rehydrate from the event log
+            stateByPartition.put(tp.partition(), rebuild(new TopicPartition("orders.events.v1", tp.partition())));
+    }
+    public void onPartitionsRevoked(Collection&lt;TopicPartition&gt; parts) {
+        parts.forEach(tp -&gt; stateByPartition.remove(tp.partition()));
+    }
+
+    private Map&lt;String, OrderState&gt; rebuild(TopicPartition events) {
+        Map&lt;String, OrderState&gt; state = new HashMap&lt;&gt;();
+        try (KafkaConsumer&lt;String, OrderEvent&gt; reader = eventReader.get()) {   // read_committed
+            reader.assign(List.of(events));
+            reader.seekToBeginning(List.of(events));                  // or seek to a snapshot offset
+            long end = reader.endOffsets(List.of(events)).get(events);
+            while (reader.position(events) &lt; end)
+                for (ConsumerRecord&lt;String, OrderEvent&gt; r : reader.poll(Duration.ofMillis(200)))
+                    state.merge(r.key(), OrderState.EMPTY.evolve(r.value()), (old, x) -&gt; old.evolve(r.value()));
+        }
+        return state;
+    }
+
+    void run() {
+        producer.initTransactions();
+        commands.subscribe(List.of("orders.commands.v1"), this);
+        while (true) {
+            ConsumerRecords&lt;String, OrderCommand&gt; batch = commands.poll(Duration.ofMillis(20));
+            if (batch.isEmpty()) continue;
+            Map&lt;Integer, Map&lt;String, OrderState&gt;&gt; pending = new HashMap&lt;&gt;();   // applied only on commit
+            Map&lt;TopicPartition, OffsetAndMetadata&gt; next = new HashMap&lt;&gt;();
+            producer.beginTransaction();
+            try {
+                for (ConsumerRecord&lt;String, OrderCommand&gt; r : batch) {
+                    var live = stateByPartition.get(r.partition());
+                    var staged = pending.computeIfAbsent(r.partition(), p -&gt; new HashMap&lt;&gt;());
+                    OrderState s = staged.getOrDefault(r.key(), live.getOrDefault(r.key(), OrderState.EMPTY));
+                    for (OrderEvent e : s.decide(r.value())) {
+                        // same partition number as the command: keeps the two topics co-partitioned
+                        producer.send(new ProducerRecord&lt;&gt;("orders.events.v1", r.partition(), r.key(), e));
+                        s = s.evolve(e);
+                    }
+                    staged.put(r.key(), s);
+                    next.put(new TopicPartition(r.topic(), r.partition()), new OffsetAndMetadata(r.offset() + 1));
+                }
+                producer.sendOffsetsToTransaction(next, commands.groupMetadata());
+                producer.commitTransaction();
+                pending.forEach((p, m) -&gt; stateByPartition.get(p).putAll(m));
+            } catch (ProducerFencedException fenced) {
+                throw fenced;
+            } catch (KafkaException e) {
+                producer.abortTransaction();                          // in-memory state untouched
+                rewindToCommitted(commands);
+            }
+        }
+    }
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Events are forever.</b> Old events must remain readable by new code. Add fields with defaults, never repurpose one, and upcast old versions on read.</li>
+<li><b>Rehydration time grows.</b> Take snapshots (state plus the offset it reflects) and replay only the tail. Remove terminal orders from memory.</li>
+<li><b>Never put rules in <code>evolve</code>.</b> If replaying history can throw, the entity can become unloadable.</li>
+<li><b>Fixing mistakes means new events</b> (a correction, a bust), not edits.</li>
+<li><b>Readers are eventually consistent.</b> A query straight after a command may not see it yet. Return the event sequence to the caller so it can wait for its read model to reach it.</li>
+<li><b>Commands and events topics must have the same partition count</b>, permanently.</li>
+</ul>
+<h3>Use when</h3>
+<p>Entities with a meaningful lifecycle and audit needs: orders, allocations, positions, limits. Avoid it for simple reference data where current state is all anyone wants.</p>
+</section>
+
+<section>
+<h2>CQRS read models</h2>
+<h3>Problem</h3>
+<p>The event log is ideal for writing and useless for querying. A blotter wants orders by trader and status, risk wants exposure by book, compliance wants search by client. No single model serves all of them.</p>
+<h3>How it works</h3>
+<p>Separate the write model (the event-sourced aggregate, or any service that emits events) from any number of read models. Each read model is a projection: a consumer that folds events into a store shaped for one set of queries. Read models are disposable. To change one, build a new version from the start of the log and switch over.</p>
+<h3>Implementation: an order blotter projection</h3>
+<pre data-lang="sql"><code>CREATE TABLE order_blotter_v2 (
+  order_id text PRIMARY KEY, cl_ord_id text, status text NOT NULL,
+  qty bigint, cum_qty bigint NOT NULL DEFAULT 0, avg_px numeric,
+  last_seq bigint NOT NULL, updated_at timestamptz NOT NULL
+);
+CREATE INDEX ON order_blotter_v2 (status, updated_at DESC);</code></pre>
+<pre data-lang="java"><code>final class BlotterProjector {
+    // group.id = "blotter-v2": a new version uses a new group and a new table
+    private final KafkaConsumer&lt;String, OrderEvent&gt; consumer;
+    private final DataSource ds;
+
+    void run() throws SQLException {
+        consumer.subscribe(List.of("orders.events.v1"));
+        while (true) {
+            ConsumerRecords&lt;String, OrderEvent&gt; batch = consumer.poll(Duration.ofMillis(200));
+            if (batch.isEmpty()) continue;
+            try (Connection db = ds.getConnection()) {
+                db.setAutoCommit(false);
+                for (ConsumerRecord&lt;String, OrderEvent&gt; r : batch) project(db, r.value());
+                db.commit();
+            }
+            consumer.commitSync();        // at-least-once is enough: the sequence guard absorbs replays
+        }
+    }
+
+    private void project(Connection db, OrderEvent e) throws SQLException {
+        switch (e) {
+            case OrderAccepted a -&gt; exec(db, """
+                INSERT INTO order_blotter_v2 (order_id, cl_ord_id, status, qty, last_seq, updated_at)
+                VALUES (?, ?, 'WORKING', ?, ?, now()) ON CONFLICT (order_id) DO NOTHING""",
+                a.orderId(), a.clOrdId(), a.qty(), a.seq());
+            case OrderFilled f -&gt; exec(db, """
+                UPDATE order_blotter_v2
+                   SET avg_px  = (coalesce(avg_px, 0) * cum_qty + ? * ?) / ?,
+                       cum_qty = ?, status = CASE WHEN ? = qty THEN 'FILLED' ELSE 'WORKING' END,
+                       last_seq = ?, updated_at = now()
+                 WHERE order_id = ? AND last_seq &lt; ?""",                 // guard: ignore replays
+                f.lastPx(), f.lastQty(), f.cumQty(), f.cumQty(), f.cumQty(), f.seq(), f.orderId(), f.seq());
+            case OrderCancelled c -&gt; exec(db,
+                "UPDATE order_blotter_v2 SET status = 'CANCELLED', last_seq = ?, updated_at = now() WHERE order_id = ? AND last_seq &lt; ?",
+                c.seq(), c.orderId(), c.seq());
+            case OrderRejected r -&gt; exec(db, """
+                INSERT INTO order_blotter_v2 (order_id, status, last_seq, updated_at) VALUES (?, 'REJECTED', ?, now())
+                ON CONFLICT (order_id) DO NOTHING""", r.orderId(), r.seq());
+        }
+    }
+}</code></pre>
+<h3>Rebuilding a read model</h3>
+<ol>
+<li>Create the new table (<code>_v3</code>) and deploy the new projector with a new group id and <code>auto.offset.reset=earliest</code>.</li>
+<li>Let it catch up while the old version keeps serving.</li>
+<li>Switch the query API to the new table once lag is near zero, then retire the old projector and table.</li>
+</ol>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Staleness is inherent.</b> Expose the last applied event time or sequence with query results, and alert on projector lag.</li>
+<li><b>Projections must be idempotent</b> (the <code>last_seq</code> guard above), because rebuilds and retries replay events.</li>
+<li><b>Rebuild cost</b> depends on retention. If the event topic does not keep full history, the read model needs a snapshot source.</li>
+<li><b>Do not let read models write back</b> to the entity. Commands go to the write model.</li>
+<li><b>One projector per read model.</b> Sharing one consumer for several stores couples their failure and rebuild.</li>
+</ul>
+<h3>Use when</h3>
+<p>More than one query shape over the same facts, or read load that should not touch the write path. It pairs naturally with event sourcing but does not require it.</p>
+</section>
+
+<section>
+<h2>Single writer with fencing</h2>
+<h3>Problem</h3>
+<p>If two instances act for the same order or position at once, they interleave updates and corrupt state. The dangerous case is the "zombie": an instance that paused (long GC, network stall), was replaced, then resumed without knowing.</p>
+<h3>How it works</h3>
+<p>Assign every entity to exactly one writer, and make it impossible for a stale writer to have any effect. Kafka provides the assignment: a key maps to one partition, and a partition is owned by one member of a consumer group. Fencing provides the enforcement: each new owner obtains a higher <b>fencing token</b>, and every write is rejected unless it carries the current token.</p>
+<ul>
+<li><b>Writes to Kafka</b> are fenced for you when using transactions: a stale producer gets <code>ProducerFencedException</code>, and a commit from a stale group generation is refused.</li>
+<li><b>Writes elsewhere</b> (a database, a venue session) need an explicit token check.</li>
+</ul>
+<h3>Implementation: fencing external writes</h3>
+<pre data-lang="sql"><code>CREATE TABLE partition_owner (
+  topic text, part int, epoch bigint NOT NULL, owner text NOT NULL,
+  PRIMARY KEY (topic, part)
+);</code></pre>
+<pre data-lang="java"><code>final class VenueSender implements ConsumerRebalanceListener {
+    private final Map&lt;TopicPartition, Long&gt; myEpoch = new ConcurrentHashMap&lt;&gt;();
+    private final String instanceId = UUID.randomUUID().toString();
+    private final DataSource ds;
+
+    public void onPartitionsAssigned(Collection&lt;TopicPartition&gt; parts) {
+        for (TopicPartition tp : parts) myEpoch.put(tp, claim(tp));   // take ownership, bump the token
+    }
+    public void onPartitionsRevoked(Collection&lt;TopicPartition&gt; parts) { parts.forEach(myEpoch::remove); }
+    public void onPartitionsLost(Collection&lt;TopicPartition&gt; parts)    { parts.forEach(myEpoch::remove); }
+
+    private long claim(TopicPartition tp) {
+        try (Connection db = ds.getConnection(); var q = db.prepareStatement("""
+                INSERT INTO partition_owner (topic, part, epoch, owner) VALUES (?, ?, 1, ?)
+                ON CONFLICT (topic, part) DO UPDATE SET epoch = partition_owner.epoch + 1, owner = EXCLUDED.owner
+                RETURNING epoch""")) {
+            q.setString(1, tp.topic()); q.setInt(2, tp.partition()); q.setString(3, instanceId);
+            try (var rs = q.executeQuery()) { rs.next(); return rs.getLong(1); }
+        } catch (SQLException e) { throw new IllegalStateException(e); }
+    }
+
+    /** Records the intent to send. Fails if this instance is no longer the owner. */
+    void enqueueOutbound(TopicPartition tp, String clOrdId, String fixMessage) throws SQLException {
+        try (Connection db = ds.getConnection(); var ins = db.prepareStatement("""
+                INSERT INTO venue_outbound (cl_ord_id, fix_message, owner_epoch)
+                SELECT ?, ?, ?
+                 WHERE EXISTS (SELECT 1 FROM partition_owner WHERE topic = ? AND part = ? AND epoch = ?)
+                ON CONFLICT (cl_ord_id) DO NOTHING""")) {
+            long epoch = myEpoch.get(tp);
+            ins.setString(1, clOrdId); ins.setString(2, fixMessage); ins.setLong(3, epoch);
+            ins.setString(4, tp.topic()); ins.setInt(5, tp.partition()); ins.setLong(6, epoch);
+            if (ins.executeUpdate() == 0 &amp;&amp; !alreadyQueued(db, clOrdId))
+                throw new FencedException(tp, epoch);                  // a newer owner exists: stop
+        }
+    }
+}</code></pre>
+<p>The token check and the write are one statement, so there is no window between "am I still the owner" and "write". The unique <code>cl_ord_id</code> adds idempotency on top.</p>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>A check followed by a separate write is not fencing.</b> The pause can happen between them. The resource being written must enforce the token.</li>
+<li><b>Leases and timeouts alone are unsafe</b>: a paused process cannot know its lease expired.</li>
+<li><b>Systems that cannot check a token</b> (many external venues) need a different guard: a single connection per session id, enforced by the counterparty, plus idempotent client order ids.</li>
+<li><b>Hot keys cannot be scaled out</b> under single writer. That is the price of the guarantee.</li>
+</ul>
+<h3>Use when</h3>
+<p>Any stateful entity with invariants: order state, limit usage, sequence generation, a venue session.</p>
+</section>
+
+<section>
+<h2>Re-keying</h2>
+<h3>Problem</h3>
+<p>Fills are keyed by order id so that an order's events stay in sequence. The position keeper needs every fill for a book and instrument in sequence, and on the same instance. One topic cannot be ordered both ways.</p>
+<h3>How it works</h3>
+<p>Insert a stage that reads the stream under its original key and writes it to a new topic under the key the next consumer needs. Order is preserved per <i>new</i> key only in the sense that each source partition's records keep their relative order. Records for one new key arriving from different source partitions interleave in an unspecified way, so carry a sequence or timestamp if cross-order ordering matters.</p>
+<h3>Implementation with Kafka Streams</h3>
+<pre data-lang="java"><code>StreamsBuilder b = new StreamsBuilder();
+
+KStream&lt;String, Fill&gt; byPosition = b
+    .stream("executions.v1", Consumed.with(Serdes.String(), fillSerde))
+    .selectKey((orderId, f) -&gt; f.positionKey())
+    .repartition(Repartitioned.&lt;String, Fill&gt;as("fills-by-position")
+        .withKeySerde(Serdes.String()).withValueSerde(fillSerde)
+        .withNumberOfPartitions(24));                    // explicit, and never changed afterwards
+
+KTable&lt;String, Position&gt; positions = byPosition
+    .groupByKey()
+    .aggregate(
+        () -&gt; null,
+        (key, f, pos) -&gt; (pos == null ? Position.flat(f.book(), f.instrumentId()) : pos).apply(f),
+        Materialized.&lt;String, Position, KeyValueStore&lt;Bytes, byte[]&gt;&gt;as("positions")
+            .withValueSerde(positionSerde));</code></pre>
+<p>With plain clients, the stage is the transactional consume-transform-produce loop shown earlier, where the transform is simply choosing a new key.</p>
+<h3>Pitfalls</h3>
+<ul>
+<li>Every re-key adds a topic, a hop of latency and storage. Do it once and let several consumers share the result.</li>
+<li>Use transactions (or <code>exactly_once_v2</code>) on the stage, otherwise a retry duplicates records into the re-keyed topic.</li>
+<li>Check the new key for skew before choosing it. Position keys in a firm with one dominant book will be lopsided.</li>
+<li>The re-keyed topic's partition count is as fixed as any other keyed topic's.</li>
+</ul>
+<h3>Use when</h3>
+<p>A consumer's unit of state does not match the producer's unit of ordering, and whenever two streams must be joined (both sides need the same key and partition count).</p>
+</section>
+
+<section>
+<h2>Saga</h2>
+<h3>Problem</h3>
+<p>A business process crosses services that each own their data. Example: after a block order completes, allocate it to client accounts, check settlement limits, then book to the ledger. There is no distributed transaction, yet the process must end either fully done or cleanly undone.</p>
+<h3>How it works</h3>
+<p>Break the process into local steps. Each step has a <b>compensating action</b> that semantically undoes it. If a later step fails, run the compensations for the completed steps in reverse order. Two styles:</p>
+<div class="tw"><table>
+<tr><th></th><th>Choreography</th><th>Orchestration</th></tr>
+<tr><td>Control</td><td>Each service reacts to the previous service's event.</td><td>A coordinator sends commands and waits for replies.</td></tr>
+<tr><td>Strength</td><td>No central component. Loose coupling.</td><td>The process is explicit, visible and testable in one place. Timeouts are easy.</td></tr>
+<tr><td>Weakness</td><td>The flow exists only implicitly across services. Hard to follow beyond three steps.</td><td>One more service to run. Risk of logic leaking into it.</td></tr>
+</table></div>
+<h3>Implementation: an orchestrated allocation saga</h3>
+<p>The orchestrator is a state machine per saga id, held in a Kafka Streams state store. Commands go to each service's command topic. Replies come back on one topic keyed by saga id, so each saga's replies are processed in order by one instance.</p>
+<pre data-lang="java"><code>enum Step { ALLOCATING, CHECKING_LIMITS, BOOKING, RELEASING, DONE, FAILED }
+
+record SagaState(String sagaId, String orderId, Step step, Instant deadline, String failure) {
+    SagaState at(Step s, Instant now) { return new SagaState(sagaId, orderId, s, now.plusSeconds(30), failure); }
+    SagaState failing(String why, Instant now) { return new SagaState(sagaId, orderId, Step.RELEASING, now.plusSeconds(30), why); }
+}
+record SagaReply(String sagaId, String from, boolean ok, String detail) { }   // from: allocation | risk | ledger
+record SagaCommand(String sagaId, String commandId, String type, String orderId) { }
+
+final class AllocationSaga implements Processor&lt;String, SagaReply, String, SagaCommand&gt; {
+    private ProcessorContext&lt;String, SagaCommand&gt; ctx;
+    private KeyValueStore&lt;String, SagaState&gt; store;
+
+    public void init(ProcessorContext&lt;String, SagaCommand&gt; ctx) {
+        this.ctx = ctx;
+        this.store = ctx.getStateStore("allocation-sagas");
+        ctx.schedule(Duration.ofSeconds(1), PunctuationType.WALL_CLOCK_TIME, this::checkTimeouts);
+    }
+
+    public void process(Record&lt;String, SagaReply&gt; rec) {
+        SagaReply r = rec.value();
+        Instant now = Instant.ofEpochMilli(rec.timestamp());
+        SagaState s = store.get(r.sagaId());
+
+        if (s == null) {                                             // "start" reply from the trigger stage
+            s = new SagaState(r.sagaId(), r.detail(), Step.ALLOCATING, now.plusSeconds(30), null);
+            send("allocation.commands.v1", s, "AllocateBlock");
+        } else switch (s.step()) {
+            case ALLOCATING -&gt; {
+                if (!r.from().equals("allocation")) return;          // stale or duplicate reply: ignore
+                if (r.ok()) { s = s.at(Step.CHECKING_LIMITS, now); send("risk.commands.v1", s, "CheckSettlementLimits"); }
+                else        { s = new SagaState(s.sagaId(), s.orderId(), Step.FAILED, now, r.detail()); }
+            }
+            case CHECKING_LIMITS -&gt; {
+                if (!r.from().equals("risk")) return;
+                if (r.ok()) { s = s.at(Step.BOOKING, now); send("ledger.commands.v1", s, "BookAllocations"); }
+                else        { s = s.failing(r.detail(), now); send("allocation.commands.v1", s, "ReleaseAllocation"); }
+            }
+            case BOOKING -&gt; {
+                if (!r.from().equals("ledger")) return;
+                if (r.ok()) { s = s.at(Step.DONE, now); }
+                else        { s = s.failing(r.detail(), now); send("allocation.commands.v1", s, "ReleaseAllocation"); }
+            }
+            case RELEASING -&gt; {
+                if (!r.from().equals("allocation")) return;
+                s = new SagaState(s.sagaId(), s.orderId(), Step.FAILED, now, s.failure());
+            }
+            case DONE, FAILED -&gt; { return; }                         // terminal: late replies are ignored
+        }
+        store.put(s.sagaId(), s);
+    }
+
+    private void send(String topic, SagaState s, String type) {
+        // commandId is deterministic, so a retried step is recognised as a duplicate by the receiver
+        SagaCommand cmd = new SagaCommand(s.sagaId(), s.sagaId() + ":" + type, type, s.orderId());
+        ctx.forward(new Record&lt;&gt;(s.orderId(), cmd, ctx.currentSystemTimeMs()), topic);   // child sink name = topic
+    }
+
+    private void checkTimeouts(long nowMs) {
+        Instant now = Instant.ofEpochMilli(nowMs);
+        try (KeyValueIterator&lt;String, SagaState&gt; it = store.all()) {
+            while (it.hasNext()) {
+                SagaState s = it.next().value;
+                if (s.step() == Step.DONE || s.step() == Step.FAILED || s.deadline().isAfter(now)) continue;
+                switch (s.step()) {
+                    case ALLOCATING      -&gt; send("allocation.commands.v1", s, "AllocateBlock");        // safe to repeat
+                    case CHECKING_LIMITS -&gt; send("risk.commands.v1", s, "CheckSettlementLimits");
+                    case BOOKING         -&gt; send("ledger.commands.v1", s, "BookAllocations");
+                    case RELEASING       -&gt; send("allocation.commands.v1", s, "ReleaseAllocation");
+                    default -&gt; { }
+                }
+                store.put(s.sagaId(), s.at(s.step(), now));           // re-arm the deadline; alert after N attempts
+            }
+        }
+    }
+}</code></pre>
+<p>Run the topology with <code>exactly_once_v2</code>, so that the state transition, the outgoing command and the consumed reply commit together. Each participating service handles its command idempotently by <code>commandId</code> and always replies, including for a duplicate.</p>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Compensation is not rollback.</b> Other parties may have seen the intermediate state. A released allocation is a new fact, not an erased one.</li>
+<li><b>Some steps cannot be compensated</b> (a confirmation sent to a client, a trade reported to a regulator). Order the saga so those come last, after everything that can fail.</li>
+<li><b>Every command and compensation must be idempotent</b>, because timeouts cause re-sends.</li>
+<li><b>No isolation.</b> Two sagas can interleave on the same data. Use semantic locks (a "pending allocation" status) where that matters.</li>
+<li><b>Timeouts need a decision</b>: retry, compensate, or escalate to a human. An unbounded retry is an invisible stuck process.</li>
+<li><b>Purge terminal sagas</b> from the store after a retention period, and publish saga outcomes so operations can see them.</li>
+</ul>
+<h3>Use when</h3>
+<p>A process spans services and each step can be undone or retried. Prefer orchestration beyond two or three steps or when timeouts matter. Do not use a saga where a hard real-time invariant is required, such as a pre-trade limit: that needs a single owner making a synchronous decision.</p>
+</section>
+
+<section>
+<h2>Snapshot plus delta</h2>
+<h3>Problem</h3>
+<p>A consumer that joins late, or restarts, needs the current value of every key. Replaying all history is too slow, and a stream of changes alone never tells it where to start.</p>
+<h3>How it works</h3>
+<p>The owner publishes two things for each key: the full current state to a compacted <b>snapshot</b> topic, and each change to a <b>delta</b> topic. Both carry a per-key sequence number. A consumer loads the snapshot, then applies only deltas with a higher sequence. A gap in the sequence means something was missed, and the consumer resynchronises from the snapshot.</p>
+<h3>Implementation: publisher</h3>
+<pre data-lang="java"><code>record PositionDelta(String key, long seq, long qtyChange, BigDecimal costChange, String execId) { }
+record PositionSnapshot(String key, long seq, long qty, BigDecimal cost, int deltaPartition, long deltaOffsetHint) { }
+
+// inside the position keeper's transaction, for each applied fill
+void publish(KafkaProducer&lt;String, Object&gt; producer, Position before, Position after, Fill f, long deltaOffsetHint) {
+    String key = f.positionKey();
+    producer.send(new ProducerRecord&lt;&gt;("positions.deltas.v1", key,
+        new PositionDelta(key, after.seq(), after.qty() - before.qty(), after.cost().subtract(before.cost()), f.execId())));
+    producer.send(new ProducerRecord&lt;&gt;("positions.snapshot.v1", key,
+        new PositionSnapshot(key, after.seq(), after.qty(), after.cost(),
+                             partitionOf(key), deltaOffsetHint)));     // where a reader may safely start deltas
+}</code></pre>
+<p>Because both sends are in one transaction, a snapshot at sequence <i>n</i> exists if and only if delta <i>n</i> does. The offset hint is any delta-topic offset at or before this delta, for example the position's offset at the previous commit.</p>
+<h3>Implementation: consumer</h3>
+<pre data-lang="java"><code>final class PositionView {
+    private final Map&lt;String, PositionSnapshot&gt; state = new HashMap&lt;&gt;();
+    private final Set&lt;String&gt; stale = new HashSet&lt;&gt;();
+
+    void start(KafkaConsumer&lt;String, PositionSnapshot&gt; snap, KafkaConsumer&lt;String, PositionDelta&gt; deltas) {
+        // 1. load the compacted snapshot topic to its current end
+        List&lt;TopicPartition&gt; sp = partitions(snap, "positions.snapshot.v1");
+        snap.assign(sp); snap.seekToBeginning(sp);
+        Map&lt;TopicPartition, Long&gt; end = snap.endOffsets(sp);
+        Map&lt;Integer, Long&gt; startFrom = new HashMap&lt;&gt;();
+        while (sp.stream().anyMatch(tp -&gt; snap.position(tp) &lt; end.get(tp)))
+            for (ConsumerRecord&lt;String, PositionSnapshot&gt; r : snap.poll(Duration.ofMillis(200))) {
+                if (r.value() == null) { state.remove(r.key()); continue; }     // tombstone
+                state.put(r.key(), r.value());
+                startFrom.merge(r.value().deltaPartition(), r.value().deltaOffsetHint(), Math::min);
+            }
+
+        // 2. start deltas from the earliest point any loaded snapshot might need
+        List&lt;TopicPartition&gt; dp = partitions(deltas, "positions.deltas.v1");
+        deltas.assign(dp);
+        for (TopicPartition tp : dp) {
+            Long from = startFrom.get(tp.partition());
+            if (from != null) deltas.seek(tp, from); else deltas.seekToEnd(List.of(tp));
+        }
+    }
+
+    void onDelta(PositionDelta d) {
+        PositionSnapshot cur = state.get(d.key());
+        long last = cur == null ? 0 : cur.seq();
+        if (d.seq() &lt;= last) return;                                   // already reflected in the snapshot
+        if (d.seq() != last + 1) { stale.add(d.key()); return; }       // gap: mark and resync this key
+        state.put(d.key(), new PositionSnapshot(d.key(), d.seq(),
+            (cur == null ? 0 : cur.qty()) + d.qtyChange(),
+            (cur == null ? BigDecimal.ZERO : cur.cost()).add(d.costChange()),
+            0, 0));
+        stale.remove(d.key());
+    }
+
+    Optional&lt;PositionSnapshot&gt; get(String key) {
+        return stale.contains(key) ? Optional.empty() : Optional.ofNullable(state.get(key));   // never serve a known-bad value
+    }
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Deltas need a sequence.</b> Without one the consumer cannot align the two streams or detect loss.</li>
+<li><b>Snapshot every change or periodically?</b> Every change is simplest and keeps recovery instant, at the cost of write volume. Periodic snapshots (every N changes or seconds) need the consumer to replay more deltas.</li>
+<li><b>Compaction lag</b> means the snapshot topic holds several versions per key. Always keep the highest sequence.</li>
+<li><b>Resync</b> on a gap must be implemented and tested, not assumed. The simple form is re-reading that key's snapshot partition.</li>
+<li><b>Start-of-day</b> is the same pattern in business terms: yesterday's closing positions are the snapshot, today's fills are the deltas.</li>
+</ul>
+<h3>Use when</h3>
+<p>Many consumers need current state plus live changes: positions, limits, order books, risk aggregates.</p>
+</section>
+
+<section>
+<h2>Catch-up gate</h2>
+<h3>Problem</h3>
+<p>A service that derives state from Kafka starts with empty state. If it begins answering queries or making decisions before it has consumed the backlog, it acts on wrong data: a risk check against positions that are still loading.</p>
+<h3>How it works</h3>
+<p>At start-up, record the current end offset of every input partition. Consume without serving until the consumer's position reaches those offsets. Then mark the service ready. Afterwards, track staleness continuously and drop back to not-ready if lag exceeds a bound.</p>
+<h3>Implementation</h3>
+<pre data-lang="java"><code>final class CatchUpGate {
+    private final AtomicBoolean ready = new AtomicBoolean(false);
+    private volatile Instant lastEventTs = Instant.EPOCH;
+
+    void consume(KafkaConsumer&lt;String, Fill&gt; consumer, String topic, Consumer&lt;Fill&gt; apply) {
+        List&lt;TopicPartition&gt; parts = consumer.partitionsFor(topic).stream()
+            .map(p -&gt; new TopicPartition(topic, p.partition())).toList();
+        consumer.assign(parts);
+        seekToSnapshotOrBeginning(consumer, parts);
+
+        Map&lt;TopicPartition, Long&gt; target = consumer.endOffsets(parts);   // the line to reach
+        while (true) {
+            for (ConsumerRecord&lt;String, Fill&gt; r : consumer.poll(Duration.ofMillis(100))) {
+                apply.accept(r.value());
+                lastEventTs = Instant.ofEpochMilli(r.timestamp());
+            }
+            if (!ready.get() &amp;&amp; parts.stream().allMatch(tp -&gt; consumer.position(tp) &gt;= target.get(tp)))
+                ready.set(true);                                         // caught up to where the log was at start
+        }
+    }
+
+    /** Wire this to the readiness probe and to every decision that depends on the state. */
+    boolean isFresh(KafkaConsumer&lt;?, ?&gt; consumer, Duration maxStaleness) {
+        if (!ready.get()) return false;
+        boolean lagging = consumer.assignment().stream()
+            .anyMatch(tp -&gt; consumer.currentLag(tp).orElse(0) &gt; 0);
+        return !lagging || Duration.between(lastEventTs, Instant.now()).compareTo(maxStaleness) &lt; 0;
+    }
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li>With <code>read_committed</code>, <code>endOffsets</code> returns the last stable offset, which is the right target.</li>
+<li>Readiness must gate <i>inbound traffic and decisions</i>, not just a log line. Connect it to the Kubernetes readiness probe and to the code path that uses the state.</li>
+<li>A quiet topic is not a lagging topic. Distinguish "no new records" from "behind" using lag, not just the age of the last record.</li>
+<li>Catch-up time is your recovery time. Measure it, and shorten it with snapshots or standby replicas.</li>
+<li>Decide what "not fresh" means for the business: reject, apply conservative limits, or alert and continue.</li>
+</ul>
+<h3>Use when</h3>
+<p>Every service that makes decisions from state it rebuilt from Kafka.</p>
+</section>
+
+<section>
+<h2>Last-value cache and reference data replica</h2>
+<h3>Problem</h3>
+<p>Consumers need slowly changing data (instrument details, account settings, limits, latest quote) while processing fast events. Calling the owning service for each event adds latency and a runtime dependency on it.</p>
+<h3>How it works</h3>
+<p>The owner publishes the latest value per key to a compacted topic. Each consumer reads the whole topic into a local table and keeps it current. Lookups are local memory reads. This is event-carried state transfer: the data travels to where it is needed, and the owning service can be down without stopping its consumers.</p>
+<h3>Implementation: topic and publisher</h3>
+<pre data-lang="java"><code>try (Admin admin = Admin.create(adminProps)) {
+    admin.createTopics(List.of(new NewTopic("refdata.instruments.v1", 6, (short) 3).configs(Map.of(
+        "cleanup.policy", "compact",
+        "min.insync.replicas", "2",
+        "min.cleanable.dirty.ratio", "0.1",          // compact eagerly: small topic, fast loads
+        "segment.ms", "3600000",                     // roll hourly so old values become compactable
+        "delete.retention.ms", "604800000"           // keep tombstones 7 days: longer than any consumer outage
+    )))).all().get();
+}
+
+producer.send(new ProducerRecord&lt;&gt;("refdata.instruments.v1", inst.id(), inst));     // upsert
+producer.send(new ProducerRecord&lt;&gt;("refdata.instruments.v1", delistedId, null));    // tombstone: delete</code></pre>
+<h3>Implementation: enrichment with a global table</h3>
+<pre data-lang="java"><code>StreamsBuilder b = new StreamsBuilder();
+GlobalKTable&lt;String, Instrument&gt; instruments =
+    b.globalTable("refdata.instruments.v1", Consumed.with(Serdes.String(), instrumentSerde));
+
+KStream&lt;String, Fill&gt; fills = b.stream("executions.v1", Consumed.with(Serdes.String(), fillSerde));
+
+KStream&lt;String, EnrichedFill&gt;[] branches = fills
+    .leftJoin(instruments,
+        (orderId, fill) -&gt; fill.instrumentId(),                       // lookup key
+        (fill, inst) -&gt; new EnrichedFill(fill, inst))                 // inst is null if unknown
+    .branch((k, e) -&gt; e.instrument() != null, (k, e) -&gt; true);
+
+branches[0].to("executions.enriched.v1");
+branches[1].to("executions.missing-refdata.v1");                     // never drop a fill silently</code></pre>
+<p>A <code>GlobalKTable</code> is fully loaded on every instance before processing starts and needs no co-partitioning, which suits small reference sets. For large tables use a <code>KTable</code> join, which requires both sides to share key and partition count.</p>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>No time alignment by default.</b> A fill may be joined with reference data that changed after the fill happened. Where the value "as of" the event matters (prices, corporate actions), use versioned state stores or a temporal join.</li>
+<li><b>Missing keys.</b> An event can arrive before its reference record. Decide: route to a pending topic and retry, or fail.</li>
+<li><b>Tombstone retention</b> shorter than a consumer's downtime means the consumer never learns of a delete.</li>
+<li><b>Memory.</b> Every consumer holds a full copy. Fine for a hundred thousand instruments, not for a hundred million client records.</li>
+<li><b>The table is eventually consistent</b> with the owner. For limits that must be exact at decision time, the owner must make the decision.</li>
+</ul>
+<h3>Use when</h3>
+<p>Read-mostly data needed on a hot processing path: reference data, configuration, entitlements, latest prices for valuation.</p>
+</section>
+
+<section>
+<h2>Claim check</h2>
+<h3>Problem</h3>
+<p>Some payloads are large: a risk report, a full order book snapshot, a document. Kafka's default limit is about 1 MB per record, and large records hurt everyone through memory pressure, replication delay and latency spikes.</p>
+<h3>How it works</h3>
+<p>Store the payload in object storage and send a small reference through Kafka: location, size and a checksum. The consumer fetches the object only if it needs it. Kafka keeps the ordering and delivery semantics, object storage carries the bytes.</p>
+<h3>Implementation</h3>
+<pre data-lang="java"><code>record ClaimCheck(String bucket, String objectKey, long sizeBytes, String sha256, String contentType) { }
+record RiskReportReady(String reportId, String book, Instant asOf, ClaimCheck payload) { }
+
+// producer side: upload first, publish second
+void publish(S3Client s3, KafkaProducer&lt;String, RiskReportReady&gt; producer, String book, Instant asOf, byte[] report) throws Exception {
+    String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(report));
+    String objectKey = "risk-reports/%s/%s/%s.parquet".formatted(book, asOf, sha);    // content-addressed: idempotent
+    s3.putObject(PutObjectRequest.builder().bucket("acme-risk-payloads").key(objectKey)
+                     .contentType("application/vnd.apache.parquet").build(),
+                 RequestBody.fromBytes(report));
+
+    var event = new RiskReportReady(UUID.randomUUID().toString(), book, asOf,
+        new ClaimCheck("acme-risk-payloads", objectKey, report.length, sha, "application/vnd.apache.parquet"));
+    producer.send(new ProducerRecord&lt;&gt;("risk.reports.v1", book, event)).get();          // durable before returning
+}
+
+// consumer side: fetch on demand and verify
+byte[] redeem(S3Client s3, ClaimCheck c) throws Exception {
+    byte[] bytes = s3.getObjectAsBytes(GetObjectRequest.builder().bucket(c.bucket()).key(c.objectKey()).build()).asByteArray();
+    String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+    if (bytes.length != c.sizeBytes() || !sha.equals(c.sha256())) throw new PermanentException();   // corrupt or wrong object
+    return bytes;
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Upload before publishing.</b> The reverse order lets consumers receive a reference to something that does not exist yet.</li>
+<li><b>Orphans.</b> An upload followed by a failed publish leaves an unreferenced object. Content-addressed keys make retries harmless, and a lifecycle rule cleans up.</li>
+<li><b>Retention must match.</b> If the object expires before the Kafka record, replay breaks. Set object lifetime at least as long as topic retention.</li>
+<li><b>Access control now lives in two places.</b> A consumer needs permission on the bucket as well as the topic.</li>
+<li><b>Objects must be immutable.</b> Never overwrite a referenced key.</li>
+<li><b>Put what consumers filter on in the event itself</b> (book, as-of time, type), so most never need to fetch.</li>
+</ul>
+<h3>Use when</h3>
+<p>Payloads above roughly a few hundred kilobytes, or anything binary and bulky. Keep ordinary events inline.</p>
+</section>
+
+<section>
+<h2>Stop and retry in place</h2>
+<h3>Problem</h3>
+<p>A record fails to process and order matters. Skipping it would apply later records for the same key on top of missing state: a position missing one fill is simply wrong.</p>
+<h3>How it works</h3>
+<p>Do not move past the failing record. For a transient failure, pause that partition, wait with backoff, and retry the same record. For a permanent failure, stop consuming that partition and raise an alert: a human decides. Other partitions keep flowing. The consumer keeps calling <code>poll</code> throughout so it stays in the group.</p>
+<h3>Implementation</h3>
+<pre data-lang="java"><code>final class OrderedConsumer {
+    private final Map&lt;TopicPartition, Integer&gt; attempts = new HashMap&lt;&gt;();
+    private final Map&lt;TopicPartition, Instant&gt; resumeAt = new HashMap&lt;&gt;();
+    private final Set&lt;TopicPartition&gt; halted = new HashSet&lt;&gt;();
+
+    void run(KafkaConsumer&lt;String, byte[]&gt; consumer, Deserializer&lt;Fill&gt; serde, Consumer&lt;Fill&gt; handler) {
+        while (true) {
+            resumeDue(consumer);
+            ConsumerRecords&lt;String, byte[]&gt; batch = consumer.poll(Duration.ofMillis(100));
+            for (TopicPartition tp : batch.partitions()) {
+                long done = -1;
+                for (ConsumerRecord&lt;String, byte[]&gt; r : batch.records(tp)) {
+                    try {
+                        handler.accept(serde.deserialize(r.topic(), r.value()));   // deserialise here, so failures are catchable
+                        done = r.offset();
+                        attempts.remove(tp);
+                    } catch (TransientException e) {
+                        int n = attempts.merge(tp, 1, Integer::sum);
+                        long delayMs = Math.min(30_000, 100L &lt;&lt; Math.min(n, 8));   // exponential backoff, capped
+                        consumer.seek(tp, r.offset());                             // re-read this record next time
+                        consumer.pause(List.of(tp));
+                        resumeAt.put(tp, Instant.now().plusMillis(delayMs));
+                        if (n == 10) alert("partition retrying", tp, r.offset(), e);
+                        break;                                                     // nothing after it on this partition
+                    } catch (RuntimeException permanent) {
+                        consumer.seek(tp, r.offset());
+                        consumer.pause(List.of(tp));
+                        halted.add(tp);                                            // stays paused until an operator acts
+                        alert("partition halted on poison record", tp, r.offset(), permanent);
+                        break;
+                    }
+                }
+                if (done &gt;= 0) consumer.commitSync(Map.of(tp, new OffsetAndMetadata(done + 1)));
+            }
+        }
+    }
+
+    private void resumeDue(KafkaConsumer&lt;?, ?&gt; consumer) {
+        Instant now = Instant.now();
+        resumeAt.entrySet().removeIf(e -&gt; {
+            if (e.getValue().isAfter(now)) return false;
+            consumer.resume(List.of(e.getKey()));
+            return true;
+        });
+    }
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Paused state is lost on rebalance.</b> A new owner starts unpaused and hits the same record. That is fine, but a halted partition needs its alert to keep firing.</li>
+<li><b>A halt needs a runbook</b>: inspect the record, fix the code or data, or publish a correcting event and skip with an explicit, audited offset reset.</li>
+<li><b>One bad record blocks every key on the partition.</b> If that is too coarse, use the park-the-key pattern.</li>
+<li><b>Consume as bytes and deserialise inside the handler.</b> Otherwise a malformed record throws from <code>poll</code> itself, which is harder to handle per record.</li>
+<li><b>Classify failures correctly.</b> Treating a dependency outage as permanent halts everything. Treating a bad record as transient retries forever.</li>
+</ul>
+<h3>Use when</h3>
+<p>Per-key order is a correctness requirement and a stalled partition is preferable to a wrong answer: fills into positions, ledger postings.</p>
+</section>
+
+<section>
+<h2>Dead-letter topic</h2>
+<h3>Problem</h3>
+<p>A record can never be processed (malformed, fails validation, references something that does not exist) and the records behind it are independent. Blocking the partition for it helps nobody.</p>
+<h3>How it works</h3>
+<p>Publish the failing record, unchanged, to a dead-letter topic together with enough context to diagnose and replay it. Only after that write is durable, commit past the record and continue. Someone owns the dead-letter topic: it is monitored, triaged, and records are repaired and redriven or explicitly discarded.</p>
+<h3>Implementation</h3>
+<pre data-lang="java"><code>final class DeadLetters {
+    private final KafkaProducer&lt;byte[], byte[]&gt; producer;      // acks=all, idempotent
+    private final String consumerName;
+
+    void send(ConsumerRecord&lt;byte[], byte[]&gt; failed, Exception cause) throws Exception {
+        var out = new ProducerRecord&lt;&gt;(failed.topic() + ".dlq", null, failed.key(), failed.value(), failed.headers());
+        out.headers()
+           .add("dlq.source.topic", failed.topic().getBytes(UTF_8))
+           .add("dlq.source.partition", Integer.toString(failed.partition()).getBytes(UTF_8))
+           .add("dlq.source.offset", Long.toString(failed.offset()).getBytes(UTF_8))
+           .add("dlq.source.timestamp", Long.toString(failed.timestamp()).getBytes(UTF_8))
+           .add("dlq.consumer", consumerName.getBytes(UTF_8))
+           .add("dlq.error.class", cause.getClass().getName().getBytes(UTF_8))
+           .add("dlq.error.message", String.valueOf(cause.getMessage()).getBytes(UTF_8))
+           .add("dlq.failed.at", Instant.now().toString().getBytes(UTF_8));
+        producer.send(out).get(10, TimeUnit.SECONDS);          // must be durable before the offset moves on
+    }
+}
+
+// in the consumer loop
+for (ConsumerRecord&lt;byte[], byte[]&gt; r : batch) {
+    try {
+        handle(deserialise(r));
+    } catch (TransientException e) {
+        throw e;                                 // not a dead letter: let the retry policy deal with it
+    } catch (Exception permanent) {
+        deadLetters.send(r, permanent);          // if this throws, do not commit: the record is retried
+        metrics.counter("dlq.sent", "topic", r.topic()).increment();
+    }
+}
+consumer.commitSync();</code></pre>
+<h3>Redriving</h3>
+<p>A redrive tool consumes the dead-letter topic, optionally filters by error class or time, and republishes each record to its <code>dlq.source.topic</code> with the original key, adding a <code>dlq.redriven</code> header so that a second failure can be recognised. Because consumers are idempotent, redriving a record that had in fact been processed is harmless.</p>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Order is broken for that key.</b> Later records for the same key have already been processed when the dead letter is redriven. Only use it where that is acceptable, or redrive as an explicit adjustment.</li>
+<li><b>Never dead-letter transient failures.</b> A database outage would otherwise empty the main topic into the DLQ in seconds.</li>
+<li><b>An unmonitored DLQ is silent data loss.</b> Alert on any arrival for critical flows, and on rate for others.</li>
+<li><b>Keep the original bytes.</b> A re-serialised copy may lose exactly the detail that explains the failure.</li>
+<li><b>One DLQ per source topic and consumer</b>, with retention long enough for triage.</li>
+<li>For share groups, Kafka 4.4 can route records that exceed their delivery count to a dead-letter queue on the broker side.</li>
+</ul>
+<h3>Use when</h3>
+<p>Records are independent of each other, or the bad record can be repaired and applied later without harm: enrichment, notifications, reporting feeds, inbound data from external parties.</p>
+</section>
+
+<section>
+<h2>Delayed retry topics</h2>
+<h3>Problem</h3>
+<p>A failure is transient but may last a while (a downstream system is restarting, a counterparty is rate limiting). Retrying in place blocks the partition, and the records behind the failed one are independent and could proceed.</p>
+<h3>How it works</h3>
+<p>Move the failing record to a retry topic and carry on. A separate consumer reads the retry topic and waits until the record's delay has elapsed before trying again. A chain of topics gives increasing delays. After the last tier the record goes to the dead-letter topic.</p>
+<div class="flow">
+<span class="n">main topic</span><span class="a">→</span>
+<span class="n">.retry.5s</span><span class="a">→</span>
+<span class="n">.retry.1m</span><span class="a">→</span>
+<span class="n">.retry.10m</span><span class="a">→</span>
+<span class="n">.dlq</span>
+</div>
+<h3>Implementation</h3>
+<pre data-lang="java"><code>final class RetryTiers {
+    private static final List&lt;Duration&gt; DELAYS = List.of(Duration.ofSeconds(5), Duration.ofMinutes(1), Duration.ofMinutes(10));
+    private final KafkaProducer&lt;byte[], byte[]&gt; producer;
+    private final DeadLetters deadLetters;
+
+    /** Called by the main consumer, or by a retry consumer, when handling fails transiently. */
+    void defer(ConsumerRecord&lt;byte[], byte[]&gt; r, String baseTopic, Exception cause) throws Exception {
+        int attempt = header(r, "retry.attempt").map(Integer::parseInt).orElse(0);
+        if (attempt &gt;= DELAYS.size()) { deadLetters.send(r, cause); return; }
+
+        Duration delay = DELAYS.get(attempt);
+        var out = new ProducerRecord&lt;&gt;(baseTopic + ".retry." + delay.toSeconds() + "s", null, r.key(), r.value(), r.headers());
+        out.headers().remove("retry.attempt").remove("retry.due.at")
+           .add("retry.attempt", Integer.toString(attempt + 1).getBytes(UTF_8))
+           .add("retry.due.at", Long.toString(System.currentTimeMillis() + delay.toMillis()).getBytes(UTF_8));
+        producer.send(out).get(10, TimeUnit.SECONDS);
+    }
+}
+
+/** One of these per retry topic. Records in a tier share a delay, so they become due in offset order. */
+void runRetryConsumer(KafkaConsumer&lt;byte[], byte[]&gt; consumer, String baseTopic, RetryTiers tiers) throws Exception {
+    Map&lt;TopicPartition, Long&gt; wakeAt = new HashMap&lt;&gt;();
+    while (true) {
+        long now = System.currentTimeMillis();
+        wakeAt.entrySet().removeIf(e -&gt; { if (e.getValue() &gt; now) return false; consumer.resume(List.of(e.getKey())); return true; });
+
+        ConsumerRecords&lt;byte[], byte[]&gt; batch = consumer.poll(Duration.ofMillis(200));
+        for (TopicPartition tp : batch.partitions()) {
+            long done = -1;
+            for (ConsumerRecord&lt;byte[], byte[]&gt; r : batch.records(tp)) {
+                long due = header(r, "retry.due.at").map(Long::parseLong).orElse(0L);
+                if (due &gt; System.currentTimeMillis()) {            // not yet: wait without blocking the poll loop
+                    consumer.seek(tp, r.offset());
+                    consumer.pause(List.of(tp));
+                    wakeAt.put(tp, due);
+                    break;
+                }
+                try { handle(r); }
+                catch (TransientException e) { tiers.defer(r, baseTopic, e); }     // on to the next tier
+                catch (Exception permanent)  { deadLetters.send(r, permanent); }
+                done = r.offset();
+            }
+            if (done &gt;= 0) consumer.commitSync(Map.of(tp, new OffsetAndMetadata(done + 1)));
+        }
+    }
+}</code></pre>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Ordering is gone.</b> A retried record is processed after later records for the same key. Never use this for order-dependent flows.</li>
+<li><b>Do not sleep in the poll loop.</b> Sleeping past <code>max.poll.interval.ms</code> gets the consumer evicted. Pause the partition and keep polling, as above.</li>
+<li><b>A fixed delay per topic is what keeps it simple.</b> Mixed delays in one topic would block short delays behind long ones.</li>
+<li><b>During a full outage everything flows into the retry tiers</b>, then returns in a burst. Size the tiers and rate-limit the retry consumers.</li>
+<li><b>More topics and consumers to operate.</b> Frameworks such as Spring Kafka provide this pattern ready-made.</li>
+</ul>
+<h3>Use when</h3>
+<p>Independent records with failures that resolve themselves over seconds to minutes: outbound notifications, calls to rate-limited external APIs, non-critical enrichment.</p>
+</section>
+
+<section>
+<h2>Park the key</h2>
+<h3>Problem</h3>
+<p>You need both properties at once: per-key order must hold, and one bad record must not block every other key on the partition. Stop-and-retry gives the first, a dead-letter topic gives the second, and neither gives both.</p>
+<h3>How it works</h3>
+<p>When a record fails, mark its <i>key</i> as parked and divert the record to a parking topic. While a key is parked, every later record for that key is diverted too, without being processed, so order within the key is kept. All other keys continue. Once the cause is fixed, the parked records are replayed in order and the key is released.</p>
+<div class="flow">
+<span class="n">fills<small>keyed by position</small></span><span class="a">→</span>
+<span class="n">Processor<small>is this key parked?</small></span><span class="a">→</span>
+<span class="n">applied<small>normal path</small></span>
+<span class="br"></span>
+<span class="n">Processor</span><span class="a">→</span>
+<span class="n">fills.parked<small>failed + later records for the key</small></span><span class="a">→</span>
+<span class="n">Redrive tool</span><span class="a">→</span>
+<span class="n">fills.replay<small>records, then a RELEASE marker</small></span><span class="a">→</span>
+<span class="n">Processor</span>
+</div>
+<h3>Implementation</h3>
+<p>The set of parked keys is state that must move with the partition, so a Kafka Streams state store is the natural home. The store holds, per parked key, how many records have been diverted.</p>
+<pre data-lang="java"><code>record Envelope(Fill fill, boolean release, long replayedCount) {        // value type on the replay topic
+    static Envelope of(Fill f) { return new Envelope(f, false, 0); }
+}
+
+final class ParkingProcessor implements Processor&lt;String, Envelope, String, Fill&gt; {
+    private ProcessorContext&lt;String, Fill&gt; ctx;
+    private KeyValueStore&lt;String, Long&gt; parked;                          // key -&gt; number of records diverted
+    private final Consumer&lt;Fill&gt; apply;
+
+    public void init(ProcessorContext&lt;String, Fill&gt; ctx) {
+        this.ctx = ctx;
+        this.parked = ctx.getStateStore("parked-keys");
+    }
+
+    public void process(Record&lt;String, Envelope&gt; rec) {
+        String key = rec.key();
+        Envelope in = rec.value();
+        boolean replay = rec.headers().lastHeader("replay") != null;
+        Long count = parked.get(key);
+
+        if (in.release()) {                                              // marker written after the replayed records
+            if (count != null &amp;&amp; count == in.replayedCount()) parked.delete(key);   // everything diverted was replayed
+            else ctx.forward(rec.withValue((Fill) null), "release-incomplete");     // more arrived meanwhile: tool repeats
+            return;
+        }
+        if (count != null &amp;&amp; !replay) {                                  // key is parked: divert, preserving order
+            parked.put(key, count + 1);
+            ctx.forward(rec.withValue(in.fill()), "parked-sink");
+            return;
+        }
+        try {
+            apply.accept(in.fill());                                     // idempotent: replays are safe
+            ctx.forward(rec.withValue(in.fill()), "applied-sink");
+        } catch (TransientException e) {
+            throw e;                                                     // let the stream thread retry
+        } catch (RuntimeException permanent) {
+            if (replay) throw permanent;                                 // still failing after the fix: stop and alert
+            parked.put(key, 1L);
+            rec.headers().add("park.error", String.valueOf(permanent.getMessage()).getBytes(UTF_8));
+            ctx.forward(rec.withValue(in.fill()), "parked-sink");
+        }
+    }
+}</code></pre>
+<p>Topology: the processor reads the live topic and the replay topic (same key, same partition count, merged), writes to <code>fills.applied</code> and <code>fills.parked</code>, and runs with <code>exactly_once_v2</code> so the store, the diversion and the input offset move together.</p>
+<h4>The redrive tool</h4>
+<ol>
+<li>Read <code>fills.parked</code> for the chosen key, from the first parked record to the current end, counting records.</li>
+<li>Publish each to <code>fills.replay</code> in the same order with a <code>replay</code> header.</li>
+<li>Publish a release marker for the key carrying the total count replayed so far.</li>
+<li>If the processor reports <code>release-incomplete</code> (new records were parked in the meantime), repeat from the last replayed position. The key is released only when the counts match, so nothing is skipped and nothing overtakes.</li>
+</ol>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>Complexity.</b> This is the most machinery of the four error patterns. Use it only where both requirements are real.</li>
+<li><b>A parked key is stale.</b> Downstream must be able to see that: publish parked keys so that position views can flag the affected book and instrument.</li>
+<li><b>Parking must be bounded.</b> Alert on any parked key, and on the count of diverted records growing.</li>
+<li><b>Cross-key dependencies break it.</b> If key B's correctness depends on key A's records, parking A silently corrupts B.</li>
+<li><b>The handler must be idempotent</b>, since replay may reapply records that partly succeeded.</li>
+</ul>
+<h3>Use when</h3>
+<p>Many independent keys share partitions, per-key order matters, and one key's problem must not stop the rest: per-account or per-position processing with occasional bad data.</p>
+</section>
+
+<section>
+<h2>Priority lanes</h2>
+<h3>Problem</h3>
+<p>Kafka has no message priority. Within a partition, records are consumed strictly in order, so a cancel request can sit behind thousands of queued new orders, and a kill-switch behind a backlog.</p>
+<h3>How it works</h3>
+<p>Give each priority class its own topic. One consumer subscribes to all of them and, whenever the urgent lane has anything waiting, pauses the others. Urgent work is always drained first. The lanes are independent logs, so there is no ordering between them: this only suits operations that are safe to reorder relative to the other lane.</p>
+<h3>Implementation</h3>
+<pre data-lang="java"><code>final class PriorityConsumer {
+    private static final String URGENT = "orders.commands.urgent.v1";    // cancels, kill-switch, limit cuts
+    private static final String NORMAL = "orders.commands.v1";
+
+    void run(KafkaConsumer&lt;String, OrderCommand&gt; consumer, Consumer&lt;OrderCommand&gt; handler) {
+        consumer.subscribe(List.of(URGENT, NORMAL));
+        while (true) {
+            ConsumerRecords&lt;String, OrderCommand&gt; batch = consumer.poll(Duration.ofMillis(20));
+
+            // urgent first, always
+            for (ConsumerRecord&lt;String, OrderCommand&gt; r : batch.records(URGENT)) handler.accept(r.value());
+
+            Set&lt;TopicPartition&gt; normal = consumer.assignment().stream()
+                .filter(tp -&gt; tp.topic().equals(NORMAL)).collect(Collectors.toSet());
+            boolean urgentWaiting = consumer.assignment().stream()
+                .filter(tp -&gt; tp.topic().equals(URGENT))
+                .anyMatch(tp -&gt; consumer.currentLag(tp).orElse(0) &gt; 0);
+
+            if (urgentWaiting) {
+                // put back what we fetched but have not processed, then hold the normal lane
+                for (TopicPartition tp : normal) {
+                    List&lt;ConsumerRecord&lt;String, OrderCommand&gt;&gt; recs = batch.records(tp);
+                    if (!recs.isEmpty()) consumer.seek(tp, recs.get(0).offset());
+                }
+                consumer.pause(normal);
+            } else {
+                for (ConsumerRecord&lt;String, OrderCommand&gt; r : batch.records(NORMAL)) handler.accept(r.value());
+                consumer.resume(normal);
+            }
+            consumer.commitSync();
+        }
+    }
+}</code></pre>
+<p>Keep <code>max.poll.records</code> small on this consumer so that the check for urgent work happens often.</p>
+<h3>Pitfalls</h3>
+<ul>
+<li><b>No ordering across lanes.</b> A cancel can now arrive before the new order it refers to. The handler must cope: remember the cancel and apply it when the order appears, or reject it and let the sender retry.</li>
+<li><b>Starvation.</b> A flood of urgent records stops normal work entirely. Decide whether that is intended (for a kill-switch it is) or add a ratio.</li>
+<li><b>Priority is only as fast as the poll loop.</b> A slow handler on a normal record still delays the next urgent one.</li>
+<li><b>For true low-latency preemption</b>, Kafka is the wrong layer: handle cancels and kill-switches in the gateway's own in-memory path, and use Kafka to record them.</li>
+<li><b>Dedicated consumers per lane</b> are an alternative when lanes can be processed fully independently.</li>
+</ul>
+<h3>Use when</h3>
+<p>A small class of control messages must not wait behind bulk flow, and can safely be processed out of order relative to it: cancels, limit reductions, halts, configuration changes.</p>
+</section>
+
+<section>
+<h2>Putting the patterns together</h2>
+<p>The patterns are designed to compose. A typical post-trade pipeline uses most of them:</p>
+<div class="flow">
+<span class="n">OMS<small>event sourcing, single writer</small></span><span class="a">→</span>
+<span class="n">orders.events<small>outbox or transactional produce</small></span><span class="a">→</span>
+<span class="n">Blotter<small>CQRS read model</small></span>
+<span class="br"></span>
+<span class="n">executions</span><span class="a">→</span>
+<span class="n">Re-key<small>by book+instrument</small></span><span class="a">→</span>
+<span class="n">Position keeper<small>idempotent, EOS, park the key</small></span><span class="a">→</span>
+<span class="n">snapshot + deltas</span><span class="a">→</span>
+<span class="n">Risk<small>catch-up gate, refdata replica</small></span>
+<span class="br"></span>
+<span class="n">Order complete</span><span class="a">→</span>
+<span class="n">Allocation saga</span><span class="a">→</span>
+<span class="n">Ledger<small>offsets stored with state</small></span><span class="a">→</span>
+<span class="n">Reports<small>claim check, DLQ</small></span>
+</div>
+<h3>Error-handling decision</h3>
+<div class="tw"><table>
+<tr><th>Does order matter per key?</th><th>Can other keys proceed?</th><th>Failure type</th><th>Pattern</th></tr>
+<tr><td>Yes</td><td>No, or it does not matter</td><td>Any</td><td>Stop and retry in place</td></tr>
+<tr><td>Yes</td><td>Yes</td><td>Permanent</td><td>Park the key</td></tr>
+<tr><td>No</td><td>Yes</td><td>Permanent</td><td>Dead-letter topic</td></tr>
+<tr><td>No</td><td>Yes</td><td>Transient, long-lived</td><td>Delayed retry topics, then dead-letter</td></tr>
+<tr><td>Either</td><td>Either</td><td>Transient, brief</td><td>Retry in place with backoff</td></tr>
+</table></div>
+<h3>Guarantees at a glance</h3>
+<div class="tw"><table>
+<tr><th>Pattern</th><th>Delivery guarantee achieved</th><th>Per-key order</th><th>Main cost</th></tr>
+<tr><td>Idempotent consumer</td><td>Effectively once, from at-least-once</td><td>Kept</td><td>A de-duplication store</td></tr>
+<tr><td>Transactional outbox</td><td>At-least-once publish, atomic with DB</td><td>Kept per aggregate</td><td>Relay to operate</td></tr>
+<tr><td>Consume-transform-produce</td><td>Exactly-once within Kafka</td><td>Kept</td><td>Commit latency</td></tr>
+<tr><td>Offsets stored with state</td><td>Exactly-once into the database</td><td>Kept</td><td>Custom offset management</td></tr>
+<tr><td>Event sourcing</td><td>As the handler's transaction</td><td>Kept</td><td>Schema evolution, rehydration</td></tr>
+<tr><td>CQRS</td><td>Eventually consistent views</td><td>Kept</td><td>Staleness, rebuilds</td></tr>
+<tr><td>Saga</td><td>Eventual completion or compensation</td><td>Per saga</td><td>No isolation</td></tr>
+<tr><td>Dead-letter and retry topics</td><td>At-least-once</td><td>Broken</td><td>Operations and triage</td></tr>
+<tr><td>Park the key</td><td>At-least-once</td><td>Kept</td><td>Complexity</td></tr>
+<tr><td>Priority lanes</td><td>At-least-once</td><td>Kept per lane only</td><td>Reordering between lanes</td></tr>
+</table></div>
+<h3>Testing each pattern</h3>
+<ul class="chk">
+<li>Deliver every record twice and assert identical results (idempotency).</li>
+<li>Kill the process between every pair of steps: after the write and before the commit, mid-transaction, mid-rebalance.</li>
+<li>Start a second instance with the same identity and assert the first is fenced.</li>
+<li>Inject a permanent failure on one key and assert other keys keep flowing, or the partition halts, according to the chosen policy.</li>
+<li>Inject a dependency outage and assert nothing is dead-lettered.</li>
+<li>Drop a delta and assert the gap is detected and the key resynchronised.</li>
+<li>Restart with a large backlog and assert nothing is served before the catch-up gate opens.</li>
+<li>Rebuild a read model from the start of the log and compare it with the live one.</li>
+<li>Time out each saga step and assert retries are idempotent and compensations run in reverse order.</li>
+<li>Replay a recorded production day through the whole pipeline and compare outputs with the previous build.</li>
+</ul>
+</section>
+
+<footer>Part of a series: Argo CD, AWS and EKS for developers, Kafka for event-driven trading systems, Kafka design patterns. Self-contained file: open in any browser, works offline.</footer>
+</main>
+</div>
+<script>
+(function(){
+var toc=document.getElementById('toc'),links=[];
+document.querySelectorAll('main h2').forEach(function(h,i){
+  if(!h.id)h.id='s'+(i+1);
+  var li=document.createElement('li'),a=document.createElement('a');
+  a.href='#'+h.id;a.textContent=h.textContent;li.appendChild(a);toc.appendChild(li);links.push(a);
+});
+var d=document.getElementById('tocd'),mq=window.matchMedia('(min-width:1040px)');
+function setOpen(){d.open=mq.matches}setOpen();
+if(mq.addEventListener)mq.addEventListener('change',setOpen);
+toc.addEventListener('click',function(){if(!mq.matches)d.open=false});
+document.querySelectorAll('pre').forEach(function(p){
+  var b=document.createElement('button');b.type='button';b.textContent='Copy';
+  b.onclick=function(){var t=p.querySelector('code').innerText;
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)})}};
+  p.appendChild(b);
+});
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){
+    links.forEach(function(l){l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'0px 0px -75% 0px'});
+  document.querySelectorAll('main h2').forEach(function(h){io.observe(h)});
+}
+})();
+</script>
+</body>
+</html>

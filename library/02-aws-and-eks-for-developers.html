@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AWS and EKS for Developers</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1c1e22;--muted:#5b616c;--line:#e2ddd2;--card:#ffffff;--code:#f1ede5;--accent:#0f6e8c;--accent-soft:#e4f1f5;--warn:#b4541a;--ok:#2c7a4b}
+@media (prefers-color-scheme:dark){:root{--bg:#131519;--fg:#e7e4dd;--muted:#9ba1ab;--line:#2b2f37;--card:#1a1d23;--code:#0e1013;--accent:#56b6d6;--accent-soft:#13242b;--warn:#e09055;--ok:#6cc08b}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:1fr;gap:0}
+@media (min-width:1040px){.wrap{grid-template-columns:250px minmax(0,1fr);gap:48px}}
+header.hero{border-bottom:1px solid var(--line);padding:44px 20px 32px;background:linear-gradient(180deg,var(--accent-soft),transparent)}
+.hero-in{max-width:1180px;margin:0 auto}
+.tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px}
+h1,h2,h3{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px);margin:0 0 12px;letter-spacing:-.01em}
+.lede{font-size:18px;color:var(--muted);max-width:760px;margin:0}
+.meta{margin-top:16px;font-size:13px;color:var(--muted)}
+nav.toc{font-size:14px;padding:24px 0}
+@media (min-width:1040px){nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:32px 0}}
+nav.toc summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--accent)}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:t}
+nav.toc li{counter-increment:t}
+nav.toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line)}
+nav.toc a::before{content:counter(t) ". "}
+nav.toc a:hover,nav.toc a.on{color:var(--fg);border-left-color:var(--accent)}
+main{padding:8px 0 80px;min-width:0;counter-reset:sec}
+section{padding-top:28px}
+h2{font-size:28px;margin:28px 0 12px;padding-top:20px;border-top:1px solid var(--line);counter-increment:sec}
+h2::before{content:counter(sec);display:inline-block;min-width:1.6em;color:var(--accent);font-variant-numeric:tabular-nums}
+h3{font-size:20px;margin:28px 0 8px}
+h4{font-size:15px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+p{margin:0 0 14px;max-width:780px}
+ul,ol{max-width:780px;padding-left:22px;margin:0 0 14px}
+li{margin:4px 0}
+a{color:var(--accent)}
+code{font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow:auto;margin:0 0 18px;max-width:100%}
+pre code{background:none;padding:0;font-size:13px;white-space:pre;overflow-wrap:normal}
+pre[data-lang]::before{content:attr(data-lang);position:absolute;top:6px;right:64px;font:11px ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+pre button{position:absolute;top:5px;right:6px;font:11px inherit;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:5px;padding:2px 8px;cursor:pointer}
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--accent-soft)}
+tr:last-child td{border-bottom:0}
+.note,.warn,.tip{border-left:4px solid var(--accent);background:var(--card);border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 18px;max-width:780px;box-shadow:0 0 0 1px var(--line)}
+.warn{border-left-color:var(--warn)}.tip{border-left-color:var(--ok)}
+.note b:first-child,.warn b:first-child,.tip b:first-child{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.warn b:first-child{color:var(--warn)}.tip b:first-child{color:var(--ok)}.note b:first-child{color:var(--accent)}
+.note p:last-child,.warn p:last-child,.tip p:last-child{margin-bottom:0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 18px;padding:16px;border:1px dashed var(--line);border-radius:8px;background:var(--card)}
+.flow .n{border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-size:13.5px;font-weight:600;background:var(--accent-soft);text-align:center}
+.flow .n small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.flow .a{color:var(--accent);font-weight:700}
+.flow .br{flex-basis:100%;height:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h4{margin:0 0 6px;color:var(--accent)}
+.card p,.card ul{font-size:14.5px;margin-bottom:0}
+ul.chk{list-style:none;padding-left:0}
+ul.chk li{padding-left:28px;position:relative}
+ul.chk li::before{content:"";position:absolute;left:2px;top:.35em;width:14px;height:14px;border:2px solid var(--accent);border-radius:4px}
+footer{border-top:1px solid var(--line);margin-top:48px;padding-top:16px;font-size:13px;color:var(--muted)}
+@media print{nav.toc{display:none}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-in">
+<span class="tag">Guide 2 of 3 - Building on EKS</span>
+<h1>AWS and EKS for Developers</h1>
+<p class="lede">What an engineer shipping services onto Amazon EKS needs to understand: access, IAM, networking, compute, delivery, data, observability, security, upgrades and cost.</p>
+<p class="meta">Written November 2026. EKS moves quickly: check versions and pricing against AWS documentation before relying on a specific number.</p>
+</div></header>
+<div class="wrap">
+<nav class="toc"><details id="tocd"><summary>Contents</summary><ol id="toc"></ol></details></nav>
+<main>
+<section>
+<h2>The mental model</h2>
+<p>Amazon EKS gives you a managed Kubernetes control plane. Everything else (the nodes your pods run on, the network they sit in, the IAM permissions they use, the load balancers in front of them) is ordinary AWS infrastructure that Kubernetes controllers create and manage on your behalf. Most confusing EKS problems are really AWS problems wearing a Kubernetes error message, so a developer needs a working model of both layers.</p>
+<div class="flow">
+<span class="n">Your code<small>container image in ECR</small></span><span class="a">→</span>
+<span class="n">Kubernetes objects<small>Deployment, Service, Ingress</small></span><span class="a">→</span>
+<span class="n">Controllers<small>CNI, LB controller, CSI, Karpenter</small></span><span class="a">→</span>
+<span class="n">AWS resources<small>ENIs, ALB/NLB, EBS, EC2</small></span>
+</div>
+<h3>Who owns what</h3>
+<div class="tw"><table>
+<tr><th>Layer</th><th>AWS runs it</th><th>Your platform team</th><th>You, the developer</th></tr>
+<tr><td>Control plane (API server, etcd)</td><td>Yes: multi-AZ, patched, scaled</td><td>Version choice, endpoint access, logging</td><td>Use it through <code>kubectl</code> and the API</td></tr>
+<tr><td>Nodes</td><td>Only with Auto Mode or Fargate</td><td>Node pools, AMIs, scaling policy</td><td>Requests, limits, scheduling constraints</td></tr>
+<tr><td>Add-ons (CNI, CoreDNS, CSI drivers)</td><td>Publishes them, manages them in Auto Mode</td><td>Versions and config</td><td>Know they exist when debugging</td></tr>
+<tr><td>Workloads</td><td>No</td><td>Guard rails, shared services</td><td>Images, manifests, probes, IAM needs, dashboards</td></tr>
+</table></div>
+<h3>AWS building blocks you will keep meeting</h3>
+<div class="tw"><table>
+<tr><th>Concept</th><th>What matters for you</th></tr>
+<tr><td>Account</td><td>The hard isolation boundary. Dev, staging and production are usually separate accounts under AWS Organizations.</td></tr>
+<tr><td>Region and Availability Zone</td><td>A cluster lives in one region and spans several AZs. Pods and EBS volumes are AZ-bound. Traffic between AZs is billed.</td></tr>
+<tr><td>VPC and subnets</td><td>The cluster's private network. Pods get real VPC IP addresses.</td></tr>
+<tr><td>IAM</td><td>Every AWS API call, from you or from a pod, is authorised by IAM.</td></tr>
+<tr><td>ARN</td><td>The unique name of any resource, used in policies.</td></tr>
+<tr><td>Tags</td><td>Key-value labels on AWS resources. Controllers and cost reports depend on them.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>Getting access to a cluster</h2>
+<h3>Human access to AWS</h3>
+<p>Use short-lived credentials from IAM Identity Center (SSO). Long-lived access keys on a laptop are the classic way credentials leak.</p>
+<pre data-lang="bash"><code>aws configure sso                       # once: creates a named profile
+aws sso login --profile dev
+export AWS_PROFILE=dev
+aws sts get-caller-identity             # always check who you are first</code></pre>
+<h3>From AWS identity to Kubernetes permissions</h3>
+<p>EKS authenticates you with IAM, then maps your IAM principal to Kubernetes permissions. The current mechanism is <b>access entries</b>, managed through the EKS API. The older <code>aws-auth</code> ConfigMap is deprecated, so do not build new workflows on it.</p>
+<pre data-lang="bash"><code>aws eks update-kubeconfig --name dev-euw1 --region eu-west-1 --alias dev
+kubectl config get-contexts
+kubectl auth whoami
+kubectl auth can-i --list -n pricing
+
+# platform side: grant a role edit rights in one namespace
+aws eks create-access-entry --cluster-name dev-euw1 \
+  --principal-arn arn:aws:iam::111122223333:role/pricing-devs
+aws eks associate-access-policy --cluster-name dev-euw1 \
+  --principal-arn arn:aws:iam::111122223333:role/pricing-devs \
+  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy \
+  --access-scope type=namespace,namespaces=pricing</code></pre>
+<div class="tw"><table>
+<tr><th>Access policy</th><th>Roughly equals</th></tr>
+<tr><td><code>AmazonEKSClusterAdminPolicy</code></td><td><code>cluster-admin</code></td></tr>
+<tr><td><code>AmazonEKSAdminPolicy</code></td><td><code>admin</code> in the scoped namespaces</td></tr>
+<tr><td><code>AmazonEKSEditPolicy</code></td><td><code>edit</code>: workloads yes, RBAC no</td></tr>
+<tr><td><code>AmazonEKSViewPolicy</code></td><td><code>view</code>: read-only, no Secrets</td></tr>
+</table></div>
+<p>For finer control, an access entry can instead place you in a Kubernetes group that is bound with normal <code>Role</code> and <code>RoleBinding</code> objects.</p>
+<div class="tip"><b>Daily tooling</b><p><code>kubectx</code> and <code>kubens</code> for switching context and namespace, <code>k9s</code> for a terminal dashboard, <code>stern</code> for tailing logs across pods. Show the current context in your shell prompt: running a command against production by mistake is the most common self-inflicted incident.</p></div>
+</section>
+
+<section>
+<h2>IAM essentials</h2>
+<p>IAM answers one question: may this <b>principal</b> perform this <b>action</b> on this <b>resource</b> under these <b>conditions</b>?</p>
+<div class="tw"><table>
+<tr><th>Piece</th><th>Meaning</th></tr>
+<tr><td>Role</td><td>An identity with no permanent credentials. Something assumes it and receives temporary ones from STS.</td></tr>
+<tr><td>Trust policy</td><td>Attached to a role: <i>who</i> may assume it.</td></tr>
+<tr><td>Permissions policy</td><td>Attached to a role: <i>what</i> it may do.</td></tr>
+<tr><td>Resource policy</td><td>Attached to a resource (S3 bucket, KMS key, SQS queue): who may touch it. Needed for cross-account access.</td></tr>
+<tr><td>Permission boundary, SCP</td><td>Ceilings set by your organisation. They never grant, they only limit.</td></tr>
+</table></div>
+<p>Evaluation, simplified: an explicit <code>Deny</code> anywhere wins. Otherwise the action must be allowed by an identity or resource policy <i>and</i> fall inside every boundary and SCP. No matching allow means denied.</p>
+<pre data-lang="json"><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::acme-pricing-snapshots/prod/*" },
+    { "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::acme-pricing-snapshots",
+      "Condition": { "StringLike": { "s3:prefix": "prod/*" } } }
+  ]
+}</code></pre>
+<div class="note"><b>Reading AccessDenied</b><p>The error message names the principal, the action and usually the resource. Check all three against what you expected before changing a policy: very often the pod is simply not running as the role you think it is.</p></div>
+</section>
+
+<section>
+<h2>Giving pods AWS permissions</h2>
+<p>A pod that calls S3, SQS, DynamoDB or Secrets Manager needs AWS credentials. Never bake keys into images or Secrets, and never rely on the node's instance role, which would give every pod on the node the same rights. Bind an IAM role to a Kubernetes service account instead. There are two mechanisms.</p>
+<div class="tw"><table>
+<tr><th></th><th>EKS Pod Identity</th><th>IRSA (IAM Roles for Service Accounts)</th></tr>
+<tr><td>How it is wired</td><td>An <i>association</i> in the EKS API: cluster + namespace + service account → role.</td><td>An annotation on the ServiceAccount, plus a role trust policy that names the cluster's OIDC provider.</td></tr>
+<tr><td>Trust policy</td><td>One generic principal, <code>pods.eks.amazonaws.com</code>. The same role is reusable across clusters.</td><td>References a specific cluster's OIDC issuer and the exact service account.</td></tr>
+<tr><td>Needs</td><td>The Pod Identity Agent add-on (built into Auto Mode).</td><td>An IAM OIDC provider per cluster.</td></tr>
+<tr><td>Extras</td><td>Session tags (cluster, namespace, service account) usable in policies. Can chain to a role in another account.</td><td>Works on Fargate and on non-EKS clusters.</td></tr>
+<tr><td>Choose it</td><td>By default for new work on EC2-backed nodes.</td><td>On Fargate, or where it is already established.</td></tr>
+</table></div>
+<pre data-lang="bash"><code># Pod Identity
+aws eks create-pod-identity-association --cluster-name dev-euw1 \
+  --namespace pricing --service-account pricing-api \
+  --role-arn arn:aws:iam::111122223333:role/pricing-api</code></pre>
+<pre data-lang="json"><code>{ "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Allow",
+    "Principal": { "Service": "pods.eks.amazonaws.com" },
+    "Action": ["sts:AssumeRole", "sts:TagSession"] }] }</code></pre>
+<pre data-lang="yaml"><code># IRSA
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pricing-api
+  namespace: pricing
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111122223333:role/pricing-api</code></pre>
+<p>In both cases your code changes nothing. The AWS SDK's default credential chain finds the injected credentials and refreshes them. Do not construct clients with explicit keys, and do use a reasonably recent SDK.</p>
+<pre data-lang="bash"><code># debugging: which role is this pod really using?
+kubectl exec -n pricing deploy/pricing-api -- aws sts get-caller-identity
+kubectl describe pod -n pricing POD | grep -i -E "AWS_|serviceaccount"</code></pre>
+<div class="warn"><b>Common mistakes</b><p>The Deployment does not set <code>serviceAccountName</code>, so the pod runs as <code>default</code>. The association or annotation was added after the pod started: restart it. The role's trust policy names a different namespace or service account. One role is shared by many services, so every service has every permission.</p></div>
+</section>
+
+<section>
+<h2>Networking</h2>
+<h3>Pod networking with the VPC CNI</h3>
+<p>On EKS each pod receives an IP address from the VPC subnets, so pods are directly routable inside the VPC with no overlay. Consequences:</p>
+<ul>
+<li><b>IP addresses are a finite resource.</b> Small subnets run out, and pods then stick in <code>ContainerCreating</code> with IP allocation errors. Platform teams address this with larger or secondary CIDR ranges, prefix delegation, or IPv6 clusters.</li>
+<li><b>Pod density per node is bounded</b> by how many network interfaces and addresses the instance type supports, unless prefix delegation is on.</li>
+<li><b>Security groups apply at node level by default.</b> Security groups for pods exist for the cases where a specific workload needs its own.</li>
+<li><b>Network policies</b> are enforced by the VPC CNI when enabled. Without that, <code>NetworkPolicy</code> objects are accepted and silently do nothing.</li>
+</ul>
+<h3>Exposing a service</h3>
+<div class="tw"><table>
+<tr><th>Need</th><th>Kubernetes object</th><th>AWS result</th></tr>
+<tr><td>Internal calls between services</td><td><code>Service</code> type <code>ClusterIP</code></td><td>Nothing in AWS. Cluster DNS name <code>svc.namespace.svc.cluster.local</code>.</td></tr>
+<tr><td>HTTP(S) from outside the cluster</td><td><code>Ingress</code> or Gateway API <code>HTTPRoute</code></td><td>Application Load Balancer (layer 7: host and path routing, TLS with ACM, WAF, OIDC auth).</td></tr>
+<tr><td>TCP, UDP, gRPC pass-through, static IPs, lowest latency</td><td><code>Service</code> type <code>LoadBalancer</code></td><td>Network Load Balancer (layer 4).</td></tr>
+<tr><td>Private access from another VPC or account</td><td>NLB plus a VPC endpoint service</td><td>PrivateLink.</td></tr>
+</table></div>
+<p>The <b>AWS Load Balancer Controller</b> (built into Auto Mode) turns these objects into load balancers. Use <b>IP target mode</b> so the balancer sends traffic straight to pod IPs, skipping an extra node hop.</p>
+<pre data-lang="yaml"><code>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pricing-api
+  namespace: pricing
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/group.name: internal-shared   # share one ALB across teams
+spec:
+  ingressClassName: alb
+  rules:
+    - host: pricing.dev.acme.internal
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: pricing-api, port: { number: 80 } } }</code></pre>
+<p><b>ExternalDNS</b> usually creates the Route 53 record from the hostname, and ACM supplies the certificate. Each ALB costs money and takes minutes to create, so share them with ingress groups instead of one per service.</p>
+<h3>Zero-downtime deploys behind a load balancer</h3>
+<p>The load balancer and Kubernetes update on different clocks. Three settings close the gaps:</p>
+<ul>
+<li><b>Pod readiness gates</b>: the pod is not Ready until the target group reports it healthy, so a rollout cannot outrun target registration.</li>
+<li><b>A <code>preStop</code> sleep</b> (for example 15 seconds) so the pod keeps serving while it is being deregistered.</li>
+<li><b>Graceful shutdown in your code</b>: on SIGTERM stop accepting new work, finish in-flight requests, exit before <code>terminationGracePeriodSeconds</code>.</li>
+</ul>
+<h3>DNS and egress gotchas</h3>
+<ul>
+<li>The default <code>ndots:5</code> makes a lookup of an external name try several cluster suffixes first. Chatty clients multiply DNS load. Use fully qualified names with a trailing dot or lower <code>ndots</code> for such workloads, and consider NodeLocal DNSCache.</li>
+<li>Pods in private subnets reach the internet through NAT gateways, billed per GB. Pulling images and calling S3, ECR or DynamoDB through NAT is a common hidden cost. VPC endpoints remove it.</li>
+<li>Calling another AWS account or an on-premises system requires routing (Transit Gateway, peering, PrivateLink) <i>and</i> security group rules <i>and</i> often DNS. Ask for all three.</li>
+</ul>
+</section>
+
+<section>
+<h2>Compute: where pods run</h2>
+<div class="tw"><table>
+<tr><th>Option</th><th>What it is</th><th>Developer impact</th></tr>
+<tr><td><b>EKS Auto Mode</b></td><td>AWS manages nodes, scaling, networking, storage and load-balancing controllers. Built on Karpenter concepts (<code>NodePool</code>, <code>NodeClass</code>).</td><td>Least to operate. Nodes are locked down (no SSH) and are replaced regularly, so workloads must tolerate rescheduling. Extra per-instance fee.</td></tr>
+<tr><td><b>Karpenter</b></td><td>Open-source autoscaler that launches right-sized instances directly for pending pods and consolidates under-used nodes.</td><td>Fast, flexible scaling. Your pods <i>will</i> be moved during consolidation.</td></tr>
+<tr><td><b>Managed node groups</b></td><td>EC2 Auto Scaling groups that EKS upgrades for you. Often paired with Cluster Autoscaler.</td><td>Predictable, slower to scale, fixed instance shapes per group.</td></tr>
+<tr><td><b>Fargate</b></td><td>One isolated micro-VM per pod, no nodes.</td><td>No DaemonSets, no EBS volumes, slower starts. Fits small or strongly isolated workloads.</td></tr>
+</table></div>
+<h3>What you control: requests, limits and scheduling</h3>
+<pre data-lang="yaml"><code>resources:
+  requests: { cpu: "500m", memory: "1Gi" }   # what the scheduler reserves, what you pay for
+  limits:   { memory: "1Gi" }                # memory limit = request; usually no CPU limit</code></pre>
+<ul>
+<li><b>Requests drive everything</b>: scheduling, autoscaling and cost. Set them from measured usage, not guesses.</li>
+<li><b>Memory</b>: exceeding the limit gets the container OOM-killed. Set limit equal to request for predictable behaviour.</li>
+<li><b>CPU</b>: a limit causes throttling even when the node is idle, which shows up as latency spikes. Many teams set CPU requests and omit CPU limits. For latency-critical services that need whole cores, Guaranteed QoS with integer CPUs and the static CPU manager policy is the tool.</li>
+<li><b>JVM and other runtimes</b>: make the heap container-aware (for example <code>-XX:MaxRAMPercentage=75</code>) and leave room for off-heap memory, or you will be OOM-killed with a heap that looks fine.</li>
+<li>Recent Kubernetes versions on EKS support resizing a pod's CPU and memory in place, without a restart. Useful for vertical scaling of stateful or slow-starting services.</li>
+</ul>
+<h3>Surviving node churn</h3>
+<p>Nodes disappear: Spot interruptions, consolidation, upgrades, AMI rotation, hardware failure. Treat it as normal.</p>
+<pre data-lang="yaml"><code>apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: pricing-api, namespace: pricing }
+spec:
+  maxUnavailable: 1
+  selector: { matchLabels: { app: pricing-api } }
+---
+# in the pod template
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector: { matchLabels: { app: pricing-api } }</code></pre>
+<ul>
+<li>Run at least two replicas, three for anything important, spread across zones.</li>
+<li>Define a PodDisruptionBudget. A PDB that allows zero disruptions (for example <code>minAvailable</code> equal to replicas) blocks node upgrades and makes you unpopular.</li>
+<li><b>Probes</b>: <code>startupProbe</code> for slow starters, <code>readinessProbe</code> to gate traffic, <code>livenessProbe</code> only for deadlocks. A liveness probe that checks a downstream dependency turns one outage into a restart storm.</li>
+<li><b>Spot</b> is fine for stateless, replicated or batch work with two minutes of notice. Keep stateful and singleton workloads on On-Demand with node selectors or tolerations.</li>
+<li><b>Graviton (arm64)</b> is cheaper per unit of work for most services. Build multi-architecture images so the scheduler can use either.</li>
+</ul>
+<h3>Autoscaling pods</h3>
+<div class="tw"><table>
+<tr><th>Tool</th><th>Scales on</th><th>Notes</th></tr>
+<tr><td>HPA</td><td>CPU, memory, custom or external metrics</td><td>Needs sensible requests. Add a scale-down stabilisation window to avoid flapping.</td></tr>
+<tr><td>KEDA</td><td>Event sources: SQS depth, Kafka consumer lag, schedules</td><td>Can scale to zero. Natural fit for consumers.</td></tr>
+<tr><td>VPA</td><td>Observed usage, adjusts requests</td><td>Use in recommendation mode to learn right sizes. Do not combine with HPA on the same metric.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>Building and shipping</h2>
+<h3>Images and Amazon ECR</h3>
+<ul>
+<li><b>Small, reproducible images</b>: multi-stage builds, minimal or distroless base, non-root user, pinned base image digests.</li>
+<li><b>Immutable tags</b>. Tag with the Git SHA or a version, deploy by digest where you can. Turn on tag immutability in ECR.</li>
+<li><b>Scanning</b> on push (basic or Amazon Inspector), with CI failing on critical findings.</li>
+<li><b>Lifecycle policies</b> to expire old images, otherwise storage grows without bound.</li>
+<li><b>Pull-through cache</b> for public registries, to avoid rate limits and outages you do not control.</li>
+</ul>
+<pre data-lang="bash"><code>aws ecr get-login-password --region eu-west-1 | \
+  docker login --username AWS --password-stdin 111122223333.dkr.ecr.eu-west-1.amazonaws.com
+
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t 111122223333.dkr.ecr.eu-west-1.amazonaws.com/pricing-api:$(git rev-parse --short HEAD) \
+  --push .</code></pre>
+<h3>CI without stored AWS keys</h3>
+<p>Let the pipeline assume a role through OIDC federation. No secrets to rotate, and the trust policy can restrict the role to one repository and branch.</p>
+<pre data-lang="yaml"><code># GitHub Actions
+permissions:
+  id-token: write
+  contents: read
+steps:
+  - uses: actions/checkout@v4
+  - uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: arn:aws:iam::111122223333:role/gha-pricing-api-ecr-push
+      aws-region: eu-west-1
+  - uses: aws-actions/amazon-ecr-login@v2</code></pre>
+<h3>Deploying</h3>
+<div class="flow">
+<span class="n">CI<small>test, build, scan, push</small></span><span class="a">→</span>
+<span class="n">Config repo<small>bump image tag by PR</small></span><span class="a">→</span>
+<span class="n">Argo CD or Flux<small>pulls and reconciles</small></span><span class="a">→</span>
+<span class="n">Cluster</span>
+</div>
+<p>Prefer GitOps over pipelines that run <code>kubectl apply</code> or <code>helm upgrade</code>: the pipeline needs no cluster credentials, drift is visible, and rollback is a revert. AWS offers managed Argo CD as an EKS Capability if your platform team would rather not run it. Guide 1 in this series covers Argo CD in depth.</p>
+<p>Package with <b>Kustomize</b> for your own services (base plus per-environment overlays) or <b>Helm</b> when distributing a chart to others. Whichever you pick, render locally and validate before pushing:</p>
+<pre data-lang="bash"><code>kustomize build overlays/dev | kubectl apply --dry-run=server -f -
+kubectl diff -k overlays/dev</code></pre>
+</section>
+
+<section>
+<h2>Data, storage and other AWS resources</h2>
+<h3>Persistent storage in the cluster</h3>
+<div class="tw"><table>
+<tr><th>Driver</th><th>Access</th><th>Use for</th><th>Catch</th></tr>
+<tr><td>EBS CSI (gp3, io2)</td><td>One node at a time</td><td>Databases, brokers, anything needing fast block storage</td><td>Bound to one AZ. The pod can only reschedule within it. Use <code>volumeBindingMode: WaitForFirstConsumer</code>.</td></tr>
+<tr><td>EFS CSI</td><td>Many nodes, read-write</td><td>Shared files across pods and zones</td><td>Network file system latency. Not for databases.</td></tr>
+<tr><td>Mountpoint for S3 CSI</td><td>Many nodes</td><td>Reading large datasets as files</td><td>Not a full POSIX file system.</td></tr>
+<tr><td>Instance store / <code>emptyDir</code></td><td>Local</td><td>Scratch space, caches</td><td>Gone when the pod or node goes.</td></tr>
+</table></div>
+<div class="note"><b>Stateful or managed?</b><p>The usual advice holds: keep the cluster stateless where you can and use managed services for state (RDS or Aurora, DynamoDB, ElastiCache, MSK, S3). Run stateful systems on EKS when you need control over version, latency or cost, and have the operator skills. When you do, use an operator, dedicated nodes, PDBs and tested backup and restore.</p></div>
+<h3>Provisioning the AWS resources your service needs</h3>
+<div class="tw"><table>
+<tr><th>Tool</th><th>Model</th><th>Fits</th></tr>
+<tr><td>Terraform / OpenTofu</td><td>Declarative HCL, state file, plan and apply</td><td>The common default for platform and shared infrastructure.</td></tr>
+<tr><td>AWS CDK</td><td>Real programming languages that synthesise CloudFormation</td><td>Teams that want abstractions and tests in code.</td></tr>
+<tr><td>ACK (AWS Controllers for Kubernetes)</td><td>AWS resources as Kubernetes custom resources</td><td>Service-owned resources (a queue, a bucket, a table) delivered through the same GitOps flow as the app.</td></tr>
+<tr><td>kro</td><td>Compose several resources into one custom API</td><td>Platform teams offering "a service with a queue and a role" as a single object.</td></tr>
+<tr><td>Crossplane</td><td>Like ACK, multi-cloud, with compositions</td><td>Platform APIs across providers.</td></tr>
+</table></div>
+<p>A workable split: the platform team owns accounts, VPCs, clusters and shared services in Terraform. Service teams own the handful of resources specific to their service, next to their code, in whichever tool the platform supports.</p>
+</section>
+
+<section>
+<h2>Configuration and secrets</h2>
+<ul>
+<li><b>ConfigMaps</b> for non-secret configuration. Changing one does not restart pods. Kustomize's <code>configMapGenerator</code> adds a content hash to the name, so a config change rolls the Deployment and a rollback restores the old config.</li>
+<li><b>Kubernetes Secrets</b> are base64, not encryption. On EKS they are encrypted at rest with KMS, but anyone with read access to Secrets in the namespace can read them. Lock down RBAC accordingly.</li>
+<li><b>Source of truth</b> should be AWS Secrets Manager or SSM Parameter Store (rotation, audit trail, IAM control), not a YAML file.</li>
+</ul>
+<div class="tw"><table>
+<tr><th>Way to get a secret into a pod</th><th>How</th><th>Trade-off</th></tr>
+<tr><td>External Secrets Operator</td><td>An <code>ExternalSecret</code> object syncs a Secrets Manager entry into a Kubernetes Secret.</td><td>Most common. Works with env vars and any chart. The value does exist as a Secret in the cluster.</td></tr>
+<tr><td>Secrets Store CSI Driver with the AWS provider</td><td>Mounts the secret as a file in the pod.</td><td>No Secret object needed. The app must read files and handle rotation.</td></tr>
+<tr><td>SDK call at start-up</td><td>The app reads Secrets Manager directly using its pod role.</td><td>Nothing stored in the cluster. Couples code to AWS and needs caching.</td></tr>
+</table></div>
+<pre data-lang="yaml"><code>apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata: { name: pricing-db, namespace: pricing }
+spec:
+  refreshInterval: 1h
+  secretStoreRef: { name: aws-secrets-manager, kind: ClusterSecretStore }
+  target: { name: pricing-db }
+  dataFrom:
+    - extract: { key: prod/pricing/db }</code></pre>
+<p>Prefer mounting secrets as files over environment variables for anything sensitive: env vars leak into crash dumps, debug endpoints and child processes. Plan for rotation: either reload on file change or restart on Secret change (tools such as Reloader do this).</p>
+</section>
+
+<section>
+<h2>Observability and debugging</h2>
+<h3>The three signals on AWS</h3>
+<div class="tw"><table>
+<tr><th>Signal</th><th>AWS-native</th><th>Open-source route</th></tr>
+<tr><td>Logs</td><td>CloudWatch Logs through Fluent Bit or the CloudWatch agent</td><td>Loki, OpenSearch</td></tr>
+<tr><td>Metrics</td><td>CloudWatch Container Insights</td><td>Prometheus, usually Amazon Managed Service for Prometheus, with Grafana</td></tr>
+<tr><td>Traces</td><td>X-Ray, CloudWatch Application Signals</td><td>OpenTelemetry (ADOT collector) to Tempo, Jaeger or a vendor</td></tr>
+</table></div>
+<p>What you owe as the service owner: structured JSON logs to stdout with a correlation or trace ID, RED metrics (rate, errors, duration) per endpoint, OpenTelemetry instrumentation, and a dashboard plus alerts based on user-visible symptoms. Watch log volume: CloudWatch ingestion is priced per GB and debug logging in production is a classic bill surprise.</p>
+<h3>Debugging a pod: a decision table</h3>
+<div class="tw"><table>
+<tr><th>Status</th><th>Usual cause on EKS</th><th>Look at</th></tr>
+<tr><td><code>Pending</code></td><td>No node fits: requests too large, node selector or taint mismatch, PVC in another AZ, node pool limits reached.</td><td><code>kubectl describe pod</code> events, Karpenter or autoscaler logs.</td></tr>
+<tr><td><code>ContainerCreating</code> for a long time</td><td>No free pod IPs in the subnet, volume cannot attach, secret or config map missing.</td><td>Events, CNI and CSI errors.</td></tr>
+<tr><td><code>ImagePullBackOff</code></td><td>Wrong tag, image expired by lifecycle policy, no ECR permission (cross-account repo policy), wrong CPU architecture, no route to the registry.</td><td>Events show the exact pull error.</td></tr>
+<tr><td><code>CrashLoopBackOff</code></td><td>The app exits: bad config, missing env var, cannot reach a dependency, AccessDenied on start-up.</td><td><code>kubectl logs --previous</code>.</td></tr>
+<tr><td><code>OOMKilled</code> (exit 137)</td><td>Memory limit too low, a leak, or runtime not container-aware.</td><td><code>describe pod</code> last state, memory graphs.</td></tr>
+<tr><td>Running but not Ready</td><td>Readiness probe failing, or the target group health check failing (path, port, security group).</td><td>Probe config, ALB target health in the console.</td></tr>
+<tr><td>Ready but 502, 503 or 504 at the load balancer</td><td>Pods terminated before deregistration, idle timeout shorter than the app keep-alive, no healthy targets in a zone.</td><td>ALB access logs, pod termination sequence.</td></tr>
+<tr><td>Intermittent timeouts to AWS services or other pods</td><td>DNS throttling, connection tracking exhaustion, security groups, network policy.</td><td>CoreDNS metrics, VPC flow logs.</td></tr>
+<tr><td><code>Evicted</code></td><td>Node under memory or disk pressure, often from pods with no requests or large <code>emptyDir</code> usage.</td><td>Node conditions, ephemeral storage requests.</td></tr>
+</table></div>
+<pre data-lang="bash"><code>kubectl get pods -n pricing -o wide
+kubectl describe pod -n pricing POD                     # read the Events section first
+kubectl logs -n pricing POD -c app --previous --tail=200
+kubectl get events -n pricing --sort-by=.lastTimestamp | tail -30
+kubectl top pod -n pricing --containers
+kubectl debug -n pricing -it POD --image=nicolaka/netshoot --target=app   # ephemeral debug container
+kubectl port-forward -n pricing svc/pricing-api 8080:80
+kubectl rollout status deploy/pricing-api -n pricing
+kubectl rollout undo deploy/pricing-api -n pricing      # emergency only: GitOps will revert it</code></pre>
+</section>
+
+<section>
+<h2>Security for workloads</h2>
+<ul class="chk">
+<li>One IAM role per service, least privilege, scoped to named resources. Review with IAM Access Analyzer.</li>
+<li>Pods run as non-root with a read-only root file system, no privilege escalation and all Linux capabilities dropped. Namespaces enforce the Pod Security Standards <code>restricted</code> or <code>baseline</code> profile.</li>
+<li>Default-deny NetworkPolicy per namespace, then allow what is needed. Confirm policy enforcement is actually enabled on the cluster.</li>
+<li>Pods cannot reach the node's instance metadata credentials (IMDSv2 with a hop limit of 1 on nodes).</li>
+<li>Images come only from your ECR registries, are scanned, and ideally signed and verified at admission.</li>
+<li>Admission policy (Kyverno, OPA Gatekeeper or built-in ValidatingAdmissionPolicy) enforces the rules above instead of relying on review.</li>
+<li>Secrets come from Secrets Manager, are never committed, and RBAC to read Secrets is narrow.</li>
+<li>TLS everywhere it leaves the pod: ACM at the load balancer, and a mesh or application TLS for service-to-service where required.</li>
+<li>Cluster audit logs are on, and GuardDuty's EKS protections are enabled.</li>
+<li>The cluster API endpoint is private or restricted by CIDR.</li>
+</ul>
+<pre data-lang="yaml"><code>securityContext:                 # container level
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: { drop: ["ALL"] }
+  seccompProfile: { type: RuntimeDefault }</code></pre>
+</section>
+
+<section>
+<h2>Versions and upgrades</h2>
+<p>Kubernetes ships about three minor versions a year, and EKS follows each within weeks. By late 2026 EKS has reached Kubernetes 1.37. Each version gets 14 months of standard support on EKS, then 12 months of extended support at a substantially higher control-plane price, after which the cluster is upgraded automatically. In practice that means an upgrade roughly every four to six months is normal life, not an event.</p>
+<h3>What an upgrade involves</h3>
+<ol>
+<li>Control plane moves up one minor version (no skipping). In place, no API downtime.</li>
+<li>Add-ons are updated (CNI, CoreDNS, kube-proxy, CSI drivers). Auto Mode handles these.</li>
+<li>Nodes are replaced with the new version, draining pods while respecting PodDisruptionBudgets.</li>
+</ol>
+<h3>What it asks of developers</h3>
+<ul>
+<li><b>No removed APIs in your manifests or charts.</b> EKS upgrade insights and tools such as <code>pluto</code> or <code>kubent</code> flag them. Fix these ahead of time: they are the main cause of blocked upgrades.</li>
+<li><b>Workloads that tolerate a rolling node replacement</b>: multiple replicas, PDBs that permit disruption, graceful shutdown, no reliance on local disk.</li>
+<li><b>Client libraries and operators</b> compatible with the new version.</li>
+<li><b>Images that run on the current node OS.</b> Amazon Linux 2 AMIs are no longer published for recent versions: nodes are Amazon Linux 2023 or Bottlerocket, with cgroup v2 and containerd 2.x. Very old runtimes and agents can break on that.</li>
+</ul>
+<pre data-lang="bash"><code>aws eks describe-cluster --name dev-euw1 --query cluster.version
+aws eks list-insights --cluster-name dev-euw1          # upgrade readiness findings
+kubectl get nodes -o wide                               # node versions during a rollout</code></pre>
+</section>
+
+<section>
+<h2>Cost awareness</h2>
+<div class="tw"><table>
+<tr><th>Cost driver</th><th>What moves it</th><th>What a developer can do</th></tr>
+<tr><td>Compute (the big one)</td><td>Sum of pod <b>requests</b>, not usage. Idle headroom.</td><td>Right-size requests from real data. Scale replicas with load. Scale non-production down out of hours.</td></tr>
+<tr><td>Instance pricing</td><td>On-Demand versus Spot versus Savings Plans, x86 versus Graviton.</td><td>Make workloads Spot-tolerant and multi-arch so the platform can choose cheap capacity.</td></tr>
+<tr><td>Data transfer</td><td>Cross-AZ traffic, NAT gateway processing, internet egress.</td><td>Keep chatty services zone-aware (topology-aware routing), use VPC endpoints, compress payloads.</td></tr>
+<tr><td>Load balancers</td><td>Hourly charge plus capacity units, per balancer.</td><td>Share ALBs through ingress groups.</td></tr>
+<tr><td>Observability</td><td>Log ingestion, high-cardinality metrics, trace volume.</td><td>Log at the right level, drop noisy labels, sample traces.</td></tr>
+<tr><td>Storage</td><td>Unattached EBS volumes, old snapshots, ECR images.</td><td>Clean up PVCs, set lifecycle policies.</td></tr>
+<tr><td>Control plane</td><td>Flat hourly fee per cluster, several times higher in extended support.</td><td>Help keep clusters upgraded.</td></tr>
+</table></div>
+<p>Ask for cost visibility by namespace or team (split cost allocation data in AWS billing, or Kubecost/OpenCost). Teams that can see their own spend fix it. Teams that cannot, do not.</p>
+</section>
+
+<section>
+<h2>Local development and inner loop</h2>
+<div class="tw"><table>
+<tr><th>Approach</th><th>Tools</th><th>Good for</th></tr>
+<tr><td>Local cluster</td><td>kind, k3d, minikube</td><td>Testing manifests, charts and operators without AWS.</td></tr>
+<tr><td>Emulated AWS services</td><td>LocalStack, DynamoDB Local, Testcontainers</td><td>Integration tests against S3, SQS, DynamoDB or Kafka on a laptop and in CI.</td></tr>
+<tr><td>Fast rebuild and redeploy</td><td>Skaffold, Tilt</td><td>Edit, build, deploy to a dev namespace in seconds.</td></tr>
+<tr><td>Run locally, connected to the cluster</td><td>Telepresence, mirrord</td><td>Debugging one service against real dependencies in a dev cluster.</td></tr>
+<tr><td>Ephemeral environments</td><td>Namespace per pull request (Argo CD pull request generator)</td><td>Reviewing a change end to end before merge.</td></tr>
+</table></div>
+<p>For local runs that call real AWS, use your SSO profile so the same default credential chain works locally and in the pod. Keep environment differences in configuration, never in code branches.</p>
+</section>
+
+<section>
+<h2>Production-readiness checklist</h2>
+<ul class="chk">
+<li>At least two replicas across zones, with a PodDisruptionBudget and topology spread.</li>
+<li>CPU and memory requests based on measurement, memory limit set, runtime heap sized for the container.</li>
+<li>Startup, readiness and liveness probes that test only the service itself.</li>
+<li>Graceful shutdown on SIGTERM, a <code>preStop</code> delay behind load balancers, readiness gates enabled.</li>
+<li>A dedicated service account bound to a least-privilege IAM role through Pod Identity or IRSA.</li>
+<li>Config in ConfigMaps, secrets from Secrets Manager, nothing sensitive in the image or repo.</li>
+<li>Restricted security context and a default-deny NetworkPolicy.</li>
+<li>Immutable image tags or digests, multi-arch, scanned, from ECR.</li>
+<li>Deployed through GitOps, with a tested rollback.</li>
+<li>Autoscaling (HPA or KEDA) with sane minimum, maximum and stabilisation.</li>
+<li>JSON logs with trace IDs, RED metrics, traces, a dashboard, and symptom-based alerts with a runbook.</li>
+<li>No deprecated Kubernetes APIs. Survives a node drain in a test.</li>
+<li>Timeouts, retries with backoff and jitter, and idempotency on every outbound call.</li>
+<li>Resource tags and labels for ownership and cost allocation.</li>
+</ul>
+<h3>AWS CLI and kubectl quick reference</h3>
+<pre data-lang="bash"><code>aws sts get-caller-identity
+aws eks list-clusters
+aws eks update-kubeconfig --name CLUSTER --alias ALIAS
+aws eks list-access-entries --cluster-name CLUSTER
+aws eks list-pod-identity-associations --cluster-name CLUSTER
+aws eks list-addons --cluster-name CLUSTER
+aws ecr describe-images --repository-name pricing-api --query 'sort_by(imageDetails,&amp;imagePushedAt)[-5:].imageTags'
+aws logs tail /aws/containerinsights/CLUSTER/application --follow
+aws elbv2 describe-target-health --target-group-arn ARN
+
+kubectl get deploy,po,svc,ing,hpa,pdb -n NAMESPACE
+kubectl get pod POD -o jsonpath='{.spec.serviceAccountName}'
+kubectl get nodes -L topology.kubernetes.io/zone,karpenter.sh/capacity-type,kubernetes.io/arch
+kubectl api-resources | grep -i -E "karpenter|eks.amazonaws"
+kubectl explain deployment.spec.strategy</code></pre>
+</section>
+
+<footer>Part of a three-guide series: Argo CD, AWS and EKS for developers, Kafka for event-driven trading systems. Self-contained file: open in any browser, works offline.</footer>
+</main>
+</div>
+<script>
+(function(){
+var toc=document.getElementById('toc'),links=[];
+document.querySelectorAll('main h2').forEach(function(h,i){
+  if(!h.id)h.id='s'+(i+1);
+  var li=document.createElement('li'),a=document.createElement('a');
+  a.href='#'+h.id;a.textContent=h.textContent;li.appendChild(a);toc.appendChild(li);links.push(a);
+});
+var d=document.getElementById('tocd'),mq=window.matchMedia('(min-width:1040px)');
+function setOpen(){d.open=mq.matches}setOpen();
+if(mq.addEventListener)mq.addEventListener('change',setOpen);
+toc.addEventListener('click',function(){if(!mq.matches)d.open=false});
+document.querySelectorAll('pre').forEach(function(p){
+  var b=document.createElement('button');b.type='button';b.textContent='Copy';
+  b.onclick=function(){var t=p.querySelector('code').innerText;
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)})}};
+  p.appendChild(b);
+});
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){
+    links.forEach(function(l){l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'0px 0px -75% 0px'});
+  document.querySelectorAll('main h2').forEach(function(h){io.observe(h)});
+}
+})();
+</script>
+</body>
+</html>
