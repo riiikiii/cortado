@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 
-export type ProviderKind = 'gdrive' | 'dev';
+export type ProviderKind = 'gdrive' | 'dev' | 'site';
 
 export interface Vault {
   id: string;

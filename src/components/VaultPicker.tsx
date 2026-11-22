@@ -40,6 +40,7 @@ function VaultList({ onClose }: { onClose: () => void }) {
   const vaults = useStore((s) => s.vaults);
   const accounts = useStore((s) => s.accounts);
   const activeVaultId = useStore((s) => s.activeVaultId);
+  const siteLibrary = useStore((s) => s.siteLibrary);
   const { setActiveVault, removeVault, openPicker } = useStore.getState();
   const byId = new Map(accounts.map((a) => [a.id, a]));
 
@@ -65,11 +66,17 @@ function VaultList({ onClose }: { onClose: () => void }) {
                       onClose();
                     }}
                   >
-                    {account ? <Avatar name={account.name} photo={account.photo} size={34} /> : <span className="vault-icon"><Icon name={v.provider === 'gdrive' ? 'drive' : 'vault'} size={18} /></span>}
+                    {account ? (
+                      <Avatar name={account.name} photo={account.photo} size={34} />
+                    ) : (
+                      <span className={`vault-icon ${v.provider === 'site' ? 'site' : ''}`}>
+                        <Icon name={v.provider === 'gdrive' ? 'drive' : v.provider === 'site' ? 'book' : 'vault'} size={18} />
+                      </span>
+                    )}
                     <span className="vault-text">
                       <span className="vault-name">{v.name}</span>
                       <span className="vault-meta">
-                        {v.provider === 'dev' ? 'Local sample' : (v.accountId ?? 'Google Drive')}
+                        {v.provider === 'dev' ? 'Local sample' : v.provider === 'site' ? 'Published with this site' : (v.accountId ?? 'Google Drive')}
                         {' · '}
                         {v.lastSyncedAt ? `synced ${timeAgo(v.lastSyncedAt)}` : 'never synced'}
                       </span>
@@ -80,7 +87,8 @@ function VaultList({ onClose }: { onClose: () => void }) {
                     className="icon-btn danger"
                     aria-label={`Remove ${v.name}`}
                     onClick={() => {
-                      if (confirm(`Remove “${v.name}” and its downloaded files from this device? Nothing in Google Drive is touched.`)) void removeVault(v.id);
+                      const where = v.provider === 'site' ? 'You can add it back from this menu.' : 'Nothing in Google Drive is touched.';
+                      if (confirm(`Remove “${v.name}” and its downloaded files from this device? ${where}`)) void removeVault(v.id);
                     }}
                   >
                     <Icon name="trash" size={18} />
@@ -89,6 +97,30 @@ function VaultList({ onClose }: { onClose: () => void }) {
               );
             })}
           </ul>
+        )}
+
+        {siteLibrary && !vaults.some((v) => v.provider === 'site') && (
+          <div className="sheet-section">
+            <h3 className="section-title">On this site</h3>
+            <button
+              className="vault-row site-offer"
+              onClick={async () => {
+                await useStore.getState().addSiteLibrary();
+                onClose();
+              }}
+            >
+              <span className="vault-icon site">
+                <Icon name="book" size={18} />
+              </span>
+              <span className="vault-text">
+                <span className="vault-name">{siteLibrary.name}</span>
+                <span className="vault-meta">
+                  {siteLibrary.count} {siteLibrary.count === 1 ? 'file' : 'files'} · no sign-in needed
+                </span>
+              </span>
+              <Icon name="plus" size={18} className="accent" />
+            </button>
+          </div>
         )}
 
         <div className="sheet-section">

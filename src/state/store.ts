@@ -13,6 +13,7 @@ import { extractText, type DocText } from '../library/text';
 import { isLesson } from '../library/tree';
 import { devProvider } from '../providers/dev';
 import { driveFor } from '../providers/gdrive';
+import { SITE_VAULT_ID, siteProvider, type SiteLibraryInfo } from '../providers/site';
 import type { VaultProvider } from '../providers/types';
 import { db, deleteVaultData, type ProviderKind, type Vault } from '../storage/db';
 import { syncVault, type SyncProgress, type SyncResult } from '../sync/sync';
@@ -67,11 +68,15 @@ interface State {
   picker: PickerView | null;
   sync: SyncState;
   toast?: { message: string; id: number };
+  /** The library this site publishes from the repo, once checked. Null when there is none. */
+  siteLibrary: SiteLibraryInfo | null;
 
   init(): Promise<void>;
   setActiveVault(id: string | null): Promise<void>;
   addVault(v: { name: string; provider: ProviderKind; rootFolderId: string; accountId?: string }): Promise<Vault>;
   removeVault(id: string): Promise<void>;
+  /** Add the site's published library as a vault (automatically on first launch). */
+  addSiteLibrary(opts?: { activate?: boolean }): Promise<void>;
   openFile(path: string, opts?: { newTab?: boolean; hash?: string; background?: boolean }): void;
   goHome(folder?: string | null): void;
   closeTab(id: string): void;
@@ -89,7 +94,8 @@ interface State {
   connectGoogle(opts?: { chooseAccount?: boolean }): void;
   disconnectAccount(id: string): Promise<void>;
   afterSignIn(account: GoogleAccount | undefined, resume: ResumeIntent | undefined): Promise<void>;
-  runSync(): Promise<void>;
+  /** `quiet` is for background checks: no toast unless something changed, and no error shown. */
+  runSync(opts?: { quiet?: boolean }): Promise<void>;
   cancelSync(): void;
   showToast(msg: string): void;
 }
@@ -98,10 +104,14 @@ const ACTIVE_KEY = 'cortado.activeVault';
 const tabsKey = (vaultId: string) => `cortado.tabs.${vaultId}`;
 const recentKey = (vaultId: string) => `cortado.recent.${vaultId}`;
 const progressKey = (vaultId: string) => `cortado.progress.${vaultId}`;
+// Set when someone removes the site library, so it isn't added back on the next launch.
+const SITE_REMOVED_KEY = 'cortado.siteLibraryRemoved';
 const newId = () => Math.random().toString(36).slice(2, 10);
 export const isNarrow = () => window.innerWidth < 900;
 
 let syncAbort: AbortController | null = null;
+/** A sync asked for while another was running; it runs for the active vault afterwards. */
+let queuedSync: { quiet?: boolean } | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 let indexRun = 0;
 
@@ -115,6 +125,7 @@ function readJSON<T>(key: string, fallback: T): T {
 }
 
 function providerFor(vault: Vault): VaultProvider {
+  if (vault.provider === 'site') return siteProvider;
   return vault.provider === 'dev' ? devProvider : driveFor(vault.accountId);
 }
 
@@ -166,6 +177,7 @@ export const useStore = create<State>((set, get) => {
     settingsOpen: false,
     picker: null,
     sync: { running: false },
+    siteLibrary: null,
 
     async init() {
       const vaults = await db.vaults.toArray();
@@ -175,6 +187,14 @@ export const useStore = create<State>((set, get) => {
       const active = vaults.find((v) => v.id === saved) ?? vaults[0];
       await get().setActiveVault(active?.id ?? null);
       set({ ready: true });
+      // Look for a library published with the site, without holding up startup.
+      void siteProvider.info().then(async (info) => {
+        set({ siteLibrary: info });
+        if (!info || get().vaults.some((v) => v.provider === 'site') || localStorage.getItem(SITE_REMOVED_KEY)) return;
+        const first = !get().activeVaultId;
+        await get().addSiteLibrary({ activate: first });
+        if (!first) get().showToast(`New: “${info.name}” is ready. Tap the vault name to open it.`);
+      });
     },
 
     async setActiveVault(id) {
@@ -204,6 +224,8 @@ export const useStore = create<State>((set, get) => {
         homeFolder: null,
       });
       void buildDocs(id);
+      // The site library is cheap to check, so keep it current whenever it's opened.
+      if (get().vaults.find((v) => v.id === id)?.provider === 'site' && navigator.onLine) void get().runSync({ quiet: true });
     },
 
     async addVault({ name, provider, rootFolderId, accountId }) {
@@ -214,7 +236,21 @@ export const useStore = create<State>((set, get) => {
       return vault;
     },
 
+    async addSiteLibrary({ activate = true } = {}) {
+      const info = get().siteLibrary ?? (await siteProvider.info());
+      if (!info) return;
+      localStorage.removeItem(SITE_REMOVED_KEY);
+      const existing = get().vaults.find((v) => v.provider === 'site');
+      if (!existing) {
+        const vault: Vault = { id: SITE_VAULT_ID, name: info.name, provider: 'site', rootFolderId: 'library', createdAt: Date.now() };
+        await db.vaults.put(vault);
+        set({ vaults: [...get().vaults, vault] });
+      }
+      if (activate) await get().setActiveVault(SITE_VAULT_ID);
+    },
+
     async removeVault(id) {
+      if (get().vaults.find((v) => v.id === id)?.provider === 'site') localStorage.setItem(SITE_REMOVED_KEY, '1');
       await deleteVaultData(id);
       for (const key of [tabsKey(id), recentKey(id), progressKey(id)]) localStorage.removeItem(key);
       const vaults = get().vaults.filter((v) => v.id !== id);
@@ -345,9 +381,13 @@ export const useStore = create<State>((set, get) => {
       get().showToast(`Signed in as ${account.email}`);
     },
 
-    async runSync() {
+    async runSync({ quiet = false } = {}) {
       const vault = get().vaults.find((v) => v.id === get().activeVaultId);
-      if (!vault || get().sync.running) return;
+      if (!vault) return;
+      if (get().sync.running) {
+        queuedSync = { quiet: quiet && (queuedSync?.quiet ?? true) };
+        return;
+      }
       if (vault.provider === 'gdrive' && !googleConfigured()) {
         set({ picker: { view: 'setup' } });
         return;
@@ -360,25 +400,32 @@ export const useStore = create<State>((set, get) => {
       set({ sync: { running: true } });
       try {
         const result = await syncVault(vault, providerFor(vault), (progress) => set({ sync: { running: true, progress } }), syncAbort.signal);
-        const paths = await loadPaths(vault.id);
         const updated = (await db.vaults.get(vault.id))!;
-        set({
-          sync: { running: false, result },
-          paths,
-          vaults: get().vaults.map((v) => (v.id === vault.id ? updated : v)),
-          // Reload open tabs so they show the fresh content.
-          tabs: result.downloaded || result.removed ? get().tabs.map((t) => ({ ...t, nonce: Date.now() })) : get().tabs,
-        });
-        void buildDocs(vault.id);
         const changed = result.downloaded + result.removed;
+        set({ sync: { running: false, result }, vaults: get().vaults.map((v) => (v.id === vault.id ? updated : v)) });
+        // Someone may have switched vaults while this one synced.
+        if (get().activeVaultId === vault.id) {
+          set({
+            paths: await loadPaths(vault.id),
+            // Reload open tabs so they show the fresh content.
+            tabs: changed ? get().tabs.map((t) => ({ ...t, nonce: Date.now() })) : get().tabs,
+          });
+          if (changed || !get().docs) void buildDocs(vault.id);
+        }
+        if (quiet && !changed && !result.failed.length) return;
         get().showToast(
           result.failed.length
             ? `Synced with ${result.failed.length} error(s). ${result.failed[0].path}: ${result.failed[0].error}`
             : !changed
               ? 'Everything is up to date'
-              : !result.unchanged && !result.removed
+              : !vault.lastSyncedAt
                 ? `Downloaded ${result.downloaded} ${result.downloaded === 1 ? 'file' : 'files'}. Ready to read offline.`
-                : `Synced: ${result.downloaded} updated, ${result.removed} removed`,
+                : `Updated: ${[
+                    result.downloaded && `${result.downloaded} new or changed ${result.downloaded === 1 ? 'file' : 'files'}`,
+                    result.removed && `${result.removed} removed`,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}`,
         );
       } catch (e) {
         if (e instanceof AuthRequiredError) {
@@ -387,12 +434,17 @@ export const useStore = create<State>((set, get) => {
           return;
         }
         const aborted = syncAbort?.signal.aborted;
-        set({ sync: { running: false, error: aborted ? undefined : (e as Error).message } });
-        get().showToast(aborted ? 'Sync cancelled' : `Sync failed: ${(e as Error).message}`);
+        set({ sync: { running: false, error: aborted || quiet ? undefined : (e as Error).message } });
+        if (!quiet || aborted) get().showToast(aborted ? 'Sync cancelled' : `Sync failed: ${(e as Error).message}`);
         // Whatever finished downloading is kept, so refresh the tree.
-        set({ paths: await loadPaths(vault.id) });
+        if (get().activeVaultId === vault.id) set({ paths: await loadPaths(vault.id) });
       } finally {
         syncAbort = null;
+        if (queuedSync) {
+          const next = queuedSync;
+          queuedSync = null;
+          void get().runSync(next);
+        }
       }
     },
 

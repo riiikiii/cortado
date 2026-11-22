@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { devVault } from './scripts/devVaultPlugin.ts';
+import { siteLibrary } from './scripts/libraryPlugin.ts';
 
 export default defineConfig(({ command, isPreview }) => ({
   // GitHub Pages serves the app from /<repo>/. Override with BASE_PATH if the repo has another name.
@@ -10,6 +11,7 @@ export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     react(),
     devVault(),
+    siteLibrary(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
@@ -19,6 +21,8 @@ export default defineConfig(({ command, isPreview }) => ({
       devOptions: { enabled: true, type: 'module' },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // The published library is synced into IndexedDB by the app, not precached.
+        globIgnores: ['library/**'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
       manifest: {
@@ -41,6 +45,6 @@ export default defineConfig(({ command, isPreview }) => ({
   ],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
   },
 }));
