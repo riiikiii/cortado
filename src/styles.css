@@ -155,7 +155,6 @@ kbd { font: 500 11px/1 var(--font); color: var(--muted); padding: 3px 6px; borde
 .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .rot90 { transform: rotate(90deg); }
 .boot { height: 100%; background: var(--bg); }
-.banner { background: var(--danger); color: #fff; padding: 8px 16px; font-size: 13px; }
 .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .stack { display: flex; flex-direction: column; gap: 10px; }
 .resizing, .resizing * { cursor: col-resize !important; user-select: none !important; }
@@ -926,6 +925,28 @@ details[open] > summary.callout-title::after { transform: rotate(90deg); }
   transform: translateX(-50%);
   animation: toast-in 0.4s var(--spring);
 }
+
+/* A problem worth knowing about, floating over the app without pushing it down. */
+.notice {
+  position: fixed;
+  z-index: 65;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 50%;
+  width: min(620px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px 10px 16px;
+  border-radius: 16px;
+  background: var(--raised);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-50%);
+  animation: notice-in 0.4s var(--spring);
+}
+.notice-icon { flex: none; color: var(--danger); }
+.notice-text { flex: 1; font-size: 14px; line-height: 1.4; color: var(--text-2); }
+@keyframes notice-in { from { opacity: 0; transform: translate(-50%, -12px); } }
 
 /* Keep toasts clear of the floating lesson controls. */
 .app:has(.viewer.active .finish-pill) .toast { bottom: calc(92px + env(safe-area-inset-bottom)); }
