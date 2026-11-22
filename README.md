@@ -1,10 +1,15 @@
 # Cortado
 
-An installable, offline-first reader for vaults of HTML guides and Markdown notes stored in Google Drive. It's built for the iPad mini.
+An installable, offline-first learning library for the HTML guides and Markdown notes you keep in Google Drive. It's built for the iPad mini, and works on any modern browser.
 
-- Syncs a Google Drive folder into on-device storage with one tap.
-- Renders standalone HTML guides, scripts included, with their relative assets and links between guides working.
-- Renders Markdown with wikilinks, code highlighting, tables, tasks, footnotes, Mermaid and KaTeX.
-- Has a file tree, tabs, a quick switcher (⌘K), and layouts for portrait and landscape.
+- **Sign in with Google** and pick a folder from My Drive, Shared with me or a shared drive. Connect as many Google accounts as you like; each vault remembers its own.
+- **Syncs with one tap** into on-device storage, so everything works offline.
+- **A library, not just a file list:** a home screen with a Continue card, folders as collections with progress, and lessons in order.
+- **Track your learning:** reading progress, Mark complete & continue, next and previous lesson, and progress badges in the sidebar.
+- **Comfortable reading:** Light, Sepia and Dark themes, adjustable text size, font and line width, an outline for every note, a reading progress bar, and a toolbar that tucks away as you scroll.
+- **Full-text search** (⌘K) across every note and guide, with highlighted snippets.
+- **Renders standalone HTML guides**, scripts included, with their relative assets and links between guides working.
+- **Renders Markdown** with wikilinks, callouts, code highlighting with copy buttons, tables, tasks, footnotes, Mermaid and KaTeX.
+- Tabs, keyboard shortcuts, and layouts for portrait and landscape.
 
 See [SETUP.md](SETUP.md) to run it, connect Google Drive, deploy to GitHub Pages and install it on the iPad.

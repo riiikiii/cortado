@@ -2,18 +2,21 @@ import { useEffect, useRef } from 'react';
 import { useStore, type Tab } from '../state/store';
 import { parseVaultUrl, vaultUrl } from '../util/paths';
 import { attachLinkHandling } from './links';
+import { collectHeadings, currentSection, toOutline, type ViewerEvents } from './types';
 
 // allow-same-origin keeps the iframe under the service worker, so the guide's relative
 // assets and links load from the synced vault. Guides are your own files, so this is fine.
 const SANDBOX = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-modals allow-downloads';
 
-export function HtmlView({ tab, vaultId }: { tab: Tab; vaultId: string }) {
+export function HtmlView({ tab, vaultId, events }: { tab: Tab; vaultId: string; events: ViewerEvents }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const cleanup = useRef<(() => void) | null>(null);
   const src = vaultUrl(vaultId, tab.path) + (tab.hash ?? '');
 
   const tabRef = useRef(tab);
   tabRef.current = tab;
+  const eventsRef = useRef(events);
+  eventsRef.current = events;
 
   // A native listener, because React's onLoad can miss iframe loads (e.g. a fast load from the
   // service worker, or one that finished before React attached its handler).
@@ -37,6 +40,7 @@ export function HtmlView({ tab, vaultId }: { tab: Tab; vaultId: string }) {
     const frame = ref.current;
     cleanup.current?.();
     cleanup.current = null;
+    frame?.classList.add('loaded');
     const win = frame?.contentWindow;
     const doc = frame?.contentDocument;
     if (!win || !doc) return;
@@ -50,8 +54,35 @@ export function HtmlView({ tab, vaultId }: { tab: Tab; vaultId: string }) {
     const offLinks = attachLinkHandling(doc, here?.path ?? tab.path, vaultId);
     if (!tab.hash && tab.scrollY) win.scrollTo(0, tab.scrollY);
 
+    let headings = collectHeadings(doc);
+    eventsRef.current.onOutline?.(toOutline(headings));
+    eventsRef.current.registerJump?.((i) => headings[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    // Guides that build their content with script get a second look once they settle.
+    const late = setTimeout(() => {
+      const again = collectHeadings(doc);
+      if (again.length !== headings.length) {
+        headings = again;
+        eventsRef.current.onOutline?.(toOutline(headings));
+      }
+      report();
+    }, 800);
+
+    const scroller = doc.scrollingElement ?? doc.documentElement;
+    const report = () => {
+      const max = scroller.scrollHeight - win.innerHeight;
+      eventsRef.current.onScroll?.({
+        y: win.scrollY,
+        ratio: max > 4 ? win.scrollY / max : 1,
+        section: currentSection(headings, 0, win.innerHeight),
+      });
+    };
+    report();
+
     let t: ReturnType<typeof setTimeout> | undefined;
+    let frameReq = 0;
     const onScroll = () => {
+      cancelAnimationFrame(frameReq);
+      frameReq = requestAnimationFrame(report);
       clearTimeout(t);
       t = setTimeout(() => useStore.getState().updateTab(tab.id, { scrollY: Math.round(win.scrollY) }), 400);
     };
@@ -67,6 +98,8 @@ export function HtmlView({ tab, vaultId }: { tab: Tab; vaultId: string }) {
     cleanup.current = () => {
       offLinks();
       clearTimeout(t);
+      clearTimeout(late);
+      cancelAnimationFrame(frameReq);
       win.removeEventListener('scroll', onScroll);
       doc.removeEventListener('keydown', onKey);
     };

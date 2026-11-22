@@ -7,6 +7,8 @@ export interface Vault {
   name: string;
   provider: ProviderKind;
   rootFolderId: string;
+  /** Google account (email) a Drive vault belongs to. */
+  accountId?: string;
   lastSyncedAt?: number;
   createdAt: number;
 }

@@ -24,11 +24,11 @@ export default defineConfig(({ command, isPreview }) => ({
       manifest: {
         name: 'Cortado',
         short_name: 'Cortado',
-        description: 'Browse your HTML guides and Markdown notes offline.',
+        description: 'Your guides and notes from Google Drive, beautifully readable and available offline.',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#1d1714',
-        theme_color: '#1d1714',
+        background_color: '#1a1512',
+        theme_color: '#1a1512',
         start_url: '.',
         scope: '.',
         icons: [

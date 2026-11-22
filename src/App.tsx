@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { registerSW } from 'virtual:pwa-register';
-import { handleRedirect } from './auth/google';
+import { finishRedirect, migrateLegacyToken } from './auth/google';
 import { AppShell } from './components/AppShell';
-import { openDriveBrowser } from './components/VaultPicker';
 import { useStore } from './state/store';
 
 /** Resolve once a service worker controls this page, so vault URLs are served from IndexedDB. */
@@ -24,18 +23,16 @@ export function App() {
 
   useEffect(() => {
     (async () => {
-      const redirect = handleRedirect();
-      const [swOk] = await Promise.all([waitForServiceWorker(), useStore.getState().init()]);
+      const [swOk, redirect] = await Promise.all([
+        waitForServiceWorker(),
+        finishRedirect(),
+        migrateLegacyToken(),
+        useStore.getState().init(),
+      ]).then(([sw, r]) => [sw, r] as const);
       if (!swOk) setSwError('This browser has no service worker support, so guides can’t be shown offline.');
       const s = useStore.getState();
-      if (redirect?.error) s.showToast(`Google sign-in failed: ${redirect.error}`);
-      const resume = redirect?.resume;
-      if (resume?.action === 'sync') {
-        await s.setActiveVault(resume.vaultId);
-        s.runSync();
-      } else if (resume?.action === 'pick-folder') {
-        openDriveBrowser();
-      }
+      if (redirect?.error) s.showToast(redirect.error);
+      await s.afterSignIn(redirect?.account, redirect?.resume);
     })();
   }, []);
 
