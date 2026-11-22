@@ -24,7 +24,7 @@ export function TabBar() {
           aria-selected={activeTabId === null}
           aria-label="Library home"
           title="Library home"
-          onClick={() => useStore.getState().goHome(useStore.getState().activeTabId === null ? null : useStore.getState().homeFolder)}
+          onClick={() => useStore.getState().goHome()}
         >
           <CupLogo size={28} />
         </button>

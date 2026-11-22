@@ -61,8 +61,6 @@ interface State {
   docs: Map<string, DocText> | null;
   /** Each document's own title (first heading or <title>), cached per vault so it shows at once. */
   titles: Record<string, string>;
-  /** The collection shown on the home screen, or null for the overview. */
-  homeFolder: string | null;
   accounts: GoogleAccount[];
   sidebarOpen: boolean;
   quickOpen: boolean;
@@ -85,7 +83,7 @@ interface State {
   /** Add the site's published library as a vault (automatically on first launch). */
   addSiteLibrary(opts?: { activate?: boolean }): Promise<void>;
   openFile(path: string, opts?: { newTab?: boolean; hash?: string; background?: boolean }): void;
-  goHome(folder?: string | null): void;
+  goHome(): void;
   closeTab(id: string): void;
   closeOtherTabs(id: string): void;
   activateTab(id: string): void;
@@ -183,7 +181,6 @@ export const useStore = create<State>((set, get) => {
     progress: {},
     docs: null,
     titles: {},
-    homeFolder: null,
     accounts: [],
     sidebarOpen: typeof window !== 'undefined' ? !isNarrow() : true,
     quickOpen: false,
@@ -215,7 +212,7 @@ export const useStore = create<State>((set, get) => {
       indexRun++;
       if (!id) {
         localStorage.removeItem(ACTIVE_KEY);
-        set({ activeVaultId: null, paths: [], tabs: [], activeTabId: null, mru: [], recent: [], progress: {}, docs: null, titles: {}, homeFolder: null });
+        set({ activeVaultId: null, paths: [], tabs: [], activeTabId: null, mru: [], recent: [], progress: {}, docs: null, titles: {} });
         return;
       }
       localStorage.setItem(ACTIVE_KEY, id);
@@ -236,7 +233,6 @@ export const useStore = create<State>((set, get) => {
         recent: readJSON<string[]>(recentKey(id), []),
         titles: readJSON<Record<string, string>>(titlesKey(id), {}),
         progress: readJSON<Record<string, Progress>>(progressKey(id), {}),
-        homeFolder: null,
       });
       void buildDocs(id);
       // The site library is cheap to check, so keep it current whenever it's opened.
@@ -297,8 +293,8 @@ export const useStore = create<State>((set, get) => {
       if (isNarrow()) set({ sidebarOpen: false });
     },
 
-    goHome(folder = null) {
-      set({ activeTabId: null, homeFolder: folder });
+    goHome() {
+      set({ activeTabId: null });
       if (isNarrow()) set({ sidebarOpen: false });
     },
 

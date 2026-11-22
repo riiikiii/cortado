@@ -5,7 +5,7 @@ An installable, offline-first learning library for HTML guides and Markdown note
 - **Publish lessons from this repo:** anything in `library/` ships with the site and opens for everyone with no sign-in. Push a change and Cortado downloads just the new or changed files.
 - **Or sign in with Google** and pick a folder from My Drive, Shared with me or a shared drive. Connect as many Google accounts as you like; each vault remembers its own.
 - **Syncs with one tap** into on-device storage, so everything works offline.
-- **A library, not just a file list:** a home screen with a Continue card, folders as collections with progress, and lessons in order.
+- **Learn in order:** folders and numbered files set the reading order, with next and previous lesson buttons, and a friendly coffee cup to greet you.
 - **Track your learning:** reading progress, Mark complete & continue, next and previous lesson, and progress badges in the sidebar.
 - **Comfortable reading:** Light, Sepia and Dark themes, adjustable text size, font and line width, an outline for every note, a reading progress bar, and a toolbar that tucks away as you scroll.
 - **Full-text search** (⌘K) across every note and guide, with highlighted snippets.

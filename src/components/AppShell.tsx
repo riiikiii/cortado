@@ -220,7 +220,7 @@ function Sidebar() {
       </div>
 
       <nav className="sb-nav">
-        <button className={`nav-row ${atHome ? 'active' : ''}`} onClick={() => goHome(null)}>
+        <button className={`nav-row ${atHome ? 'active' : ''}`} onClick={() => goHome()}>
           <Icon name="home" size={19} />
           <span>Library</span>
           {done > 0 && (

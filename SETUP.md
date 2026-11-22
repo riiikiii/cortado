@@ -17,7 +17,7 @@ Other commands: `npm test` (unit tests), `npm run build` and `npm run preview` (
 
 Everything in the `library/` folder is published with the site and opens in Cortado with no sign-in.
 
-- Put Markdown notes (`.md`) and standalone HTML guides (`.html`) in `library/`, with each guide's images, CSS and scripts beside it. Top-level folders become collections. Number files (`01 Intro.md`, `02 Basics.md`) to set the reading order.
+- Put Markdown notes (`.md`) and standalone HTML guides (`.html`) in `library/`, with each guide's images, CSS and scripts beside it. Folders show in the sidebar. Number files (`01 Intro.md`, `02 Basics.md`) to set the reading order.
 - Commit and push to `main`. The deploy copies the folder to `https://<you>.github.io/cortado/library/` and writes `library.json`, a list of every file with its checksum.
 - The first time someone opens Cortado, it adds the library as a vault and downloads it. After that, each time the library is opened while online, Cortado checks `library.json` and downloads only new or changed files, and removes deleted ones.
 - To change the name people see (it defaults to "Cortado Library"), add an Actions variable `LIBRARY_NAME` (step 4).
@@ -72,7 +72,7 @@ To let *any* Google account sign in you would publish the app to **In production
 3. The site library opens and downloads by itself. To add a Google Drive folder too, tap the vault name → **Continue with Google**, sign in, browse to your folder, and choose **Use "…" as a vault**. The first sync starts straight away. To add more folders or accounts later, tap the vault name at the top of the sidebar.
 
 Tips:
-- **Library** (the house tab) shows your progress, a **Continue** card that picks up where you left off, and each top-level folder as a collection. Tap a collection to see its lessons in order.
+- The coffee cup tab (and **Library** in the sidebar) goes back to the home screen.
 - Lessons follow the sidebar order, with a top-level Welcome, README, Index or "00 …" note first. Number your files ("01 Intro", "02 Basics") to set the order.
 - At the end of a note, **Mark complete & continue** ticks it off and opens the next lesson. HTML guides show the same controls in a floating bar when you reach the bottom. The ✓ button in the toolbar works anywhere.
 - **Aa** in the toolbar changes theme (Auto, Light, Sepia, Dark), text size, font and line width. The list button shows the note's outline.

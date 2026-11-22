@@ -170,20 +170,3 @@ export function hue(s: string): number {
   for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360;
   return h;
 }
-
-// Hand-picked cover gradients that sit well with the warm palette, chosen by name.
-const COVERS: [string, string][] = [
-  ['#c9774a', '#8a3f24'], // terracotta
-  ['#7f9a6e', '#47603f'], // sage
-  ['#4f8f8b', '#2c5a5c'], // teal
-  ['#9a6b9e', '#5e3a66'], // plum
-  ['#5f84b0', '#33507a'], // ocean
-  ['#d1a04a', '#946422'], // amber
-  ['#c47a7e', '#86454f'], // rose
-  ['#7d8596', '#4a5161'], // slate
-];
-
-export function coverStyle(name: string): React.CSSProperties {
-  const [a, b] = COVERS[hue(name) % COVERS.length];
-  return { '--c1': a, '--c2': b } as React.CSSProperties;
-}
