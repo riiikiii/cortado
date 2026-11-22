@@ -61,6 +61,7 @@ describe('library tree', () => {
     expect(lessonTitle('01 Getting started')).toEqual({ number: '1', title: 'Getting started' });
     expect(lessonTitle('3. Loops')).toEqual({ number: '3', title: 'Loops' });
     expect(lessonTitle('2024 review')).toEqual({ title: '2024 review' });
+    expect(lessonTitle('00 Start here')).toEqual({ title: 'Start here' });
     expect(lessonTitle('Colour theory')).toEqual({ title: 'Colour theory' });
   });
 });

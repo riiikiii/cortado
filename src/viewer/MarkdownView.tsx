@@ -51,7 +51,7 @@ export function MarkdownView({ tab, vaultId, events, footer }: { tab: Tab; vault
     eventsRef.current.onOutline?.(toOutline(headings.current));
     eventsRef.current.registerJump?.((i) => {
       const h = headings.current[i];
-      if (h) sc.scrollTo({ top: h.offsetTop - 64, behavior: 'smooth' });
+      if (h) sc.scrollTo({ top: h.offsetTop - 16, behavior: 'smooth' });
     });
     if (tab.hash) scrollToHash(el, tab.hash);
     else sc.scrollTop = tab.scrollY ?? 0;

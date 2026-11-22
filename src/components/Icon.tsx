@@ -45,10 +45,31 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, size = 20, className, strokeWidth = 1.8 }: { name: IconName; size?: number; className?: string; strokeWidth?: number }) {
+const PAGE = 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z';
+// A soft tinted fill under some icons, which gives them a friendlier, more solid look.
+const DUO: Partial<Record<IconName, string>> = {
+  folder: PATHS.folder,
+  md: PAGE,
+  html: PAGE,
+  pdf: PAGE,
+  file: PAGE,
+  image: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
+  home: PATHS.home,
+  search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z',
+  sidebar: 'M5 3h4v18H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
+  'check-circle': PATHS.circle,
+  clock: PATHS.circle,
+  book: PATHS.book,
+  layers: 'M12 3 3 7.5l9 4.5 9-4.5z',
+  key: 'M14.5 3.5a6 6 0 1 1 0 12 6 6 0 0 1 0-12z',
+  drive: 'M4 15.5 8.5 7.7h7L20 15.5 17.7 19.5H6.3z',
+};
+
+export function Icon({ name, size = 20, className, strokeWidth = 2 }: { name: IconName; size?: number; className?: string; strokeWidth?: number }) {
+  const duo = DUO[name];
   return (
     <svg
-      className={className}
+      className={`icon ${className ?? ''}`}
       width={size}
       height={size}
       viewBox="0 0 24 24"
@@ -59,6 +80,7 @@ export function Icon({ name, size = 20, className, strokeWidth = 1.8 }: { name: 
       strokeLinejoin="round"
       aria-hidden="true"
     >
+      {duo && <path d={duo} fill="currentColor" stroke="none" opacity={0.16} />}
       <path d={PATHS[name] ?? PATHS.file} />
     </svg>
   );
@@ -78,7 +100,17 @@ export function StatusDot({ state, ratio = 0, size = 18 }: { state: 'done' | 'st
       </svg>
     );
   }
-  return <ProgressRing value={state === 'started' ? Math.max(0.12, ratio) : 0} size={size} stroke={2.4} className={`status status-${state}`} />;
+  if (state === 'new') return <ProgressRing value={0} size={size} stroke={2.2} className="status status-new" />;
+  // In progress: a little pie that fills as you read (a ring arc looked like a loading spinner).
+  const a = Math.min(0.92, Math.max(0.15, ratio)) * 2 * Math.PI;
+  const x = 12 + 6.5 * Math.sin(a);
+  const y = 12 - 6.5 * Math.cos(a);
+  return (
+    <svg className="status status-started" width={size} height={size} viewBox="0 0 24 24" aria-label="In progress" role="img">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2.2" />
+      <path d={`M12 12V5.5A6.5 6.5 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z`} fill="currentColor" />
+    </svg>
+  );
 }
 
 export function ProgressRing({ value, size = 44, stroke = 4, className, children }: { value: number; size?: number; stroke?: number; className?: string; children?: React.ReactNode }) {

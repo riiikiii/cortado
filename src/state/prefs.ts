@@ -17,7 +17,8 @@ export interface Prefs {
 const KEY = 'cortado.prefs';
 export const TEXT_SIZES = [15, 16, 17, 18, 20, 22, 24];
 const DEFAULTS: Prefs = { theme: 'system', textSize: 18, font: 'sans', width: 'medium' };
-const WIDTHS: Record<ReadWidth, string> = { narrow: '600px', medium: '720px', wide: '880px' };
+// Wide uses the whole reading pane; a fixed cap would look no different from Normal on an iPad.
+const WIDTHS: Record<ReadWidth, string> = { narrow: '560px', medium: '720px', wide: '100%' };
 const THEME_COLORS: Record<Theme, string> = { light: '#fbf8f4', sepia: '#f4ecdc', dark: '#1a1512' };
 
 function load(): Prefs {
