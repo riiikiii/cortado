@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../state/store';
 import { Appearance } from './Appearance';
-import { AccountList, ClientIdRow, GoogleButton } from './GoogleConnect';
 import { Icon } from './Icon';
 import { Sheet } from './Sheet';
 import { formatBytes } from './SyncButton';
@@ -17,7 +16,6 @@ const SHORTCUTS: [string, string][] = [
 
 export function SettingsSheet() {
   const open = useStore((s) => s.settingsOpen);
-  const accounts = useStore((s) => s.accounts);
   const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));
   const { setSettingsOpen, resetProgress } = useStore.getState();
   const [usage, setUsage] = useState<string | null>(null);
@@ -45,15 +43,6 @@ export function SettingsSheet() {
         <section className="sheet-section">
           <h3 className="section-title">Reading</h3>
           <Appearance />
-        </section>
-
-        <section className="sheet-section">
-          <h3 className="section-title">Google accounts</h3>
-          {accounts.length ? <AccountList /> : <p className="small muted">No Google account connected on this device yet.</p>}
-          <div className="stack">
-            <GoogleButton label={accounts.length ? 'Connect another account' : 'Continue with Google'} chooseAccount={accounts.length > 0} subtle={accounts.length > 0} />
-          </div>
-          <ClientIdRow />
         </section>
 
         {vault && (

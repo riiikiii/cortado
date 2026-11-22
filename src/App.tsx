@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { registerSW } from 'virtual:pwa-register';
-import { finishRedirect, migrateLegacyToken } from './auth/google';
 import { AppShell } from './components/AppShell';
 import { Icon } from './components/Icon';
 import { useStore } from './state/store';
@@ -54,13 +53,8 @@ export function App() {
 
   useEffect(() => {
     startServiceWorker().then(report, () => report('failed'));
-    (async () => {
-      // Signing in and syncing don't need the service worker, so don't wait for it.
-      const [redirect] = await Promise.all([finishRedirect(), migrateLegacyToken(), useStore.getState().init()]);
-      const s = useStore.getState();
-      if (redirect?.error) s.showToast(redirect.error);
-      await s.afterSignIn(redirect?.account, redirect?.resume);
-    })();
+    // Syncing doesn't need the service worker, so don't wait for it.
+    void useStore.getState().init();
   }, []);
 
   if (!ready) return <div className="boot" />;

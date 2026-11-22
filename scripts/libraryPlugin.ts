@@ -17,7 +17,7 @@ export function libraryManifest(root: string, name: string): LibraryManifest {
 
 export function siteLibrary(): Plugin {
   const root = resolve(process.env.LIBRARY_DIR ?? 'library');
-  const name = process.env.LIBRARY_NAME?.trim() || 'Cortado Library';
+  const name = process.env.LIBRARY_NAME?.trim() || 'Cortado Notes';
   let base = '/';
 
   const serve: Connect.NextHandleFunction = (req, res, next) => {

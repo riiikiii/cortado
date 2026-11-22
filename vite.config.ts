@@ -28,7 +28,7 @@ export default defineConfig(({ command, isPreview }) => ({
       manifest: {
         name: 'Cortado',
         short_name: 'Cortado',
-        description: 'Your guides and notes from Google Drive, beautifully readable and available offline.',
+        description: 'Your guides and notes, beautifully readable and available offline.',
         display: 'standalone',
         orientation: 'any',
         background_color: '#f4d8b4',
