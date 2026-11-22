@@ -124,6 +124,7 @@ export function AppShell() {
 
   return (
     <div className={`app ${overlay ? 'narrow' : 'wide'} ${sidebarOpen ? 'sb-open' : 'sb-closed'}`} style={{ '--sb-w': `${sbWidth}px` } as React.CSSProperties}>
+      <div className="edge-strip" aria-hidden="true" />
       {overlay && <div className={`scrim ${sidebarOpen ? 'on' : ''}`} onClick={() => setSidebarOpen(false)} />}
       <aside
         className="sidebar"
