@@ -64,3 +64,9 @@ if (manifest.some((e) => (typeof e === 'string' ? e : e.url).endsWith('index.htm
 
 self.skipWaiting();
 clientsClaim();
+
+// A hard reload (⇧⌘R) loads the page without the service worker. The page asks us to take it
+// over again, so vault files (guides, images) keep loading from the device.
+self.addEventListener('message', (event) => {
+  if ((event.data as { type?: string } | null)?.type === 'CLAIM') event.waitUntil(self.clients.claim());
+});

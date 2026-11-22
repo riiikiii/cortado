@@ -2,34 +2,57 @@ import { useEffect, useState } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 import { finishRedirect, migrateLegacyToken } from './auth/google';
 import { AppShell } from './components/AppShell';
+import { Icon } from './components/Icon';
 import { useStore } from './state/store';
 
-/** Resolve once a service worker controls this page, so vault URLs are served from IndexedDB. */
-async function waitForServiceWorker(): Promise<boolean> {
-  if (!('serviceWorker' in navigator)) return false;
+type SwStatus = 'ok' | 'unsupported' | 'failed';
+const RELOADED_KEY = 'cortado.swReloaded';
+
+/**
+ * Make sure the service worker controls this page, so vault URLs (HTML guides, images) are
+ * served from the device. A hard reload skips the service worker, so ask it to take over,
+ * and as a last resort reload once normally.
+ */
+async function startServiceWorker(): Promise<SwStatus> {
+  if (!('serviceWorker' in navigator)) return 'unsupported';
   registerSW({ immediate: true });
-  await navigator.serviceWorker.ready;
-  if (navigator.serviceWorker.controller) return true;
-  await new Promise<void>((resolve) => {
-    navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
-    setTimeout(resolve, 3000);
-  });
-  return !!navigator.serviceWorker.controller;
+  const controlled = () => !!navigator.serviceWorker.controller;
+  const reg = await navigator.serviceWorker.ready;
+  if (!controlled()) {
+    const changed = new Promise<void>((resolve) => {
+      navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+      setTimeout(resolve, 4000);
+    });
+    reg.active?.postMessage({ type: 'CLAIM' });
+    await changed;
+  }
+  if (controlled()) {
+    sessionStorage.removeItem(RELOADED_KEY);
+    return 'ok';
+  }
+  if (!sessionStorage.getItem(RELOADED_KEY)) {
+    sessionStorage.setItem(RELOADED_KEY, '1');
+    location.reload();
+    return new Promise(() => {});
+  }
+  return 'failed';
 }
+
+const SW_MESSAGES: Record<Exclude<SwStatus, 'ok'>, string> = {
+  unsupported:
+    'This browser won’t let Cortado work offline, so HTML guides can’t open. Private browsing and in-app browsers often block it: open this page in Safari or Chrome instead.',
+  failed: 'Cortado’s offline helper didn’t start, so HTML guides may not open. Reloading usually fixes it.',
+};
 
 export function App() {
   const ready = useStore((s) => s.ready);
-  const [swError, setSwError] = useState<string | null>(null);
+  const [swStatus, setSwStatus] = useState<SwStatus>('ok');
 
   useEffect(() => {
+    startServiceWorker().then(setSwStatus, () => setSwStatus('failed'));
     (async () => {
-      const [swOk, redirect] = await Promise.all([
-        waitForServiceWorker(),
-        finishRedirect(),
-        migrateLegacyToken(),
-        useStore.getState().init(),
-      ]).then(([sw, r]) => [sw, r] as const);
-      if (!swOk) setSwError('This browser has no service worker support, so guides can’t be shown offline.');
+      // Signing in and syncing don't need the service worker, so don't wait for it.
+      const [redirect] = await Promise.all([finishRedirect(), migrateLegacyToken(), useStore.getState().init()]);
       const s = useStore.getState();
       if (redirect?.error) s.showToast(redirect.error);
       await s.afterSignIn(redirect?.account, redirect?.resume);
@@ -39,8 +62,21 @@ export function App() {
   if (!ready) return <div className="boot" />;
   return (
     <>
-      {swError && <div className="banner">{swError}</div>}
       <AppShell />
+      {swStatus !== 'ok' && (
+        <div className="notice" role="alert">
+          <Icon name="wifi" size={20} className="notice-icon" />
+          <span className="notice-text">{SW_MESSAGES[swStatus]}</span>
+          {swStatus === 'failed' && (
+            <button className="btn small" onClick={() => location.reload()}>
+              Reload
+            </button>
+          )}
+          <button className="icon-btn small" aria-label="Dismiss" onClick={() => setSwStatus('ok')}>
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+      )}
     </>
   );
 }
