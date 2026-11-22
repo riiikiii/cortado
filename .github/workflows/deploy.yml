@@ -27,7 +27,7 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          BASE_PATH: /${{ github.event.repository.name }}/
+          BASE_PATH: /
           LIBRARY_NAME: ${{ vars.LIBRARY_NAME }}
       - uses: actions/upload-pages-artifact@v3
         with:
