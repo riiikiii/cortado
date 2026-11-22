@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { CupLogo } from '../components/Logo';
-import { useStore, type Tab } from '../state/store';
+import { useStore, type DocTab } from '../state/store';
 import { getBlob } from '../storage/db';
 import { kindOf, vaultUrl } from '../util/paths';
 import { HtmlView } from './HtmlView';
@@ -8,7 +8,7 @@ import type { ViewerEvents } from './types';
 // Markdown, highlighting and sanitising are loaded on first use to keep startup fast.
 const MarkdownView = lazy(() => import('./MarkdownView').then((m) => ({ default: m.MarkdownView })));
 
-export function DocView({ tab, vaultId, events, footer }: { tab: Tab; vaultId: string; events: ViewerEvents; footer?: ReactNode }) {
+export function DocView({ tab, vaultId, events, footer }: { tab: DocTab; vaultId: string; events: ViewerEvents; footer?: ReactNode }) {
   // Guides, PDFs and images (also those inside notes) are served by the service worker. On the
   // very first launch it is still installing, and a request then goes to the web server and 404s.
   const sw = useStore((s) => s.sw);
@@ -44,7 +44,7 @@ export function DocView({ tab, vaultId, events, footer }: { tab: Tab; vaultId: s
   }
 }
 
-function TextView({ tab, vaultId, events }: { tab: Tab; vaultId: string; events: ViewerEvents }) {
+function TextView({ tab, vaultId, events }: { tab: DocTab; vaultId: string; events: ViewerEvents }) {
   const [text, setText] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {

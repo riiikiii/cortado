@@ -29,6 +29,33 @@ function Splash() {
   );
 }
 
+/** What an empty tab shows until a file is chosen. */
+export function NewTabPage() {
+  const paths = useStore((s) => s.paths);
+  const sidebarOpen = useStore((s) => s.sidebarOpen);
+  const { setSidebarOpen, setQuickOpen } = useStore.getState();
+  if (!paths.length) return <Home />;
+  return (
+    <div className="landing">
+      <div className="splash new-tab">
+        <CupIllustration size={250} looking />
+        <h1 className="splash-title">Select a file</h1>
+        <p className="new-tab-hint">Choose a lesson from the sidebar, or search for one.</p>
+        <div className="new-tab-actions">
+          {!sidebarOpen && (
+            <button className="btn" onClick={() => setSidebarOpen(true)}>
+              <Icon name="sidebar" size={18} /> Browse files
+            </button>
+          )}
+          <button className="btn" onClick={() => setQuickOpen(true)}>
+            <Icon name="search" size={18} /> Search
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmptyVault({ name }: { name: string }) {
   const running = useStore((s) => s.sync.running);
   const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));

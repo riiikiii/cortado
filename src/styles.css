@@ -403,25 +403,37 @@ kbd { font: 500 11px/1 var(--font); color: var(--muted); padding: 3px 6px; borde
   position: relative;
   z-index: 10;
 }
+.tabstrip { flex: 1; min-width: 0; height: 100%; display: flex; }
 .tabbar {
   flex: 1;
   min-width: 0;
   display: flex;
   gap: 3px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  position: relative; /* so tabs' offsetLeft is measured from the strip */
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   height: 100%;
   align-items: center;
   padding: 0 2px;
 }
+/* Fades at whichever end has tabs scrolled out of view. */
+.tabstrip.fade-left .tabbar { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px); mask-image: linear-gradient(90deg, transparent, #000 36px); }
+.tabstrip.fade-right .tabbar { -webkit-mask-image: linear-gradient(270deg, transparent, #000 36px); mask-image: linear-gradient(270deg, transparent, #000 36px); }
+.tabstrip.fade-left.fade-right .tabbar {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+}
 .tabbar::-webkit-scrollbar { display: none; }
 .tab {
-  flex: 0 0 auto;
+  /* Tabs share the bar and shrink to the minimum; past that the strip scrolls. */
+  flex: 1 1 190px;
+  min-width: 128px;
   display: flex;
   align-items: center;
   gap: 7px;
-  max-width: 230px;
+  max-width: 220px;
   height: 38px;
   padding: 0 3px 0 12px;
   border-radius: 10px;
@@ -435,10 +447,19 @@ kbd { font: 500 11px/1 var(--font); color: var(--muted); padding: 3px 6px; borde
 }
 .tab:hover { background: var(--fill); color: var(--text-2); }
 .tab.active { background: var(--raised); color: var(--text); font-weight: 550; box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
-.home-tab { padding: 0; width: 46px; justify-content: center; animation: none; }
-.home-tab .cup-logo { transition: transform 0.3s var(--spring); }
-.home-tab:hover .cup-logo, .home-tab.active .cup-logo { transform: rotate(-8deg) scale(1.06); }
-.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.tab.is-new .tab-title { color: var(--muted); }
+.tab-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.new-tab-btn { width: 40px; height: 40px; }
+.tab-count-wrap { position: relative; flex: none; }
+.tab-count { min-width: 28px; height: 24px; margin: 0 6px; padding: 0 6px; border-radius: 7px; border: 2px solid currentColor; color: var(--text-2); font: 700 12px/1 var(--font); font-variant-numeric: tabular-nums; transition: background 0.15s, color 0.15s; }
+.tab-count:hover, .tab-count.on { background: var(--text-2); color: var(--surface); }
+.popover.tab-list { right: -8px; width: min(360px, calc(100vw - 24px)); }
+.tab-list ul { list-style: none; margin: 0; padding: 0; max-height: min(55vh, 460px); overflow-y: auto; }
+.tab-list-row { display: flex; align-items: center; gap: 2px; border-radius: 10px; }
+.tab-list-row.active { background: var(--accent-soft); }
+.tab-list-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 10px; text-align: left; border-radius: 10px; font-size: 14.5px; }
+.tab-list-pick:hover { background: var(--fill); }
+.tab-list .menu-item { margin-top: 6px; border-top: 1px solid var(--border); border-radius: 0 0 9px 9px; }
 .tab-close { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; color: var(--muted); opacity: 0.7; }
 .tab.active .tab-close, .tab:hover .tab-close { opacity: 1; }
 .tab-close:hover { background: var(--fill-2); color: var(--text); }
@@ -653,6 +674,19 @@ details[open] > summary.callout-title::after { transform: rotate(90deg); }
 .cup-illustration .cup-sparkles path:nth-child(4) { animation-delay: 1.9s; }
 .splash-title { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(52px, 10vw, 84px); font-weight: 600; letter-spacing: -0.035em; line-height: 1; color: var(--text); }
 .landing .welcome-actions { margin-top: 32px; }
+.splash.new-tab .splash-title { font-size: clamp(36px, 6vw, 54px); margin-top: 2px; }
+.new-tab-hint { margin: 10px 0 0; font-size: 16px; color: var(--muted); }
+.new-tab-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
+
+/* The new-tab cup peers through its magnifying glass, looking for a file. */
+.cup-illustration.looking .cup-magnifier { transform-box: view-box; transform-origin: 124px 190px; animation: scan 3.6s ease-in-out infinite; }
+.cup-illustration.looking .cup-pupil { animation: look 3.6s ease-in-out infinite; }
+.cup-illustration.looking .cup-blink { transform-box: fill-box; transform-origin: center; animation: blink 4.4s ease-in-out infinite; }
+.cup-illustration.looking .cup-question { transform-box: fill-box; transform-origin: center; animation: question 2.8s ease-in-out infinite; }
+@keyframes scan { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 30% { transform: translate(-9px, -3px) rotate(-6deg); } 65% { transform: translate(8px, 2px) rotate(5deg); } }
+@keyframes look { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-4px); } 65% { transform: translateX(4px); } }
+@keyframes blink { 0%, 88%, 100% { transform: scaleY(1); } 92% { transform: scaleY(0.12); } }
+@keyframes question { 0%, 100% { transform: translateY(0) rotate(-10deg); opacity: 0.65; } 50% { transform: translateY(-9px) rotate(10deg); opacity: 1; } }
 .section-title { font-size: 13px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px 2px; }
 
 /* Screens shown before a vault has lessons (downloading, or nothing synced yet). */
@@ -876,6 +910,7 @@ details[open] > summary.callout-title::after { transform: rotate(90deg); }
    Narrow screens
    ========================================================================== */
 @media (max-width: 700px) {
+  .tab { min-width: 104px; padding-left: 10px; }
   .md { padding: 28px 20px 20px; }
   .md-end { padding-left: 20px; padding-right: 20px; }
 }

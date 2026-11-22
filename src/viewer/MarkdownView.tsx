@@ -2,12 +2,12 @@ import DOMPurify from 'dompurify';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createRenderer, createWikilinkResolver } from '../markdown/render';
 import { usePrefs } from '../state/prefs';
-import { useStore, type Tab } from '../state/store';
+import { useStore, type DocTab } from '../state/store';
 import { getBlob } from '../storage/db';
 import { attachLinkHandling, scrollToHash } from './links';
 import { collectHeadings, currentSection, toOutline, type ViewerEvents } from './types';
 
-export function MarkdownView({ tab, vaultId, events, footer }: { tab: Tab; vaultId: string; events: ViewerEvents; footer?: ReactNode }) {
+export function MarkdownView({ tab, vaultId, events, footer }: { tab: DocTab; vaultId: string; events: ViewerEvents; footer?: ReactNode }) {
   const paths = useStore((s) => s.paths);
   const theme = usePrefs((s) => s.resolved);
   const resolver = useMemo(() => createWikilinkResolver(paths), [paths]);

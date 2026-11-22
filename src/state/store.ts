@@ -21,12 +21,16 @@ import { kindOf, stem } from '../util/paths';
 
 export interface Tab {
   id: string;
-  path: string;
+  /** null for a new tab that hasn't had a file chosen yet. */
+  path: string | null;
   hash?: string;
   scrollY?: number;
   /** Bumped to force the viewer to reload. */
   nonce?: number;
 }
+
+/** A tab showing a file. */
+export type DocTab = Tab & { path: string };
 
 export interface Progress {
   /** Furthest point read, 0 to 1. */
@@ -82,9 +86,12 @@ interface State {
   removeVault(id: string): Promise<void>;
   /** Add the site's published library as a vault (automatically on first launch). */
   addSiteLibrary(opts?: { activate?: boolean }): Promise<void>;
+  /** Open a file in the current tab (or in a new one with `newTab`, e.g. ⌘-click). */
   openFile(path: string, opts?: { newTab?: boolean; hash?: string; background?: boolean }): void;
-  goHome(): void;
+  /** Add an empty tab at the end and switch to it. */
+  newTab(): void;
   closeTab(id: string): void;
+  closeAllTabs(): void;
   closeOtherTabs(id: string): void;
   activateTab(id: string): void;
   moveTab(id: string, toIndex: number): void;
@@ -218,12 +225,8 @@ export const useStore = create<State>((set, get) => {
       localStorage.setItem(ACTIVE_KEY, id);
       const paths = await loadPaths(id);
       const saved = readJSON<{ tabs: Tab[]; activeTabId?: string | null }>(tabsKey(id), { tabs: [], activeTabId: null });
-      const tabs = saved.tabs.filter((t) => t.path);
-      const activeTabId = tabs.some((t) => t.id === saved.activeTabId)
-        ? saved.activeTabId!
-        : saved.activeTabId === null
-          ? null
-          : (tabs[0]?.id ?? null);
+      const tabs = saved.tabs.filter((t) => t.id && (typeof t.path === 'string' || t.path === null));
+      const activeTabId = tabs.some((t) => t.id === saved.activeTabId) ? saved.activeTabId! : (tabs[0]?.id ?? null);
       set({
         activeVaultId: id,
         paths,
@@ -271,20 +274,18 @@ export const useStore = create<State>((set, get) => {
 
     openFile(path, opts = {}) {
       const { tabs, activeTabId } = get();
-      const existing = tabs.find((t) => t.path === path);
+      const active = tabs.find((t) => t.id === activeTabId);
       let nextTabs: Tab[];
       let target: Tab;
-      if (existing && !opts.newTab) {
-        // Already open: just switch to it.
-        target = { ...existing, hash: opts.hash, nonce: opts.hash ? Date.now() : existing.nonce };
-        nextTabs = tabs.map((t) => (t.id === existing.id ? target : t));
-      } else if (opts.newTab || !activeTabId) {
+      if (opts.newTab || !active) {
+        // A new tab goes next to the current one, like in a browser.
         target = { id: newId(), path, hash: opts.hash };
         const at = tabs.findIndex((t) => t.id === activeTabId);
         nextTabs = at < 0 ? [...tabs, target] : [...tabs.slice(0, at + 1), target, ...tabs.slice(at + 1)];
       } else {
-        target = { id: activeTabId, path, hash: opts.hash, scrollY: 0, nonce: Date.now() };
-        nextTabs = tabs.map((t) => (t.id === activeTabId ? target : t));
+        // Otherwise the file always replaces what the current tab shows.
+        target = { id: active.id, path, hash: opts.hash, scrollY: 0, nonce: Date.now() };
+        nextTabs = tabs.map((t) => (t.id === active.id ? target : t));
       }
       const recent = [path, ...get().recent.filter((p) => p !== path)].slice(0, 30);
       const prev = get().progress[path];
@@ -293,9 +294,14 @@ export const useStore = create<State>((set, get) => {
       if (isNarrow()) set({ sidebarOpen: false });
     },
 
-    goHome() {
-      set({ activeTabId: null });
-      if (isNarrow()) set({ sidebarOpen: false });
+    newTab() {
+      const tab: Tab = { id: newId(), path: null };
+      set({ tabs: [...get().tabs, tab] });
+      get().activateTab(tab.id);
+    },
+
+    closeAllTabs() {
+      set({ tabs: [], activeTabId: null, mru: [] });
     },
 
     closeTab(id) {

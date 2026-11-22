@@ -5,13 +5,13 @@ import { Icon } from '../components/Icon';
 import { ToolbarSlot } from '../components/toolbarSlot';
 import { readingMinutes } from '../library/text';
 import { lessonTitle, neighbours, readingOrder } from '../library/tree';
-import { titleOf, useStore, type Tab } from '../state/store';
+import { titleOf, useStore, type DocTab } from '../state/store';
 import { kindOf, stem } from '../util/paths';
 import { DocView } from './DocView';
 import type { OutlineItem, ScrollInfo, ViewerEvents } from './types';
 
 /** One open document: the document itself, its progress line and lesson controls. */
-export function Reader({ tab, vaultId, active }: { tab: Tab; vaultId: string; active: boolean }) {
+export function Reader({ tab, vaultId, active }: { tab: DocTab; vaultId: string; active: boolean }) {
   const kind = kindOf(tab.path);
   const paths = useStore((s) => s.paths);
   const done = useStore((s) => !!s.progress[tab.path]?.doneAt);

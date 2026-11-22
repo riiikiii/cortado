@@ -18,7 +18,7 @@ function loadExpanded(): Set<string> {
 export function FileTree({ filter, showAll }: { filter: string; showAll: boolean }) {
   const paths = useStore((s) => s.paths);
   const progress = useStore((s) => s.progress);
-  const activePath = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.path);
+  const activePath = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.path ?? undefined);
   const [expanded, setExpanded] = useState(loadExpanded);
 
   const visible = useMemo(() => paths.filter((p) => !isHidden(p) && (showAll || LESSON_KINDS.has(kindOf(p)))), [paths, showAll]);

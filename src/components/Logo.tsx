@@ -44,9 +44,16 @@ export function CupTile({ size = 30, face }: { size?: number; face?: boolean }) 
 }
 
 /** The big landing-page cup: the mascot with latte art, a rosy smile, rising steam and sparkles. */
-export function CupIllustration({ size = 300 }: { size?: number }) {
+export function CupIllustration({ size = 300, looking = false }: { size?: number; looking?: boolean }) {
   return (
-    <svg className="cup-illustration" width={size} height={size} viewBox="0 0 320 320" role="img" aria-label="A smiling cup of coffee">
+    <svg
+      className={`cup-illustration ${looking ? 'looking' : ''}`}
+      width={size}
+      height={size}
+      viewBox="0 0 320 320"
+      role="img"
+      aria-label={looking ? 'A coffee cup peering through a magnifying glass' : 'A smiling cup of coffee'}
+    >
       <defs>
         <radialGradient id="cup-glow" cx="50%" cy="55%" r="50%">
           <stop offset="0%" style={{ stopColor: 'var(--cup-glow)' }} />
@@ -63,6 +70,12 @@ export function CupIllustration({ size = 300 }: { size?: number }) {
       </defs>
 
       <circle cx="160" cy="175" r="150" fill="url(#cup-glow)" />
+
+      {looking && (
+        <text className="cup-question" x="262" y="104" fontFamily="Georgia, serif" fontWeight="700" fontSize="44" fill="#d6a074">
+          ?
+        </text>
+      )}
 
       <g className="cup-sparkles" fill="#f2b65f">
         <path d="M52 92l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" />
@@ -89,16 +102,42 @@ export function CupIllustration({ size = 300 }: { size?: number }) {
         <ellipse cx="160" cy="121" rx="78" ry="15" fill="none" stroke="#c98a5c" strokeWidth="4" opacity="0.7" />
         <path d="M160 130c-15-6-23-11-23-17a8 6 0 0 1 16-1l7 4 7-4a8 6 0 0 1 16 1c0 6-8 11-23 17z" fill="#f7e2c6" />
 
-        <ellipse cx="127" cy="190" rx="10" ry="13" fill="#3b2417" />
-        <ellipse cx="193" cy="190" rx="10" ry="13" fill="#3b2417" />
-        <circle cx="131" cy="185" r="4" fill="#fff" />
-        <circle cx="197" cy="185" r="4" fill="#fff" />
-        <circle cx="124" cy="196" r="1.8" fill="#fff" />
-        <circle cx="190" cy="196" r="1.8" fill="#fff" />
         <ellipse cx="104" cy="214" rx="15" ry="9" fill="#f39a8f" opacity="0.7" />
         <ellipse cx="216" cy="214" rx="15" ry="9" fill="#f39a8f" opacity="0.7" />
-        <path d="M143 207q17 24 34 0z" fill="#3b2417" stroke="#3b2417" strokeWidth="4" strokeLinejoin="round" />
-        <path d="M152 217q8-6 16 0q-8 6-16 0z" fill="#f2786b" />
+        {looking ? (
+          <>
+            <ellipse cx="160" cy="218" rx="7" ry="8.5" fill="#3b2417" />
+            <g className="cup-blink">
+              <ellipse cx="195" cy="190" rx="13" ry="15" fill="#fff" stroke="#3b2417" strokeWidth="4" />
+              <g className="cup-pupil">
+                <circle cx="195" cy="192" r="7.5" fill="#3b2417" />
+                <circle cx="198" cy="188.5" r="2.4" fill="#fff" />
+              </g>
+            </g>
+            <g className="cup-magnifier">
+              <path d="M104 212 70 250" fill="none" stroke="#3b2417" strokeWidth="16" strokeLinecap="round" />
+              <path d="M104 212 70 250" fill="none" stroke="#c07c4c" strokeWidth="7" strokeLinecap="round" />
+              <circle cx="124" cy="190" r="31" fill="#fff" />
+              <g className="cup-pupil big">
+                <circle cx="124" cy="193" r="12" fill="#3b2417" />
+                <circle cx="129" cy="187" r="3.8" fill="#fff" />
+              </g>
+              <circle cx="124" cy="190" r="31" fill="#cfe9f3" fillOpacity="0.35" stroke="#3b2417" strokeWidth="6" />
+              <path d="M104 178a23 23 0 0 1 13-11" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
+            </g>
+          </>
+        ) : (
+          <>
+            <ellipse cx="127" cy="190" rx="10" ry="13" fill="#3b2417" />
+            <ellipse cx="193" cy="190" rx="10" ry="13" fill="#3b2417" />
+            <circle cx="131" cy="185" r="4" fill="#fff" />
+            <circle cx="197" cy="185" r="4" fill="#fff" />
+            <circle cx="124" cy="196" r="1.8" fill="#fff" />
+            <circle cx="190" cy="196" r="1.8" fill="#fff" />
+            <path d="M143 207q17 24 34 0z" fill="#3b2417" stroke="#3b2417" strokeWidth="4" strokeLinejoin="round" />
+            <path d="M152 217q8-6 16 0q-8 6-16 0z" fill="#f2786b" />
+          </>
+        )}
       </g>
     </svg>
   );
