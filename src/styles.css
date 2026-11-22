@@ -48,6 +48,8 @@
   --radius-lg: 18px;
   --tap: 44px;
   --bar-h: 46px;
+  /* The fixed strip along the top edge (see .edge-strip): the status bar area plus a little. */
+  --edge-h: calc(env(safe-area-inset-top, 0px) + 10px);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --spring: cubic-bezier(0.32, 1.25, 0.6, 1);
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
@@ -166,7 +168,7 @@ kbd { font: 500 11px/1 var(--font); color: var(--muted); padding: 3px 6px; borde
 .app {
   display: flex;
   height: 100%;
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--edge-h);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   position: relative;
@@ -191,10 +193,14 @@ kbd { font: 500 11px/1 var(--font); color: var(--muted); padding: 3px 6px; borde
   top: 0;
   bottom: 0;
   left: 0;
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--edge-h);
   transform: translateX(-105%);
 }
 .app.narrow.sb-open .sidebar { transform: none; box-shadow: var(--shadow-lg); }
+/* Safari 26+ (and iPadOS home-screen apps) lay a frosted glass band over the top of the page unless
+   a fixed or sticky element spanning the width sits at the top edge; then it uses that element's
+   colour instead. A normal header doesn't count, so this strip gives it one, in the top bar's colour. */
+.edge-strip { position: fixed; z-index: 20; top: 0; left: 0; right: 0; height: var(--edge-h); background: var(--surface); transition: background-color 0.3s var(--ease); }
 .scrim { position: absolute; inset: 0; z-index: 25; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity 0.3s var(--ease); }
 .scrim.on { opacity: 1; pointer-events: auto; }
 .resizer { position: absolute; top: 0; right: -4px; width: 8px; bottom: 0; cursor: col-resize; touch-action: none; z-index: 5; }
@@ -205,7 +211,7 @@ kbd { font: 500 11px/1 var(--font); color: var(--muted); padding: 3px 6px; borde
 /* ==========================================================================
    Sidebar
    ========================================================================== */
-.sb-head { display: flex; align-items: center; gap: 4px; padding: 10px 8px 6px 8px; }
+.sb-head { display: flex; align-items: center; gap: 4px; padding: 2px 8px 6px 8px; }
 .vault-switch {
   flex: 1;
   min-width: 0;
@@ -385,7 +391,7 @@ kbd { font: 500 11px/1 var(--font); color: var(--muted); padding: 3px 6px; borde
   display: flex;
   align-items: center;
   gap: 2px;
-  height: 52px;
+  height: 50px;
   padding: 0 6px;
   border-bottom: 1px solid var(--border);
   /* Same colour as the sidebar, so the top edge of the page is one solid colour. When iPadOS can't
@@ -954,7 +960,7 @@ details[open] > summary.callout-title::after { transform: rotate(90deg); }
 .notice {
   position: fixed;
   z-index: 65;
-  top: calc(10px + env(safe-area-inset-top));
+  top: calc(var(--edge-h) + 6px);
   left: 50%;
   width: min(620px, calc(100% - 24px));
   display: flex;
