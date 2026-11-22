@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
+import { usePrefs } from '../state/prefs';
 import { useStore, type DocTab } from '../state/store';
 import { parseVaultUrl, vaultUrl } from '../util/paths';
+import { applyPrefsToDocument } from './htmlPrefs';
 import { attachLinkHandling } from './links';
 import { collectHeadings, currentSection, toOutline, type ViewerEvents } from './types';
 
@@ -44,6 +46,9 @@ export function HtmlView({ tab, vaultId, events }: { tab: DocTab; vaultId: strin
     const win = frame?.contentWindow;
     const doc = frame?.contentDocument;
     if (!win || !doc) return;
+
+    applyPrefsToDocument(doc, usePrefs.getState());
+    const offPrefs = usePrefs.subscribe((prefs) => applyPrefsToDocument(doc, prefs));
 
     // The guide may have navigated itself (location.href = ...); keep the tab in step.
     const here = parseVaultUrl(win.location.pathname);
@@ -96,6 +101,7 @@ export function HtmlView({ tab, vaultId, events }: { tab: DocTab; vaultId: strin
     };
     doc.addEventListener('keydown', onKey);
     cleanup.current = () => {
+      offPrefs();
       offLinks();
       clearTimeout(t);
       clearTimeout(late);

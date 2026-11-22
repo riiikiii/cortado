@@ -162,7 +162,7 @@ function DocActions({
           <Icon name="outline" />
         </button>
       )}
-      {(kind === 'md' || kind === 'text') && (
+      {(kind === 'md' || kind === 'text' || kind === 'html') && (
         <button className={`icon-btn ${menu === 'type' ? 'on' : ''}`} aria-label="Text and theme" title="Text and theme" onClick={() => setMenu(menu === 'type' ? null : 'type')}>
           <Icon name="type" />
         </button>

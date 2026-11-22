@@ -16,7 +16,7 @@ export interface Prefs {
 // Also read by the inline script in index.html, which sets the theme before first paint.
 const KEY = 'cortado.prefs';
 export const TEXT_SIZES = [15, 16, 17, 18, 20, 22, 24];
-const DEFAULTS: Prefs = { theme: 'system', textSize: 18, font: 'sans', width: 'medium' };
+const DEFAULTS: Prefs = { theme: 'system', textSize: 18, font: 'sans', width: 'wide' };
 // Wide uses the whole reading pane; a fixed cap would look no different from Normal on an iPad.
 const WIDTHS: Record<ReadWidth, string> = { narrow: '560px', medium: '720px', wide: '100%' };
 // The top bar's colour (--surface), so the browser's own bars blend into it.
