@@ -32,7 +32,7 @@ export default defineConfig(({ command, isPreview }) => ({
         display: 'standalone',
         orientation: 'any',
         background_color: '#f4d8b4',
-        theme_color: '#1a1512',
+        theme_color: '#f5f0e9',
         start_url: '.',
         scope: '.',
         icons: [

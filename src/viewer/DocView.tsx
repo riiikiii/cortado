@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { Tab } from '../state/store';
+import { CupLogo } from '../components/Logo';
+import { useStore, type Tab } from '../state/store';
 import { getBlob } from '../storage/db';
 import { kindOf, vaultUrl } from '../util/paths';
 import { HtmlView } from './HtmlView';
@@ -8,6 +9,17 @@ import type { ViewerEvents } from './types';
 const MarkdownView = lazy(() => import('./MarkdownView').then((m) => ({ default: m.MarkdownView })));
 
 export function DocView({ tab, vaultId, events, footer }: { tab: Tab; vaultId: string; events: ViewerEvents; footer?: ReactNode }) {
+  // Guides, PDFs and images (also those inside notes) are served by the service worker. On the
+  // very first launch it is still installing, and a request then goes to the web server and 404s.
+  const sw = useStore((s) => s.sw);
+  if (sw === 'pending') {
+    return (
+      <div className="doc-waiting" role="status">
+        <CupLogo size={72} animated />
+        <p>Getting your library ready to read offline…</p>
+      </div>
+    );
+  }
   switch (kindOf(tab.path)) {
     case 'html':
       return <HtmlView tab={tab} vaultId={vaultId} events={events} />;

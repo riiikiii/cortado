@@ -19,7 +19,8 @@ export const TEXT_SIZES = [15, 16, 17, 18, 20, 22, 24];
 const DEFAULTS: Prefs = { theme: 'system', textSize: 18, font: 'sans', width: 'medium' };
 // Wide uses the whole reading pane; a fixed cap would look no different from Normal on an iPad.
 const WIDTHS: Record<ReadWidth, string> = { narrow: '560px', medium: '720px', wide: '100%' };
-const THEME_COLORS: Record<Theme, string> = { light: '#fbf8f4', sepia: '#f4ecdc', dark: '#1a1512' };
+// The top bar's colour (--surface), so the browser's own bars blend into it.
+const THEME_COLORS: Record<Theme, string> = { light: '#f5f0e9', sepia: '#ede2cd', dark: '#201a16' };
 
 function load(): Prefs {
   try {

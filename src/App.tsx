@@ -47,9 +47,13 @@ const SW_MESSAGES: Record<Exclude<SwStatus, 'ok'>, string> = {
 export function App() {
   const ready = useStore((s) => s.ready);
   const [swStatus, setSwStatus] = useState<SwStatus>('ok');
+  const report = (status: SwStatus) => {
+    useStore.setState({ sw: status });
+    setSwStatus(status);
+  };
 
   useEffect(() => {
-    startServiceWorker().then(setSwStatus, () => setSwStatus('failed'));
+    startServiceWorker().then(report, () => report('failed'));
     (async () => {
       // Signing in and syncing don't need the service worker, so don't wait for it.
       const [redirect] = await Promise.all([finishRedirect(), migrateLegacyToken(), useStore.getState().init()]);
