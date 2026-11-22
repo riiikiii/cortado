@@ -1,8 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import './state/prefs';
 import './styles.css';
-import 'highlight.js/styles/github.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

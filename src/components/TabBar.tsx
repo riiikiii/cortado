@@ -11,12 +11,22 @@ export function TabBar() {
 
   // Keep the active tab in view.
   useEffect(() => {
-    scroller.current?.querySelector('.tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    scroller.current?.querySelector('.tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   }, [activeTabId, tabs.length]);
 
   return (
     <>
       <div className="tabbar" ref={scroller} role="tablist">
+        <button
+          className={`tab home-tab ${activeTabId === null ? 'active' : ''}`}
+          role="tab"
+          aria-selected={activeTabId === null}
+          aria-label="Library home"
+          title="Library home"
+          onClick={() => useStore.getState().goHome(useStore.getState().activeTabId === null ? null : useStore.getState().homeFolder)}
+        >
+          <Icon name="home" size={18} />
+        </button>
         {tabs.map((t) => (
           <TabButton key={t.id} tab={t} active={t.id === activeTabId} onMenu={(x, y) => setMenu({ tab: t, x, y })} />
         ))}
@@ -28,6 +38,7 @@ export function TabBar() {
 
 function TabButton({ tab, active, onMenu }: { tab: Tab; active: boolean; onMenu: (x: number, y: number) => void }) {
   const { activateTab, closeTab } = useStore.getState();
+  const done = useStore((s) => !!s.progress[tab.path]?.doneAt);
   const press = useRef<ReturnType<typeof setTimeout>>(undefined);
   const longPressed = useRef(false);
   const kind = kindOf(tab.path);
@@ -60,7 +71,7 @@ function TabButton({ tab, active, onMenu }: { tab: Tab; active: boolean; onMenu:
       onTouchEnd={() => clearTimeout(press.current)}
       onTouchMove={() => clearTimeout(press.current)}
     >
-      <Icon name={fileIcon(tab.path, kind)} size={16} className={`ico kind-${kind}`} />
+      <Icon name={done ? 'check-circle' : fileIcon(kind)} size={16} className={`ico ${done ? 'done' : `kind-${kind}`}`} />
       <span className="tab-title">{stem(tab.path)}</span>
       <button
         className="tab-close"
@@ -70,7 +81,7 @@ function TabButton({ tab, active, onMenu }: { tab: Tab; active: boolean; onMenu:
           closeTab(tab.id);
         }}
       >
-        <Icon name="close" size={14} />
+        <Icon name="close" size={13} strokeWidth={2.2} />
       </button>
     </div>
   );

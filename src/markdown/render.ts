@@ -5,6 +5,9 @@ import footnote from 'markdown-it-footnote';
 import taskLists from 'markdown-it-task-lists';
 import hljs from 'highlight.js/lib/common';
 import { isDocument, kindOf, resolveRelative, vaultUrl } from '../util/paths';
+import { stripFrontMatter } from './strip';
+
+export { stripFrontMatter };
 
 export interface RenderContext {
   vaultId: string;
@@ -27,10 +30,6 @@ export function slugify(s: string) {
 }
 
 const isExternal = (href: string) => /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//');
-
-export function stripFrontMatter(src: string): string {
-  return src.replace(/^﻿?---\r?\n[\s\S]*?\r?\n(---|\.\.\.)\s*(\r?\n|$)/, '');
-}
 
 /** Inline rule for [[target#heading|alias]] and ![[embed]]. */
 function wikilinkRule(state: StateInline, silent: boolean): boolean {

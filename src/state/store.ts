@@ -1,10 +1,22 @@
 import { create } from 'zustand';
-import { AuthRequiredError, signIn } from '../auth/google';
+import {
+  AuthRequiredError,
+  googleConfigured,
+  hasSession,
+  listAccounts,
+  removeAccount,
+  signIn,
+  type GoogleAccount,
+  type ResumeIntent,
+} from '../auth/google';
+import { extractText, type DocText } from '../library/text';
+import { isLesson } from '../library/tree';
 import { devProvider } from '../providers/dev';
-import { driveProvider } from '../providers/gdrive';
+import { driveFor } from '../providers/gdrive';
 import type { VaultProvider } from '../providers/types';
 import { db, deleteVaultData, type ProviderKind, type Vault } from '../storage/db';
 import { syncVault, type SyncProgress, type SyncResult } from '../sync/sync';
+import { kindOf } from '../util/paths';
 
 export interface Tab {
   id: string;
@@ -15,6 +27,13 @@ export interface Tab {
   nonce?: number;
 }
 
+export interface Progress {
+  /** Furthest point read, 0 to 1. */
+  ratio: number;
+  doneAt?: number;
+  openedAt?: number;
+}
+
 interface SyncState {
   running: boolean;
   progress?: SyncProgress;
@@ -22,48 +41,69 @@ interface SyncState {
   error?: string;
 }
 
+export type PickerView = { view: 'list' } | { view: 'browse'; accountId: string } | { view: 'setup'; then?: 'connect' };
+
 interface State {
   ready: boolean;
   vaults: Vault[];
   activeVaultId: string | null;
   paths: string[];
   tabs: Tab[];
+  /** null shows the library home. */
   activeTabId: string | null;
   /** Tab ids, most recently used first. Used to decide which iframes stay alive. */
   mru: string[];
   recent: string[];
+  /** Reading progress per path in the active vault. */
+  progress: Record<string, Progress>;
+  /** Text of every note and guide, for search and reading times. Null until built. */
+  docs: Map<string, DocText> | null;
+  /** The collection shown on the home screen, or null for the overview. */
+  homeFolder: string | null;
+  accounts: GoogleAccount[];
   sidebarOpen: boolean;
   quickOpen: boolean;
-  vaultPickerOpen: boolean;
+  settingsOpen: boolean;
+  picker: PickerView | null;
   sync: SyncState;
-  toast?: string;
+  toast?: { message: string; id: number };
 
   init(): Promise<void>;
   setActiveVault(id: string | null): Promise<void>;
-  addVault(v: { name: string; provider: ProviderKind; rootFolderId: string }): Promise<Vault>;
+  addVault(v: { name: string; provider: ProviderKind; rootFolderId: string; accountId?: string }): Promise<Vault>;
   removeVault(id: string): Promise<void>;
   openFile(path: string, opts?: { newTab?: boolean; hash?: string; background?: boolean }): void;
+  goHome(folder?: string | null): void;
   closeTab(id: string): void;
   closeOtherTabs(id: string): void;
   activateTab(id: string): void;
   moveTab(id: string, toIndex: number): void;
   updateTab(id: string, patch: Partial<Tab>): void;
+  recordProgress(path: string, ratio: number): void;
+  setDone(path: string, done: boolean): void;
+  resetProgress(): void;
   setSidebarOpen(open: boolean): void;
   setQuickOpen(open: boolean): void;
-  setVaultPickerOpen(open: boolean): void;
+  setSettingsOpen(open: boolean): void;
+  openPicker(view: PickerView | null): void;
+  connectGoogle(opts?: { chooseAccount?: boolean }): void;
+  disconnectAccount(id: string): Promise<void>;
+  afterSignIn(account: GoogleAccount | undefined, resume: ResumeIntent | undefined): Promise<void>;
   runSync(): Promise<void>;
   cancelSync(): void;
   showToast(msg: string): void;
 }
 
-const providers: Record<ProviderKind, VaultProvider> = { gdrive: driveProvider, dev: devProvider };
 const ACTIVE_KEY = 'cortado.activeVault';
 const tabsKey = (vaultId: string) => `cortado.tabs.${vaultId}`;
 const recentKey = (vaultId: string) => `cortado.recent.${vaultId}`;
+const progressKey = (vaultId: string) => `cortado.progress.${vaultId}`;
 const newId = () => Math.random().toString(36).slice(2, 10);
+export const isNarrow = () => window.innerWidth < 900;
 
 let syncAbort: AbortController | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+let indexRun = 0;
 
 function readJSON<T>(key: string, fallback: T): T {
   try {
@@ -74,194 +114,314 @@ function readJSON<T>(key: string, fallback: T): T {
   }
 }
 
+function providerFor(vault: Vault): VaultProvider {
+  return vault.provider === 'dev' ? devProvider : driveFor(vault.accountId);
+}
+
 async function loadPaths(vaultId: string): Promise<string[]> {
   const keys = (await db.files.where('vaultId').equals(vaultId).primaryKeys()) as [string, string][];
   return keys.map((k) => k[1]).sort((a, b) => a.localeCompare(b));
 }
 
-export const useStore = create<State>((set, get) => ({
-  ready: false,
-  vaults: [],
-  activeVaultId: null,
-  paths: [],
-  tabs: [],
-  activeTabId: null,
-  mru: [],
-  recent: [],
-  sidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 900 : true,
-  quickOpen: false,
-  vaultPickerOpen: false,
-  sync: { running: false },
-
-  async init() {
-    const vaults = await db.vaults.orderBy('id').toArray();
-    vaults.sort((a, b) => a.createdAt - b.createdAt);
-    set({ vaults });
-    const saved = localStorage.getItem(ACTIVE_KEY);
-    const active = vaults.find((v) => v.id === saved) ?? vaults[0];
-    await get().setActiveVault(active?.id ?? null);
-    set({ ready: true });
-  },
-
-  async setActiveVault(id) {
-    if (!id) {
-      localStorage.removeItem(ACTIVE_KEY);
-      set({ activeVaultId: null, paths: [], tabs: [], activeTabId: null, mru: [], recent: [] });
-      return;
+export const useStore = create<State>((set, get) => {
+  /** Read every note and guide in the background so search and reading times work. */
+  async function buildDocs(vaultId: string) {
+    const run = ++indexRun;
+    set({ docs: null });
+    const paths = get().paths.filter((p) => isLesson(p) && kindOf(p) !== 'pdf');
+    const docs = new Map<string, DocText>();
+    for (let i = 0; i < paths.length; i += 25) {
+      const chunk = paths.slice(i, i + 25);
+      const rows = await db.blobs.bulkGet(chunk.map((p) => [vaultId, p] as [string, string]));
+      for (const row of rows) {
+        // Very large files (often guides with embedded media) are left out of search.
+        if (!row || row.blob.size > 3_000_000) continue;
+        try {
+          docs.set(row.path, extractText(row.path, await row.blob.text()));
+        } catch {
+          /* unreadable file: leave it out of search */
+        }
+      }
+      if (run !== indexRun) return;
+      await new Promise((r) => setTimeout(r, 0));
     }
-    localStorage.setItem(ACTIVE_KEY, id);
-    const paths = await loadPaths(id);
-    const saved = readJSON<{ tabs: Tab[]; activeTabId: string | null }>(tabsKey(id), { tabs: [], activeTabId: null });
-    const tabs = saved.tabs.filter((t) => t.path);
-    const activeTabId = tabs.some((t) => t.id === saved.activeTabId) ? saved.activeTabId : (tabs[0]?.id ?? null);
-    set({
-      activeVaultId: id,
-      paths,
-      tabs,
-      activeTabId,
-      mru: activeTabId ? [activeTabId] : [],
-      recent: readJSON<string[]>(recentKey(id), []),
-    });
-  },
+    if (run === indexRun && get().activeVaultId === vaultId) set({ docs });
+  }
 
-  async addVault({ name, provider, rootFolderId }) {
-    const vault: Vault = { id: newId(), name, provider, rootFolderId, createdAt: Date.now() };
-    await db.vaults.put(vault);
-    set({ vaults: [...get().vaults, vault] });
-    await get().setActiveVault(vault.id);
-    return vault;
-  },
+  return {
+    ready: false,
+    vaults: [],
+    activeVaultId: null,
+    paths: [],
+    tabs: [],
+    activeTabId: null,
+    mru: [],
+    recent: [],
+    progress: {},
+    docs: null,
+    homeFolder: null,
+    accounts: [],
+    sidebarOpen: typeof window !== 'undefined' ? !isNarrow() : true,
+    quickOpen: false,
+    settingsOpen: false,
+    picker: null,
+    sync: { running: false },
 
-  async removeVault(id) {
-    await deleteVaultData(id);
-    localStorage.removeItem(tabsKey(id));
-    localStorage.removeItem(recentKey(id));
-    const vaults = get().vaults.filter((v) => v.id !== id);
-    set({ vaults });
-    if (get().activeVaultId === id) await get().setActiveVault(vaults[0]?.id ?? null);
-  },
+    async init() {
+      const vaults = await db.vaults.toArray();
+      vaults.sort((a, b) => a.createdAt - b.createdAt);
+      set({ vaults, accounts: listAccounts() });
+      const saved = localStorage.getItem(ACTIVE_KEY);
+      const active = vaults.find((v) => v.id === saved) ?? vaults[0];
+      await get().setActiveVault(active?.id ?? null);
+      set({ ready: true });
+    },
 
-  openFile(path, opts = {}) {
-    const { tabs, activeTabId } = get();
-    const existing = tabs.find((t) => t.path === path);
-    let nextTabs: Tab[];
-    let target: Tab;
-    if (existing && !opts.newTab) {
-      // Already open: just switch to it.
-      target = { ...existing, hash: opts.hash, nonce: opts.hash ? Date.now() : existing.nonce };
-      nextTabs = tabs.map((t) => (t.id === existing.id ? target : t));
-    } else if (opts.newTab || !activeTabId) {
-      target = { id: newId(), path, hash: opts.hash };
-      const at = tabs.findIndex((t) => t.id === activeTabId);
-      nextTabs = [...tabs.slice(0, at + 1), target, ...tabs.slice(at + 1)];
-    } else {
-      target = { id: activeTabId, path, hash: opts.hash, scrollY: 0, nonce: Date.now() };
-      nextTabs = tabs.map((t) => (t.id === activeTabId ? target : t));
-    }
-    const recent = [path, ...get().recent.filter((p) => p !== path)].slice(0, 30);
-    set({ tabs: nextTabs, recent });
-    if (!opts.background) get().activateTab(target.id);
-    if (window.innerWidth < 900) set({ sidebarOpen: false });
-  },
-
-  closeTab(id) {
-    const { tabs, activeTabId, mru } = get();
-    const idx = tabs.findIndex((t) => t.id === id);
-    if (idx < 0) return;
-    const nextTabs = tabs.filter((t) => t.id !== id);
-    const nextMru = mru.filter((m) => m !== id);
-    let nextActive = activeTabId;
-    if (activeTabId === id) nextActive = nextMru[0] ?? nextTabs[Math.min(idx, nextTabs.length - 1)]?.id ?? null;
-    set({ tabs: nextTabs, mru: nextMru, activeTabId: nextActive });
-  },
-
-  closeOtherTabs(id) {
-    set({ tabs: get().tabs.filter((t) => t.id === id), mru: [id], activeTabId: id });
-  },
-
-  activateTab(id) {
-    set({ activeTabId: id, mru: [id, ...get().mru.filter((m) => m !== id)] });
-  },
-
-  moveTab(id, toIndex) {
-    const tabs = [...get().tabs];
-    const from = tabs.findIndex((t) => t.id === id);
-    if (from < 0) return;
-    const [tab] = tabs.splice(from, 1);
-    tabs.splice(Math.max(0, Math.min(toIndex, tabs.length)), 0, tab);
-    set({ tabs });
-  },
-
-  updateTab(id, patch) {
-    set({ tabs: get().tabs.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
-  },
-
-  setSidebarOpen: (open) => set({ sidebarOpen: open }),
-  setQuickOpen: (open) => set({ quickOpen: open }),
-  setVaultPickerOpen: (open) => set({ vaultPickerOpen: open }),
-
-  async runSync() {
-    const vault = get().vaults.find((v) => v.id === get().activeVaultId);
-    if (!vault || get().sync.running) return;
-    syncAbort = new AbortController();
-    set({ sync: { running: true } });
-    try {
-      const result = await syncVault(
-        vault,
-        providers[vault.provider],
-        (progress) => set({ sync: { running: true, progress } }),
-        syncAbort.signal,
-      );
-      const paths = await loadPaths(vault.id);
-      const updated = (await db.vaults.get(vault.id))!;
-      set({
-        sync: { running: false, result },
-        paths,
-        vaults: get().vaults.map((v) => (v.id === vault.id ? updated : v)),
-        // Reload open tabs so they show the fresh content.
-        tabs: get().tabs.map((t) => ({ ...t, nonce: Date.now() })),
-      });
-      const changed = result.downloaded + result.removed;
-      get().showToast(
-        result.failed.length
-          ? `Synced with ${result.failed.length} error(s). ${result.failed[0].path}: ${result.failed[0].error}`
-          : changed
-            ? `Synced: ${result.downloaded} updated, ${result.removed} removed`
-            : 'Vault is up to date',
-      );
-    } catch (e) {
-      if (e instanceof AuthRequiredError) {
-        set({ sync: { running: false } });
-        signIn({ action: 'sync', vaultId: vault.id });
+    async setActiveVault(id) {
+      indexRun++;
+      if (!id) {
+        localStorage.removeItem(ACTIVE_KEY);
+        set({ activeVaultId: null, paths: [], tabs: [], activeTabId: null, mru: [], recent: [], progress: {}, docs: null, homeFolder: null });
         return;
       }
-      const aborted = syncAbort?.signal.aborted;
-      set({ sync: { running: false, error: aborted ? undefined : (e as Error).message } });
-      get().showToast(aborted ? 'Sync cancelled' : `Sync failed: ${(e as Error).message}`);
-      // Whatever finished downloading is kept, so refresh the tree.
-      set({ paths: await loadPaths(vault.id) });
-    } finally {
-      syncAbort = null;
-    }
-  },
+      localStorage.setItem(ACTIVE_KEY, id);
+      const paths = await loadPaths(id);
+      const saved = readJSON<{ tabs: Tab[]; activeTabId?: string | null }>(tabsKey(id), { tabs: [], activeTabId: null });
+      const tabs = saved.tabs.filter((t) => t.path);
+      const activeTabId = tabs.some((t) => t.id === saved.activeTabId)
+        ? saved.activeTabId!
+        : saved.activeTabId === null
+          ? null
+          : (tabs[0]?.id ?? null);
+      set({
+        activeVaultId: id,
+        paths,
+        tabs,
+        activeTabId,
+        mru: activeTabId ? [activeTabId] : [],
+        recent: readJSON<string[]>(recentKey(id), []),
+        progress: readJSON<Record<string, Progress>>(progressKey(id), {}),
+        homeFolder: null,
+      });
+      void buildDocs(id);
+    },
 
-  cancelSync() {
-    syncAbort?.abort();
-  },
+    async addVault({ name, provider, rootFolderId, accountId }) {
+      const vault: Vault = { id: newId(), name, provider, rootFolderId, accountId, createdAt: Date.now() };
+      await db.vaults.put(vault);
+      set({ vaults: [...get().vaults, vault] });
+      await get().setActiveVault(vault.id);
+      return vault;
+    },
 
-  showToast(msg) {
-    clearTimeout(toastTimer);
-    set({ toast: msg });
-    toastTimer = setTimeout(() => set({ toast: undefined }), 4000);
-  },
-}));
+    async removeVault(id) {
+      await deleteVaultData(id);
+      for (const key of [tabsKey(id), recentKey(id), progressKey(id)]) localStorage.removeItem(key);
+      const vaults = get().vaults.filter((v) => v.id !== id);
+      set({ vaults });
+      if (get().activeVaultId === id) await get().setActiveVault(vaults[0]?.id ?? null);
+    },
 
-// Persist tabs and recent files per vault.
+    openFile(path, opts = {}) {
+      const { tabs, activeTabId } = get();
+      const existing = tabs.find((t) => t.path === path);
+      let nextTabs: Tab[];
+      let target: Tab;
+      if (existing && !opts.newTab) {
+        // Already open: just switch to it.
+        target = { ...existing, hash: opts.hash, nonce: opts.hash ? Date.now() : existing.nonce };
+        nextTabs = tabs.map((t) => (t.id === existing.id ? target : t));
+      } else if (opts.newTab || !activeTabId) {
+        target = { id: newId(), path, hash: opts.hash };
+        const at = tabs.findIndex((t) => t.id === activeTabId);
+        nextTabs = at < 0 ? [...tabs, target] : [...tabs.slice(0, at + 1), target, ...tabs.slice(at + 1)];
+      } else {
+        target = { id: activeTabId, path, hash: opts.hash, scrollY: 0, nonce: Date.now() };
+        nextTabs = tabs.map((t) => (t.id === activeTabId ? target : t));
+      }
+      const recent = [path, ...get().recent.filter((p) => p !== path)].slice(0, 30);
+      const prev = get().progress[path];
+      set({ tabs: nextTabs, recent, progress: { ...get().progress, [path]: { ...prev, ratio: prev?.ratio ?? 0, openedAt: Date.now() } } });
+      if (!opts.background) get().activateTab(target.id);
+      if (isNarrow()) set({ sidebarOpen: false });
+    },
+
+    goHome(folder = null) {
+      set({ activeTabId: null, homeFolder: folder });
+      if (isNarrow()) set({ sidebarOpen: false });
+    },
+
+    closeTab(id) {
+      const { tabs, activeTabId, mru } = get();
+      const idx = tabs.findIndex((t) => t.id === id);
+      if (idx < 0) return;
+      const nextTabs = tabs.filter((t) => t.id !== id);
+      const nextMru = mru.filter((m) => m !== id);
+      let nextActive = activeTabId;
+      if (activeTabId === id) nextActive = nextMru.find((m) => nextTabs.some((t) => t.id === m)) ?? nextTabs[Math.min(idx, nextTabs.length - 1)]?.id ?? null;
+      set({ tabs: nextTabs, mru: nextMru, activeTabId: nextActive });
+    },
+
+    closeOtherTabs(id) {
+      set({ tabs: get().tabs.filter((t) => t.id === id), mru: [id], activeTabId: id });
+    },
+
+    activateTab(id) {
+      set({ activeTabId: id, mru: [id, ...get().mru.filter((m) => m !== id)] });
+    },
+
+    moveTab(id, toIndex) {
+      const tabs = [...get().tabs];
+      const from = tabs.findIndex((t) => t.id === id);
+      if (from < 0) return;
+      const [tab] = tabs.splice(from, 1);
+      tabs.splice(Math.max(0, Math.min(toIndex, tabs.length)), 0, tab);
+      set({ tabs });
+    },
+
+    updateTab(id, patch) {
+      set({ tabs: get().tabs.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
+    },
+
+    recordProgress(path, ratio) {
+      const prev = get().progress[path];
+      const r = Math.max(0, Math.min(1, ratio));
+      // Store in 5% steps (and the very end) so scrolling doesn't re-render the library constantly.
+      if (prev && r < prev.ratio + 0.05 && !(r >= 0.98 && prev.ratio < 0.98)) return;
+      set({ progress: { ...get().progress, [path]: { ...prev, ratio: Math.max(r, prev?.ratio ?? 0) } } });
+    },
+
+    setDone(path, done) {
+      const prev = get().progress[path] ?? { ratio: 0 };
+      const next: Progress = done ? { ...prev, doneAt: Date.now() } : { ...prev, doneAt: undefined };
+      set({ progress: { ...get().progress, [path]: next } });
+    },
+
+    resetProgress() {
+      set({ progress: {} });
+    },
+
+    setSidebarOpen: (open) => set({ sidebarOpen: open }),
+    setQuickOpen: (open) => set({ quickOpen: open }),
+    setSettingsOpen: (open) => set({ settingsOpen: open, accounts: listAccounts() }),
+    openPicker: (picker) => set({ picker, accounts: listAccounts() }),
+
+    connectGoogle({ chooseAccount } = {}) {
+      if (!googleConfigured()) {
+        set({ picker: { view: 'setup', then: 'connect' } });
+        return;
+      }
+      signIn({ resume: { action: 'pick-folder' }, chooseAccount });
+    },
+
+    async disconnectAccount(id) {
+      await removeAccount(id);
+      set({ accounts: listAccounts() });
+    },
+
+    async afterSignIn(account, resume) {
+      set({ accounts: listAccounts() });
+      if (!account) return;
+      if (resume?.action === 'pick-folder') {
+        set({ picker: { view: 'browse', accountId: account.id } });
+        return;
+      }
+      if (resume?.action === 'sync') {
+        const vault = get().vaults.find((v) => v.id === resume.vaultId);
+        if (!vault) return;
+        if (vault.accountId && vault.accountId !== account.id) {
+          get().showToast(`You signed in as ${account.email}, but “${vault.name}” belongs to ${vault.accountId}.`);
+          return;
+        }
+        if (!vault.accountId) {
+          // Vaults from before accounts were tracked adopt the account that syncs them.
+          await db.vaults.update(vault.id, { accountId: account.id });
+          set({ vaults: get().vaults.map((v) => (v.id === vault.id ? { ...v, accountId: account.id } : v)) });
+        }
+        await get().setActiveVault(vault.id);
+        void get().runSync();
+        return;
+      }
+      get().showToast(`Signed in as ${account.email}`);
+    },
+
+    async runSync() {
+      const vault = get().vaults.find((v) => v.id === get().activeVaultId);
+      if (!vault || get().sync.running) return;
+      if (vault.provider === 'gdrive' && !googleConfigured()) {
+        set({ picker: { view: 'setup' } });
+        return;
+      }
+      if (vault.provider === 'gdrive' && vault.accountId && !hasSession(vault.accountId)) {
+        signIn({ resume: { action: 'sync', vaultId: vault.id }, loginHint: vault.accountId });
+        return;
+      }
+      syncAbort = new AbortController();
+      set({ sync: { running: true } });
+      try {
+        const result = await syncVault(vault, providerFor(vault), (progress) => set({ sync: { running: true, progress } }), syncAbort.signal);
+        const paths = await loadPaths(vault.id);
+        const updated = (await db.vaults.get(vault.id))!;
+        set({
+          sync: { running: false, result },
+          paths,
+          vaults: get().vaults.map((v) => (v.id === vault.id ? updated : v)),
+          // Reload open tabs so they show the fresh content.
+          tabs: result.downloaded || result.removed ? get().tabs.map((t) => ({ ...t, nonce: Date.now() })) : get().tabs,
+        });
+        void buildDocs(vault.id);
+        const changed = result.downloaded + result.removed;
+        get().showToast(
+          result.failed.length
+            ? `Synced with ${result.failed.length} error(s). ${result.failed[0].path}: ${result.failed[0].error}`
+            : !changed
+              ? 'Everything is up to date'
+              : !result.unchanged && !result.removed
+                ? `Downloaded ${result.downloaded} ${result.downloaded === 1 ? 'file' : 'files'}. Ready to read offline.`
+                : `Synced: ${result.downloaded} updated, ${result.removed} removed`,
+        );
+      } catch (e) {
+        if (e instanceof AuthRequiredError) {
+          set({ sync: { running: false } });
+          signIn({ resume: { action: 'sync', vaultId: vault.id }, loginHint: vault.accountId });
+          return;
+        }
+        const aborted = syncAbort?.signal.aborted;
+        set({ sync: { running: false, error: aborted ? undefined : (e as Error).message } });
+        get().showToast(aborted ? 'Sync cancelled' : `Sync failed: ${(e as Error).message}`);
+        // Whatever finished downloading is kept, so refresh the tree.
+        set({ paths: await loadPaths(vault.id) });
+      } finally {
+        syncAbort = null;
+      }
+    },
+
+    cancelSync() {
+      syncAbort?.abort();
+    },
+
+    showToast(message) {
+      clearTimeout(toastTimer);
+      set({ toast: { message, id: Date.now() } });
+      toastTimer = setTimeout(() => set({ toast: undefined }), 4200);
+    },
+  };
+});
+
+// Persist tabs, recent files and progress per vault.
 useStore.subscribe((s, prev) => {
-  if (!s.activeVaultId) return;
+  if (!s.activeVaultId || s.activeVaultId !== prev.activeVaultId) return;
   if (s.tabs !== prev.tabs || s.activeTabId !== prev.activeTabId) {
     const tabs = s.tabs.map(({ id, path, scrollY }) => ({ id, path, scrollY }));
     localStorage.setItem(tabsKey(s.activeVaultId), JSON.stringify({ tabs, activeTabId: s.activeTabId }));
   }
   if (s.recent !== prev.recent) localStorage.setItem(recentKey(s.activeVaultId), JSON.stringify(s.recent));
+  if (s.progress !== prev.progress) localStorage.setItem(progressKey(s.activeVaultId), JSON.stringify(s.progress));
 });
+
+/** Status of a lesson for badges and lists. */
+export function lessonState(p: Progress | undefined): 'done' | 'started' | 'new' {
+  if (p?.doneAt) return 'done';
+  if (p && (p.ratio > 0.05 || p.openedAt)) return 'started';
+  return 'new';
+}

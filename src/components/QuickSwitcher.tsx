@@ -1,38 +1,49 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { searchDocs } from '../library/text';
 import { useStore } from '../state/store';
 import { fuzzyFilter } from '../util/fuzzy';
 import { dirName, isDocument, isHidden, kindOf, stem } from '../util/paths';
 import { fileIcon, Icon } from './Icon';
 
+interface Row {
+  path: string;
+  snippet?: { text: string; match: boolean }[];
+}
+
 export function QuickSwitcher() {
   const open = useStore((s) => s.quickOpen);
   const paths = useStore((s) => s.paths);
   const recent = useStore((s) => s.recent);
+  const docs = useStore((s) => s.docs);
   const { setQuickOpen, openFile } = useStore.getState();
   const [query, setQuery] = useState('');
   const [sel, setSel] = useState(0);
   const input = useRef<HTMLInputElement>(null);
-  const list = useRef<HTMLUListElement>(null);
+  const list = useRef<HTMLDivElement>(null);
 
-  const docs = useMemo(() => paths.filter((p) => isDocument(p) && !isHidden(p) && kindOf(p) !== 'image'), [paths]);
-  const results = useMemo(() => {
+  const files = useMemo(() => paths.filter((p) => isDocument(p) && !isHidden(p) && kindOf(p) !== 'image'), [paths]);
+  const { titles, text } = useMemo(() => {
     if (!query.trim()) {
       const have = new Set(paths);
-      return recent.filter((p) => have.has(p)).slice(0, 15);
+      return { titles: recent.filter((p) => have.has(p)).slice(0, 12).map((path) => ({ path })), text: [] as Row[] };
     }
-    return fuzzyFilter(query, docs, (p) => p, 40);
-  }, [query, docs, recent, paths]);
+    const titles: Row[] = fuzzyFilter(query, files, (p) => p, 8).map((path) => ({ path }));
+    const shown = new Set(titles.map((t) => t.path));
+    const text: Row[] = docs ? searchDocs(docs.values(), query, 25).filter((h) => !shown.has(h.path)).map((h) => ({ path: h.path, snippet: h.snippet })) : [];
+    return { titles, text };
+  }, [query, files, recent, paths, docs]);
+  const rows = [...titles, ...text];
 
   useEffect(() => {
     if (open) {
       setQuery('');
       setSel(0);
-      setTimeout(() => input.current?.focus(), 30);
+      input.current?.focus();
     }
   }, [open]);
   useEffect(() => setSel(0), [query]);
   useEffect(() => {
-    list.current?.children[sel]?.scrollIntoView({ block: 'nearest' });
+    list.current?.querySelector(`[data-i="${sel}"]`)?.scrollIntoView({ block: 'nearest' });
   }, [sel]);
 
   if (!open) return null;
@@ -41,44 +52,66 @@ export function QuickSwitcher() {
     openFile(p, { newTab });
   };
 
+  const item = (r: Row, i: number) => {
+    const kind = kindOf(r.path);
+    return (
+      <button
+        key={r.path}
+        data-i={i}
+        className={`switcher-item ${i === sel ? 'sel' : ''} ${r.snippet ? 'with-snippet' : ''}`}
+        onClick={() => choose(r.path)}
+        onMouseMove={() => setSel(i)}
+      >
+        <Icon name={fileIcon(kind)} size={18} className={`ico kind-${kind}`} />
+        <span className="switcher-text">
+          <span className="switcher-line">
+            <span className="name">{stem(r.path)}</span>
+            <span className="dir">{dirName(r.path)}</span>
+          </span>
+          {r.snippet && (
+            <span className="snippet">
+              {r.snippet.map((s, j) => (s.match ? <mark key={j}>{s.text}</mark> : <span key={j}>{s.text}</span>))}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <div className="modal-backdrop top" onClick={() => setQuickOpen(false)}>
-      <div className="switcher" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Open file">
+      <div className="switcher" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Search">
         <div className="switcher-input">
-          <Icon name="search" size={18} />
+          <Icon name="search" size={19} />
           <input
             ref={input}
+            autoFocus
             value={query}
-            placeholder="Find a guide or note…"
+            placeholder="Search lessons and notes…"
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
             enterKeyHint="go"
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') (e.preventDefault(), setSel((s) => Math.min(s + 1, results.length - 1)));
+              if (e.key === 'ArrowDown') (e.preventDefault(), setSel((s) => Math.min(s + 1, rows.length - 1)));
               else if (e.key === 'ArrowUp') (e.preventDefault(), setSel((s) => Math.max(s - 1, 0)));
-              else if (e.key === 'Enter' && results[sel]) choose(results[sel], e.metaKey || e.ctrlKey);
+              else if (e.key === 'Enter' && rows[sel]) choose(rows[sel].path, e.metaKey || e.ctrlKey);
               else if (e.key === 'Escape') setQuickOpen(false);
             }}
           />
+          <kbd className="esc" onClick={() => setQuickOpen(false)}>
+            esc
+          </kbd>
         </div>
-        {!query.trim() && results.length > 0 && <div className="switcher-heading">Recent</div>}
-        <ul className="switcher-list" ref={list}>
-          {results.map((p, i) => {
-            const kind = kindOf(p);
-            return (
-              <li key={p}>
-                <button className={`switcher-item ${i === sel ? 'sel' : ''}`} onClick={() => choose(p)} onMouseMove={() => setSel(i)}>
-                  <Icon name={fileIcon(p, kind)} size={18} className={`ico kind-${kind}`} />
-                  <span className="name">{stem(p)}</span>
-                  <span className="dir">{dirName(p)}</span>
-                </button>
-              </li>
-            );
-          })}
-          {!results.length && <li className="switcher-empty">{query ? 'No matches' : 'Start typing to search the vault'}</li>}
-        </ul>
+        <div className="switcher-list" ref={list}>
+          {titles.length > 0 && <div className="switcher-heading">{query.trim() ? 'Titles' : 'Recent'}</div>}
+          {titles.map((r, i) => item(r, i))}
+          {text.length > 0 && <div className="switcher-heading">In the text</div>}
+          {text.map((r, i) => item(r, titles.length + i))}
+          {query.trim() && !docs && <div className="switcher-empty small">Indexing your notes for full-text search…</div>}
+          {!rows.length && (query.trim() ? docs && <div className="switcher-empty">No matches for “{query}”</div> : <div className="switcher-empty">Type to search every lesson and note</div>)}
+        </div>
       </div>
     </div>
   );

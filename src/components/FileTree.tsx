@@ -1,38 +1,11 @@
 import { memo, useMemo, useState } from 'react';
-import { useStore } from '../state/store';
+import { buildTree, flatten, LESSON_KINDS, type TreeNode } from '../library/tree';
+import { lessonState, useStore, type Progress } from '../state/store';
 import { fuzzyFilter } from '../util/fuzzy';
 import { baseName, dirName, isHidden, kindOf, stem } from '../util/paths';
-import { fileIcon, Icon } from './Icon';
+import { fileIcon, Icon, StatusDot } from './Icon';
 
-interface Node {
-  name: string;
-  path: string;
-  children?: Node[];
-}
-
-const SHOWN_KINDS = new Set(['md', 'html', 'pdf']);
 const EXPANDED_KEY = 'cortado.expanded';
-
-function buildTree(paths: string[]): Node[] {
-  const root: Node = { name: '', path: '', children: [] };
-  const folders = new Map<string, Node>([['', root]]);
-  const folderFor = (dir: string): Node => {
-    let node = folders.get(dir);
-    if (node) return node;
-    const parent = folderFor(dirName(dir));
-    node = { name: baseName(dir), path: dir, children: [] };
-    parent.children!.push(node);
-    folders.set(dir, node);
-    return node;
-  };
-  for (const p of paths) folderFor(dirName(p)).children!.push({ name: baseName(p), path: p });
-  const sort = (n: Node) => {
-    n.children?.sort((a, b) => (!!b.children === !!a.children ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a.children ? -1 : 1));
-    n.children?.forEach(sort);
-  };
-  sort(root);
-  return root.children!;
-}
 
 function loadExpanded(): Set<string> {
   try {
@@ -44,13 +17,11 @@ function loadExpanded(): Set<string> {
 
 export function FileTree({ filter, showAll }: { filter: string; showAll: boolean }) {
   const paths = useStore((s) => s.paths);
+  const progress = useStore((s) => s.progress);
   const activePath = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.path);
   const [expanded, setExpanded] = useState(loadExpanded);
 
-  const visible = useMemo(
-    () => paths.filter((p) => !isHidden(p) && (showAll || SHOWN_KINDS.has(kindOf(p)))),
-    [paths, showAll],
-  );
+  const visible = useMemo(() => paths.filter((p) => !isHidden(p) && (showAll || LESSON_KINDS.has(kindOf(p)))), [paths, showAll]);
   const tree = useMemo(() => buildTree(visible), [visible]);
 
   const toggle = (path: string) => {
@@ -61,14 +32,14 @@ export function FileTree({ filter, showAll }: { filter: string; showAll: boolean
     localStorage.setItem(EXPANDED_KEY, JSON.stringify([...next]));
   };
 
-  if (!paths.length) return <div className="tree-empty">No files yet. Tap Sync to download this vault.</div>;
+  if (!paths.length) return <div className="tree-empty">No files yet. Tap sync to download this vault.</div>;
 
   if (filter.trim()) {
     const hits = fuzzyFilter(filter, visible, (p) => p, 200);
     return (
       <ul className="tree" role="tree">
         {hits.map((p) => (
-          <FileRow key={p} path={p} depth={0} active={p === activePath} showDir />
+          <FileRow key={p} path={p} depth={0} active={p === activePath} progress={progress[p]} showDir />
         ))}
         {!hits.length && <li className="tree-empty">No matches</li>}
       </ul>
@@ -78,38 +49,47 @@ export function FileTree({ filter, showAll }: { filter: string; showAll: boolean
   return (
     <ul className="tree" role="tree">
       {tree.map((n) => (
-        <TreeNode key={n.path} node={n} depth={0} expanded={expanded} toggle={toggle} activePath={activePath} />
+        <Node key={n.path} node={n} depth={0} expanded={expanded} toggle={toggle} activePath={activePath} progress={progress} />
       ))}
     </ul>
   );
 }
 
-const TreeNode = memo(function TreeNode({
+const Node = memo(function Node({
   node,
   depth,
   expanded,
   toggle,
   activePath,
+  progress,
 }: {
-  node: Node;
+  node: TreeNode;
   depth: number;
   expanded: Set<string>;
   toggle: (p: string) => void;
   activePath?: string;
+  progress: Record<string, Progress>;
 }) {
-  if (!node.children) return <FileRow path={node.path} depth={depth} active={node.path === activePath} />;
+  if (!node.children) return <FileRow path={node.path} depth={depth} active={node.path === activePath} progress={progress[node.path]} />;
   const open = expanded.has(node.path);
+  const lessons = flatten(node.children).filter((p) => LESSON_KINDS.has(kindOf(p)));
+  const done = lessons.filter((p) => progress[p]?.doneAt).length;
   return (
     <li role="treeitem" aria-expanded={open}>
-      <button className="tree-row folder" style={{ paddingLeft: 8 + depth * 16 }} onClick={() => toggle(node.path)}>
-        <Icon name="chevron" size={14} className={`chev ${open ? 'open' : ''}`} />
-        <Icon name="folder" size={18} className="ico" />
+      <button className="tree-row folder" style={{ paddingLeft: 6 + depth * 14 }} onClick={() => toggle(node.path)}>
+        <Icon name="chevron" size={13} className={`chev ${open ? 'open' : ''}`} strokeWidth={2.2} />
+        <Icon name="folder" size={17} className="ico" />
         <span className="label">{node.name}</span>
+        {lessons.length > 0 && (
+          <span className={`count ${done === lessons.length ? 'complete' : ''}`}>
+            {done > 0 ? `${done}/${lessons.length}` : lessons.length}
+          </span>
+        )}
       </button>
       {open && (
-        <ul role="group">
+        <ul role="group" className="tree-group" style={{ '--guide': `${13 + depth * 14}px` } as React.CSSProperties}>
           {node.children.map((c) => (
-            <TreeNode key={c.path} node={c} depth={depth + 1} expanded={expanded} toggle={toggle} activePath={activePath} />
+            <Node key={c.path} node={c} depth={depth + 1} expanded={expanded} toggle={toggle} activePath={activePath} progress={progress} />
           ))}
         </ul>
       )}
@@ -117,14 +97,16 @@ const TreeNode = memo(function TreeNode({
   );
 });
 
-function FileRow({ path, depth, active, showDir }: { path: string; depth: number; active: boolean; showDir?: boolean }) {
+function FileRow({ path, depth, active, showDir, progress }: { path: string; depth: number; active: boolean; showDir?: boolean; progress?: Progress }) {
   const openFile = useStore((s) => s.openFile);
   const kind = kindOf(path);
+  const lesson = LESSON_KINDS.has(kind);
+  const state = lessonState(progress);
   return (
     <li role="treeitem">
       <button
         className={`tree-row file ${active ? 'active' : ''}`}
-        style={{ paddingLeft: 8 + depth * 16 + 14 }}
+        style={{ paddingLeft: 6 + depth * 14 + 17 }}
         onClick={(e) => openFile(path, { newTab: e.metaKey || e.ctrlKey })}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -132,11 +114,12 @@ function FileRow({ path, depth, active, showDir }: { path: string; depth: number
         }}
         title={path}
       >
-        <Icon name={fileIcon(path, kind)} size={18} className={`ico kind-${kind}`} />
+        <Icon name={fileIcon(kind)} size={17} className={`ico kind-${kind}`} />
         <span className="label">
           {kind === 'md' || kind === 'html' ? stem(path) : baseName(path)}
           {showDir && dirName(path) && <span className="dir">{dirName(path)}</span>}
         </span>
+        {lesson && state !== 'new' && <StatusDot state={state} ratio={progress?.ratio} size={15} />}
       </button>
     </li>
   );

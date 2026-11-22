@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { neighbours, readingOrder } from '../library/tree';
 import { useStore } from '../state/store';
-import { dirName, kindOf, stem } from '../util/paths';
-import { DocView } from '../viewer/DocView';
+import { Reader } from '../viewer/Reader';
 import { FileTree } from './FileTree';
-import { fileIcon, Icon } from './Icon';
+import { Home } from './Home';
+import { Avatar, Icon } from './Icon';
 import { QuickSwitcher } from './QuickSwitcher';
+import { SettingsSheet } from './SettingsSheet';
 import { SyncButton, SyncStatus } from './SyncButton';
 import { TabBar } from './TabBar';
-import { AddDevVaultButton, AddDriveButton, openDriveBrowser, VaultPicker } from './VaultPicker';
+import { VaultPicker } from './VaultPicker';
 
 const WIDE = 900; // iPad mini landscape is 1133pt wide, portrait 744pt
 const KEEP_ALIVE = 4; // iframes kept loaded, to stay within the iPad mini's memory
@@ -23,6 +25,11 @@ function useWide() {
   return wide;
 }
 
+const typing = (e: KeyboardEvent) => {
+  const el = e.target as HTMLElement | null;
+  return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+};
+
 export function AppShell() {
   const wide = useWide();
   const sidebarOpen = useStore((s) => s.sidebarOpen);
@@ -31,9 +38,7 @@ export function AppShell() {
   const activeTabId = useStore((s) => s.activeTabId);
   const mru = useStore((s) => s.mru);
   const toast = useStore((s) => s.toast);
-  const { setSidebarOpen, setQuickOpen, setVaultPickerOpen } = useStore.getState();
-  const [filter, setFilter] = useState('');
-  const [showAll, setShowAll] = useState(false);
+  const { setSidebarOpen, setQuickOpen } = useStore.getState();
   const [width, setWidth] = useState(() => Number(localStorage.getItem(WIDTH_KEY)) || 300);
 
   // Rotating to portrait hides the slide-over; rotating to landscape docks it again.
@@ -59,6 +64,14 @@ export function AppShell() {
         const i = s.tabs.findIndex((t) => t.id === s.activeTabId);
         const n = (i + (e.shiftKey ? -1 : 1) + s.tabs.length) % s.tabs.length;
         s.activateTab(s.tabs[n].id);
+      } else if (e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !typing(e)) {
+        const path = s.tabs.find((t) => t.id === s.activeTabId)?.path;
+        if (!path) return;
+        const { prev, next } = neighbours(readingOrder(s.paths), path);
+        const target = e.key === 'ArrowRight' ? next : prev;
+        if (target) (e.preventDefault(), s.openFile(target));
+      } else if (e.key === 'Escape' && s.sidebarOpen && window.innerWidth < WIDE && !s.quickOpen && !s.picker && !s.settingsOpen) {
+        s.setSidebarOpen(false);
       }
     };
     addEventListener('keydown', onKey);
@@ -88,11 +101,14 @@ export function AppShell() {
     e.preventDefault();
     const startX = e.clientX;
     const startW = width;
-    const move = (ev: PointerEvent) => setWidth(Math.max(220, Math.min(520, startW + ev.clientX - startX)));
+    const clamp = (x: number) => Math.max(240, Math.min(480, startW + x - startX));
+    document.documentElement.classList.add('resizing');
+    const move = (ev: PointerEvent) => setWidth(clamp(ev.clientX));
     const up = (ev: PointerEvent) => {
       removeEventListener('pointermove', move);
       removeEventListener('pointerup', up);
-      localStorage.setItem(WIDTH_KEY, String(Math.max(220, Math.min(520, startW + ev.clientX - startX))));
+      document.documentElement.classList.remove('resizing');
+      localStorage.setItem(WIDTH_KEY, String(clamp(ev.clientX)));
     };
     addEventListener('pointermove', move);
     addEventListener('pointerup', up);
@@ -100,16 +116,16 @@ export function AppShell() {
 
   const live = new Set(mru.slice(0, KEEP_ALIVE));
   if (activeTabId) live.add(activeTabId);
-  const showSidebar = sidebarOpen;
   const overlay = !wide;
+  const sbWidth = overlay ? Math.min(340, window.innerWidth - 56) : width;
 
   return (
-    <div className={`app ${overlay ? 'narrow' : 'wide'} ${showSidebar ? 'sb-open' : 'sb-closed'}`}>
-      {overlay && showSidebar && <div className="scrim" onClick={() => setSidebarOpen(false)} />}
+    <div className={`app ${overlay ? 'narrow' : 'wide'} ${sidebarOpen ? 'sb-open' : 'sb-closed'}`} style={{ '--sb-w': `${sbWidth}px` } as React.CSSProperties}>
+      {overlay && <div className={`scrim ${sidebarOpen ? 'on' : ''}`} onClick={() => setSidebarOpen(false)} />}
       <aside
         className="sidebar"
-        style={{ width: overlay ? Math.min(340, window.innerWidth - 60) : width }}
-        aria-hidden={!showSidebar}
+        aria-hidden={!sidebarOpen}
+        inert={!sidebarOpen}
         onTouchStart={(e) => (close.current = e.touches[0].clientX)}
         onTouchMove={(e) => {
           if (overlay && close.current !== null && close.current - e.touches[0].clientX > 70) {
@@ -118,20 +134,107 @@ export function AppShell() {
           }
         }}
       >
-        <div className="sb-head">
-          <button className="vault-switch" onClick={() => setVaultPickerOpen(true)}>
-            <Icon name={vault?.provider === 'gdrive' ? 'google' : 'vault'} size={18} />
-            <span className="vault-title">{vault?.name ?? 'No vault'}</span>
-            <Icon name="chevron" size={14} className="rot90 muted" />
+        <Sidebar />
+        {!overlay && <div className="resizer" onPointerDown={startResize} />}
+      </aside>
+
+      <main className="main">
+        <header className="topbar">
+          <button className="icon-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar" title="Sidebar (⌘\)">
+            <Icon name="sidebar" />
           </button>
-          <SyncButton />
+          <TabBar />
+          <button className="icon-btn" onClick={() => setQuickOpen(true)} aria-label="Search" title="Search (⌘K)">
+            <Icon name="search" />
+          </button>
+        </header>
+        <div className="viewer-stack">
+          {vault &&
+            tabs
+              .filter((t) => live.has(t.id))
+              .map((t) => (
+                <div key={t.id} className={`viewer ${t.id === activeTabId ? 'active' : ''}`}>
+                  <Reader tab={t} vaultId={vault.id} />
+                </div>
+              ))}
+          {!activeTabId && (
+            <div className="viewer active home-view">
+              <Home />
+            </div>
+          )}
+          {overlay && !sidebarOpen && <div className="edge-swipe" {...edgeHandlers} />}
         </div>
+      </main>
+
+      <QuickSwitcher />
+      <VaultPicker />
+      <SettingsSheet />
+      {toast && (
+        <div className="toast" role="status" key={toast.id}>
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Sidebar() {
+  const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));
+  const account = useStore((s) => s.accounts.find((a) => a.id === vault?.accountId));
+  const atHome = useStore((s) => s.activeTabId === null);
+  const paths = useStore((s) => s.paths);
+  const progress = useStore((s) => s.progress);
+  const { openPicker, goHome, setQuickOpen, setSettingsOpen } = useStore.getState();
+  const [filter, setFilter] = useState('');
+  const [showAll, setShowAll] = useState(false);
+  const order = useMemo(() => readingOrder(paths), [paths]);
+  const done = order.filter((p) => progress[p]?.doneAt).length;
+
+  return (
+    <>
+      <div className="sb-head">
+        <button className="vault-switch" onClick={() => openPicker({ view: 'list' })} title="Switch or add a vault">
+          {account ? (
+            <Avatar name={account.name} photo={account.photo} size={30} />
+          ) : (
+            <span className="mini-logo" aria-hidden="true">
+              <span />
+            </span>
+          )}
+          <span className="vault-text">
+            <span className="vault-title">{vault?.name ?? 'Cortado'}</span>
+            <span className="vault-sub">{vault ? (account?.email ?? (vault.provider === 'dev' ? 'Sample vault' : 'Google Drive')) : 'No vault yet'}</span>
+          </span>
+          <Icon name="chevron" size={14} className="rot90 muted" />
+        </button>
+        <SyncButton />
+      </div>
+
+      <nav className="sb-nav">
+        <button className={`nav-row ${atHome ? 'active' : ''}`} onClick={() => goHome(null)}>
+          <Icon name="home" size={19} />
+          <span>Library</span>
+          {done > 0 && (
+            <span className="nav-count" title={`${done} of ${order.length} lessons complete`}>
+              {done}/{order.length}
+            </span>
+          )}
+        </button>
+        <button className="nav-row" onClick={() => setQuickOpen(true)}>
+          <Icon name="search" size={19} />
+          <span>Search</span>
+          <kbd>⌘K</kbd>
+        </button>
+      </nav>
+
+      {paths.length > 0 && (
         <div className="sb-filter">
-          <Icon name="search" size={16} className="muted" />
+          <Icon name="outline" size={15} className="muted" />
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter files"
+            aria-label="Filter files"
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
@@ -142,100 +245,25 @@ export function AppShell() {
             </button>
           )}
         </div>
-        <div className="sb-tree">
+      )}
+      <div className="sb-tree">
+        {vault ? (
           <FileTree filter={filter} showAll={showAll} />
-        </div>
-        <div className="sb-foot">
-          <SyncStatus />
+        ) : (
+          <div className="tree-empty">Your vault’s folders and files will appear here once you connect one.</div>
+        )}
+      </div>
+      <div className="sb-foot">
+        <SyncStatus />
+        <div className="sb-foot-row">
           <label className="toggle small muted">
             <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> Show all files
           </label>
-        </div>
-        {!overlay && <div className="resizer" onPointerDown={startResize} />}
-      </aside>
-
-      <main className="main">
-        <header className="topbar">
-          <button className="icon-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">
-            <Icon name="sidebar" />
+          <button className="icon-btn small" onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings">
+            <Icon name="settings" size={18} />
           </button>
-          <TabBar />
-          <button className="icon-btn" onClick={() => setQuickOpen(true)} aria-label="Search files">
-            <Icon name="search" />
-          </button>
-        </header>
-        <div className="viewer-stack">
-          {vault &&
-            tabs
-              .filter((t) => live.has(t.id))
-              .map((t) => (
-                <div key={t.id} className={`viewer ${t.id === activeTabId ? 'active' : ''}`}>
-                  <DocView tab={t} vaultId={vault.id} />
-                </div>
-              ))}
-          {!activeTabId && <EmptyState />}
-          {overlay && !showSidebar && <div className="edge-swipe" {...edgeHandlers} />}
-        </div>
-      </main>
-
-      <QuickSwitcher />
-      <VaultPicker />
-      {toast && <div className="toast" role="status">{toast}</div>}
-    </div>
-  );
-}
-
-function EmptyState() {
-  const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));
-  const recent = useStore((s) => s.recent);
-  const paths = useStore((s) => s.paths);
-  const { openFile, runSync } = useStore.getState();
-  const devAvailable = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(location.hostname);
-
-  if (!vault) {
-    return (
-      <div className="welcome">
-        <div className="logo-mark" />
-        <h1>Cortado</h1>
-        <p className="muted">Browse your HTML guides and Markdown notes, offline. Connect a Google Drive folder to start.</p>
-        <div className="welcome-actions">
-          <AddDriveButton onBrowse={openDriveBrowser} />
-          {devAvailable && <AddDevVaultButton />}
         </div>
       </div>
-    );
-  }
-  if (!paths.length) {
-    return (
-      <div className="welcome">
-        <h2>{vault.name}</h2>
-        <p className="muted">Nothing downloaded yet.</p>
-        <button className="btn primary" onClick={() => runSync()}>
-          <Icon name="sync" /> Sync vault
-        </button>
-      </div>
-    );
-  }
-  const have = new Set(paths);
-  const items = recent.filter((p) => have.has(p)).slice(0, 10);
-  return (
-    <div className="welcome">
-      <h2>{vault.name}</h2>
-      {items.length ? (
-        <ul className="recent-list">
-          {items.map((p) => (
-            <li key={p}>
-              <button className="switcher-item" onClick={() => openFile(p)}>
-                <Icon name={fileIcon(p, kindOf(p))} size={18} className={`ico kind-${kindOf(p)}`} />
-                <span className="name">{stem(p)}</span>
-                <span className="dir">{dirName(p)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="muted">Pick a file from the sidebar, or press ⌘K to search.</p>
-      )}
-    </div>
+    </>
   );
 }
