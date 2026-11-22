@@ -29,7 +29,7 @@ export function SyncButton() {
       className={`icon-btn sync-btn ${sync.running ? 'running' : ''}`}
       disabled={!hasVault || (!online && !sync.running)}
       onClick={() => (sync.running ? cancelSync() : runSync())}
-      aria-label={!online ? 'Offline' : sync.running ? 'Cancel sync' : provider === 'gdrive' ? 'Sync with Google Drive' : 'Check for new lessons'}
+      aria-label={!online ? 'Offline' : sync.running ? 'Cancel sync' : 'Check for new lessons'}
       title={!online ? 'Offline: your downloaded lessons still work' : sync.running ? 'Cancel sync' : 'Download the latest files'}
     >
       <Icon name={online ? 'sync' : 'wifi'} size={19} className={sync.running ? 'spin' : ''} />

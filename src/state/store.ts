@@ -1,18 +1,7 @@
 import { create } from 'zustand';
-import {
-  AuthRequiredError,
-  googleConfigured,
-  hasSession,
-  listAccounts,
-  removeAccount,
-  signIn,
-  type GoogleAccount,
-  type ResumeIntent,
-} from '../auth/google';
 import { extractText, type DocText } from '../library/text';
 import { isLesson, lessonTitle } from '../library/tree';
 import { devProvider } from '../providers/dev';
-import { driveFor } from '../providers/gdrive';
 import { SITE_VAULT_ID, siteProvider, type SiteLibraryInfo } from '../providers/site';
 import type { VaultProvider } from '../providers/types';
 import { db, deleteVaultData, type ProviderKind, type Vault } from '../storage/db';
@@ -46,7 +35,6 @@ interface SyncState {
   error?: string;
 }
 
-export type PickerView = { view: 'list' } | { view: 'browse'; accountId: string } | { view: 'setup'; then?: 'connect' };
 
 interface State {
   ready: boolean;
@@ -65,11 +53,10 @@ interface State {
   docs: Map<string, DocText> | null;
   /** Each document's own title (first heading or <title>), cached per vault so it shows at once. */
   titles: Record<string, string>;
-  accounts: GoogleAccount[];
   sidebarOpen: boolean;
   quickOpen: boolean;
   settingsOpen: boolean;
-  picker: PickerView | null;
+  pickerOpen: boolean;
   sync: SyncState;
   toast?: { message: string; id: number };
   /** The library this site publishes from the repo, once checked. Null when there is none. */
@@ -82,7 +69,7 @@ interface State {
 
   init(): Promise<void>;
   setActiveVault(id: string | null): Promise<void>;
-  addVault(v: { name: string; provider: ProviderKind; rootFolderId: string; accountId?: string }): Promise<Vault>;
+  addVault(v: { name: string; provider: ProviderKind; rootFolderId: string }): Promise<Vault>;
   removeVault(id: string): Promise<void>;
   /** Add the site's published library as a vault (automatically on first launch). */
   addSiteLibrary(opts?: { activate?: boolean }): Promise<void>;
@@ -102,10 +89,7 @@ interface State {
   setSidebarOpen(open: boolean): void;
   setQuickOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
-  openPicker(view: PickerView | null): void;
-  connectGoogle(opts?: { chooseAccount?: boolean }): void;
-  disconnectAccount(id: string): Promise<void>;
-  afterSignIn(account: GoogleAccount | undefined, resume: ResumeIntent | undefined): Promise<void>;
+  setPickerOpen(open: boolean): void;
   /** `quiet` is for background checks: no toast unless something changed, and no error shown. */
   runSync(opts?: { quiet?: boolean }): Promise<void>;
   cancelSync(): void;
@@ -117,6 +101,8 @@ const tabsKey = (vaultId: string) => `cortado.tabs.${vaultId}`;
 const recentKey = (vaultId: string) => `cortado.recent.${vaultId}`;
 const progressKey = (vaultId: string) => `cortado.progress.${vaultId}`;
 const titlesKey = (vaultId: string) => `cortado.titles.${vaultId}`;
+// Left over from the Google Drive sign-in, which has been removed.
+const LEGACY_KEYS = ['cortado.google.accounts', 'cortado.google.tokens', 'cortado.google.clientId', 'cortado.gtoken', 'cortado.oauthState', 'cortado.oauthResume'];
 // Set when someone removes the site library, so it isn't added back on the next launch.
 const SITE_REMOVED_KEY = 'cortado.siteLibraryRemoved';
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -139,7 +125,7 @@ function readJSON<T>(key: string, fallback: T): T {
 
 function providerFor(vault: Vault): VaultProvider {
   if (vault.provider === 'site') return siteProvider;
-  return vault.provider === 'dev' ? devProvider : driveFor(vault.accountId);
+  return devProvider;
 }
 
 async function loadPaths(vaultId: string): Promise<string[]> {
@@ -188,19 +174,25 @@ export const useStore = create<State>((set, get) => {
     progress: {},
     docs: null,
     titles: {},
-    accounts: [],
     sidebarOpen: typeof window !== 'undefined' ? !isNarrow() : true,
     quickOpen: false,
     settingsOpen: false,
-    picker: null,
+    pickerOpen: false,
     sync: { running: false },
     siteLibrary: null,
     sw: typeof navigator !== 'undefined' && navigator.serviceWorker?.controller ? 'ok' : 'pending',
 
     async init() {
-      const vaults = await db.vaults.toArray();
+      let vaults = await db.vaults.toArray();
+      // Google Drive vaults are no longer supported: clear them and any old sign-in data away.
+      for (const v of vaults.filter((v) => (v.provider as string) === 'gdrive')) {
+        await deleteVaultData(v.id);
+        for (const key of [tabsKey(v.id), recentKey(v.id), progressKey(v.id), titlesKey(v.id)]) localStorage.removeItem(key);
+      }
+      vaults = vaults.filter((v) => (v.provider as string) !== 'gdrive');
+      for (const key of LEGACY_KEYS) localStorage.removeItem(key);
       vaults.sort((a, b) => a.createdAt - b.createdAt);
-      set({ vaults, accounts: listAccounts() });
+      set({ vaults });
       const saved = localStorage.getItem(ACTIVE_KEY);
       const active = vaults.find((v) => v.id === saved) ?? vaults[0];
       await get().setActiveVault(active?.id ?? null);
@@ -208,7 +200,14 @@ export const useStore = create<State>((set, get) => {
       // Look for a library published with the site, without holding up startup.
       void siteProvider.info().then(async (info) => {
         set({ siteLibrary: info });
-        if (!info || get().vaults.some((v) => v.provider === 'site') || localStorage.getItem(SITE_REMOVED_KEY)) return;
+        if (!info) return;
+        // Pick up a new name for the library (it's stored with the vault when first added).
+        const site = get().vaults.find((v) => v.provider === 'site');
+        if (site && site.name !== info.name) {
+          await db.vaults.update(site.id, { name: info.name });
+          set({ vaults: get().vaults.map((v) => (v.id === site.id ? { ...v, name: info.name } : v)) });
+        }
+        if (site || localStorage.getItem(SITE_REMOVED_KEY)) return;
         const first = !get().activeVaultId;
         await get().addSiteLibrary({ activate: first });
         if (!first) get().showToast(`New: “${info.name}” is ready. Tap the vault name to open it.`);
@@ -242,8 +241,8 @@ export const useStore = create<State>((set, get) => {
       if (get().vaults.find((v) => v.id === id)?.provider === 'site' && navigator.onLine) void get().runSync({ quiet: true });
     },
 
-    async addVault({ name, provider, rootFolderId, accountId }) {
-      const vault: Vault = { id: newId(), name, provider, rootFolderId, accountId, createdAt: Date.now() };
+    async addVault({ name, provider, rootFolderId }) {
+      const vault: Vault = { id: newId(), name, provider, rootFolderId, createdAt: Date.now() };
       await db.vaults.put(vault);
       set({ vaults: [...get().vaults, vault] });
       await get().setActiveVault(vault.id);
@@ -356,61 +355,14 @@ export const useStore = create<State>((set, get) => {
 
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setQuickOpen: (open) => set({ quickOpen: open }),
-    setSettingsOpen: (open) => set({ settingsOpen: open, accounts: listAccounts() }),
-    openPicker: (picker) => set({ picker, accounts: listAccounts() }),
-
-    connectGoogle({ chooseAccount } = {}) {
-      if (!googleConfigured()) {
-        set({ picker: { view: 'setup', then: 'connect' } });
-        return;
-      }
-      signIn({ resume: { action: 'pick-folder' }, chooseAccount });
-    },
-
-    async disconnectAccount(id) {
-      await removeAccount(id);
-      set({ accounts: listAccounts() });
-    },
-
-    async afterSignIn(account, resume) {
-      set({ accounts: listAccounts() });
-      if (!account) return;
-      if (resume?.action === 'pick-folder') {
-        set({ picker: { view: 'browse', accountId: account.id } });
-        return;
-      }
-      if (resume?.action === 'sync') {
-        const vault = get().vaults.find((v) => v.id === resume.vaultId);
-        if (!vault) return;
-        if (vault.accountId && vault.accountId !== account.id) {
-          get().showToast(`You signed in as ${account.email}, but “${vault.name}” belongs to ${vault.accountId}.`);
-          return;
-        }
-        if (!vault.accountId) {
-          // Vaults from before accounts were tracked adopt the account that syncs them.
-          await db.vaults.update(vault.id, { accountId: account.id });
-          set({ vaults: get().vaults.map((v) => (v.id === vault.id ? { ...v, accountId: account.id } : v)) });
-        }
-        await get().setActiveVault(vault.id);
-        void get().runSync();
-        return;
-      }
-      get().showToast(`Signed in as ${account.email}`);
-    },
+    setSettingsOpen: (open) => set({ settingsOpen: open }),
+    setPickerOpen: (open) => set({ pickerOpen: open }),
 
     async runSync({ quiet = false } = {}) {
       const vault = get().vaults.find((v) => v.id === get().activeVaultId);
       if (!vault) return;
       if (get().sync.running) {
         queuedSync = { quiet: quiet && (queuedSync?.quiet ?? true) };
-        return;
-      }
-      if (vault.provider === 'gdrive' && !googleConfigured()) {
-        set({ picker: { view: 'setup' } });
-        return;
-      }
-      if (vault.provider === 'gdrive' && vault.accountId && !hasSession(vault.accountId)) {
-        signIn({ resume: { action: 'sync', vaultId: vault.id }, loginHint: vault.accountId });
         return;
       }
       syncAbort = new AbortController();
@@ -445,11 +397,6 @@ export const useStore = create<State>((set, get) => {
                     .join(', ')}`,
         );
       } catch (e) {
-        if (e instanceof AuthRequiredError) {
-          set({ sync: { running: false } });
-          signIn({ resume: { action: 'sync', vaultId: vault.id }, loginHint: vault.accountId });
-          return;
-        }
         const aborted = syncAbort?.signal.aborted;
         set({ sync: { running: false, error: aborted || quiet ? undefined : (e as Error).message } });
         if (!quiet || aborted) get().showToast(aborted ? 'Sync cancelled' : `Sync failed: ${(e as Error).message}`);

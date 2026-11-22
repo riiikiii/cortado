@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 const PATHS = {
   sidebar: 'M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 3v18',
   search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-4.35-4.35',
@@ -30,17 +28,8 @@ const PATHS = {
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5V12l3 2',
   book: 'M2.5 4.5h6a3.5 3.5 0 0 1 3.5 3.5v12.5a2.6 2.6 0 0 0-2.6-2.6H2.5zM21.5 4.5h-6A3.5 3.5 0 0 0 12 8v12.5a2.6 2.6 0 0 1 2.6-2.6h6.9z',
   play: 'M8 5.2v13.6a.7.7 0 0 0 1.1.6l10.3-6.8a.7.7 0 0 0 0-1.2L9.1 4.6a.7.7 0 0 0-1.1.6z',
-  users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
-  layers: 'M12 3 3 7.5l9 4.5 9-4.5zM3 12l9 4.5 9-4.5M3 16.5 12 21l9-4.5',
-  drive: 'M4 15.5 8.5 7.7h7L20 15.5 17.7 19.5H6.3zM8.5 7.7 13 15.5H4M15.5 7.7 11 15.5M17.7 19.5 13 15.5',
-  logout: 'M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11',
-  copy: 'M9 9h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1',
-  external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
-  key: 'M14.5 3.5a6 6 0 1 1-5.6 8.2L3 17.6V21h3.4v-2.3h2.3v-2.3H11l1.3-1.3a6 6 0 0 1 2.2-11.6zM16.5 7.5h.01',
   sparkle: 'M12 3.5l1.9 5 5.1 1.9-5.1 1.9-1.9 5-1.9-5L5 10.4l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
   wifi: 'M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a14.5 14.5 0 0 1 20 0M12 19.5h.01',
-  google:
-    'M21 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h5a4.3 4.3 0 0 1-1.9 2.8v2.3h3A9 9 0 0 0 21 12.2zM12 21a8.9 8.9 0 0 0 6.1-2.2l-3-2.3a5.5 5.5 0 0 1-8.2-2.9H3.8v2.4A9 9 0 0 0 12 21zM6.9 13.6a5.4 5.4 0 0 1 0-3.4V7.8H3.8a9 9 0 0 0 0 8.2zM12 6.6c1.4 0 2.6.5 3.6 1.4l2.6-2.6A9 9 0 0 0 3.8 7.8l3.1 2.4A5.4 5.4 0 0 1 12 6.6z',
 } as const;
 
 export type IconName = keyof typeof PATHS;
@@ -60,9 +49,6 @@ const DUO: Partial<Record<IconName, string>> = {
   'check-circle': PATHS.circle,
   clock: PATHS.circle,
   book: PATHS.book,
-  layers: 'M12 3 3 7.5l9 4.5 9-4.5z',
-  key: 'M14.5 3.5a6 6 0 1 1 0 12 6 6 0 0 1 0-12z',
-  drive: 'M4 15.5 8.5 7.7h7L20 15.5 17.7 19.5H6.3z',
 };
 
 export function Icon({ name, size = 20, className, strokeWidth = 2 }: { name: IconName; size?: number; className?: string; strokeWidth?: number }) {
@@ -139,34 +125,4 @@ export function ProgressRing({ value, size = 44, stroke = 4, className, children
       {children && <span className="ring-label">{children}</span>}
     </span>
   );
-}
-
-/** Google's multi-colour "G", for sign-in buttons. */
-export function GoogleLogo({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-    </svg>
-  );
-}
-
-/** A Google account's photo, or its initial on a tinted circle. */
-export function Avatar({ name, photo, size = 32 }: { name: string; photo?: string; size?: number }) {
-  // Photos come from Google, so fall back to the initial when offline.
-  const [failed, setFailed] = useState(false);
-  if (photo && !failed) return <img className="avatar" src={photo} alt="" width={size} height={size} referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
-  return (
-    <span className="avatar avatar-initial" style={{ width: size, height: size, fontSize: size * 0.45, background: `hsl(${hue(name)} 45% 55%)` }}>
-      {name.trim().charAt(0).toUpperCase()}
-    </span>
-  );
-}
-
-export function hue(s: string): number {
-  let h = 0;
-  for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return h;
 }

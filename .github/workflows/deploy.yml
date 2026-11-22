@@ -28,7 +28,6 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           LIBRARY_NAME: ${{ vars.LIBRARY_NAME }}
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -59,8 +59,6 @@ export async function syncVault(
         progress.bytes += blob.size;
       } catch (e) {
         if (signal?.aborted) throw e;
-        // Auth errors should stop the whole sync so the caller can sign in again.
-        if ((e as Error).name === 'AuthRequiredError' || (e as Error).message === 'Google sign-in required') throw e;
         failed.push({ path: entry.path, error: (e as Error).message });
       }
       progress.done++;

@@ -4,14 +4,14 @@ import { useStore } from '../state/store';
 import { Reader } from '../viewer/Reader';
 import { FileTree } from './FileTree';
 import { Home, NewTabPage } from './Home';
-import { Avatar, Icon } from './Icon';
+import { Icon } from './Icon';
 import { QuickSwitcher } from './QuickSwitcher';
 import { SettingsSheet } from './SettingsSheet';
 import { SyncButton, SyncStatus } from './SyncButton';
 import { CupTile } from './Logo';
 import { TabBar } from './TabBar';
 import { ToolbarSlot } from './toolbarSlot';
-import { VaultPicker } from './VaultPicker';
+import { devAvailable, VaultPicker } from './VaultPicker';
 
 const WIDE = 900; // iPad mini landscape is 1133pt wide, portrait 744pt
 const KEEP_ALIVE = 4; // iframes kept loaded, to stay within the iPad mini's memory
@@ -74,7 +74,7 @@ export function AppShell() {
         const { prev, next } = neighbours(readingOrder(s.paths), path);
         const target = e.key === 'ArrowRight' ? next : prev;
         if (target) (e.preventDefault(), s.openFile(target));
-      } else if (e.key === 'Escape' && s.sidebarOpen && window.innerWidth < WIDE && !s.quickOpen && !s.picker && !s.settingsOpen) {
+      } else if (e.key === 'Escape' && s.sidebarOpen && window.innerWidth < WIDE && !s.quickOpen && !s.pickerOpen && !s.settingsOpen) {
         s.setSidebarOpen(false);
       }
     };
@@ -188,30 +188,20 @@ export function AppShell() {
 
 function Sidebar() {
   const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));
-  const account = useStore((s) => s.accounts.find((a) => a.id === vault?.accountId));
   const paths = useStore((s) => s.paths);
-  const { openPicker, newTab, setQuickOpen, setSettingsOpen } = useStore.getState();
+  // There's only something to switch to on localhost (the sample vault), or if the notes were removed.
+  const canSwitch = useStore((s) => devAvailable || s.vaults.length > 1 || (!!s.siteLibrary && !s.vaults.some((v) => v.provider === 'site')));
+  const { setPickerOpen, newTab, setQuickOpen, setSettingsOpen } = useStore.getState();
   const [filter, setFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
 
   return (
     <>
       <div className="sb-head">
-        <button className="vault-switch" onClick={() => openPicker({ view: 'list' })} title="Switch or add a vault">
-          {account ? (
-            <Avatar name={account.name} photo={account.photo} size={30} />
-          ) : (
-            <CupTile size={34} />
-          )}
-          <span className="vault-text">
-            <span className="vault-title">{vault?.name ?? 'Cortado'}</span>
-            <span className="vault-sub">
-              {vault
-                ? (account?.email ?? (vault.provider === 'dev' ? 'Sample vault' : vault.provider === 'site' ? 'Published with this site' : 'Google Drive'))
-                : 'No vault yet'}
-            </span>
-          </span>
-          <Icon name="chevron" size={14} className="rot90 muted" />
+        <button className="vault-switch" disabled={!canSwitch} onClick={() => setPickerOpen(true)} title={canSwitch ? 'Switch vault' : undefined}>
+          <CupTile size={34} />
+          <span className="vault-title">{vault?.name ?? 'Cortado'}</span>
+          {canSwitch && <Icon name="chevron" size={14} className="rot90 muted" />}
         </button>
         <SyncButton />
       </div>

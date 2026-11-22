@@ -1,14 +1,12 @@
 import Dexie, { type EntityTable } from 'dexie';
 
-export type ProviderKind = 'gdrive' | 'dev' | 'site';
+export type ProviderKind = 'site' | 'dev';
 
 export interface Vault {
   id: string;
   name: string;
   provider: ProviderKind;
   rootFolderId: string;
-  /** Google account (email) a Drive vault belongs to. */
-  accountId?: string;
   lastSyncedAt?: number;
   createdAt: number;
 }

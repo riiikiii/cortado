@@ -1,11 +1,8 @@
-import { hasSession } from '../auth/google';
 import { useStore } from '../state/store';
-import { GoogleButton } from './GoogleConnect';
-import { Avatar, Icon } from './Icon';
+import { Icon } from './Icon';
 import { CupIllustration, CupLogo } from './Logo';
-import { SyncStatus } from './SyncButton';
-
-const devAvailable = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(location.hostname);
+import { SyncStatus, useOnline } from './SyncButton';
+import { devAvailable } from './VaultPicker';
 
 export function Home() {
   const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));
@@ -58,7 +55,6 @@ export function NewTabPage() {
 
 function EmptyVault({ name }: { name: string }) {
   const running = useStore((s) => s.sync.running);
-  const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));
   return (
     <div className="welcome">
       <div className="welcome-card">
@@ -77,7 +73,6 @@ function EmptyVault({ name }: { name: string }) {
             <button className="btn primary big" onClick={() => useStore.getState().runSync()}>
               <Icon name="sync" size={18} /> Sync now
             </button>
-            {vault?.accountId && !hasSession(vault.accountId) && <p className="small muted">You may be asked to sign in to Google again.</p>}
           </>
         )}
       </div>
@@ -85,43 +80,33 @@ function EmptyVault({ name }: { name: string }) {
   );
 }
 
+/** No vault yet: usually only for a moment on the very first launch, while the notes are found. */
 function Welcome() {
-  const accounts = useStore((s) => s.accounts);
   const siteLibrary = useStore((s) => s.siteLibrary);
-  const { openPicker } = useStore.getState();
-  const signedIn = accounts.filter((a) => hasSession(a.id));
-
+  const online = useOnline();
   return (
     <div className="landing">
       <Splash />
-        <div className="welcome-actions">
-          {signedIn.length > 0 ? (
-            <>
-              <button className="btn primary big" onClick={() => openPicker({ view: 'browse', accountId: signedIn[0].id })}>
-                <Avatar name={signedIn[0].name} photo={signedIn[0].photo} size={24} /> Choose a folder from {signedIn[0].name.split(' ')[0]}’s Drive
-              </button>
-              <GoogleButton label="Use another Google account" chooseAccount subtle />
-            </>
-          ) : (
-            <GoogleButton label="Continue with Google" />
-          )}
-          {siteLibrary && (
-            <button className="btn ghost" onClick={() => useStore.getState().addSiteLibrary()}>
-              <Icon name="book" size={18} /> Open {siteLibrary.name}
-            </button>
-          )}
-          {devAvailable && (
-            <button
-              className="btn ghost"
-              onClick={async () => {
-                await useStore.getState().addVault({ name: 'Sample vault', provider: 'dev', rootFolderId: 'dev' });
-                useStore.getState().runSync();
-              }}
-            >
-              <Icon name="sparkle" size={18} /> Try the sample vault
-            </button>
-          )}
-        </div>
+      <div className="welcome-actions">
+        {siteLibrary ? (
+          <button className="btn primary big" onClick={() => useStore.getState().addSiteLibrary()}>
+            <Icon name="book" size={18} /> Open {siteLibrary.name}
+          </button>
+        ) : (
+          <p className="muted">{online ? 'Looking for your notes…' : 'Connect to the internet once to download your notes.'}</p>
+        )}
+        {devAvailable && (
+          <button
+            className="btn ghost"
+            onClick={async () => {
+              await useStore.getState().addVault({ name: 'Sample vault', provider: 'dev', rootFolderId: 'dev' });
+              useStore.getState().runSync();
+            }}
+          >
+            <Icon name="sparkle" size={18} /> Try the sample vault
+          </button>
+        )}
+      </div>
     </div>
   );
 }
