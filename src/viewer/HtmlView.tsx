@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useStore, type Tab } from '../state/store';
+import { useStore, type DocTab } from '../state/store';
 import { parseVaultUrl, vaultUrl } from '../util/paths';
 import { attachLinkHandling } from './links';
 import { collectHeadings, currentSection, toOutline, type ViewerEvents } from './types';
@@ -8,7 +8,7 @@ import { collectHeadings, currentSection, toOutline, type ViewerEvents } from '.
 // assets and links load from the synced vault. Guides are your own files, so this is fine.
 const SANDBOX = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-modals allow-downloads';
 
-export function HtmlView({ tab, vaultId, events }: { tab: Tab; vaultId: string; events: ViewerEvents }) {
+export function HtmlView({ tab, vaultId, events }: { tab: DocTab; vaultId: string; events: ViewerEvents }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const cleanup = useRef<(() => void) | null>(null);
   const src = vaultUrl(vaultId, tab.path) + (tab.hash ?? '');

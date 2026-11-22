@@ -9,6 +9,7 @@ import { formatBytes } from './SyncButton';
 const SHORTCUTS: [string, string][] = [
   ['⌘K', 'Search titles and text'],
   ['⌘\\', 'Show or hide the sidebar'],
+  ['⌘T', 'New tab'],
   ['⌘W', 'Close tab'],
   ['⌃Tab', 'Next tab'],
   ['⌥→ / ⌥←', 'Next or previous lesson'],

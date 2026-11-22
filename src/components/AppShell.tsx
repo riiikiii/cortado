@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { neighbours, readingOrder } from '../library/tree';
 import { useStore } from '../state/store';
 import { Reader } from '../viewer/Reader';
 import { FileTree } from './FileTree';
-import { Home } from './Home';
+import { Home, NewTabPage } from './Home';
 import { Avatar, Icon } from './Icon';
 import { QuickSwitcher } from './QuickSwitcher';
 import { SettingsSheet } from './SettingsSheet';
@@ -60,6 +60,7 @@ export function AppShell() {
       const mod = e.metaKey || e.ctrlKey;
       const s = useStore.getState();
       if (mod && e.key.toLowerCase() === 'k') (e.preventDefault(), s.setQuickOpen(true));
+      else if (mod && e.key.toLowerCase() === 't' && s.activeVaultId) (e.preventDefault(), s.newTab());
       else if (mod && e.key === '\\') (e.preventDefault(), s.setSidebarOpen(!s.sidebarOpen));
       else if (mod && e.key.toLowerCase() === 'w' && s.activeTabId) (e.preventDefault(), s.closeTab(s.activeTabId));
       else if (e.ctrlKey && e.key === 'Tab' && s.tabs.length > 1) {
@@ -160,7 +161,7 @@ export function AppShell() {
                 .filter((t) => live.has(t.id))
                 .map((t) => (
                   <div key={t.id} className={`viewer ${t.id === activeTabId ? 'active' : ''}`}>
-                    <Reader tab={t} vaultId={vault.id} active={t.id === activeTabId} />
+                    {t.path !== null ? <Reader tab={{ ...t, path: t.path }} vaultId={vault.id} active={t.id === activeTabId} /> : <NewTabPage />}
                   </div>
                 ))}
             {!activeTabId && (
@@ -188,14 +189,10 @@ export function AppShell() {
 function Sidebar() {
   const vault = useStore((s) => s.vaults.find((v) => v.id === s.activeVaultId));
   const account = useStore((s) => s.accounts.find((a) => a.id === vault?.accountId));
-  const atHome = useStore((s) => s.activeTabId === null);
   const paths = useStore((s) => s.paths);
-  const progress = useStore((s) => s.progress);
-  const { openPicker, goHome, setQuickOpen, setSettingsOpen } = useStore.getState();
+  const { openPicker, newTab, setQuickOpen, setSettingsOpen } = useStore.getState();
   const [filter, setFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
-  const order = useMemo(() => readingOrder(paths), [paths]);
-  const done = order.filter((p) => progress[p]?.doneAt).length;
 
   return (
     <>
@@ -220,14 +217,10 @@ function Sidebar() {
       </div>
 
       <nav className="sb-nav">
-        <button className={`nav-row ${atHome ? 'active' : ''}`} onClick={() => goHome()}>
-          <Icon name="home" size={19} />
-          <span>Library</span>
-          {done > 0 && (
-            <span className="nav-count" title={`${done} of ${order.length} lessons complete`}>
-              {done}/{order.length}
-            </span>
-          )}
+        <button className="nav-row" onClick={() => newTab()} disabled={!vault}>
+          <Icon name="plus" size={19} />
+          <span>New tab</span>
+          <kbd>⌘T</kbd>
         </button>
         <button className="nav-row" onClick={() => setQuickOpen(true)}>
           <Icon name="search" size={19} />

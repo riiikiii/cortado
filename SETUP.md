@@ -72,13 +72,13 @@ To let *any* Google account sign in you would publish the app to **In production
 3. The site library opens and downloads by itself. To add a Google Drive folder too, tap the vault name → **Continue with Google**, sign in, browse to your folder, and choose **Use "…" as a vault**. The first sync starts straight away. To add more folders or accounts later, tap the vault name at the top of the sidebar.
 
 Tips:
-- The coffee cup tab (and **Library** in the sidebar) goes back to the home screen.
+- Tabs work like a browser's: a file always opens in the tab you're in. Tap **+** (or **New tab** in the sidebar, or ⌘T) for a new tab, which shows "Select a file" until you pick one. When there are more tabs than fit, the bar scrolls and a count button lists them all. Closing every tab brings back the home screen.
 - Lessons follow the sidebar order, with a top-level Welcome, README, Index or "00 …" note first. Number your files ("01 Intro", "02 Basics") to set the order.
 - At the end of a note, **Mark complete & continue** ticks it off and opens the next lesson. HTML guides show the same controls in a floating bar when you reach the bottom. The ✓ button in the toolbar works anywhere.
 - **Aa** in the toolbar changes theme (Auto, Light, Sepia, Dark), text size, font and line width. The list button shows the note's outline.
 - In portrait, swipe in from the left edge (or tap the sidebar button) to open the file list. In landscape the file list stays docked; drag its edge to resize it.
-- To open a link in a new tab, long-press it, or ⌘-click with a keyboard. Long-press a tab for more options.
-- With a keyboard: ⌘K to search titles and full text, ⌥→ / ⌥← for the next or previous lesson, ⌘W to close a tab, ⌃Tab to switch tabs, ⌘\ to toggle the sidebar.
+- To open a link in a new tab instead, long-press it, or ⌘-click with a keyboard. Long-press a tab for more options.
+- With a keyboard: ⌘K to search titles and full text, ⌥→ / ⌥← for the next or previous lesson, ⌘T for a new tab, ⌘W to close a tab, ⌃Tab to switch tabs, ⌘\ to toggle the sidebar.
 - Tap **Sync** whenever you've changed files in Drive. Only new or changed files download, and files deleted in Drive are removed from the iPad.
 
 ## How it works
