@@ -1,0 +1,1135 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ORMs in Java: from zero to guru</title>
+<meta name="description" content="A 25-minute guide to object-relational mapping in Java: JPA, Hibernate, Spring Data, Jakarta Data, jOOQ and MyBatis, from first entity to production-grade performance.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,800;1,7..72,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF5F4; --paper-2:#E1EDEB; --rule:#BFD6D3;
+  --ink:#10282B; --ink-soft:#3E5B5E;
+  --t900:#08393E; --t700:#0B5D63; --t500:#13898C; --t300:#62C5BF; --t100:#D2EBE8;
+  --amber:#8A5806; --amber-bg:#F7EAD0; --amber-rule:#D9A341;
+  --code-bg:#0A3236; --code-fg:#DCEFEC;
+  --serif:"Literata","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --measure:40rem;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:52px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.5 var(--serif);
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+@media (max-width:520px){body{font-size:16px}}
+a{color:var(--t700);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--t900)}
+:focus-visible{outline:3px solid var(--t500);outline-offset:3px;border-radius:4px}
+p,li{hyphens:auto;-webkit-hyphens:auto}
+strong{font-weight:600}
+code{font-family:var(--mono);hyphens:manual;-webkit-hyphens:manual;font-size:.84em;background:var(--t100);color:var(--t900);
+  padding:.08em .32em;border-radius:4px;overflow-wrap:anywhere}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+  padding:7px max(20px,env(safe-area-inset-left));background:rgba(238,245,244,.92);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule);font-size:15px}
+.bar b{font-weight:600;color:var(--t900);white-space:nowrap}
+.bar span{color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.bar a{white-space:nowrap;font-weight:600;text-decoration:none;border:1px solid var(--rule);padding:2px 11px;border-radius:99px}
+.progress{position:absolute;left:0;bottom:-1px;height:3px;width:0;background:var(--t500)}
+
+/* hero */
+.hero{background:var(--t700);color:#F2FAF8;padding:36px 24px 40px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;opacity:.13;pointer-events:none;
+  background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);
+  background-size:28px 28px}
+.hero-in{max-width:58rem;margin:0 auto;position:relative}
+.hero h1{font-weight:800;font-size:clamp(46px,10vw,92px);line-height:.92;letter-spacing:-.035em;margin:0 0 14px}
+.hero .lede{font-size:clamp(18px,2.4vw,21px);line-height:1.38;max-width:34em;margin:0 0 6px;color:#E3F4F1}
+.hero .meta{font-size:14.5px;line-height:1.4;color:#B9E3DE;margin:0 0 22px}
+.map{background:var(--paper);color:var(--ink);border-radius:14px;padding:14px 16px 8px;
+  box-shadow:0 18px 40px -18px rgba(3,30,33,.55);max-width:46rem}
+.map-grid{display:grid;grid-template-columns:max-content 72px minmax(0,1fr);align-items:center}
+.map-head,.map-row{display:contents}
+.map-head span{font-size:14px;color:var(--ink-soft);padding:0 0 6px;border-bottom:1px solid var(--rule);align-self:stretch}
+.map-row > *{padding:5px 0;border-bottom:1px dashed var(--rule);align-self:stretch;display:flex;align-items:center}
+.map-row:last-child > *{border-bottom:0}
+.map-row code{background:none;font-size:13px;color:var(--t900);white-space:nowrap;border-radius:0}
+.map-row code:first-child{padding-right:10px}
+.map-row code.sql{color:var(--ink-soft)}
+.wire{position:relative}
+.wire::before{content:"";flex:1;height:2px;margin:0 10px 0 0;background:var(--t500);transform-origin:left}
+.wire::after{content:"";position:absolute;right:6px;top:50%;margin-top:-5px;border:5px solid transparent;border-left-color:var(--t500);border-right:0}
+.map-row.gap .wire::before{background:repeating-linear-gradient(90deg,var(--amber-rule) 0 5px,transparent 5px 10px)}
+.map-row.gap .wire::after{border-left-color:var(--amber-rule)}
+.map-row code.sql{padding-left:4px}
+.map-row.gap code.sql{color:var(--amber);font-family:var(--serif);font-style:italic;font-size:14.5px;white-space:normal}
+.map-note{font-size:14px;line-height:1.4;color:var(--ink-soft);margin:8px 0 4px}
+@media (prefers-reduced-motion:no-preference){
+  .wire::before{animation:draw .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(.25s + var(--d,0) * .14s)}
+  .wire::after{animation:fade .2s ease-out both;animation-delay:calc(.6s + var(--d,0) * .14s)}
+  @keyframes draw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+}
+@media (max-width:520px){.map{padding:14px 14px 8px}.map-grid{grid-template-columns:max-content 30px minmax(0,1fr)}
+  .map-row code{font-size:11px}.map-row code.sql{white-space:normal;overflow-wrap:anywhere}.map-row.gap code.sql{font-size:13px}
+  .wire::before{margin-right:8px}.wire::after{right:4px}}
+
+/* layout */
+.shell{max-width:72rem;margin:0 auto;padding:0 24px}
+.toc{display:none}
+main{max-width:var(--measure);margin:0 auto;padding-bottom:40px}
+@media (min-width:1080px){
+  .shell{display:grid;grid-template-columns:200px minmax(0,var(--measure));gap:56px;justify-content:center}
+  main{margin:0}
+  .toc{display:block;position:sticky;top:60px;align-self:start;padding-top:28px;font-size:14px;line-height:1.3}
+  .toc a{display:block;padding:3px 0 3px 12px;border-left:2px solid var(--rule);color:var(--ink-soft);text-decoration:none}
+  .toc a.on,.toc a:hover{border-left-color:var(--t500);color:var(--t900)}
+  .toc p{margin:12px 0 2px;font-weight:600;color:var(--t900)}
+}
+
+/* learning path */
+.path{margin:28px 0 0}
+.path h2{font-size:26px;margin:0 0 4px}
+.path > p{margin:0 0 12px;color:var(--ink-soft)}
+.stage{display:grid;grid-template-columns:80px 1fr;gap:0 16px;padding:8px 0;border-top:1px solid var(--rule)}
+.stage .lvl{font-weight:800;font-size:15px;color:var(--t700);padding-top:3px}
+.stage h3{margin:0;font-size:17.5px;line-height:1.3}
+.stage ol{margin:2px 0 0;padding:0;list-style:none;font-size:15.5px;line-height:1.4}
+.stage ol a{text-decoration:none}
+.stage li{margin:0}
+.stage ol span{color:var(--ink-soft);font-size:14px}
+
+/* chapters */
+section.ch{padding-top:32px}
+h2{font-weight:800;font-size:clamp(28px,4.6vw,35px);line-height:1.08;letter-spacing:-.02em;margin:0 0 12px;color:var(--t900)}
+h2 .n{display:block;font-size:.5em;line-height:1;letter-spacing:0;font-weight:600;color:var(--t500);margin-bottom:5px;
+  font-variant-numeric:lining-nums}
+h3{font-weight:600;font-size:20px;line-height:1.25;margin:22px 0 6px;color:var(--t900)}
+h4{font-size:17px;margin:16px 0 4px}
+p{margin:0 0 11px}
+ul,ol{padding-left:1.25em;margin:0 0 11px}
+li{margin:0 0 3px}
+li::marker{color:var(--t500)}
+.intro{font-size:1.05em;line-height:1.48;color:var(--ink)}
+hr{border:0;border-top:1px solid var(--rule);margin:24px 0}
+
+/* code */
+figure{margin:14px 0 16px}
+figure.code{margin:12px -12px 14px}
+@media (max-width:720px){figure.code{margin-left:0;margin-right:0}}
+figure.code figcaption{font-family:var(--mono);font-size:12px;line-height:1.3;color:var(--t700);padding:0 4px 4px}
+figure.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:9px;padding:11px 14px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;font:400 13px/1.42 var(--mono);tab-size:4}
+figure.code code{background:none;color:inherit;padding:0;font-size:inherit;overflow-wrap:normal}
+.code .k,.code .kd,.code .kn,.code .kr,.code .kc,.code .kp{color:#7ADBD0}
+.code .kt{color:#A8E6DD}
+.code .nd{color:#A3E7B0}
+.code .s,.code .s1,.code .s2,.code .sb,.code .sd,.code .sc,.code .dl{color:#F2C879}
+.code .m,.code .mi,.code .mf,.code .il{color:#F2C879}
+.code .c,.code .c1,.code .cm,.code .cs,.code .ch{color:#86ABA7;font-style:italic}
+.code .nc,.code .nn{color:#fff;font-weight:600}
+.code .nf,.code .fm{color:#CFEFF7}
+.code .nt{color:#7ADBD0}.code .na,.code .nv{color:#A8E6DD}
+.code .o,.code .ow,.code .p{color:#B5D3CF}
+.code .err{color:inherit;background:none}
+
+/* callouts */
+.note{border-radius:10px;padding:10px 14px 1px;margin:14px 0 16px;font-size:15.5px;line-height:1.45}
+.note p{margin:0 0 9px}
+.note > b:first-child{display:block;font-size:14.5px;margin-bottom:2px}
+.note.pit{background:var(--amber-bg);border-left:4px solid var(--amber-rule)}
+.note.pit > b:first-child{color:var(--amber)}
+.note.guru{background:var(--t100);border-left:4px solid var(--t500)}
+.note.guru > b:first-child{color:var(--t700)}
+.note.spring{border:1px solid var(--rule);background:#F7FBFA}
+.note.spring > b:first-child{color:var(--t700)}
+.note code{background:rgba(255,255,255,.65)}
+
+/* tables */
+.tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0 16px;border:1px solid var(--rule);border-radius:10px;background:#F7FBFA}
+table{border-collapse:collapse;width:100%;font-size:14.5px;line-height:1.35}
+th,td{text-align:left;vertical-align:top;padding:6px 10px;border-bottom:1px solid var(--rule)}
+th{font-weight:600;color:var(--t900);background:var(--paper-2)}
+tr:last-child td{border-bottom:0}
+td code{font-size:.85em;white-space:nowrap}
+.tbl.wide table{min-width:620px}
+
+/* timeline */
+.timeline{list-style:none;padding:0;margin:12px 0 14px;border-left:2px solid var(--t300)}
+.timeline li{padding:0 0 5px 18px;margin:0;position:relative;font-size:15.5px;line-height:1.4}
+.timeline li::before{content:"";position:absolute;left:-7px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--t500)}
+.timeline b{color:var(--t700);display:inline-block;min-width:3.2em}
+
+/* lifecycle diagram */
+.diagram{background:#F7FBFA;border:1px solid var(--rule);border-radius:12px;padding:8px 8px 2px;margin:14px -12px 16px}
+@media (max-width:720px){.diagram{margin-left:0;margin-right:0}}
+.diagram svg{display:block;width:100%;height:auto}
+.diagram figcaption{font-size:14px;color:var(--ink-soft);padding:2px 12px 6px;line-height:1.4}
+
+/* N+1 simulator */
+.sim{border:2px solid var(--t700);border-radius:14px;margin:16px -12px 18px;background:#F7FBFA;overflow:hidden}
+@media (max-width:720px){.sim{margin-left:0;margin-right:0}}
+.sim > input{position:absolute;opacity:0;pointer-events:none}
+.sim-top{background:var(--t700);color:#F2FAF8;padding:10px 14px 12px}
+.sim-top p{margin:0 0 8px;font-size:15px;line-height:1.4}
+.sim-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.sim-tabs label{cursor:pointer;font-size:14.5px;font-weight:600;padding:5px 12px;border-radius:99px;border:1.5px solid #7FCFC8;color:#E9F7F5;user-select:none;-webkit-user-select:none}
+.panel{display:none;padding:12px 14px 2px}
+.count{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.count strong{font-size:46px;line-height:1;font-weight:800;color:var(--t900);font-variant-numeric:tabular-nums}
+.count span{font-size:16px;color:var(--ink-soft)}
+.ticks{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 10px}
+.ticks span{width:13px;height:13px;border-radius:3px;background:var(--t500)}
+.ticks span:first-child{background:var(--t900)}
+.panel pre{margin:0 0 9px;background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:9px 12px;font:12px/1.4 var(--mono);overflow-x:auto}
+.panel pre i{color:#86ABA7}
+.panel p{font-size:15px;line-height:1.45;margin-bottom:9px}
+#f-lazy:checked ~ .sim-panels .p-lazy,#f-join:checked ~ .sim-panels .p-join,
+#f-batch:checked ~ .sim-panels .p-batch,#f-dto:checked ~ .sim-panels .p-dto{display:block}
+#f-lazy:checked ~ .sim-top label[for=f-lazy],#f-join:checked ~ .sim-top label[for=f-join],
+#f-batch:checked ~ .sim-top label[for=f-batch],#f-dto:checked ~ .sim-top label[for=f-dto]{background:#F2FAF8;color:var(--t900);border-color:#F2FAF8}
+#f-lazy:focus-visible ~ .sim-top label[for=f-lazy],#f-join:focus-visible ~ .sim-top label[for=f-join],
+#f-batch:focus-visible ~ .sim-top label[for=f-batch],#f-dto:focus-visible ~ .sim-top label[for=f-dto]{outline:3px solid #F2C879;outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){
+  .panel .ticks span{animation:pop .28s ease-out both;animation-delay:calc(var(--i) * 18ms)}
+  @keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+}
+
+/* checklist + quiz */
+.rules{counter-reset:r;list-style:none;padding:0}
+.rules li{counter-increment:r;display:grid;grid-template-columns:34px 1fr;padding:5px 0;line-height:1.42;border-top:1px solid var(--rule);margin:0}
+.rules li::before{content:counter(r);font-weight:800;color:var(--t500);font-size:17px;line-height:1.42}
+details{border:1px solid var(--rule);border-radius:10px;background:#F7FBFA;margin:0 0 7px}
+summary{cursor:pointer;padding:9px 16px;font-weight:600;line-height:1.38;list-style:none;position:relative;padding-right:44px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:16px;top:5px;font-size:22px;font-weight:400;color:var(--t500)}
+details[open] summary::after{content:"\2212"}
+details[open] summary{border-bottom:1px solid var(--rule)}
+details > div{padding:9px 16px 1px;font-size:15.5px;line-height:1.45}
+.sources li{font-size:15.5px;line-height:1.4}
+footer{border-top:1px solid var(--rule);padding:16px 0 36px;font-size:14px;line-height:1.4;color:var(--ink-soft)}
+
+@media print{.bar,.toc{display:none}.hero{padding:24px}body{font-size:12pt}}
+</style>
+</head>
+<body>
+
+<div class="bar" role="banner">
+  <b>ORMs in Java</b><span id="here">Zero to guru</span><a href="#path">Contents</a>
+  <div class="progress" id="progress"></div>
+</div>
+
+<header class="hero">
+  <div class="hero-in">
+    <h1>ORMs in Java</h1>
+    <p class="lede">From your first <code style="background:rgba(255,255,255,.16);color:#fff">@Entity</code> to reading the SQL Hibernate writes on your behalf, and knowing when to write it yourself.</p>
+    <p class="meta">About 25 to 30 minutes. Current as of November 2026: Hibernate 7.4, Jakarta Persistence 3.2, Spring Boot 4, jOOQ 3.21.</p>
+
+    <div class="map" role="img" aria-label="How the fields of a Java Concert class map to columns of the concert table. The tickets list has no column; it lives as a foreign key in the ticket table.">
+      <div class="map-grid">
+      <div class="map-head"><span>Concert.java</span><span></span><span>concert table</span></div>
+      <div class="map-row" style="--d:0"><code>Long id</code><i class="wire" aria-hidden="true"></i><code class="sql">id bigint primary key</code></div>
+      <div class="map-row" style="--d:1"><code>String title</code><i class="wire" aria-hidden="true"></i><code class="sql">title varchar(200) not null</code></div>
+      <div class="map-row" style="--d:2"><code>Instant startsAt</code><i class="wire" aria-hidden="true"></i><code class="sql">starts_at timestamptz</code></div>
+      <div class="map-row" style="--d:3"><code>Status status</code><i class="wire" aria-hidden="true"></i><code class="sql">status varchar(20)</code></div>
+      <div class="map-row" style="--d:4"><code>Venue venue</code><i class="wire" aria-hidden="true"></i><code class="sql">venue_id bigint references venue</code></div>
+      <div class="map-row gap" style="--d:5"><code>List&lt;Ticket&gt; tickets</code><i class="wire" aria-hidden="true"></i><code class="sql">no column here: it lives in ticket.concert_id</code></div>
+      </div>
+      <p class="map-note">Five fields map cleanly. The sixth is the whole subject of this guide: in Java a collection is a field, in SQL it is a query waiting to happen.</p>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="toc" aria-label="Chapters">
+  <p>Zero</p>
+  <a href="#why">1. Why ORMs exist</a>
+  <a href="#first">2. Your first entity</a>
+  <p>Working</p>
+  <a href="#assoc">3. Associations</a>
+  <a href="#context">4. The persistence context</a>
+  <a href="#query">5. Querying</a>
+  <p>Expert</p>
+  <a href="#perf">6. Performance</a>
+  <a href="#tx">7. Transactions and concurrency</a>
+  <a href="#ship">8. Schema and testing</a>
+  <p>Guru</p>
+  <a href="#beyond">9. Beyond JPA</a>
+  <a href="#next">10. What's coming</a>
+  <a href="#guru">11. Guru check</a>
+</nav>
+
+<main id="top">
+
+<section class="path" id="path">
+  <h2>The route</h2>
+  <p>Eleven chapters in four stages. Each builds on the last, but if you already ship JPA code, start at chapter 4: the persistence context is where most "Hibernate is slow" stories really begin.</p>
+  <div class="stage"><div class="lvl">Zero</div><div><h3>What an ORM is, and your first mapping</h3>
+    <ol><li><a href="#why">1. Why ORMs exist</a> <span>4 min</span></li><li><a href="#first">2. Your first entity</a> <span>3 min</span></li></ol></div></div>
+  <div class="stage"><div class="lvl">Working</div><div><h3>Model a domain and query it with confidence</h3>
+    <ol><li><a href="#assoc">3. Associations</a> <span>4 min</span></li><li><a href="#context">4. The persistence context</a> <span>3 min</span></li><li><a href="#query">5. Querying</a> <span>3 min</span></li></ol></div></div>
+  <div class="stage"><div class="lvl">Expert</div><div><h3>Make it fast, correct under load, and safe to change</h3>
+    <ol><li><a href="#perf">6. Performance</a> <span>3 min</span></li><li><a href="#tx">7. Transactions and concurrency</a> <span>2 min</span></li><li><a href="#ship">8. Schema and testing</a> <span>1 min</span></li></ol></div></div>
+  <div class="stage"><div class="lvl">Guru</div><div><h3>Choose the right tool and see where it's heading</h3>
+    <ol><li><a href="#beyond">9. Beyond JPA</a> <span>2 min</span></li><li><a href="#next">10. What's coming</a> <span>1 min</span></li><li><a href="#guru">11. Guru check</a> <span>2 min</span></li></ol></div></div>
+</section>
+
+<!-- ============================================================ 1 -->
+<section class="ch" id="why">
+<h2><span class="n">1</span>Why ORMs exist</h2>
+
+<p class="intro">Java thinks in objects that point at each other. A relational database thinks in sets of rows that refer to each other by value. Every Java application that talks to a database has to translate between those two worlds, and an object-relational mapper (ORM) is a library that does the translation for you.</p>
+
+<p>That translation is harder than it looks, and the difficulties have a name: the <strong>object-relational impedance mismatch</strong>. It shows up in five places.</p>
+
+<ul>
+  <li><strong>Identity.</strong> Java has two notions of sameness, <code>a == b</code> and <code>a.equals(b)</code>. The database has a third: same primary key. An ORM has to keep all three in step.</li>
+  <li><strong>Granularity.</strong> You might model an <code>Address</code> as its own small object, but store it as three columns in the <code>venue</code> table. Objects are often finer-grained than tables.</li>
+  <li><strong>Inheritance.</strong> Java classes extend each other. SQL tables don't, so a class hierarchy has to be flattened, split or duplicated.</li>
+  <li><strong>Associations.</strong> An object reference points one way: a concert knows its venue. A foreign key can be joined from either side, and a many-to-many relationship needs a third table that has no class of its own.</li>
+  <li><strong>Navigation.</strong> In Java you walk a graph one reference at a time. In SQL you ask for everything you need in one go, with a join. This mismatch causes more performance problems than the other four put together.</li>
+</ul>
+
+<h3>Life without one</h3>
+<p>Here is what reading one concert and its venue looks like in plain JDBC:</p>
+
+<figure class="code" data-lang="java"><figcaption>ConcertDao.java (plain JDBC)</figcaption><pre tabindex="0"><code><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">conn</span><span class="p">.</span><span class="na">prepareStatement</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        select c.id, c.title, c.starts_at, v.id, v.name</span>
+<span class="s">        from concert c join venue v on v.id = c.venue_id</span>
+<span class="s">        where c.id = ?"""</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ps</span><span class="p">.</span><span class="na">setLong</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">rs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ps</span><span class="p">.</span><span class="na">executeQuery</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">rs</span><span class="p">.</span><span class="na">next</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Optional</span><span class="p">.</span><span class="na">empty</span><span class="p">();</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">venue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Venue</span><span class="p">(</span><span class="n">rs</span><span class="p">.</span><span class="na">getLong</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span><span class="w"> </span><span class="n">rs</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="mi">5</span><span class="p">));</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Optional</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Concert</span><span class="p">(</span><span class="n">rs</span><span class="p">.</span><span class="na">getLong</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="n">rs</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+<span class="w">                </span><span class="n">rs</span><span class="p">.</span><span class="na">getObject</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="n">OffsetDateTime</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">toInstant</span><span class="p">(),</span><span class="w"> </span><span class="n">venue</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>That's one read. Now write the update: which fields changed? Did anyone else change the row meanwhile? Load the same concert twice and you get two objects that can disagree. Multiply by fifty tables and you've written a bad ORM by hand.</p>
+
+<h3>What an ORM actually gives you</h3>
+<p>Martin Fowler named the moving parts in <em>Patterns of Enterprise Application Architecture</em> (2002), and every serious Java ORM implements them:</p>
+<ul>
+  <li><strong>Data mapper:</strong> annotations describe how classes map to tables, so domain classes contain no SQL.</li>
+  <li><strong>Unit of work:</strong> it tracks what you created, changed or deleted, and writes the SQL at the end.</li>
+  <li><strong>Identity map:</strong> one row, one Java object, per unit of work.</li>
+  <li><strong>Lazy load:</strong> related objects load when you first touch them.</li>
+  <li><strong>Dialects and a query language:</strong> correct SQL for each database from one mapping, and queries written in classes and fields.</li>
+</ul>
+
+<p>The price is that SQL is now generated rather than written, and generated SQL can surprise you. The thesis of this guide is simple: <strong>use the ORM for what it does well, and always know what SQL it is sending.</strong> People who get into trouble with ORMs almost always broke the second half of that rule.</p>
+
+<h3>Who's who</h3>
+<p>The names get confusing because some are specifications and some are products.</p>
+<div class="tbl"><table>
+<tr><th>Name</th><th>What it is</th></tr>
+<tr><td><strong>Jakarta Persistence</strong> (JPA)</td><td>The standard API: annotations like <code>@Entity</code> and interfaces like <code>EntityManager</code>. It's a specification with no implementation of its own. Formerly the Java Persistence API, hence "JPA".</td></tr>
+<tr><td><strong>Hibernate ORM</strong></td><td>The most widely used JPA implementation (a "provider"), plus a large native API of its own: <code>Session</code>, HQL, filters, natural IDs, multi-tenancy.</td></tr>
+<tr><td><strong>EclipseLink</strong></td><td>The other major provider, maintained at the Eclipse Foundation and common on Jakarta EE servers.</td></tr>
+<tr><td><strong>Spring Data JPA</strong></td><td>A repository layer that sits on top of JPA and writes the boilerplate for you. It's not an ORM: Hibernate still does the mapping underneath.</td></tr>
+<tr><td><strong>Jakarta Data</strong></td><td>A newer standard for repositories (1.0 shipped with Jakarta EE 11). Think Spring Data's idea, standardised and checked at compile time.</td></tr>
+</table></div>
+
+<h3>Twenty-five years in eight lines</h3>
+<ul class="timeline">
+  <li><b>2001</b> Gavin King starts Hibernate as an alternative to EJB 2 entity beans.</li>
+  <li><b>2006</b> JPA 1.0 arrives with EJB 3.0 (JSR 220), largely shaped by Hibernate's ideas.</li>
+  <li><b>2009</b> JPA 2.0 adds the type-safe Criteria API and the static metamodel.</li>
+  <li><b>2013</b> JPA 2.1 adds entity graphs, attribute converters and stored procedures.</li>
+  <li><b>2020</b> Jakarta Persistence 3.0: same API, new package, <code>javax.persistence</code> becomes <code>jakarta.persistence</code>.</li>
+  <li><b>2024</b> Jakarta Persistence 3.2 for Jakarta EE 11: records as embeddables, programmatic configuration, set operations in JPQL.</li>
+  <li><b>2025</b> Hibernate 7.0 implements JPA 3.2 and Jakarta Data 1.0, now entirely under the Apache licence.</li>
+  <li><b>2026</b> Jakarta Persistence 4.0 is in milestones for Jakarta EE 12; Hibernate 8.0 reached its first release candidate on 12 November.</li>
+</ul>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="ch" id="first">
+<h2><span class="n">2</span>Your first entity</h2>
+
+<p class="intro">We'll use one small domain all the way through: a concert-ticketing system. Venues host concerts, concerts have tickets, and fans buy them. It is just big enough to show every interesting problem, including two fans trying to buy the last seat at the same moment.</p>
+
+<p>Add Hibernate and a JDBC driver. If you're using Spring Boot, skip this: the <code>spring-boot-starter-data-jpa</code> starter brings Hibernate 7 with it.</p>
+
+<figure class="code" data-lang="xml"><figcaption>pom.xml</figcaption><pre tabindex="0"><code><span class="nt">&lt;dependency&gt;</span>
+<span class="w">  </span><span class="nt">&lt;groupId&gt;</span>org.hibernate.orm<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">  </span><span class="nt">&lt;artifactId&gt;</span>hibernate-core<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">  </span><span class="nt">&lt;version&gt;</span>7.4.4.Final<span class="nt">&lt;/version&gt;</span><span class="w"> </span><span class="cm">&lt;!-- or the latest 7.4.x --&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+<span class="w">  </span><span class="nt">&lt;groupId&gt;</span>org.postgresql<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">  </span><span class="nt">&lt;artifactId&gt;</span>postgresql<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">  </span><span class="nt">&lt;version&gt;</span>42.7.7<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></figure>
+
+<p>Now the entity. Read every annotation: each one is a decision.</p>
+
+<figure class="code" data-lang="java"><figcaption>Concert.java</figcaption><pre tabindex="0"><code><span class="nd">@Entity</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Concert</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="nd">@Id</span>
+<span class="w">    </span><span class="nd">@GeneratedValue</span><span class="p">(</span><span class="n">strategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GenerationType</span><span class="p">.</span><span class="na">SEQUENCE</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Long</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Column</span><span class="p">(</span><span class="n">nullable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">200</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">title</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Column</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"starts_at"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Instant</span><span class="w"> </span><span class="n">startsAt</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Enumerated</span><span class="p">(</span><span class="n">EnumType</span><span class="p">.</span><span class="na">STRING</span><span class="p">)</span>
+<span class="w">    </span><span class="nd">@Column</span><span class="p">(</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Status</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Status</span><span class="p">.</span><span class="na">ON_SALE</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@ManyToOne</span><span class="p">(</span><span class="n">fetch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FetchType</span><span class="p">.</span><span class="na">LAZY</span><span class="p">,</span><span class="w"> </span><span class="n">optional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Venue</span><span class="w"> </span><span class="n">venue</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@OneToMany</span><span class="p">(</span><span class="n">mappedBy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"concert"</span><span class="p">,</span><span class="w"> </span><span class="n">cascade</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CascadeType</span><span class="p">.</span><span class="na">ALL</span><span class="p">,</span>
+<span class="w">               </span><span class="n">orphanRemoval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Ticket</span><span class="o">&gt;</span><span class="w"> </span><span class="n">tickets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+
+<span class="w">    </span><span class="kd">protected</span><span class="w"> </span><span class="nf">Concert</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w">              </span><span class="c1">// required by JPA</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">Concert</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">title</span><span class="p">,</span><span class="w"> </span><span class="n">Instant</span><span class="w"> </span><span class="n">startsAt</span><span class="p">,</span><span class="w"> </span><span class="n">Venue</span><span class="w"> </span><span class="n">venue</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">title</span><span class="p">;</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">startsAt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">startsAt</span><span class="p">;</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">venue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">venue</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="c1">// getters, plus behaviour methods (see chapter 3)</span>
+<span class="p">}</span></code></pre></figure>
+
+<ul>
+  <li><code>@Entity</code> makes the class persistent, mapped by default to a table of the same name.</li>
+  <li><code>@Id</code> marks the primary key. Its position also sets the <strong>access type</strong>: on a field, Hibernate reads fields directly; on a getter, it uses getters and setters. Field access is usual, because it keeps setters out of your API.</li>
+  <li><code>@GeneratedValue</code> asks the database to supply the key (strategies below).</li>
+  <li><code>@Column</code> is optional: every non-transient field is persisted anyway. Add it for constraints, lengths or a different name.</li>
+  <li><code>@Enumerated(EnumType.STRING)</code> stores <code>ON_SALE</code> rather than <code>0</code>. The default is <code>ORDINAL</code>, which silently corrupts your data the day someone reorders the enum constants.</li>
+  <li>The two association annotations are the subject of the next chapter.</li>
+</ul>
+
+<p>JPA has a few rules for entity classes. They need a no-argument constructor (it can be <code>protected</code>), they must not be <code>final</code> (Hibernate creates subclasses at runtime as lazy-loading proxies), and their persistent fields must not be final either. That's why a Java <code>record</code> can't be an entity. Records are still welcome, though: since JPA 3.2 they can be <strong>embeddables</strong>, and they make excellent read-only query results.</p>
+
+<figure class="code" data-lang="java"><figcaption>Address.java</figcaption><pre tabindex="0"><code><span class="nd">@Embeddable</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">Address</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">street</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">postcode</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="c1">// inside Venue:  private Address address;  -&gt; street, city, postcode columns</span></code></pre></figure>
+
+<div class="note guru"><b>Guru note: names</b>
+<p>That's why <code>startsAt</code> has an explicit column name. Left alone, plain Hibernate maps it to a column called <code>startsAt</code> (which PostgreSQL folds to <code>startsat</code>), while Spring Boot configures a naming strategy that produces <code>starts_at</code>. If you move code between the two, or share a schema with another team, set the naming strategy explicitly rather than relying on defaults.</p></div>
+
+<h3>Choosing a primary key strategy</h3>
+<div class="tbl"><table>
+<tr><th>Strategy</th><th>How it works</th><th>Verdict</th></tr>
+<tr><td><code>IDENTITY</code></td><td>An auto-increment column. The database assigns the key during <code>INSERT</code>.</td><td>Simple, but Hibernate must run each insert immediately to learn the key, which <strong>disables JDBC insert batching</strong>.</td></tr>
+<tr><td><code>SEQUENCE</code></td><td>A database sequence. Hibernate fetches a block of values (50 by default) and assigns keys in memory.</td><td>The best default on PostgreSQL, Oracle and SQL Server. Fast, batch-friendly. Hibernate 6 and later name it <code>concert_SEQ</code> by default.</td></tr>
+<tr><td><code>UUID</code></td><td>Generated in the application (JPA 3.1 added <code>GenerationType.UUID</code>).</td><td>Good for distributed systems and public IDs. Prefer time-ordered UUIDs (version 7) over random ones: random keys scatter inserts across the index.</td></tr>
+</table></div>
+
+<h3>Booting it up</h3>
+<p>JPA 3.2 finally lets you configure everything in code, with no <code>persistence.xml</code>, and adds transaction helpers to <code>EntityManagerFactory</code>:</p>
+
+<figure class="code" data-lang="java"><figcaption>Main.java</figcaption><pre tabindex="0"><code><span class="n">EntityManagerFactory</span><span class="w"> </span><span class="n">emf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PersistenceConfiguration</span><span class="p">(</span><span class="s">"concerts"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">managedClass</span><span class="p">(</span><span class="n">Venue</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">managedClass</span><span class="p">(</span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">managedClass</span><span class="p">(</span><span class="n">Ticket</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">managedClass</span><span class="p">(</span><span class="n">Fan</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">property</span><span class="p">(</span><span class="s">"jakarta.persistence.jdbc.url"</span><span class="p">,</span>
+<span class="w">                  </span><span class="s">"jdbc:postgresql://localhost:5432/concerts"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">property</span><span class="p">(</span><span class="s">"jakarta.persistence.jdbc.user"</span><span class="p">,</span><span class="w"> </span><span class="s">"app"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">property</span><span class="p">(</span><span class="s">"jakarta.persistence.jdbc.password"</span><span class="p">,</span><span class="w"> </span><span class="s">"secret"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">property</span><span class="p">(</span><span class="s">"hibernate.show_sql"</span><span class="p">,</span><span class="w"> </span><span class="s">"true"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">createEntityManagerFactory</span><span class="p">();</span>
+
+<span class="n">Long</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emf</span><span class="p">.</span><span class="na">callInTransaction</span><span class="p">(</span><span class="n">em</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="n">venue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Venue</span><span class="p">(</span><span class="s">"Harbour Hall"</span><span class="p">,</span>
+<span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">Address</span><span class="p">(</span><span class="s">"1 Quay Street"</span><span class="p">,</span><span class="w"> </span><span class="s">"London"</span><span class="p">,</span><span class="w"> </span><span class="s">"E1 1AA"</span><span class="p">),</span><span class="w"> </span><span class="mi">1800</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="n">concert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Concert</span><span class="p">(</span><span class="s">"Night Shift"</span><span class="p">,</span>
+<span class="w">            </span><span class="n">Instant</span><span class="p">.</span><span class="na">parse</span><span class="p">(</span><span class="s">"2026-12-12T20:00:00Z"</span><span class="p">),</span><span class="w"> </span><span class="n">venue</span><span class="p">);</span>
+<span class="w">    </span><span class="n">em</span><span class="p">.</span><span class="na">persist</span><span class="p">(</span><span class="n">venue</span><span class="p">);</span>
+<span class="w">    </span><span class="n">em</span><span class="p">.</span><span class="na">persist</span><span class="p">(</span><span class="n">concert</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">concert</span><span class="p">.</span><span class="na">getId</span><span class="p">();</span>
+<span class="p">});</span></code></pre></figure>
+
+<p>Run it and look at the log. You'll see something like this:</p>
+
+<figure class="code" data-lang="sql"><figcaption>Hibernate&#x27;s log</figcaption><pre tabindex="0"><code><span class="k">select</span><span class="w"> </span><span class="n">nextval</span><span class="p">(</span><span class="s1">'venue_SEQ'</span><span class="p">)</span>
+<span class="k">select</span><span class="w"> </span><span class="n">nextval</span><span class="p">(</span><span class="s1">'concert_SEQ'</span><span class="p">)</span>
+<span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="n">venue</span><span class="w"> </span><span class="p">(</span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="n">postcode</span><span class="p">,</span><span class="w"> </span><span class="n">street</span><span class="p">,</span><span class="w"> </span><span class="n">capacity</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">values</span><span class="w"> </span><span class="p">(</span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">)</span>
+<span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="n">concert</span><span class="w"> </span><span class="p">(</span><span class="n">starts_at</span><span class="p">,</span><span class="w"> </span><span class="n">status</span><span class="p">,</span><span class="w"> </span><span class="n">title</span><span class="p">,</span><span class="w"> </span><span class="n">venue_id</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">values</span><span class="w"> </span><span class="p">(</span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">)</span></code></pre></figure>
+
+<p>Notice the order. The <code>persist()</code> calls did <em>not</em> run the inserts; they only reserved IDs. The inserts ran at commit. That delay is deliberate, and chapter 4 explains why it's the most important idea in this guide.</p>
+
+<div class="note spring"><b>In Spring Boot</b>
+<p>You don't build the factory yourself. Point Spring at the database and declare a repository interface; Spring Data writes the implementation:</p>
+
+<figure class="code" data-lang="properties"><figcaption>application.properties</figcaption><pre tabindex="0"><code><span class="na">spring.datasource.url</span><span class="o">=</span><span class="s">jdbc:postgresql://localhost:5432/concerts</span>
+<span class="na">spring.jpa.hibernate.ddl-auto</span><span class="o">=</span><span class="s">validate</span>
+<span class="na">spring.jpa.open-in-view</span><span class="o">=</span><span class="s">false</span>
+<span class="na">logging.level.org.hibernate.SQL</span><span class="o">=</span><span class="s">debug</span></code></pre></figure>
+
+<figure class="code" data-lang="java"><figcaption>ConcertRepository.java</figcaption><pre tabindex="0"><code><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ConcertRepository</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">JpaRepository</span><span class="o">&lt;</span><span class="n">Concert</span><span class="p">,</span><span class="w"> </span><span class="n">Long</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{}</span></code></pre></figure>
+<p>Those two non-default settings, <code>validate</code> and <code>open-in-view=false</code>, are explained in chapters 8 and 6. Set them on day one.</p></div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="ch" id="assoc">
+<h2><span class="n">3</span>Associations</h2>
+
+<p class="intro">Associations are where an ORM earns its keep, and where most mapping bugs live. The key idea is the <strong>owning side</strong>.</p>
+
+<p>In the database, the relationship between a concert and its tickets is one foreign key column: <code>ticket.concert_id</code>. In Java you can have <em>two</em> references, <code>ticket.concert</code> and <code>concert.tickets</code>. Two references, one column: Hibernate needs to know which reference to read when it writes that column. The answer is the side that has the foreign key, and you mark the other side with <code>mappedBy</code>.</p>
+
+<figure class="code" data-lang="java"><figcaption>Ticket.java</figcaption><pre tabindex="0"><code><span class="nd">@Entity</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Ticket</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Id</span><span class="w"> </span><span class="nd">@GeneratedValue</span><span class="p">(</span><span class="n">strategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GenerationType</span><span class="p">.</span><span class="na">SEQUENCE</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Long</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@ManyToOne</span><span class="p">(</span><span class="n">fetch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FetchType</span><span class="p">.</span><span class="na">LAZY</span><span class="p">,</span><span class="w"> </span><span class="n">optional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Concert</span><span class="w"> </span><span class="n">concert</span><span class="p">;</span><span class="w">          </span><span class="c1">// owning side: writes concert_id</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">seat</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@ManyToOne</span><span class="p">(</span><span class="n">fetch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FetchType</span><span class="p">.</span><span class="na">LAZY</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Fan</span><span class="w"> </span><span class="n">holder</span><span class="p">;</span><span class="w">               </span><span class="c1">// null until sold</span>
+
+<span class="w">    </span><span class="nd">@Version</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">version</span><span class="p">;</span><span class="w">              </span><span class="c1">// chapter 7</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>In <code>Concert</code>, <code>@OneToMany(mappedBy = "concert")</code> says "this collection is the mirror image of <code>Ticket.concert</code>; don't write anything for it". Because two Java references now describe one fact, keep them in step with small methods on the parent:</p>
+
+<figure class="code" data-lang="java"><figcaption>Concert.java (behaviour)</figcaption><pre tabindex="0"><code><span class="kd">public</span><span class="w"> </span><span class="n">Ticket</span><span class="w"> </span><span class="nf">addTicket</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">seat</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="n">ticket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Ticket</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="n">seat</span><span class="p">,</span><span class="w"> </span><span class="n">price</span><span class="p">);</span><span class="w">   </span><span class="c1">// sets ticket.concert</span>
+<span class="w">    </span><span class="n">tickets</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">ticket</span><span class="p">);</span><span class="w">                          </span><span class="c1">// and the mirror</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ticket</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">removeTicket</span><span class="p">(</span><span class="n">Ticket</span><span class="w"> </span><span class="n">ticket</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">tickets</span><span class="p">.</span><span class="na">remove</span><span class="p">(</span><span class="n">ticket</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ticket</span><span class="p">.</span><span class="na">detachFromConcert</span><span class="p">();</span><span class="w">                   </span><span class="c1">// sets concert = null</span>
+<span class="p">}</span></code></pre></figure>
+
+<div class="note pit"><b>Pitfall: changing only the inverse side</b>
+<p>If you add a ticket to <code>concert.getTickets()</code> but never set <code>ticket.concert</code>, nothing is written: the collection is the inverse side and Hibernate ignores it when deciding the foreign key. Changes are only persisted from the owning side. Helper methods make this mistake impossible.</p></div>
+
+<h3>Fetch types: make everything lazy</h3>
+<p>Every association has a fetch type. <code>LAZY</code> means "load it when I touch it"; <code>EAGER</code> means "always load it with the owner". The JPA defaults are historical and inconsistent:</p>
+<div class="tbl"><table>
+<tr><th>Annotation</th><th>Default fetch</th><th>What to use</th></tr>
+<tr><td><code>@ManyToOne</code></td><td>EAGER</td><td>LAZY</td></tr>
+<tr><td><code>@OneToOne</code></td><td>EAGER</td><td>LAZY</td></tr>
+<tr><td><code>@OneToMany</code></td><td>LAZY</td><td>LAZY</td></tr>
+<tr><td><code>@ManyToMany</code></td><td>LAZY</td><td>LAZY</td></tr>
+</table></div>
+<p>The rule is to map every association as <code>LAZY</code> and decide what to fetch <em>per query</em> (chapter 6). An eager mapping applies everywhere, forever, even to the screen that only needed the concert title. Worse, a JPQL query ignores eager joins in the mapping and fetches eager associations with extra selects afterwards. Lazy mappings plus explicit fetching give you control; eager mappings take it away. Jakarta Persistence 4.0 is adding a persistence-unit setting that makes to-one associations lazy by default, which tells you where the experts landed.</p>
+
+<h3>Cascades and orphans</h3>
+<p>A <strong>cascade</strong> passes an operation from parent to child: with <code>cascade = CascadeType.ALL</code> on <code>Concert.tickets</code>, persisting a concert persists its new tickets and removing it removes them. <code>orphanRemoval = true</code> goes further: a ticket removed from the collection is deleted from the database.</p>
+<p>Cascade from aggregate roots to the things they own, and nowhere else. A ticket doesn't own its concert, so <code>Ticket.concert</code> has no cascade. A fan doesn't own the tickets they hold. And never put <code>CascadeType.REMOVE</code> on a <code>@ManyToMany</code>: deleting one student would try to delete every course they were enrolled in, along with everyone else's enrolment.</p>
+
+<h3>Lists, sets and bags</h3>
+<p>A <code>List</code> without an <code>@OrderColumn</code> is what Hibernate calls a <strong>bag</strong>: an unordered collection that allows duplicates. Bags are fine on their own, but you can't join-fetch two bags in one query, because the result would be a Cartesian product. Hibernate refuses with a <code>MultipleBagFetchException</code>. If an entity has several collections you'll fetch together, use <code>Set</code> for them, or fetch them in separate queries.</p>
+
+<h3>Many-to-many: usually a missing entity</h3>
+<p><code>@ManyToMany</code> works, but real relationships grow attributes. "Fan follows artist" soon needs a <code>followedAt</code> date, which a bare join table can't hold. Model the link as its own entity (<code>Follow</code>, with two <code>@ManyToOne</code>s) from the start.</p>
+
+<div class="note guru"><b>Guru note: the lazy one-to-one that isn't</b>
+<p>On the inverse (<code>mappedBy</code>) side of a <code>@OneToOne</code>, Hibernate can't use a proxy, because it doesn't know whether the related row exists until it looks. So that side is effectively eager unless you enable bytecode enhancement. The fix most experts use is to share the primary key with <code>@MapsId</code> and map only the owning side.</p></div>
+
+<h3>Inheritance</h3>
+<p>If you have <code>Event</code> with subclasses <code>Concert</code> and <code>Comedy</code>, JPA offers three ways to store the hierarchy:</p>
+<div class="tbl"><table>
+<tr><th>Strategy</th><th>Tables</th><th>Trade-off</th></tr>
+<tr><td><code>SINGLE_TABLE</code></td><td>One table with a discriminator column</td><td>Fastest queries and simplest SQL, but subclass columns must be nullable.</td></tr>
+<tr><td><code>JOINED</code></td><td>One table per class, joined on the key</td><td>Normalised, allows constraints. Polymorphic queries need joins.</td></tr>
+<tr><td><code>TABLE_PER_CLASS</code></td><td>One full table per concrete class</td><td>Polymorphic queries need <code>UNION</code>s. Rarely the right answer.</td></tr>
+</table></div>
+<p>Start with <code>SINGLE_TABLE</code>. To share fields like <code>createdAt</code> without polymorphic queries, use <code>@MappedSuperclass</code>: no hierarchy in the database at all.</p>
+
+<h3>equals and hashCode</h3>
+<p>Entities go into sets and get compared, so they need <code>equals</code> and <code>hashCode</code> that survive a lifecycle in which the ID starts as <code>null</code> and is assigned later. This version is safe:</p>
+
+<figure class="code" data-lang="java"><figcaption>Ticket.java</figcaption><pre tabindex="0"><code><span class="nd">@Override</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="nf">equals</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">o</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">o</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">o</span><span class="w"> </span><span class="k">instanceof</span><span class="w"> </span><span class="n">Ticket</span><span class="w"> </span><span class="n">other</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span><span class="w">  </span><span class="c1">// works with proxies</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">id</span><span class="p">.</span><span class="na">equals</span><span class="p">(</span><span class="n">other</span><span class="p">.</span><span class="na">getId</span><span class="p">());</span><span class="w">   </span><span class="c1">// getter, not field</span>
+<span class="p">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">hashCode</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">Ticket</span><span class="p">.</span><span class="na">class</span><span class="p">.</span><span class="na">hashCode</span><span class="p">();</span><span class="w">                  </span><span class="c1">// stable across persist</span>
+<span class="p">}</span></code></pre></figure>
+<p>The constant hash code looks odd, but it means an entity added to a <code>HashSet</code> before it was saved can still be found after it gets an ID. Use <code>other.getId()</code> rather than <code>other.id</code>: on an uninitialised proxy the field is empty, but the getter works. If your entity has a natural key that never changes, such as a fan's email, comparing on that is even better.</p>
+
+<div class="note pit"><b>Pitfall: Lombok's @Data on entities</b>
+<p><code>@Data</code> generates <code>equals</code>, <code>hashCode</code> and <code>toString</code> over every field, including lazy collections. Logging an entity can then trigger a cascade of queries, or a <code>LazyInitializationException</code>, or a stack overflow on a bidirectional pair. Use <code>@Getter</code> and write the other three by hand.</p></div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="ch" id="context">
+<h2><span class="n">4</span>The persistence context</h2>
+
+<p class="intro">If you understand one thing deeply, make it this. The <strong>persistence context</strong> is the unit of work and identity map from chapter 1, living inside every <code>EntityManager</code> (Hibernate calls it the <code>Session</code>). Almost every ORM behaviour that surprises people is the persistence context doing exactly what it was designed to do.</p>
+
+<p>Think of it as a map from (entity type, ID) to a Java object, plus a snapshot of the values loaded from the database. Watch what happens in this method:</p>
+
+<figure class="code" data-lang="java"><figcaption>ConcertService.java</figcaption><pre tabindex="0"><code><span class="nd">@Transactional</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">reprice</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">concertId</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">increase</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Concert</span><span class="w"> </span><span class="n">concert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">find</span><span class="p">(</span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">concertId</span><span class="p">);</span><span class="w"> </span><span class="c1">// SELECT; snapshot taken</span>
+<span class="w">    </span><span class="n">Concert</span><span class="w"> </span><span class="n">again</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">find</span><span class="p">(</span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">concertId</span><span class="p">);</span><span class="w"> </span><span class="c1">// no SQL: same object</span>
+<span class="w">    </span><span class="k">assert</span><span class="w"> </span><span class="n">concert</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">again</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Ticket</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">concert</span><span class="p">.</span><span class="na">getTickets</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w">               </span><span class="c1">// SELECT tickets (lazy)</span>
+<span class="w">        </span><span class="n">t</span><span class="p">.</span><span class="na">setPrice</span><span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="na">getPrice</span><span class="p">().</span><span class="na">add</span><span class="p">(</span><span class="n">increase</span><span class="p">));</span><span class="w">           </span><span class="c1">// no SQL yet</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span><span class="w">   </span><span class="c1">// commit: flush compares each ticket to its snapshot, sends UPDATEs</span></code></pre></figure>
+
+<p>There is no <code>save()</code> call, and there doesn't need to be. The objects are <strong>managed</strong>: at flush time Hibernate compares each one with its snapshot (this is <strong>dirty checking</strong>) and generates an <code>UPDATE</code> for each that changed. That's also why the second <code>find</code> costs nothing and returns the identical object: one row, one object, per persistence context.</p>
+
+<p><strong>Flush</strong> means "send the pending SQL"; <strong>commit</strong> means "make it permanent". Hibernate flushes automatically at commit, before running a query whose results might be affected by pending changes, and whenever you call <code>flush()</code>. Until then, changes live only in memory. This write-behind is what makes batching possible: twenty updates to the same table can go in one JDBC round trip.</p>
+
+<h3>The four states of an entity</h3>
+<figure class="diagram">
+<svg viewBox="0 0 680 360" role="img" aria-labelledby="lc-t lc-d">
+<title id="lc-t">Entity lifecycle</title>
+<desc id="lc-d">A new object becomes managed through persist. find and queries load managed objects from the database, and flush writes their inserts and updates. detach, clear and close make managed objects detached; merge copies a detached object onto a managed instance and returns it. remove makes a managed object removed, and the next flush deletes its row.</desc>
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#13898C"/></marker>
+  <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B9770E"/></marker>
+</defs>
+<g fill="none" stroke-width="2">
+  <path d="M170 89 H259" stroke="#13898C" marker-end="url(#ah)"/>
+  <path d="M415 76 H504" stroke="#13898C" marker-end="url(#ah)"/>
+  <path d="M510 104 H421" stroke="#13898C" marker-end="url(#ah)"/>
+  <path d="M340 136 V294" stroke="#13898C" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <path d="M400 130 V219 Q400 229 410 229 H504" stroke="#B9770E" marker-end="url(#aa)"/>
+  <path d="M585 258 V294" stroke="#B9770E" marker-end="url(#aa)"/>
+</g>
+<g font-family="Literata, 'Iowan Old Style', Georgia, serif" font-size="15">
+  <rect x="20" y="60" width="150" height="58" rx="10" fill="#EEF5F4" stroke="#62C5BF" stroke-width="1.5"/>
+  <text x="95" y="85" text-anchor="middle" font-weight="700" fill="#08393E">New</text>
+  <text x="95" y="105" text-anchor="middle" font-size="12.5" fill="#3E5B5E">not tracked, no row</text>
+
+  <rect x="265" y="60" width="150" height="70" rx="10" fill="#0B5D63"/>
+  <text x="340" y="90" text-anchor="middle" font-weight="700" fill="#fff">Managed</text>
+  <text x="340" y="111" text-anchor="middle" font-size="12.5" fill="#D2EBE8">tracked, dirty-checked</text>
+
+  <rect x="510" y="60" width="150" height="58" rx="10" fill="#EEF5F4" stroke="#62C5BF" stroke-width="1.5"/>
+  <text x="585" y="85" text-anchor="middle" font-weight="700" fill="#08393E">Detached</text>
+  <text x="585" y="105" text-anchor="middle" font-size="12.5" fill="#3E5B5E">has an ID, not tracked</text>
+
+  <rect x="510" y="200" width="150" height="58" rx="10" fill="#F7EAD0" stroke="#D9A341" stroke-width="1.5"/>
+  <text x="585" y="225" text-anchor="middle" font-weight="700" fill="#8A5806">Removed</text>
+  <text x="585" y="245" text-anchor="middle" font-size="12.5" fill="#8A5806">deleted at next flush</text>
+
+  <rect x="20" y="300" width="640" height="44" rx="10" fill="#E1EDEB" stroke="#BFD6D3" stroke-width="1.5"/>
+  <text x="40" y="327" font-weight="700" fill="#08393E">Database</text>
+</g>
+<g font-family="'JetBrains Mono', ui-monospace, Menlo, monospace" font-size="12" fill="#08393E">
+  <text x="214" y="80" text-anchor="middle">persist()</text>
+  <text x="462" y="30" text-anchor="middle">detach(), clear(),</text>
+  <text x="462" y="46" text-anchor="middle">close()</text>
+  <text x="462" y="150" text-anchor="middle">merge()</text>
+  <text x="462" y="165" text-anchor="middle" font-size="11" fill="#3E5B5E">returns a copy</text>
+  <text x="330" y="206" text-anchor="end">find(), queries</text>
+  <text x="330" y="221" text-anchor="end" font-size="11" fill="#3E5B5E">load rows</text>
+  <text x="350" y="262">flush:</text>
+  <text x="350" y="277">INSERT, UPDATE</text>
+  <text x="412" y="221" fill="#8A5806">remove()</text>
+  <text x="575" y="282" text-anchor="end" fill="#8A5806">flush: DELETE</text>
+</g>
+</svg>
+<figcaption>Only managed entities are tracked. Everything you change on a managed entity is written at the next flush; everything you change on a detached one is ignored unless you merge it.</figcaption>
+</figure>
+
+<h3>persist versus merge</h3>
+<p><code>persist(x)</code> makes <code>x</code> itself managed. <code>merge(x)</code> does something quite different: it finds or loads the managed instance with the same ID, copies <code>x</code>'s state onto it, and <strong>returns that managed instance</strong>. The object you passed in stays detached. This trips up nearly everyone once:</p>
+
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="n">Fan</span><span class="w"> </span><span class="n">managed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">merge</span><span class="p">(</span><span class="n">detachedFan</span><span class="p">);</span>
+<span class="n">detachedFan</span><span class="p">.</span><span class="na">setName</span><span class="p">(</span><span class="s">"Ada"</span><span class="p">);</span><span class="w">   </span><span class="c1">// ignored: this object isn't tracked</span>
+<span class="n">managed</span><span class="p">.</span><span class="na">setName</span><span class="p">(</span><span class="s">"Ada"</span><span class="p">);</span><span class="w">       </span><span class="c1">// written at flush</span></code></pre></figure>
+
+<div class="note spring"><b>In Spring Data</b>
+<p><code>repository.save(entity)</code> calls <code>persist</code> if the entity looks new and <code>merge</code> otherwise. "New" means a <code>null</code> <code>@Version</code> if the entity has a wrapper-typed one (<code>Long</code>, not <code>long</code>), and otherwise a <code>null</code> ID. So always use the return value of <code>save()</code>. And if you assign IDs yourself, say a UUID in the constructor, every save of a brand-new entity looks like a merge and costs an extra <code>SELECT</code>. Add a <code>Long</code> <code>@Version</code> field or implement <code>Persistable</code> to fix it. Inside a transaction you rarely need <code>save()</code> for updates at all: dirty checking does it.</p></div>
+
+<h3>find versus getReference</h3>
+<p><code>find()</code> returns the real object, querying if needed. <code>getReference()</code> returns a proxy holding only the ID, with no query until you call one of its other methods. That's perfect for setting a foreign key:</p>
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="n">ticket</span><span class="p">.</span><span class="na">setHolder</span><span class="p">(</span><span class="n">em</span><span class="p">.</span><span class="na">getReference</span><span class="p">(</span><span class="n">Fan</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">fanId</span><span class="p">));</span><span class="w">  </span><span class="c1">// no SELECT on fan</span></code></pre></figure>
+
+<h3>Scope, and the famous exception</h3>
+<p>A persistence context is cheap to create and not thread-safe. Use one per unit of work, which in Spring means one per transaction. It also holds a reference to everything it has loaded, so a batch job that streams a million rows through one context will run out of memory unless it calls <code>flush()</code> and <code>clear()</code> every few hundred rows.</p>
+<p>When the context closes, its entities become detached, and an uninitialised lazy proxy can no longer reach the database. Touching it throws <code>LazyInitializationException</code>. The exception is a symptom, not the disease: it means some code needed data that the query didn't fetch. The fix is to fetch what the use case needs while the transaction is open (chapter 6), not to make the association eager or keep the session open longer.</p>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="ch" id="query">
+<h2><span class="n">5</span>Querying</h2>
+
+<p class="intro">Choose your query by what you'll do with the result. If you're going to <strong>change</strong> it, load entities, so dirty checking can write the changes back. If you're only going to <strong>show</strong> it, load exactly the columns you need into a DTO. Most screens are read-only, so most queries should return DTOs.</p>
+
+<h3>JPQL and HQL</h3>
+<p>JPQL is SQL-shaped but speaks in entities and fields. HQL is Hibernate's superset of it, and in Hibernate 6 and later the two are almost the same language. Paths like <code>c.venue.address.city</code> become joins for you.</p>
+
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="n">upcoming</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        select c from Concert c</span>
+<span class="s">        where c.venue.address.city = :city and c.startsAt &gt; :now</span>
+<span class="s">        order by c.startsAt"""</span><span class="p">,</span><span class="w"> </span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"city"</span><span class="p">,</span><span class="w"> </span><span class="s">"London"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"now"</span><span class="p">,</span><span class="w"> </span><span class="n">Instant</span><span class="p">.</span><span class="na">now</span><span class="p">())</span>
+<span class="w">    </span><span class="p">.</span><span class="na">getResultList</span><span class="p">();</span></code></pre></figure>
+
+<p>Always bind values as parameters, never by concatenating strings. Parameters prevent SQL injection and let the database reuse execution plans. JPA 3.2 standardised several things Hibernate users had long enjoyed: queries without a <code>select</code> clause (<code>from Concert where status = :s</code>), <code>union</code>, <code>intersect</code> and <code>except</code>, and functions such as <code>cast()</code>, <code>left()</code>, <code>right()</code>, <code>replace()</code>, <code>id()</code> and <code>version()</code>.</p>
+
+<h3>DTO projections with records</h3>
+
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">ConcertCard</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">title</span><span class="p">,</span><span class="w"> </span><span class="n">Instant</span><span class="w"> </span><span class="n">startsAt</span><span class="p">,</span>
+<span class="w">                          </span><span class="n">String</span><span class="w"> </span><span class="n">venue</span><span class="p">,</span><span class="w"> </span><span class="n">Long</span><span class="w"> </span><span class="n">seatsLeft</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="n">List</span><span class="o">&lt;</span><span class="n">ConcertCard</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cards</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        select new com.example.ConcertCard(c.title, c.startsAt, v.name, count(t))</span>
+<span class="s">        from Concert c</span>
+<span class="s">        join c.venue v</span>
+<span class="s">        left join c.tickets t on t.holder is null</span>
+<span class="s">        group by c.id, c.title, c.startsAt, v.name</span>
+<span class="s">        order by c.startsAt"""</span><span class="p">,</span><span class="w"> </span><span class="n">ConcertCard</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">getResultList</span><span class="p">();</span></code></pre></figure>
+
+<p>One query, four columns, no entities, nothing for the persistence context to track. Note the fully qualified class name in <code>select new</code>, which JPA requires.</p>
+
+<h3>Criteria API and the metamodel</h3>
+<p>For queries assembled at runtime, such as a search form with optional filters, use the Criteria API. Add the <code>hibernate-processor</code> annotation processor to your build and it generates a <strong>static metamodel</strong>: a class <code>Concert_</code> whose fields describe <code>Concert</code>'s attributes. Typos then fail at compile time instead of in production.</p>
+
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="kd">var</span><span class="w"> </span><span class="n">cb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">getCriteriaBuilder</span><span class="p">();</span>
+<span class="kd">var</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cb</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="kd">var</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+
+<span class="kd">var</span><span class="w"> </span><span class="n">where</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Predicate</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">city</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span>
+<span class="w">    </span><span class="n">where</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">cb</span><span class="p">.</span><span class="na">equal</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">Concert_</span><span class="p">.</span><span class="na">venue</span><span class="p">).</span><span class="na">get</span><span class="p">(</span><span class="n">Venue_</span><span class="p">.</span><span class="na">address</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">Address_</span><span class="p">.</span><span class="na">city</span><span class="p">),</span><span class="w"> </span><span class="n">city</span><span class="p">));</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">from</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span>
+<span class="w">    </span><span class="n">where</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">cb</span><span class="p">.</span><span class="na">greaterThanOrEqualTo</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">Concert_</span><span class="p">.</span><span class="na">startsAt</span><span class="p">),</span><span class="w"> </span><span class="n">from</span><span class="p">));</span>
+
+<span class="n">q</span><span class="p">.</span><span class="na">where</span><span class="p">(</span><span class="n">where</span><span class="p">.</span><span class="na">toArray</span><span class="p">(</span><span class="n">Predicate</span><span class="o">[]</span><span class="p">::</span><span class="k">new</span><span class="p">))</span>
+<span class="w"> </span><span class="p">.</span><span class="na">orderBy</span><span class="p">(</span><span class="n">cb</span><span class="p">.</span><span class="na">asc</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">Concert_</span><span class="p">.</span><span class="na">startsAt</span><span class="p">)));</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="n">q</span><span class="p">).</span><span class="na">getResultList</span><span class="p">();</span></code></pre></figure>
+
+<p>And when you need something the query language can't express cleanly, such as a recursive CTE or a vendor-specific function, write native SQL with <code>createNativeQuery</code>. Using an ORM doesn't mean giving up SQL.</p>
+
+<h3>Spring Data repositories</h3>
+<p>Spring Data JPA derives queries from method names, takes explicit JPQL in <code>@Query</code>, and can shape results into interfaces or records:</p>
+
+<figure class="code" data-lang="java"><figcaption>ConcertRepository.java</figcaption><pre tabindex="0"><code><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ConcertRepository</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">JpaRepository</span><span class="o">&lt;</span><span class="n">Concert</span><span class="p">,</span><span class="w"> </span><span class="n">Long</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findByVenueNameOrderByStartsAt</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">venueName</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nd">@Query</span><span class="p">(</span><span class="s">"select c from Concert c join fetch c.venue where c.status = :status"</span><span class="p">)</span>
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findWithVenue</span><span class="p">(</span><span class="nd">@Param</span><span class="p">(</span><span class="s">"status"</span><span class="p">)</span><span class="w"> </span><span class="n">Status</span><span class="w"> </span><span class="n">status</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nd">@EntityGraph</span><span class="p">(</span><span class="n">attributePaths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"venue"</span><span class="p">)</span>
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findByStatus</span><span class="p">(</span><span class="n">Status</span><span class="w"> </span><span class="n">status</span><span class="p">);</span>
+
+<span class="w">    </span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findByTitleContainingIgnoreCase</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">text</span><span class="p">,</span><span class="w"> </span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">type</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The last method is a dynamic projection: pass <code>ConcertCard.class</code> or <code>Concert.class</code> and get the shape you asked for. Derived names are great up to about three conditions; past that, use <code>@Query</code>, or <code>Specification</code>s for dynamic filters.</p>
+
+<h3>Jakarta Data: the standard repository</h3>
+<p>Jakarta Data takes the repository idea and standardises it. With Hibernate's implementation, the annotation processor generates the repository and <strong>type-checks your queries at compile time</strong>. A misspelt field in a query is a build error.</p>
+
+<figure class="code" data-lang="java"><figcaption>Concerts.java</figcaption><pre tabindex="0"><code><span class="nd">@Repository</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">Concerts</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="nd">@Find</span>
+<span class="w">    </span><span class="n">Optional</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">byId</span><span class="p">(</span><span class="n">Long</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nd">@Find</span>
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">byStatus</span><span class="p">(</span><span class="n">Status</span><span class="w"> </span><span class="n">status</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="n">order</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nd">@Query</span><span class="p">(</span><span class="s">"where venue.name = :venue order by startsAt"</span><span class="p">)</span>
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">at</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">venue</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nd">@Insert</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="n">Concert</span><span class="w"> </span><span class="n">concert</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Hibernate's repositories run on a <code>StatelessSession</code> by default: no persistence context, no lazy loading, no dirty checking. You call <code>@Update</code> when you want an update. It's more explicit and harder to misuse, and it's where the standard is heading (chapter 10).</p>
+
+<h3>Paging: offset versus keyset</h3>
+<p><code>setFirstResult</code> and <code>setMaxResults</code> (or Spring's <code>Pageable</code>) produce <code>OFFSET</code> pagination. It's simple, but page 5,000 makes the database read and throw away 100,000 rows. For deep or infinite scrolling, use <strong>keyset</strong> pagination: remember the last row you showed and seek past it.</p>
+
+<figure class="code" data-lang="sql"><pre tabindex="0"><code><span class="c1">-- offset: reads 100,020 rows, returns 20</span>
+<span class="k">select</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">concert</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">starts_at</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">offset</span><span class="w"> </span><span class="mi">100000</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span>
+
+<span class="c1">-- keyset: an index seek straight to the next page</span>
+<span class="k">select</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">concert</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="p">(</span><span class="n">starts_at</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="p">(</span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="p">)</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">starts_at</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span></code></pre></figure>
+<p>Spring Data supports keyset scrolling through <code>ScrollPosition.keyset()</code> and the <code>Window</code> result type, and Hibernate has <code>KeyedPage</code>. Always order by something unique, such as adding the ID as a tie-breaker.</p>
+
+<h3>Bulk updates skip the persistence context</h3>
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="kt">int</span><span class="w"> </span><span class="n">changed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        update Ticket t set t.price = t.price * 0.9</span>
+<span class="s">        where t.concert.id = :id"""</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"id"</span><span class="p">,</span><span class="w"> </span><span class="n">concertId</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">executeUpdate</span><span class="p">();</span></code></pre></figure>
+<p>This is one SQL statement and far faster than loading every ticket. But it goes straight to the database: tickets already loaded in this persistence context still hold the old price, and their <code>@Version</code> values don't change. Run bulk statements at the start of a transaction, or call <code>em.clear()</code> afterwards. (HQL's <code>update versioned</code> also bumps the version.)</p>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="ch" id="perf">
+<h2><span class="n">6</span>Performance</h2>
+
+<p class="intro">ORM performance problems are almost never Hibernate being slow at Java. They're Hibernate sending more SQL than you expected, because the code asked for it without realising.</p>
+
+<h3>The N+1 problem</h3>
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="n">concerts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="s">"from Concert"</span><span class="p">,</span><span class="w"> </span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">                           </span><span class="p">.</span><span class="na">getResultList</span><span class="p">();</span><span class="w">               </span><span class="c1">// 1 query</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Concert</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">concerts</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="na">getTitle</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">" at "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="na">getVenue</span><span class="p">().</span><span class="na">getName</span><span class="p">());</span>
+<span class="p">}</span></code></pre></figure>
+<p>The loop looks innocent. But <code>getVenue()</code> returns a lazy proxy, and <code>getName()</code> makes it load, so each venue costs its own query. Try the four standard fixes on the same task: <strong>100 concerts spread across 40 venues</strong>.</p>
+
+<div class="sim">
+  <input type="radio" name="fetch" id="f-lazy" checked>
+  <input type="radio" name="fetch" id="f-join">
+  <input type="radio" name="fetch" id="f-batch">
+  <input type="radio" name="fetch" id="f-dto">
+  <div class="sim-top">
+    <p>Pick a fetch strategy and see what reaches the database.</p>
+    <div class="sim-tabs">
+      <label for="f-lazy">Lazy loop</label>
+      <label for="f-join">Join fetch</label>
+      <label for="f-batch">Batch fetch</label>
+      <label for="f-dto">DTO projection</label>
+    </div>
+  </div>
+  <div class="sim-panels">
+    <div class="panel p-lazy">
+      <div class="count"><strong>41</strong><span>SQL statements</span></div>
+      <div class="ticks" aria-hidden="true"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span><span style="--i:5"></span><span style="--i:6"></span><span style="--i:7"></span><span style="--i:8"></span><span style="--i:9"></span><span style="--i:10"></span><span style="--i:11"></span><span style="--i:12"></span><span style="--i:13"></span><span style="--i:14"></span><span style="--i:15"></span><span style="--i:16"></span><span style="--i:17"></span><span style="--i:18"></span><span style="--i:19"></span><span style="--i:20"></span><span style="--i:21"></span><span style="--i:22"></span><span style="--i:23"></span><span style="--i:24"></span><span style="--i:25"></span><span style="--i:26"></span><span style="--i:27"></span><span style="--i:28"></span><span style="--i:29"></span><span style="--i:30"></span><span style="--i:31"></span><span style="--i:32"></span><span style="--i:33"></span><span style="--i:34"></span><span style="--i:35"></span><span style="--i:36"></span><span style="--i:37"></span><span style="--i:38"></span><span style="--i:39"></span><span style="--i:40"></span></div>
+<pre>select c1_0.id, ..., c1_0.venue_id from concert c1_0
+select v1_0.id, v1_0.capacity, ... from venue v1_0 where v1_0.id=?   <i>-- venue 1</i>
+select v1_0.id, v1_0.capacity, ... from venue v1_0 where v1_0.id=?   <i>-- venue 2</i>
+<i>-- ... 37 more ...</i>
+select v1_0.id, v1_0.capacity, ... from venue v1_0 where v1_0.id=?   <i>-- venue 40</i></pre>
+      <p>Why 41 and not 101? The persistence context loads each venue once; concerts at the same venue share one object. It's still 40 network round trips that a single join would have avoided. Mapping <code>venue</code> as <code>EAGER</code> wouldn't help: a JPQL query fetches eager associations with these same extra selects, just earlier.</p>
+    </div>
+    <div class="panel p-join">
+      <div class="count"><strong>1</strong><span>SQL statement</span></div>
+      <div class="ticks" aria-hidden="true"><span style="--i:0"></span></div>
+<pre>select c1_0.id, ..., v1_0.id, v1_0.name, ...
+from concert c1_0 join venue v1_0 on v1_0.id=c1_0.venue_id</pre>
+      <p><code>select c from Concert c join fetch c.venue</code> loads the concerts and their venues in one statement. In Spring Data, <code>@EntityGraph(attributePaths = "venue")</code> does the same without writing JPQL. Best when you know the use case needs the association. Be careful join-fetching <em>collections</em> with paging; see below.</p>
+    </div>
+    <div class="panel p-batch">
+      <div class="count"><strong>4</strong><span>SQL statements</span></div>
+      <div class="ticks" aria-hidden="true"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span></div>
+<pre>select c1_0.id, ... from concert c1_0
+select v1_0.id, ... from venue v1_0 where v1_0.id = any (?)   <i>-- 16 ids</i>
+select v1_0.id, ... from venue v1_0 where v1_0.id = any (?)   <i>-- 16 ids</i>
+select v1_0.id, ... from venue v1_0 where v1_0.id = any (?)   <i>-- 8 ids</i></pre>
+      <p>With <code>hibernate.default_batch_fetch_size=16</code> (or <code>@BatchSize</code> on the association), touching one uninitialised venue loads up to 16 of them at once. On PostgreSQL, Hibernate passes the IDs as a single array parameter; on other databases it uses an <code>IN</code> list. It's a safety net that fixes N+1 everywhere without changing any queries. Many teams set it globally on day one.</p>
+    </div>
+    <div class="panel p-dto">
+      <div class="count"><strong>1</strong><span>SQL statement</span></div>
+      <div class="ticks" aria-hidden="true"><span style="--i:0"></span></div>
+<pre>select c1_0.title, v1_0.name
+from concert c1_0 join venue v1_0 on v1_0.id=c1_0.venue_id</pre>
+      <p><code>select new com.example.ConcertLine(c.title, c.venue.name) from Concert c</code> fetches exactly two columns. No entities are created, nothing is dirty-checked, and the result can't trigger lazy loading later. For a read-only list this is the fastest option and usually the right one.</p>
+    </div>
+  </div>
+</div>
+
+<p>Collections behave the same way, but worse, because they don't share. Calling <code>c.getTickets().size()</code> in that loop costs one query per concert: 1 + 100. The same four fixes apply.</p>
+
+<h3>The pagination trap</h3>
+<p>Combine a collection join fetch with <code>setMaxResults(20)</code> and Hibernate can't put <code>LIMIT</code> in the SQL, because the database would be limiting joined rows, not concerts. So it fetches <em>everything</em> and pages in memory, logging warning <code>HHH90003004</code>. Fine in tests, a disaster on a real table. Turn the warning into an error with <code>hibernate.query.fail_on_pagination_over_collection_fetch=true</code>, and page in two steps:</p>
+
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="n">List</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ids</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span>
+<span class="w">        </span><span class="s">"select c.id from Concert c order by c.startsAt"</span><span class="p">,</span><span class="w"> </span><span class="n">Long</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setFirstResult</span><span class="p">(</span><span class="n">page</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">20</span><span class="p">).</span><span class="na">setMaxResults</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">getResultList</span><span class="p">();</span><span class="w">                                  </span><span class="c1">// page the IDs</span>
+
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Concert</span><span class="o">&gt;</span><span class="w"> </span><span class="n">concerts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        select c from Concert c left join fetch c.tickets</span>
+<span class="s">        where c.id in :ids order by c.startsAt"""</span><span class="p">,</span><span class="w"> </span><span class="n">Concert</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"ids"</span><span class="p">,</span><span class="w"> </span><span class="n">ids</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">getResultList</span><span class="p">();</span><span class="w">                                  </span><span class="c1">// then fetch the graph</span></code></pre></figure>
+<p>You don't need <code>distinct</code> here: since Hibernate 6, entity results of a join fetch are de-duplicated automatically.</p>
+
+<h3>Writing fast: batching</h3>
+<p>By default every <code>INSERT</code> and <code>UPDATE</code> is its own round trip. Turn on JDBC batching and Hibernate groups them:</p>
+
+<figure class="code" data-lang="properties"><pre tabindex="0"><code><span class="na">hibernate.jdbc.batch_size</span><span class="o">=</span><span class="s">50</span>
+<span class="na">hibernate.order_inserts</span><span class="o">=</span><span class="s">true</span>
+<span class="na">hibernate.order_updates</span><span class="o">=</span><span class="s">true</span>
+<span class="c1"># PostgreSQL driver: rewrite batches into multi-row inserts</span>
+<span class="na">spring.datasource.url</span><span class="o">=</span><span class="s">jdbc:postgresql://db/concerts?reWriteBatchedInserts=true</span></code></pre></figure>
+<p>This is where <code>SEQUENCE</code> keys pay off. With <code>IDENTITY</code>, Hibernate must execute each insert immediately to learn its key, so insert batching quietly switches off. For large imports, skip the persistence context entirely with a <code>StatelessSession</code>: no snapshots, no first-level cache, just <code>insert()</code>, <code>update()</code> and <code>delete()</code> that go straight to JDBC.</p>
+
+<h3>Caching: know the three levels</h3>
+<ul>
+  <li><strong>First-level cache:</strong> the persistence context itself. Always on, scoped to one transaction. It's why repeated <code>find()</code>s are free.</li>
+  <li><strong>Second-level cache:</strong> opt-in, shared across transactions, provided by a JCache implementation. Excellent for read-mostly reference data, such as venues. Wrong for frequently updated data, such as tickets, where cache invalidation costs more than the query it saves. Mark entities with <code>@Cacheable</code>.</li>
+  <li><strong>Query cache:</strong> stores query results and is invalidated whenever any table in the query changes. Rarely worth it.</li>
+</ul>
+
+<div class="note pit"><b>Pitfall: Open Session in View</b>
+<p>Spring Boot enables <code>spring.jpa.open-in-view</code> by default, and logs a warning saying so. It keeps the persistence context open until the HTTP response is rendered, so lazy loading "just works" in controllers and views. The cost: a database connection is held for the whole request, and queries fire from places nobody reviews, often as N+1s. Set it to <code>false</code> and fetch what each endpoint needs in the service layer.</p></div>
+
+<h3>Make the SQL visible</h3>
+<p>You can't fix what you can't see. In development, log every statement and its bind values; in production, log the slow ones.</p>
+<figure class="code" data-lang="properties"><pre tabindex="0"><code><span class="na">logging.level.org.hibernate.SQL</span><span class="o">=</span><span class="s">debug              # statements</span>
+<span class="na">logging.level.org.hibernate.orm.jdbc.bind</span><span class="o">=</span><span class="s">trace    # bind values (Hibernate 6+)</span>
+<span class="na">spring.jpa.properties.hibernate.generate_statistics</span><span class="o">=</span><span class="s">true</span>
+<span class="na">spring.jpa.properties.hibernate.log_slow_query</span><span class="o">=</span><span class="s">200 # ms</span></code></pre></figure>
+<p>Then make it a test: assert the number of statements a use case sends (chapter 8). Once that number is pinned in CI, nobody can introduce an N+1 by accident.</p>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="ch" id="tx">
+<h2><span class="n">7</span>Transactions and concurrency</h2>
+
+<p class="intro">The persistence context lives inside a transaction, so where you draw transaction boundaries decides what you can lazily load, when changes are written, and how long you hold database connections and locks.</p>
+
+<p>Put <code>@Transactional</code> on service methods that represent one business operation. Keep them short, and never make remote calls (HTTP, messaging, email) inside one: you'd be holding a connection, and maybe row locks, while waiting on someone else's network.</p>
+
+<ul>
+  <li><code>@Transactional(readOnly = true)</code> on queries. Spring tells Hibernate not to flush, and Hibernate can skip keeping snapshots for dirty checking.</li>
+  <li>The default propagation, <code>REQUIRED</code>, joins an existing transaction. <code>REQUIRES_NEW</code> suspends it and starts a separate one, for an audit record that must survive a rollback, for example.</li>
+  <li>By default Spring rolls back on unchecked exceptions only. A checked exception commits unless you set <code>rollbackFor</code>.</li>
+</ul>
+
+<div class="note pit"><b>Pitfall: self-invocation</b>
+<p>Spring applies <code>@Transactional</code> through a proxy. If <code>placeOrder()</code> calls <code>this.reserveSeats()</code> in the same class, the call doesn't go through the proxy, and <code>reserveSeats()</code>'s annotation is ignored. Move the method to another bean, or put the transaction on the outer method.</p></div>
+
+<h3>The last ticket</h3>
+<p>Two fans open the same concert page. One seat is left. Both click "buy" within a millisecond:</p>
+
+<figure class="code" data-lang="java"><figcaption>TicketService.java</figcaption><pre tabindex="0"><code><span class="nd">@Transactional</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">buy</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">ticketId</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">fanId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Ticket</span><span class="w"> </span><span class="n">ticket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tickets</span><span class="p">.</span><span class="na">findById</span><span class="p">(</span><span class="n">ticketId</span><span class="p">).</span><span class="na">orElseThrow</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ticket</span><span class="p">.</span><span class="na">getHolder</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SeatTaken</span><span class="p">(</span><span class="n">ticketId</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ticket</span><span class="p">.</span><span class="na">setHolder</span><span class="p">(</span><span class="n">fans</span><span class="p">.</span><span class="na">getReferenceById</span><span class="p">(</span><span class="n">fanId</span><span class="p">));</span>
+<span class="p">}</span></code></pre></figure>
+<p>Both transactions read the ticket, both see no holder, both set themselves as holder, both commit. The second update silently overwrites the first. This is a <strong>lost update</strong>, and the database's default isolation level (read committed on PostgreSQL, Oracle and SQL Server) does not prevent it.</p>
+
+<h4>Fix 1: optimistic locking</h4>
+<p>The <code>@Version</code> field on <code>Ticket</code> changes the update Hibernate sends:</p>
+<figure class="code" data-lang="sql"><pre tabindex="0"><code><span class="k">update</span><span class="w"> </span><span class="n">ticket</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">holder_id</span><span class="o">=?</span><span class="p">,</span><span class="w"> </span><span class="k">version</span><span class="o">=?</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">id</span><span class="o">=?</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">version</span><span class="o">=?</span>
+<span class="c1">-- binds: fan 7, new version 4, ticket 42, version read earlier 3</span></code></pre></figure>
+<p>The first commit matches the row and moves it to version 4. The second finds no row with version 3, updates nothing, and Hibernate throws an <code>OptimisticLockException</code> (Spring wraps it as <code>ObjectOptimisticLockingFailureException</code>). Nothing is overwritten. You then tell the fan the seat is gone, or retry the <em>whole</em> transaction from a fresh read. Optimistic locking takes no locks at all, so it suits the common case where conflicts are rare. Put <code>@Version</code> on every entity that users edit concurrently.</p>
+
+<h4>Fix 2: an atomic conditional update</h4>
+<figure class="code" data-lang="java"><figcaption>TicketRepository.java</figcaption><pre tabindex="0"><code><span class="nd">@Modifying</span>
+<span class="nd">@Query</span><span class="p">(</span><span class="s">"update Ticket t set t.holder = :fan where t.id = :id and t.holder is null"</span><span class="p">)</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">claim</span><span class="p">(</span><span class="nd">@Param</span><span class="p">(</span><span class="s">"id"</span><span class="p">)</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="nd">@Param</span><span class="p">(</span><span class="s">"fan"</span><span class="p">)</span><span class="w"> </span><span class="n">Fan</span><span class="w"> </span><span class="n">fan</span><span class="p">);</span></code></pre></figure>
+<p>One statement; the database guarantees only one caller can match the row. A return value of <code>1</code> means you got the seat, <code>0</code> means someone beat you. Often the simplest correct answer is a well-aimed piece of SQL.</p>
+
+<h4>Fix 3: pessimistic locking</h4>
+<p><code>@Lock(LockModeType.PESSIMISTIC_WRITE)</code> on a repository method (or <code>em.find(Ticket.class, id, LockModeType.PESSIMISTIC_WRITE)</code>) emits <code>SELECT ... FOR UPDATE</code>: the second buyer waits until the first commits, then sees the holder. Use it when conflicts are frequent, and keep the transaction tiny. For work queues, where several workers grab jobs, add <code>SKIP LOCKED</code> so each worker takes rows nobody else holds; Hibernate treats a lock timeout of <code>-2</code> as <code>SKIP LOCKED</code> on databases that support it.</p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="ch" id="ship">
+<h2><span class="n">8</span>Schema and testing</h2>
+
+<p class="intro">Hibernate can create your schema from the mappings, and that's lovely for a tutorial. It's not how you run production.</p>
+
+<p><code>spring.jpa.hibernate.ddl-auto</code> (plain Hibernate: <code>hibernate.hbm2ddl.auto</code>) accepts <code>none</code>, <code>validate</code>, <code>update</code>, <code>create</code> and <code>create-drop</code>. Use <code>create-drop</code> for throwaway experiments only. In every real environment, manage the schema with versioned migration scripts in <strong>Flyway</strong> or <strong>Liquibase</strong>, reviewed like any other code, and set Hibernate to <code>validate</code> so the application refuses to start if mappings and schema disagree. <code>update</code> never drops or renames anything and can't migrate data, so it drifts.</p>
+
+<h3>Test against the real database</h3>
+<p>An in-memory H2 database is not PostgreSQL. It differs in SQL syntax, types, locking and the query plans that drive performance. Testcontainers starts the real thing in Docker for each test run, and Spring Boot wires it in with one annotation:</p>
+
+<figure class="code" data-lang="java"><figcaption>ConcertQueriesTest.java</figcaption><pre tabindex="0"><code><span class="nd">@DataJpaTest</span>
+<span class="nd">@AutoConfigureTestDatabase</span><span class="p">(</span><span class="n">replace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Replace</span><span class="p">.</span><span class="na">NONE</span><span class="p">)</span><span class="w">   </span><span class="c1">// keep the real database</span>
+<span class="nd">@Testcontainers</span>
+<span class="kd">class</span> <span class="nc">ConcertQueriesTest</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="nd">@Container</span><span class="w"> </span><span class="nd">@ServiceConnection</span>
+<span class="w">    </span><span class="kd">static</span><span class="w"> </span><span class="n">PostgreSQLContainer</span><span class="w"> </span><span class="n">postgres</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostgreSQLContainer</span><span class="p">(</span><span class="s">"postgres:17"</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">ConcertRepository</span><span class="w"> </span><span class="n">concerts</span><span class="p">;</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">EntityManagerFactory</span><span class="w"> </span><span class="n">emf</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Test</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">listingUsesOneQuery</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Statistics</span><span class="w"> </span><span class="n">stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emf</span><span class="p">.</span><span class="na">unwrap</span><span class="p">(</span><span class="n">SessionFactory</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">getStatistics</span><span class="p">();</span>
+<span class="w">        </span><span class="n">stats</span><span class="p">.</span><span class="na">clear</span><span class="p">();</span>
+
+<span class="w">        </span><span class="n">concerts</span><span class="p">.</span><span class="na">findByStatus</span><span class="p">(</span><span class="n">Status</span><span class="p">.</span><span class="na">ON_SALE</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">forEach</span><span class="p">(</span><span class="n">c</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="na">getVenue</span><span class="p">().</span><span class="na">getName</span><span class="p">());</span>
+
+<span class="w">        </span><span class="n">assertThat</span><span class="p">(</span><span class="n">stats</span><span class="p">.</span><span class="na">getPrepareStatementCount</span><span class="p">()).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+<p>That last assertion is the most valuable test in an ORM codebase. It pins down the SQL budget of a use case, so an innocent-looking change that introduces an N+1 fails the build. (It needs <code>hibernate.generate_statistics=true</code> in the test configuration.) Libraries such as datasource-proxy do the same at the JDBC level.</p>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="ch" id="beyond">
+<h2><span class="n">9</span>Beyond JPA</h2>
+
+<p class="intro">JPA is the default in Java, not the only option. The real question is <strong>which side owns the truth</strong>. If your domain model is the centre and the database is how you store it, a full ORM fits. If the SQL is the centre, because of complex reporting, a schema owned by DBAs, or performance-critical queries, a SQL-first tool fits better. Many good systems use both.</p>
+
+<div class="tbl wide"><table>
+<tr><th>Tool</th><th>Model</th><th>Tracks changes for you?</th><th>Reach for it when</th></tr>
+<tr><td><strong>Hibernate / JPA</strong></td><td>Object graph mapped to tables</td><td>Yes: persistence context, lazy loading, dirty checking</td><td>Rich domain models with read-modify-write workflows</td></tr>
+<tr><td><strong>Spring Data JPA</strong></td><td>Repositories on top of JPA</td><td>Yes, via JPA</td><td>Spring applications that want less boilerplate</td></tr>
+<tr><td><strong>Jakarta Data</strong></td><td>Standard repositories, checked at compile time</td><td>No: stateless by default in Hibernate</td><td>Explicit, portable data access on Jakarta EE or Quarkus</td></tr>
+<tr><td><strong>Spring Data JDBC</strong></td><td>Aggregates mapped to tables, no proxies</td><td>No: saves the whole aggregate when you call <code>save()</code></td><td>Domain-driven aggregates where predictable SQL matters more than magic</td></tr>
+<tr><td><strong>jOOQ</strong></td><td>Type-safe SQL built in Java, generated from your schema</td><td>No (optional updatable records)</td><td>Complex queries, reporting, database-first teams</td></tr>
+<tr><td><strong>MyBatis</strong></td><td>SQL in XML or annotations, mapped to objects</td><td>No; optional lazy loading of nested selects</td><td>Hand-tuned SQL, legacy schemas, DBA-owned queries</td></tr>
+<tr><td><strong>Hibernate Reactive</strong></td><td>Hibernate's mappings on a non-blocking driver</td><td>Yes</td><td>Reactive stacks, especially Quarkus</td></tr>
+</table></div>
+
+<h3>jOOQ: SQL as Java</h3>
+<p>jOOQ reads your schema and generates a class per table. You then write SQL in Java, and the compiler checks every table, column and type:</p>
+
+<figure class="code" data-lang="java"><pre tabindex="0"><code><span class="kd">record</span> <span class="nc">ConcertRow</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">title</span><span class="p">,</span><span class="w"> </span><span class="n">OffsetDateTime</span><span class="w"> </span><span class="n">startsAt</span><span class="p">,</span>
+<span class="w">                  </span><span class="n">String</span><span class="w"> </span><span class="n">venue</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="w"> </span><span class="n">seatsLeft</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="n">List</span><span class="o">&lt;</span><span class="n">ConcertRow</span><span class="o">&gt;</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctx</span>
+<span class="w">    </span><span class="p">.</span><span class="na">select</span><span class="p">(</span><span class="n">CONCERT</span><span class="p">.</span><span class="na">TITLE</span><span class="p">,</span><span class="w"> </span><span class="n">CONCERT</span><span class="p">.</span><span class="na">STARTS_AT</span><span class="p">,</span><span class="w"> </span><span class="n">VENUE</span><span class="p">.</span><span class="na">NAME</span><span class="p">,</span><span class="w"> </span><span class="n">count</span><span class="p">(</span><span class="n">TICKET</span><span class="p">.</span><span class="na">ID</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">CONCERT</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">join</span><span class="p">(</span><span class="n">VENUE</span><span class="p">).</span><span class="na">on</span><span class="p">(</span><span class="n">VENUE</span><span class="p">.</span><span class="na">ID</span><span class="p">.</span><span class="na">eq</span><span class="p">(</span><span class="n">CONCERT</span><span class="p">.</span><span class="na">VENUE_ID</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">leftJoin</span><span class="p">(</span><span class="n">TICKET</span><span class="p">).</span><span class="na">on</span><span class="p">(</span><span class="n">TICKET</span><span class="p">.</span><span class="na">CONCERT_ID</span><span class="p">.</span><span class="na">eq</span><span class="p">(</span><span class="n">CONCERT</span><span class="p">.</span><span class="na">ID</span><span class="p">)</span>
+<span class="w">                         </span><span class="p">.</span><span class="na">and</span><span class="p">(</span><span class="n">TICKET</span><span class="p">.</span><span class="na">HOLDER_ID</span><span class="p">.</span><span class="na">isNull</span><span class="p">()))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">CONCERT</span><span class="p">.</span><span class="na">ID</span><span class="p">,</span><span class="w"> </span><span class="n">VENUE</span><span class="p">.</span><span class="na">NAME</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">orderBy</span><span class="p">(</span><span class="n">CONCERT</span><span class="p">.</span><span class="na">STARTS_AT</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">fetch</span><span class="p">(</span><span class="n">Records</span><span class="p">.</span><span class="na">mapping</span><span class="p">(</span><span class="n">ConcertRow</span><span class="p">::</span><span class="k">new</span><span class="p">));</span></code></pre></figure>
+<p>If someone renames a column, the build breaks rather than a query in production. jOOQ's <code>MULTISET</code> operator can even nest collections, such as concerts with their tickets, inside one SQL statement, with no N+1. The open-source edition supports open-source databases and needs Java 21 from version 3.20; commercial editions add Oracle, SQL Server and others.</p>
+
+<h3>MyBatis: you write the SQL, it maps the results</h3>
+<figure class="code" data-lang="java"><figcaption>ConcertMapper.java</figcaption><pre tabindex="0"><code><span class="nd">@Mapper</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ConcertMapper</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Select</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        select c.id, c.title, c.starts_at, v.name as venue_name</span>
+<span class="s">        from concert c join venue v on v.id = c.venue_id</span>
+<span class="s">        where v.city = #{city}</span>
+<span class="s">        order by c.starts_at"""</span><span class="p">)</span>
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ConcertSummary</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findByCity</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">city</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+<p>There's no query language to learn and no generated SQL to second-guess: what you write is what runs. <code>#{city}</code> binds a parameter safely (avoid <code>${...}</code>, which pastes text into the SQL). Turn on <code>mapUnderscoreToCamelCase</code> so <code>starts_at</code> fills <code>startsAt</code>. The trade-off is that you also write every insert and update yourself.</p>
+
+<h3>Mixing them</h3>
+<p>A pattern that ages well: use JPA for the write side, where loading an aggregate, changing it and letting dirty checking and optimistic locking do the rest is exactly right, and use jOOQ or native SQL for read-heavy screens and reports, where you want precise SQL returning DTOs. Both can share one transaction and one <code>DataSource</code>. Nobody gives out prizes for using a single tool.</p>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="ch" id="next">
+<h2><span class="n">10</span>What's coming</h2>
+
+<p class="intro">Java persistence is in its busiest period in a decade. Here's the state of play in November 2026.</p>
+
+<ul>
+  <li><strong>Hibernate 7.4</strong> is the current stable series, and Spring Boot 4.1 ships with it. Hibernate 7 implements Jakarta Persistence 3.2 and Jakarta Data 1.0, needs Java 17, and is the first fully Apache-licensed release. Its <code>StatelessSession</code> has grown to near feature parity with <code>Session</code>.</li>
+  <li><strong>Jakarta Persistence 4.0</strong> is under active development for Jakarta EE 12, with the release targeted for late 2026 and milestone builds available now.</li>
+  <li><strong>Hibernate 8.0</strong> released its first candidate on 12 November 2026. It implements the JPA 4.0 drafts and Jakarta Data 1.1.</li>
+  <li><strong>Spring</strong>: Spring Boot 4 sits on Jakarta EE 11, so JPA 3.2 and Hibernate 7. Spring Boot 4.2 was scheduled for November 2026, and Spring Data can now generate repository implementations ahead of time (AOT) for faster startup.</li>
+</ul>
+
+<h3>The headline JPA 4 changes</h3>
+<p>Based on the milestone drafts, so details may still change:</p>
+<ul>
+  <li><strong><code>EntityAgent</code></strong> standardises Hibernate's <code>StatelessSession</code>: explicit <code>insert</code>, <code>update</code>, <code>delete</code> and <code>upsert</code> that act directly on the database, with no persistence context. The standard is formally acknowledging that the stateful model isn't always the right one.</li>
+  <li><strong>Static queries</strong> declared with annotations and type-checked at compile time by an annotation processor, referenced through the generated metamodel.</li>
+  <li>A <strong><code>Statement</code></strong> interface separates updates and deletes from queries, and <code>TypedQuery.ofType()</code> returns records without <code>select new</code>.</li>
+  <li>A persistence-unit default that makes <code>@ManyToOne</code> and <code>@OneToOne</code> <strong>lazy</strong>, plus <code>findMultiple()</code> for loading batches by ID and a <code>get()</code> that throws instead of returning <code>null</code>.</li>
+</ul>
+<p>Hibernate 8 also changes how flushing works internally: it plans inserts, updates and deletes as a graph using the mapped foreign-key constraints, which removes a whole class of constraint-ordering surprises.</p>
+<p>The direction is clear: more compile-time checking, more explicit operations, less hidden magic. Chapters 4 to 7 don't go out of date; they're what lets you choose between the stateful and stateless models with your eyes open.</p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section class="ch" id="guru">
+<h2><span class="n">11</span>Guru check</h2>
+
+<p class="intro">Ten rules that cover most of what separates a calm ORM codebase from a haunted one.</p>
+
+<ol class="rules">
+  <li><span>Map every association <strong>LAZY</strong>, and decide what to fetch in each query.</span></li>
+  <li><span>Turn off <strong>Open Session in View</strong>, and load what each endpoint needs in the service layer.</span></li>
+  <li><span>Use <strong>SEQUENCE</strong> (or time-ordered UUID) keys, turn on JDBC batching, and set a default batch fetch size.</span></li>
+  <li><span>Read with <strong>DTO projections</strong>; load entities only when you're going to change them.</span></li>
+  <li><span>Put <strong><code>@Version</code></strong> on every entity users can edit at the same time.</span></li>
+  <li><span>Keep <strong>transactions short</strong>, in the service layer, with no remote calls inside.</span></li>
+  <li><span>Write associations from the <strong>owning side</strong>, through helper methods that keep both sides in step.</span></li>
+  <li><span>Manage the schema with <strong>migrations</strong>, and run Hibernate in <code>validate</code> mode.</span></li>
+  <li><span>Test against the <strong>real database</strong>, and assert the number of statements per use case.</span></li>
+  <li><span>Know when to <strong>drop to SQL</strong>, with jOOQ, MyBatis or a native query, and do it without guilt.</span></li>
+</ol>
+
+<h3>Test yourself</h3>
+<p>Answer each in your head before opening it.</p>
+
+<details><summary>You load 100 concerts held at 40 venues, with venue mapped LAZY, and print each venue's name in a loop. How many SELECTs run?</summary><div>
+<p>41: one for the concerts and one per distinct venue. The persistence context loads each venue only once, so concerts at the same venue share an object. A join fetch, an entity graph or a DTO projection brings it to 1; batch fetching with size 16 brings it to 4.</p></div></details>
+
+<details><summary>You call <code>repository.save(fan)</code> on a detached fan, then call <code>fan.setName("Ada")</code> before the transaction commits. Is the new name saved?</summary><div>
+<p>No. For a detached entity, <code>save()</code> calls <code>merge()</code>, which returns a different, managed instance. Your <code>fan</code> variable still points at the untracked object. Always use the return value: <code>fan = repository.save(fan);</code></p></div></details>
+
+<details><summary>Why does <code>GenerationType.IDENTITY</code> hurt bulk inserts in Hibernate?</summary><div>
+<p>The key only exists after the database runs the <code>INSERT</code>, and Hibernate needs the key straight away to put the entity in the persistence context. So it executes each insert immediately instead of delaying and batching them. Sequences let Hibernate assign keys in memory.</p></div></details>
+
+<details><summary>You add a ticket to <code>concert.getTickets()</code> but never call <code>ticket.setConcert(concert)</code>. What does the database contain after commit?</summary><div>
+<p>Nothing links the two. <code>Concert.tickets</code> is the inverse side (<code>mappedBy</code>), so Hibernate ignores it when writing the foreign key. With the cascade, the ticket is inserted, but with a null <code>concert_id</code>, or the insert fails if the column is <code>NOT NULL</code>. Write from the owning side, through a helper method.</p></div></details>
+
+<details><summary>A query join-fetches <code>c.tickets</code> and calls <code>setMaxResults(20)</code>. What happens?</summary><div>
+<p>Hibernate can't apply <code>LIMIT</code> to joined rows without cutting a concert's tickets in half, so it fetches every row and paginates in memory, logging <code>HHH90003004</code>. Page the IDs first, then fetch the graph for those IDs.</p></div></details>
+
+<details><summary>Inside one transaction you load a ticket, then run a bulk JPQL update that changes its price, then read <code>ticket.getPrice()</code>. Which price do you see?</summary><div>
+<p>The old one. Bulk statements go straight to the database and don't touch the persistence context. Call <code>em.clear()</code> after the bulk update (or run it first) and reload.</p></div></details>
+
+<details><summary>A <code>@Transactional</code> method is called from another method in the same class that isn't transactional. Does it run in a transaction?</summary><div>
+<p>No. Spring's transaction proxy only sees calls that come from outside the bean, so a call through <code>this</code> skips it. Move the method to another bean or make the calling method transactional.</p></div></details>
+
+<details><summary>Two fans buy the last ticket at the same moment, and <code>Ticket</code> has a <code>@Version</code> field. What happens?</summary><div>
+<p>Both read version 3. The first commit runs <code>update ... where id = ? and version = 3</code> and succeeds. The second matches no rows, and Hibernate throws <code>OptimisticLockException</code>. Nothing is overwritten; the application tells the second fan the seat has gone, or retries from a fresh read.</p></div></details>
+
+<details><summary>What exactly does dirty checking compare, and when?</summary><div>
+<p>At flush time, it compares each managed entity's current field values with the snapshot taken when the entity was loaded, and generates an <code>UPDATE</code> for each that differs. Read-only transactions and stateless sessions skip it, which is part of why they're cheaper.</p></div></details>
+
+<h3>Where to go next</h3>
+<ul class="sources">
+  <li><a href="https://hibernate.org/orm/documentation/">Hibernate ORM documentation</a>, especially <em>A Short Guide to Hibernate 7</em>, written by the project's creator.</li>
+  <li><a href="https://jakarta.ee/specifications/persistence/">Jakarta Persistence specifications</a>, including the 4.0 drafts.</li>
+  <li><a href="https://jakarta.ee/specifications/data/">Jakarta Data specifications</a>.</li>
+  <li><a href="https://docs.spring.io/spring-data/jpa/reference/">Spring Data JPA reference</a>.</li>
+  <li><a href="https://www.jooq.org/doc/latest/manual/">jOOQ manual</a> and <a href="https://mybatis.org/mybatis-3/">MyBatis documentation</a>.</li>
+  <li><a href="https://vladmihalcea.com/">Vlad Mihalcea</a> (<em>High-Performance Java Persistence</em>) and <a href="https://thorben-janssen.com/">Thorben Janssen</a> for deep dives on performance and mapping.</li>
+  <li><a href="https://in.relation.to/">In Relation To</a>, the Hibernate team's blog, for release news.</li>
+</ul>
+</section>
+
+<footer>
+  Written November 2026. Version facts were checked against the Hibernate, Jakarta EE, Spring and jOOQ release notes at that date; APIs marked as JPA 4.0 come from milestone drafts and may change before the final release. Code targets Java 21, Hibernate 7.4 and PostgreSQL.
+</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('progress'), here=document.getElementById('here');
+  var secs=[].slice.call(document.querySelectorAll('section.ch'));
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  function onScroll(){
+    var h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    var cur=null;
+    for(var i=0;i<secs.length;i++){ if(secs[i].getBoundingClientRect().top<120) cur=secs[i]; }
+    here.textContent=cur?cur.querySelector('h2').textContent.replace(/^(\d+)/,'$1. '):'Zero to guru';
+    links.forEach(function(a){ a.classList.toggle('on', cur && a.getAttribute('href')==='#'+cur.id); });
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+})();
+</script>
+</body>
+</html>

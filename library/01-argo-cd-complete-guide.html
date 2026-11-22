@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Argo CD: The Complete Guide</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1c1e22;--muted:#5b616c;--line:#e2ddd2;--card:#ffffff;--code:#f1ede5;--accent:#c2410c;--accent-soft:#fbeee4;--warn:#b4541a;--ok:#2c7a4b}
+@media (prefers-color-scheme:dark){:root{--bg:#131519;--fg:#e7e4dd;--muted:#9ba1ab;--line:#2b2f37;--card:#1a1d23;--code:#0e1013;--accent:#f08a4b;--accent-soft:#2a1d15;--warn:#e09055;--ok:#6cc08b}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:1fr;gap:0}
+@media (min-width:1040px){.wrap{grid-template-columns:250px minmax(0,1fr);gap:48px}}
+header.hero{border-bottom:1px solid var(--line);padding:44px 20px 32px;background:linear-gradient(180deg,var(--accent-soft),transparent)}
+.hero-in{max-width:1180px;margin:0 auto}
+.tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px}
+h1,h2,h3{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px);margin:0 0 12px;letter-spacing:-.01em}
+.lede{font-size:18px;color:var(--muted);max-width:760px;margin:0}
+.meta{margin-top:16px;font-size:13px;color:var(--muted)}
+nav.toc{font-size:14px;padding:24px 0}
+@media (min-width:1040px){nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:32px 0}}
+nav.toc summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--accent)}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:t}
+nav.toc li{counter-increment:t}
+nav.toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line)}
+nav.toc a::before{content:counter(t) ". "}
+nav.toc a:hover,nav.toc a.on{color:var(--fg);border-left-color:var(--accent)}
+main{padding:8px 0 80px;min-width:0;counter-reset:sec}
+section{padding-top:28px}
+h2{font-size:28px;margin:28px 0 12px;padding-top:20px;border-top:1px solid var(--line);counter-increment:sec}
+h2::before{content:counter(sec);display:inline-block;min-width:1.6em;color:var(--accent);font-variant-numeric:tabular-nums}
+h3{font-size:20px;margin:28px 0 8px}
+h4{font-size:15px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+p{margin:0 0 14px;max-width:780px}
+ul,ol{max-width:780px;padding-left:22px;margin:0 0 14px}
+li{margin:4px 0}
+a{color:var(--accent)}
+code{font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow:auto;margin:0 0 18px;max-width:100%}
+pre code{background:none;padding:0;font-size:13px;white-space:pre;overflow-wrap:normal}
+pre[data-lang]::before{content:attr(data-lang);position:absolute;top:6px;right:64px;font:11px ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+pre button{position:absolute;top:5px;right:6px;font:11px inherit;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:5px;padding:2px 8px;cursor:pointer}
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--accent-soft)}
+tr:last-child td{border-bottom:0}
+.note,.warn,.tip{border-left:4px solid var(--accent);background:var(--card);border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 18px;max-width:780px;box-shadow:0 0 0 1px var(--line)}
+.warn{border-left-color:var(--warn)}.tip{border-left-color:var(--ok)}
+.note b:first-child,.warn b:first-child,.tip b:first-child{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.warn b:first-child{color:var(--warn)}.tip b:first-child{color:var(--ok)}.note b:first-child{color:var(--accent)}
+.note p:last-child,.warn p:last-child,.tip p:last-child{margin-bottom:0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 18px;padding:16px;border:1px dashed var(--line);border-radius:8px;background:var(--card)}
+.flow .n{border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-size:13.5px;font-weight:600;background:var(--accent-soft);text-align:center}
+.flow .n small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.flow .a{color:var(--accent);font-weight:700}
+.flow .br{flex-basis:100%;height:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h4{margin:0 0 6px;color:var(--accent)}
+.card p,.card ul{font-size:14.5px;margin-bottom:0}
+ul.chk{list-style:none;padding-left:0}
+ul.chk li{padding-left:28px;position:relative}
+ul.chk li::before{content:"";position:absolute;left:2px;top:.35em;width:14px;height:14px;border:2px solid var(--accent);border-radius:4px}
+footer{border-top:1px solid var(--line);margin-top:48px;padding-top:16px;font-size:13px;color:var(--muted)}
+@media print{nav.toc{display:none}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-in">
+<span class="tag">Guide 1 of 3 - GitOps delivery</span>
+<h1>Argo CD: The Complete Guide</h1>
+<p class="lede">Concepts, architecture, day-to-day usage, patterns for many teams and clusters, and the practices that keep GitOps boring in production.</p>
+<p class="meta">Written November 2026 against Argo CD 3.6. Commands and manifests are examples: pin versions and adapt names to your environment.</p>
+</div></header>
+<div class="wrap">
+<nav class="toc"><details id="tocd"><summary>Contents</summary><ol id="toc"></ol></details></nav>
+<main>
+<section>
+<h2>What Argo CD is, and the idea behind it</h2>
+<p>Argo CD is a Kubernetes controller that keeps a cluster matching what is declared in a source of truth, almost always Git. You describe the desired state (plain YAML, Helm, Kustomize, Jsonnet or OCI artifacts), and Argo CD continuously compares it with what is actually running, shows you the difference, and applies it on request or automatically.</p>
+<p>That loop is GitOps. The four principles (from the OpenGitOps project) are worth memorising because most Argo CD design questions reduce to them:</p>
+<div class="cards">
+<div class="card"><h4>Declarative</h4><p>The system is described as desired state, not as a script of steps.</p></div>
+<div class="card"><h4>Versioned and immutable</h4><p>That state lives in a store with history: Git commits, signed tags, OCI digests.</p></div>
+<div class="card"><h4>Pulled automatically</h4><p>An agent inside the platform pulls the state. CI never needs cluster credentials.</p></div>
+<div class="card"><h4>Continuously reconciled</h4><p>Drift is detected and corrected all the time, not only at deploy time.</p></div>
+</div>
+<div class="flow">
+<span class="n">Developer<small>opens PR</small></span><span class="a">→</span>
+<span class="n">Config repo<small>merge = intent</small></span><span class="a">→</span>
+<span class="n">Argo CD<small>render, diff</small></span><span class="a">→</span>
+<span class="n">Kubernetes API<small>apply</small></span><span class="a">→</span>
+<span class="n">Live state<small>watched, compared</small></span>
+</div>
+<h3>What you gain, and what it costs</h3>
+<div class="tw"><table>
+<tr><th>Benefit</th><th>Cost or caveat</th></tr>
+<tr><td>Every change is a reviewed, auditable commit. Rollback is <code>git revert</code>.</td><td>Git becomes a production dependency and its permissions become your deployment permissions.</td></tr>
+<tr><td>CI pipelines stop holding cluster-admin credentials.</td><td>Argo CD itself now holds them. It is a high-value target and must be secured as such.</td></tr>
+<tr><td>Drift is visible within minutes and can self-heal.</td><td>Controllers and humans that mutate resources fight with it until you teach it what to ignore.</td></tr>
+<tr><td>One UI shows what is deployed where, at which revision.</td><td>It deploys manifests. It does not build images, run tests, or decide when to promote.</td></tr>
+</table></div>
+<div class="note"><b>Scope</b><p>Argo CD is the CD half only. A typical flow is: CI builds and pushes an image, then CI (or a bot) commits the new image tag to the config repo, and Argo CD takes it from there.</p></div>
+</section>
+
+<section>
+<h2>Architecture</h2>
+<p>Argo CD is a set of deployments in one namespace (normally <code>argocd</code>). Knowing which component does what tells you where to look when something is slow or broken.</p>
+<div class="tw"><table>
+<tr><th>Component</th><th>Role</th><th>When it hurts</th></tr>
+<tr><td><b>argocd-server</b></td><td>API (gRPC and REST) and web UI. Authenticates users, enforces RBAC. Stateless.</td><td>UI or CLI slow, login problems.</td></tr>
+<tr><td><b>repo-server</b></td><td>Clones repos and renders manifests (<code>helm template</code>, <code>kustomize build</code>, plugins). Caches results.</td><td>Slow refreshes, <code>ComparisonError</code>, high CPU on big monorepos.</td></tr>
+<tr><td><b>application-controller</b></td><td>The reconciler. Watches live resources in every managed cluster, diffs against rendered manifests, runs syncs. A StatefulSet that can be sharded by cluster.</td><td>Memory growth with cluster count and object count, sync queues backing up.</td></tr>
+<tr><td><b>applicationset-controller</b></td><td>Generates Application objects from templates and generators.</td><td>Apps not being created or being deleted unexpectedly.</td></tr>
+<tr><td><b>redis</b></td><td>Cache only (rendered manifests, live state trees). Safe to lose, but a cold cache is slow.</td><td>Everything slow after a restart.</td></tr>
+<tr><td><b>dex</b> (optional)</td><td>Bridges SSO providers that are not plain OIDC (SAML, LDAP, GitHub).</td><td>Login failures.</td></tr>
+<tr><td><b>notifications-controller</b></td><td>Sends events to Slack, Teams, email, webhooks, GitHub statuses.</td><td>Missing alerts.</td></tr>
+<tr><td><b>commit-server</b> (optional)</td><td>Pushes rendered manifests back to Git for the Source Hydrator.</td><td>Hydration not committing.</td></tr>
+</table></div>
+<p>All state that matters is in Kubernetes objects: <code>Application</code>, <code>ApplicationSet</code> and <code>AppProject</code> custom resources, plus ConfigMaps and Secrets for settings, repositories and clusters. There is no database to back up. If you manage those objects declaratively, you can rebuild an Argo CD instance from Git.</p>
+<h3>The main settings objects</h3>
+<div class="tw"><table>
+<tr><th>Object</th><th>Holds</th></tr>
+<tr><td><code>argocd-cm</code></td><td>General settings: SSO, resource customisations (health, actions, ignore rules), tracking method, reconciliation timing.</td></tr>
+<tr><td><code>argocd-rbac-cm</code></td><td>RBAC policy and default role.</td></tr>
+<tr><td><code>argocd-cmd-params-cm</code></td><td>Start-up flags for each component (replicas, timeouts, feature switches).</td></tr>
+<tr><td><code>argocd-secret</code></td><td>Server signing key, webhook secrets, local user passwords.</td></tr>
+<tr><td>Secrets labelled <code>argocd.argoproj.io/secret-type</code></td><td><code>repository</code>, <code>repo-creds</code> (credential templates) and <code>cluster</code> definitions.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>Core concepts</h2>
+<h3>Application</h3>
+<p>The unit of deployment: one or more <b>sources</b> (where manifests come from) mapped to one <b>destination</b> (a cluster and namespace), owned by a <b>project</b>.</p>
+<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pricing-api-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io   # delete workloads when the app is deleted
+spec:
+  project: pricing
+  source:
+    repoURL: https://github.com/acme/platform-config.git
+    targetRevision: main
+    path: apps/pricing-api/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc     # or: name: prod-eu-west-1
+    namespace: pricing
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff: { duration: 10s, factor: 2, maxDuration: 3m }</code></pre>
+<h3>The two statuses</h3>
+<p>Every application carries two independent statuses. Reading them separately is the single most useful habit.</p>
+<div class="tw"><table>
+<tr><th>Status</th><th>Question it answers</th><th>Values</th></tr>
+<tr><td><b>Sync status</b></td><td>Does live state match Git?</td><td><code>Synced</code>, <code>OutOfSync</code>, <code>Unknown</code></td></tr>
+<tr><td><b>Health status</b></td><td>Is what is running actually working?</td><td><code>Healthy</code>, <code>Progressing</code>, <code>Degraded</code>, <code>Suspended</code>, <code>Missing</code>, <code>Unknown</code></td></tr>
+</table></div>
+<p><code>Synced</code> plus <code>Degraded</code> means Git was applied faithfully and the result is broken (bad image, failing probe). <code>OutOfSync</code> plus <code>Healthy</code> means it works but someone or something changed it, or a new commit is waiting.</p>
+<h3>Vocabulary</h3>
+<div class="tw"><table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>Target state</td><td>Rendered manifests from the source at <code>targetRevision</code>.</td></tr>
+<tr><td>Live state</td><td>What the cluster API returns right now.</td></tr>
+<tr><td>Refresh</td><td>Re-fetch Git and recompute the diff. Changes nothing in the cluster. A <i>hard refresh</i> also discards the manifest cache.</td></tr>
+<tr><td>Sync</td><td>Apply the target state to the cluster.</td></tr>
+<tr><td>Prune</td><td>Delete live resources that are no longer in Git.</td></tr>
+<tr><td>Self-heal</td><td>Re-sync when live state drifts, even with no new commit.</td></tr>
+<tr><td>Resource tracking</td><td>How Argo CD knows a resource belongs to an app. Since 3.0 the default is an annotation (<code>argocd.argoproj.io/tracking-id</code>) instead of the <code>app.kubernetes.io/instance</code> label.</td></tr>
+<tr><td>AppProject</td><td>A guard rail: which repos, clusters, namespaces and resource kinds a group of apps may use.</td></tr>
+</table></div>
+<div class="note"><b>How often does it check?</b><p>Argo CD polls Git on a timer (a few minutes by default, set with <code>timeout.reconciliation</code> plus jitter in <code>argocd-cm</code>) and reacts immediately to changes in live resources because it watches them. Configure a Git webhook to <code>/api/webhook</code> so commits are picked up in seconds without lowering the poll interval.</p></div>
+</section>
+
+<section>
+<h2>Installing and deploying a first application</h2>
+<h3>Install</h3>
+<p>Two supported routes: the upstream manifests, or the community Helm chart (<code>argo/argo-cd</code>). Pin a version in both cases. Use the HA manifests for anything shared.</p>
+<pre data-lang="bash"><code>kubectl create namespace argocd
+kubectl apply -n argocd --server-side --force-conflicts \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.6.0/manifests/install.yaml
+# HA variant: .../manifests/ha/install.yaml  (needs 3+ nodes)
+
+# or with Helm
+helm repo add argo https://argoproj.github.io/argo-helm
+helm install argocd argo/argo-cd -n argocd --create-namespace -f values.yaml</code></pre>
+<h3>Log in</h3>
+<pre data-lang="bash"><code>argocd admin initial-password -n argocd          # one-time admin password
+kubectl -n argocd port-forward svc/argocd-server 8080:443 &amp;
+argocd login localhost:8080 --username admin --insecure
+argocd account update-password</code></pre>
+<p>For real use, expose <code>argocd-server</code> through an Ingress or Gateway with TLS, configure SSO, then disable the admin account.</p>
+<h3>Create an app three ways</h3>
+<pre data-lang="bash"><code># 1. CLI
+argocd app create guestbook \
+  --repo https://github.com/argoproj/argocd-example-apps.git \
+  --path guestbook --revision HEAD \
+  --dest-server https://kubernetes.default.svc --dest-namespace guestbook \
+  --sync-option CreateNamespace=true
+
+argocd app diff guestbook        # what would change
+argocd app sync guestbook        # apply
+argocd app wait guestbook --health --timeout 180</code></pre>
+<p>2. The UI: New App, fill in the same fields. Good for exploring, poor as a habit because nothing records the change.</p>
+<p>3. Declaratively: commit an <code>Application</code> manifest (as in the previous section) and let Argo CD manage it. This is the route to standardise on.</p>
+<div class="tip"><b>Bootstrap rule</b><p>Install Argo CD once by hand or with Terraform, then point it at a repo that contains its own configuration and every other Application. From then on, changes to Argo CD are pull requests too.</p></div>
+</section>
+
+<section>
+<h2>Sources and config tools</h2>
+<div class="tw"><table>
+<tr><th>Tool</th><th>How Argo CD uses it</th><th>Watch for</th></tr>
+<tr><td>Plain YAML or JSON directory</td><td>Applies every manifest in <code>path</code> (optionally recursive).</td><td>No templating: copies multiply across environments.</td></tr>
+<tr><td>Kustomize</td><td>Runs <code>kustomize build</code> if a <code>kustomization.yaml</code> exists.</td><td>The bundled Kustomize version changes with Argo CD upgrades.</td></tr>
+<tr><td>Helm</td><td>Runs <code>helm template</code> and applies the output. It does <b>not</b> run <code>helm install</code>, so there is no Helm release object and <code>helm ls</code> shows nothing.</td><td>Helm hooks are mapped to Argo CD hooks. <code>lookup</code> returns nothing. Random values regenerate on every render and cause permanent drift.</td></tr>
+<tr><td>Jsonnet</td><td>Evaluated natively.</td><td>Niche: fewer people can review it.</td></tr>
+<tr><td>OCI artifacts</td><td>Helm charts and manifest bundles pulled from a registry by tag or digest.</td><td>Use digests for immutability.</td></tr>
+<tr><td>Config Management Plugin</td><td>A sidecar on repo-server that runs any command which prints YAML.</td><td>Arbitrary code inside Argo CD: treat as privileged.</td></tr>
+</table></div>
+<h3>Helm chart from a registry with values from Git (multi-source)</h3>
+<p>The common real-world shape: a vendor or platform chart, and your values file kept in your config repo.</p>
+<pre data-lang="yaml"><code>spec:
+  sources:
+    - repoURL: https://charts.example.com
+      chart: pricing-api
+      targetRevision: 4.2.1
+      helm:
+        releaseName: pricing-api
+        valueFiles:
+          - $values/apps/pricing-api/values-prod.yaml
+    - repoURL: https://github.com/acme/platform-config.git
+      targetRevision: main
+      ref: values          # exposes this repo as $values</code></pre>
+<h3>Helm or Kustomize?</h3>
+<p>Use Helm when you are packaging something for others to configure, or consuming a third-party chart. Use Kustomize for your own services, where a shared base plus small per-environment patches is easier to review than a templated chart. Combining them (Kustomize inflating a Helm chart) works but makes diffs hard to reason about, so do it only when you need to patch a chart you do not own.</p>
+</section>
+
+<section>
+<h2>Syncing in depth</h2>
+<h3>Sync policy</h3>
+<div class="tw"><table>
+<tr><th>Setting</th><th>Effect</th><th>Guidance</th></tr>
+<tr><td>Manual (no <code>automated</code>)</td><td>Argo CD shows drift, a human or pipeline presses sync.</td><td>Reasonable for production gates, but drift accumulates silently if nobody looks.</td></tr>
+<tr><td><code>automated</code></td><td>Sync whenever Git changes.</td><td>Default for lower environments, and for production once promotion is controlled in Git.</td></tr>
+<tr><td><code>automated.prune</code></td><td>Also delete resources removed from Git.</td><td>Turn on. Without it, deleted manifests leave orphans running.</td></tr>
+<tr><td><code>automated.selfHeal</code></td><td>Revert manual changes to live state.</td><td>Turn on once teams are used to it. It is what makes Git authoritative.</td></tr>
+<tr><td><code>retry</code></td><td>Retry failed syncs with backoff.</td><td>Always set: CRDs and webhooks frequently fail on the first attempt.</td></tr>
+</table></div>
+<h3>Phases, hooks and waves</h3>
+<p>A sync runs in phases. Within each phase resources are ordered by wave (lowest first), then by kind (namespaces and CRDs before workloads), then by name. Argo CD waits for each wave to be healthy before starting the next.</p>
+<div class="flow">
+<span class="n">PreSync<small>migrations, checks</small></span><span class="a">→</span>
+<span class="n">Sync<small>waves -N .. +N</small></span><span class="a">→</span>
+<span class="n">PostSync<small>smoke tests, notify</small></span>
+<span class="br"></span>
+<span class="n">SyncFail<small>runs if sync fails</small></span>
+<span class="n">PreDelete / PostDelete<small>around app deletion</small></span>
+</div>
+<pre data-lang="yaml"><code>apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: db-migrate-
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation   # or HookSucceeded, HookFailed
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: registry.example.com/pricing-api:1.42.0
+          args: ["migrate", "up"]</code></pre>
+<div class="warn"><b>Hooks are not transactions</b><p>If a PreSync migration succeeds and the Sync phase then fails, nothing rolls the migration back. Make migrations backward compatible (expand, deploy, contract) so a failed or reverted rollout still runs against the new schema.</p></div>
+<h3>Sync options you will actually use</h3>
+<div class="tw"><table>
+<tr><th>Option</th><th>Use it when</th></tr>
+<tr><td><code>CreateNamespace=true</code></td><td>The destination namespace is not managed elsewhere.</td></tr>
+<tr><td><code>ServerSideApply=true</code></td><td>Large resources (CRDs that exceed the client-side annotation limit), or when other controllers own some fields. Increasingly the sensible default.</td></tr>
+<tr><td><code>ApplyOutOfSyncOnly=true</code></td><td>Apps with hundreds of resources: only touch what changed.</td></tr>
+<tr><td><code>PruneLast=true</code></td><td>Deletions should happen after everything new is healthy.</td></tr>
+<tr><td><code>PrunePropagationPolicy=foreground</code></td><td>You need dependents gone before the sync is reported complete.</td></tr>
+<tr><td><code>RespectIgnoreDifferences=true</code></td><td>Fields you ignore in the diff must also be left alone during sync.</td></tr>
+<tr><td><code>FailOnSharedResource=true</code></td><td>You want an error if two apps claim the same resource.</td></tr>
+<tr><td><code>Replace=true</code></td><td>Last resort for immutable-field changes. It deletes and recreates, so expect downtime.</td></tr>
+<tr><td><code>SkipDryRunOnMissingResource=true</code></td><td>A custom resource is applied in the same sync as its CRD.</td></tr>
+</table></div>
+<p>Most can also be set per resource with the annotation <code>argocd.argoproj.io/sync-options</code>. Two protective ones are worth knowing: <code>Prune=false</code> and <code>Delete=false</code> on resources that must never be removed automatically, such as PersistentVolumeClaims.</p>
+<h3>Sync windows</h3>
+<p>Defined on a project, sync windows allow or deny syncs on a cron schedule. Typical use: block automated production syncs during trading hours or a change freeze, while leaving manual sync available for emergencies.</p>
+<pre data-lang="yaml"><code>spec:
+  syncWindows:
+    - kind: deny
+      schedule: "0 7 * * 1-5"     # 07:00 Mon-Fri
+      duration: 10h
+      timeZone: Europe/London
+      applications: ["*-prod"]
+      manualSync: true            # humans can still override</code></pre>
+</section>
+
+<section>
+<h2>Diffing and drift</h2>
+<p>An app that never reaches <code>Synced</code> is the most common Argo CD complaint. The cause is nearly always a field that something else writes after apply: an autoscaler setting <code>replicas</code>, a mutating webhook injecting sidecars or defaults, a controller filling in <code>caBundle</code>.</p>
+<h3>Fixes, in order of preference</h3>
+<ol>
+<li><b>Remove the field from Git.</b> If an HPA owns <code>replicas</code>, do not declare <code>replicas</code> in the Deployment at all.</li>
+<li><b>Use server-side apply and server-side diff.</b> The API server computes the result, including defaulting and admission webhooks, which removes whole classes of false diffs. Recent releases move further in this direction: 3.6 pairs server-side diff with server-side apply by default, so read the upgrade notes when you move to it.</li>
+<li><b>Ignore the difference explicitly</b>, per app or globally.</li>
+</ol>
+<pre data-lang="yaml"><code>spec:
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers: ["/spec/replicas"]
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jqPathExpressions: [".webhooks[].clientConfig.caBundle"]
+    - group: "*"
+      kind: "*"
+      managedFieldsManagers: ["kube-controller-manager"]
+  syncPolicy:
+    syncOptions: ["RespectIgnoreDifferences=true"]</code></pre>
+<p>System-wide rules go in <code>argocd-cm</code> under <code>resource.customizations.ignoreDifferences.&lt;group&gt;_&lt;kind&gt;</code>. Keep the list short and commented: every ignore rule is a place where Git is no longer the truth.</p>
+<div class="note"><b>Resources Argo CD ignores entirely</b><p>Since 3.0, high-churn resources such as Endpoints, EndpointSlices and Leases are excluded by default so they do not flood the controller. Adjust with <code>resource.exclusions</code> and <code>resource.inclusions</code> if you need them tracked.</p></div>
+</section>
+
+<section>
+<h2>Health checks and resource actions</h2>
+<p>Argo CD has built-in health logic for core kinds (Deployment rollout complete, Service load balancer assigned, PVC bound, Ingress has an address) and for many popular CRDs. An application is as healthy as its least healthy resource.</p>
+<p>For your own CRDs, add a Lua health check so waves and <code>argocd app wait --health</code> behave correctly:</p>
+<pre data-lang="yaml"><code># argocd-cm
+data:
+  resource.customizations.health.streaming.acme.io_KafkaTopicClaim: |
+    hs = { status = "Progressing", message = "Waiting for reconciliation" }
+    if obj.status ~= nil and obj.status.conditions ~= nil then
+      for _, c in ipairs(obj.status.conditions) do
+        if c.type == "Ready" and c.status == "True" then
+          hs.status = "Healthy"; hs.message = c.message
+        elseif c.type == "Ready" and c.status == "False" then
+          hs.status = "Degraded"; hs.message = c.message
+        end
+      end
+    end
+    return hs</code></pre>
+<p><b>Resource actions</b> are Lua snippets exposed as buttons and CLI commands, for example restart a Deployment, or promote or abort an Argo Rollout. They mutate live state deliberately, so control them through RBAC (<code>applications, action/...</code>).</p>
+</section>
+
+<section>
+<h2>Projects, RBAC and SSO</h2>
+<h3>AppProject: the tenancy boundary</h3>
+<p>Never let teams use the built-in <code>default</code> project: it permits everything. Give each team or domain a project that states exactly what it can deploy and where.</p>
+<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: pricing
+  namespace: argocd
+spec:
+  description: Pricing team workloads
+  sourceRepos:
+    - https://github.com/acme/platform-config.git
+  destinations:
+    - { name: "prod-*", namespace: "pricing*" }
+    - { name: "dev-*",  namespace: "pricing*" }
+  clusterResourceWhitelist: []            # no cluster-scoped resources at all
+  namespaceResourceBlacklist:
+    - { group: "", kind: ResourceQuota }
+    - { group: "", kind: LimitRange }
+    - { group: networking.k8s.io, kind: NetworkPolicy }
+  roles:
+    - name: deployer
+      groups: ["acme:pricing-devs"]
+      policies:
+        - p, proj:pricing:deployer, applications, get,  pricing/*, allow
+        - p, proj:pricing:deployer, applications, sync, pricing/*, allow</code></pre>
+<h3>RBAC</h3>
+<p>Policies live in <code>argocd-rbac-cm</code> in Casbin CSV form: <code>p, subject, resource, action, object, effect</code>. Groups come from your identity provider's claims.</p>
+<pre data-lang="yaml"><code>data:
+  policy.default: role:readonly
+  scopes: "[groups]"
+  policy.csv: |
+    p, role:platform-admin, *, *, */*, allow
+    p, role:release-manager, applications, sync,     */*-prod, allow
+    p, role:release-manager, applications, action/*, */*-prod, allow
+    g, acme:platform,         role:platform-admin
+    g, acme:release-managers, role:release-manager</code></pre>
+<div class="warn"><b>3.x behaviour changes that surprise people</b><p>Since 3.0, <code>update</code> and <code>delete</code> on an application no longer imply the same rights on its child resources, and viewing pod logs needs an explicit <code>logs, get</code> permission. If roles were written for 2.x, re-test them.</p></div>
+<h3>Hardening the identity side</h3>
+<ul>
+<li>Use SSO (OIDC directly, or Dex for SAML and others). Map IdP groups to roles, never individual users.</li>
+<li>Disable the local <code>admin</code> user after setup (<code>admin.enabled: "false"</code>). Keep a break-glass path documented.</li>
+<li>For automation, use project roles with short-lived JWT tokens, scoped to specific apps.</li>
+<li><b>Sync impersonation</b>: by default the controller applies everything with its own, very powerful, service account. With impersonation enabled, each project names a destination service account and syncs run with only that account's Kubernetes RBAC. This is the strongest tenancy control available on a shared instance.</li>
+<li><b>Apps in any namespace</b>: lets teams keep their Application objects in their own namespace instead of <code>argocd</code>, constrained by the project's <code>sourceNamespaces</code>. Useful for self-service, but it widens the trust boundary, so pair it with strict projects.</li>
+</ul>
+</section>
+
+<section>
+<h2>Managing many applications</h2>
+<h3>App of Apps</h3>
+<p>A parent Application whose source directory contains child Application manifests. Simple, explicit, and good for bootstrapping a cluster (platform add-ons first, using sync waves). It does not scale well when the children differ only by cluster or environment, because you end up copying files.</p>
+<h3>ApplicationSet</h3>
+<p>A template plus one or more <b>generators</b> that produce parameters. One ApplicationSet can create an app per cluster, per directory, per pull request, or the product of several of those.</p>
+<div class="tw"><table>
+<tr><th>Generator</th><th>Produces an app for each</th><th>Typical use</th></tr>
+<tr><td>List</td><td>Hard-coded element</td><td>Small, fixed set of environments.</td></tr>
+<tr><td>Cluster</td><td>Registered cluster matching a label selector</td><td>Platform add-ons on every cluster.</td></tr>
+<tr><td>Git directories / files</td><td>Folder or config file in a repo</td><td>Onboard a service by adding a folder.</td></tr>
+<tr><td>Matrix / Merge</td><td>Combination of two generators</td><td>Every service on every matching cluster.</td></tr>
+<tr><td>Pull Request</td><td>Open PR</td><td>Ephemeral preview environments.</td></tr>
+<tr><td>SCM Provider</td><td>Repository in an organisation</td><td>Auto-discover services.</td></tr>
+<tr><td>OCI (3.6)</td><td>Artifact in a registry</td><td>Config shipped as OCI bundles instead of Git.</td></tr>
+<tr><td>Plugin / Cluster Decision Resource</td><td>Result of an external call</td><td>Custom placement logic.</td></tr>
+</table></div>
+<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - clusters:
+              selector:
+                matchLabels: { argocd.acme.io/tenant-workloads: "true" }
+          - git:
+              repoURL: https://github.com/acme/platform-config.git
+              revision: main
+              directories:
+                - path: "apps/*/overlays/{{ index .metadata.labels \"env\" }}"
+  template:
+    metadata:
+      name: "{{ index .path.segments 1 }}-{{ .name }}"
+    spec:
+      project: "{{ index .path.segments 1 }}"
+      source:
+        repoURL: https://github.com/acme/platform-config.git
+        targetRevision: main
+        path: "{{ .path.path }}"
+      destination:
+        name: "{{ .name }}"
+        namespace: "{{ index .path.segments 1 }}"
+      syncPolicy:
+        automated: { prune: true, selfHeal: true }
+  syncPolicy:
+    preserveResourcesOnDeletion: true</code></pre>
+<div class="warn"><b>ApplicationSets can delete a lot, quickly</b><p>If a generator suddenly returns nothing (a renamed label, a broken path glob, an SCM API outage), the controller removes the generated Applications, and with the resources finalizer, their workloads. Protect yourself: set <code>preserveResourcesOnDeletion: true</code>, consider the <code>create-update</code> applications sync policy so the controller never deletes apps, and review ApplicationSet changes as carefully as production code.</p></div>
+<p><b>Progressive syncs</b> let an ApplicationSet roll a change through groups of apps in order (for example dev clusters, then one production region, then the rest) using a <code>RollingSync</code> strategy with label-matched steps. Version 3.6 added metrics and clearer failure conditions for these rollouts. Check the feature's maturity level for your version before depending on it.</p>
+</section>
+
+<section>
+<h2>Repository structure and promotion</h2>
+<h3>Rules that hold up</h3>
+<ul>
+<li><b>Separate config from application source.</b> A commit that only bumps an image tag should not trigger a CI build, and developers who can change code should not automatically be able to change production config.</li>
+<li><b>Environments are directories, not branches.</b> Long-lived environment branches drift, and merges between them carry unintended changes. Use <code>base/</code> plus <code>overlays/dev</code>, <code>overlays/staging</code>, <code>overlays/prod</code>.</li>
+<li><b>Pin everything that reaches production.</b> Image digests or immutable tags, chart versions, remote Kustomize bases by commit SHA. <code>latest</code> and floating <code>HEAD</code> make rollbacks meaningless.</li>
+<li><b>Promotion is a pull request</b> that copies a known-good version from one environment's directory to the next.</li>
+</ul>
+<pre data-lang="text"><code>platform-config/
+  apps/
+    pricing-api/
+      base/                 deployment, service, hpa, kustomization.yaml
+      overlays/
+        dev/                kustomization.yaml  (image tag, replicas, config)
+        staging/
+        prod/
+  platform/                 ingress, cert-manager, external-secrets, monitoring
+  clusters/                 per-cluster values and cluster registration
+  argocd/                   projects, applicationsets, argocd config itself</code></pre>
+<h3>The rendered manifests pattern and the Source Hydrator</h3>
+<p>With Helm or Kustomize, the pull request shows a change to inputs (a values file), not to what will actually be applied. A chart upgrade can alter hundreds of lines that no reviewer sees. The rendered manifests pattern fixes this: render to plain YAML, commit the output to an environment-specific branch or path, and have Argo CD deploy only that.</p>
+<p>The <b>Source Hydrator</b> builds this into Argo CD. An application declares a <i>dry source</i> (the templates) and a <i>sync source</i> (where hydrated YAML is committed), and the commit-server pushes the rendered result. Recent releases have kept extending it, including hydrating to a separate repository and signing hydrated commits, which is marked alpha in 3.6. Treat it as a maturing feature: check the status for your version and trial it on non-critical apps first.</p>
+<h3>Automating the version bump</h3>
+<div class="tw"><table>
+<tr><th>Approach</th><th>How</th><th>Trade-off</th></tr>
+<tr><td>CI writes to Git</td><td>After pushing the image, the pipeline opens a PR or commits the new tag.</td><td>Simple and explicit. CI needs write access to the config repo.</td></tr>
+<tr><td>Argo CD Image Updater</td><td>Watches registries and updates the app or writes back to Git.</td><td>Less pipeline code, but adds a second source of change. Use Git write-back so history stays complete.</td></tr>
+<tr><td>Promotion tooling (GitOps Promoter, Kargo)</td><td>Models stages, checks and approvals, and moves versions between environments through Git.</td><td>More moving parts, real structure for multi-stage promotion.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>Secrets</h2>
+<p>Plain secrets must not be in Git, and Argo CD has no secret store of its own. The project's own guidance is to prefer solutions where the secret is fetched <b>in the destination cluster</b>, over plugins that inject secret values while manifests are rendered.</p>
+<div class="tw"><table>
+<tr><th>Approach</th><th>What is in Git</th><th>Notes</th></tr>
+<tr><td><b>External Secrets Operator</b></td><td>An <code>ExternalSecret</code> that references a path in AWS Secrets Manager, Vault, and so on.</td><td>The usual choice. Rotation works without a commit. Argo CD never sees the value.</td></tr>
+<tr><td><b>Secrets Store CSI Driver</b></td><td>A <code>SecretProviderClass</code>.</td><td>Mounts secrets as files, optionally syncing to a Secret.</td></tr>
+<tr><td><b>Sealed Secrets</b></td><td>Ciphertext only the cluster's controller can decrypt.</td><td>No external store needed. Key backup and rotation are on you.</td></tr>
+<tr><td><b>SOPS</b> (via plugin or KSOPS)</td><td>Encrypted files.</td><td>Decryption happens in repo-server, so plaintext ends up in the manifest cache.</td></tr>
+<tr><td>Render-time injection plugins</td><td>Placeholders.</td><td>Discouraged: values land in Redis, and rotating a secret needs a re-render that Argo CD cannot detect.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>Multi-cluster topologies</h2>
+<div class="tw"><table>
+<tr><th>Model</th><th>Shape</th><th>Good for</th><th>Risk</th></tr>
+<tr><td><b>Hub and spoke</b></td><td>One Argo CD manages many clusters.</td><td>Single pane of glass, one place to upgrade.</td><td>The hub holds credentials to everything and is a single point of failure. Controller memory grows with fleet size.</td></tr>
+<tr><td><b>Instance per cluster</b></td><td>Every cluster runs its own Argo CD.</td><td>Strong isolation, no cross-cluster credentials, works in disconnected networks.</td><td>Many instances to upgrade and observe.</td></tr>
+<tr><td><b>Instance per environment or domain</b></td><td>For example one for non-production, one for production.</td><td>A pragmatic middle: blast radius limited by environment.</td><td>Two sets of config to keep aligned.</td></tr>
+<tr><td><b>Agent based</b></td><td>A central control plane with lightweight agents in each cluster that connect outbound.</td><td>Large or network-restricted fleets: no inbound access to workload clusters.</td><td>Newer model with its own operational learning curve.</td></tr>
+</table></div>
+<p>Clusters are registered as labelled Secrets (or with <code>argocd cluster add</code>). Put meaningful labels on them (environment, region, tier) because ApplicationSet cluster generators select on those labels.</p>
+<div class="note"><b>On Amazon EKS</b><p>Avoid long-lived bearer tokens for spoke clusters. Give the application-controller and server an IAM role (EKS Pod Identity or IRSA) and grant that role access on each target cluster with EKS access entries. AWS also offers Argo CD as a managed EKS Capability, which runs the control plane for you and integrates sign-in with IAM Identity Center. It trades some configurability for not operating Argo CD yourself.</p></div>
+</section>
+
+<section>
+<h2>Progressive delivery with Argo Rollouts</h2>
+<p>Argo CD applies a Deployment and Kubernetes does a rolling update: it does not judge whether the new version is any good. <b>Argo Rollouts</b> is a separate controller that replaces Deployment with a <code>Rollout</code> resource supporting canary and blue-green strategies, traffic shifting through an ingress or mesh, and automated analysis against metrics.</p>
+<pre data-lang="yaml"><code>apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: pricing-api
+spec:
+  replicas: 6
+  strategy:
+    canary:
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - analysis:
+            templates: [{ templateName: error-rate-below-1pct }]
+        - setWeight: 50
+        - pause: { duration: 10m }
+  selector: { matchLabels: { app: pricing-api } }
+  template: { }   # the usual pod template goes here</code></pre>
+<p>Argo CD understands Rollout health: a paused canary shows as <code>Suspended</code>, and promote or abort are available as resource actions. Rollback remains a Git operation. If you abort a canary but leave the bad version in Git, the app is <code>Degraded</code> until you revert the commit.</p>
+</section>
+
+<section>
+<h2>Notifications and observability</h2>
+<h3>Notifications</h3>
+<p>Triggers (conditions such as <code>on-sync-failed</code>, <code>on-health-degraded</code>, <code>on-deployed</code>) and templates are defined in <code>argocd-notifications-cm</code>. Apps or projects subscribe by annotation:</p>
+<pre data-lang="yaml"><code>metadata:
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: pricing-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: pricing-alerts</code></pre>
+<p>Useful beyond chat: post a commit status back to GitHub or GitLab, or call a webhook that records a deployment marker in your monitoring system.</p>
+<h3>Metrics worth alerting on</h3>
+<div class="tw"><table>
+<tr><th>Metric</th><th>Tells you</th></tr>
+<tr><td><code>argocd_app_info</code> (labels <code>sync_status</code>, <code>health_status</code>)</td><td>Apps OutOfSync or Degraded for too long. The core alert.</td></tr>
+<tr><td><code>argocd_app_sync_total</code> (label <code>phase</code>)</td><td>Failed syncs and deployment frequency.</td></tr>
+<tr><td><code>argocd_app_reconcile</code></td><td>Reconciliation duration: controller saturation.</td></tr>
+<tr><td><code>workqueue_depth</code></td><td>Controller falling behind.</td></tr>
+<tr><td><code>argocd_git_request_total</code>, <code>argocd_git_request_duration_seconds</code></td><td>Git provider slowness or rate limiting.</td></tr>
+<tr><td><code>argocd_cluster_api_resource_objects</code></td><td>How much each cluster costs the controller in cached objects.</td></tr>
+</table></div>
+<p>All components can also emit OpenTelemetry traces, which is the fastest way to see whether a slow sync is spent in Git, in manifest rendering, or in the Kubernetes API.</p>
+</section>
+
+<section>
+<h2>Scaling and high availability</h2>
+<ul>
+<li><b>Run the HA manifests</b>: multiple <code>argocd-server</code> and <code>repo-server</code> replicas, and Redis with HA. The server and repo-server scale horizontally without ceremony.</li>
+<li><b>Shard the application-controller</b> across clusters by raising its replica count (and the matching <code>ARGOCD_CONTROLLER_REPLICAS</code>). Each shard owns a subset of clusters. One very large cluster still lands on a single shard, so size memory for your largest cluster.</li>
+<li><b>Cut the watch load</b>: exclude resource kinds you never deploy, and restrict managed namespaces on clusters where Argo CD only owns a few. Version 3.6 added server-side label filtering and cheaper cache serialisation, with the release notes reporting large controller memory reductions in their tests.</li>
+<li><b>Help the repo-server with monorepos</b>: a single commit otherwise invalidates the cache for every app in the repo. Set <code>argocd.argoproj.io/manifest-generate-paths</code> on each app so only changes under its paths trigger re-rendering, and use webhooks.</li>
+<li><b>Prefer more, smaller apps</b> over one giant app. Thousands of resources in one Application make every diff and sync slow and every failure wide.</li>
+<li><b>Mind Git provider rate limits</b>. Many apps polling the same repo share one cached clone, but many repos with short polling intervals can exhaust API quotas.</li>
+</ul>
+<h3>Upgrading Argo CD itself</h3>
+<p>Minor versions ship roughly every three months and the three newest minors receive fixes. Upgrade one minor at a time, read the per-version upgrade notes (defaults do change, as with tracking and RBAC in 3.0), and try it on a non-production instance that manages real apps before production.</p>
+</section>
+
+<section>
+<h2>Security checklist</h2>
+<ul class="chk">
+<li>SSO only, admin disabled, groups mapped to least-privilege roles.</li>
+<li>No team uses the <code>default</code> project. It is locked down to nothing.</li>
+<li>Projects restrict source repos, destinations and cluster-scoped kinds. Tenants cannot create Namespaces, ClusterRoles, CRDs or webhooks.</li>
+<li>Sync impersonation enabled on shared instances, or separate instances per trust zone.</li>
+<li>The config repo has branch protection, required reviews and CODEOWNERS on production paths. Whoever can merge can deploy.</li>
+<li>Repository credentials are read-only and scoped (deploy keys or a GitHub App), with credential templates instead of per-repo secrets.</li>
+<li>API and UI are not on the public internet, or sit behind an identity-aware proxy. Webhook endpoints have secrets configured.</li>
+<li>Config Management Plugins are reviewed like privileged code and are not installable by tenants.</li>
+<li>Argo CD is patched promptly. Subscribe to its security advisories.</li>
+<li>Where provenance matters, require signed commits or verified sources at project level.</li>
+</ul>
+</section>
+
+<section>
+<h2>Troubleshooting</h2>
+<div class="tw"><table>
+<tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+<tr><td>Always <code>OutOfSync</code> right after a successful sync</td><td>A controller or webhook mutates a field.</td><td>Open the diff. Remove the field from Git, switch to server-side apply and diff, or add <code>ignoreDifferences</code>.</td></tr>
+<tr><td>Sync and self-heal loop endlessly</td><td>Two owners fighting (HPA versus <code>replicas</code>, another GitOps tool, an operator).</td><td>Decide the single owner of each field.</td></tr>
+<tr><td><code>ComparisonError</code> / manifest generation failed</td><td>Helm or Kustomize fails in repo-server: missing values, wrong path, private dependency without credentials.</td><td>Reproduce locally with the same tool version. Check repo-server logs.</td></tr>
+<tr><td>Change merged but nothing happens</td><td>Cached manifests, no webhook, or <code>targetRevision</code> points elsewhere.</td><td>Refresh, then hard refresh. Confirm the revision shown in the UI.</td></tr>
+<tr><td>App stuck <code>Progressing</code></td><td>Health never becomes Healthy: rollout stalled, load balancer pending, CRD without health check.</td><td>Find the unhealthy resource in the tree and read its events.</td></tr>
+<tr><td>Sync stuck on a hook</td><td>Hook Job never completes or cannot be scheduled.</td><td>Inspect the Job and pod. Terminate the operation, fix, re-sync.</td></tr>
+<tr><td>App stuck deleting</td><td>Finalizer waiting on a resource that will not delete.</td><td>Find the blocker (often a namespace or CR with its own finalizer). Remove finalizers manually only as a last step.</td></tr>
+<tr><td>"metadata.annotations: Too long"</td><td>Client-side apply annotation exceeds the size limit on a big CRD.</td><td><code>ServerSideApply=true</code>.</td></tr>
+<tr><td>"the server could not find the requested resource" on first sync</td><td>CR applied before its CRD is established.</td><td>Sync waves, <code>SkipDryRunOnMissingResource=true</code>, and retries.</td></tr>
+<tr><td>Resource appears in two apps / <code>SharedResourceWarning</code></td><td>Overlapping manifests or tracking collisions.</td><td>One owner per resource. Annotation tracking avoids label clashes.</td></tr>
+<tr><td>Permission denied in UI or CLI</td><td>RBAC, including the 3.x sub-resource and logs changes.</td><td><code>argocd admin settings rbac can ROLE ACTION RESOURCE OBJECT</code> to test policies offline.</td></tr>
+</table></div>
+<h3>CLI cheat sheet</h3>
+<pre data-lang="bash"><code>argocd app list -o wide
+argocd app get APP --refresh              # --hard-refresh to drop cache
+argocd app diff APP                       # add --revision SHA to preview
+argocd app manifests APP --source git     # exactly what would be applied
+argocd app sync APP --prune --dry-run
+argocd app sync APP --resource apps:Deployment:pricing-api
+argocd app history APP
+argocd app rollback APP ID                # temporary: auto-sync must be off, Git still wins
+argocd app terminate-op APP
+argocd app set APP --sync-policy none     # pause automation during an incident
+argocd proj windows list PROJECT
+argocd cluster list
+argocd repo list
+kubectl -n argocd logs deploy/argocd-repo-server
+kubectl -n argocd logs sts/argocd-application-controller</code></pre>
+</section>
+
+<section>
+<h2>Best practices and anti-patterns</h2>
+<div class="cards">
+<div class="card"><h4>Do</h4><ul>
+<li>Manage Applications, Projects and Argo CD config declaratively.</li>
+<li>Enable auto-sync with prune and self-heal as the normal state.</li>
+<li>Promote by pull request between environment directories.</li>
+<li>Pin images, charts and remote bases.</li>
+<li>Keep apps small and cohesive: one service, one environment.</li>
+<li>Alert on OutOfSync and Degraded duration, not just events.</li>
+<li>Practise the full rollback path: revert, sync, verify.</li>
+</ul></div>
+<div class="card"><h4>Avoid</h4><ul>
+<li>Clicking changes in the UI, or <code>kubectl edit</code> in production.</li>
+<li>One branch per environment.</li>
+<li>CI running <code>argocd app sync</code> with a cluster-wide token as the deployment mechanism.</li>
+<li>Secrets, or tools that render secrets, in the manifest path.</li>
+<li>A growing pile of unexplained <code>ignoreDifferences</code>.</li>
+<li>Helm charts with random or time-based values.</li>
+<li>Treating <code>argocd app rollback</code> as a real rollback: Git still says otherwise.</li>
+</ul></div>
+</div>
+<h3>A sensible adoption path</h3>
+<ol>
+<li>Install on a non-production cluster. Put one service under manual sync and get used to the diff.</li>
+<li>Create the config repo layout, a project per team, and SSO with groups.</li>
+<li>Turn on auto-sync, prune and self-heal in dev. Fix every false diff properly.</li>
+<li>Move platform add-ons under Argo CD with an app-of-apps and sync waves.</li>
+<li>Introduce ApplicationSets once the copy-paste becomes visible.</li>
+<li>Add notifications, metrics and alerts. Then production, with sync windows and PR-based promotion.</li>
+<li>Later, as needed: Rollouts for canaries, the hydrator for reviewable rendered output, impersonation for hard tenancy.</li>
+</ol>
+</section>
+
+<footer>Part of a three-guide series: Argo CD, AWS and EKS for developers, Kafka for event-driven trading systems. Self-contained file: open in any browser, works offline.</footer>
+</main>
+</div>
+<script>
+(function(){
+var toc=document.getElementById('toc'),links=[];
+document.querySelectorAll('main h2').forEach(function(h,i){
+  if(!h.id)h.id='s'+(i+1);
+  var li=document.createElement('li'),a=document.createElement('a');
+  a.href='#'+h.id;a.textContent=h.textContent;li.appendChild(a);toc.appendChild(li);links.push(a);
+});
+var d=document.getElementById('tocd'),mq=window.matchMedia('(min-width:1040px)');
+function setOpen(){d.open=mq.matches}setOpen();
+if(mq.addEventListener)mq.addEventListener('change',setOpen);
+toc.addEventListener('click',function(){if(!mq.matches)d.open=false});
+document.querySelectorAll('pre').forEach(function(p){
+  var b=document.createElement('button');b.type='button';b.textContent='Copy';
+  b.onclick=function(){var t=p.querySelector('code').innerText;
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)})}};
+  p.appendChild(b);
+});
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){
+    links.forEach(function(l){l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'0px 0px -75% 0px'});
+  document.querySelectorAll('main h2').forEach(function(h){io.observe(h)});
+}
+})();
+</script>
+</body>
+</html>

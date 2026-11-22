@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A practical Amazon MSK and Java guide covering Kafka fundamentals, private networking, IAM, producer and consumer configuration, and production operations.">
+<title>Amazon MSK with Java | Kafka field guide</title>
+<style>
+:root{color-scheme:light;--ink:#10242c;--muted:#496169;--deep:#102a31;--teal:#086651;--line:#d9e4e1;--paper:#f3f7f5;--white:#fff;--code:#122a32;--accent:#aeebce;--sand:#faf1da;--measure:80rem}
+*{box-sizing:border-box}
+html{scroll-padding-top:1.25rem}
+body{margin:0;background:var(--paper);color:var(--ink);font:1rem/1.64 "Inter","Segoe UI",sans-serif}
+a{color:var(--teal);text-underline-offset:.2em;text-decoration-thickness:.075em}
+a:hover{color:#064637}
+:focus-visible{outline:3px solid #168b6a;outline-offset:4px}
+.skip{position:absolute;z-index:2;left:.8rem;top:.8rem;transform:translateY(-200%);background:white;padding:.5rem 1rem}
+.skip:focus{transform:none}
+.wrap{width:min(calc(100% - 3rem),var(--measure));margin-inline:auto}
+.mast{background:var(--deep);color:#d7eee6;border-bottom:1px solid #36525b}
+.mast .wrap{display:flex;justify-content:space-between;gap:1rem;padding:.9rem 0;font-size:.86rem;letter-spacing:.065em}
+.mast strong{color:var(--accent);font-weight:700}
+.hero{background:radial-gradient(ellipse at 82% 30%,#1a4944,transparent 52%),var(--deep);color:#fff;padding:clamp(2.8rem,6vw,6rem) 0}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(19rem,.7fr);gap:clamp(1.5rem,6vw,6rem);align-items:center}
+h1,h2,h3{font-family:"Instrument Sans","Segoe UI",sans-serif;line-height:1.16;letter-spacing:-.035em}
+h1{font-size:clamp(2.8rem,6vw,5rem);margin:0 0 1rem;max-width:12ch}
+.lead{color:#d6e7e3;max-width:54ch;font-size:clamp(1rem,2vw,1.18rem);margin:0 0 1.6rem}
+.jump{display:inline-block;padding:.65rem 1rem;color:#0b332a;background:var(--accent);border-radius:.45rem;text-decoration:none;font-weight:750}
+.jump:hover{color:#0b332a;background:#d2f5e3}
+.topology{margin:0;padding:1.25rem 1.4rem;border:1px solid #507c74;border-radius:.9rem;background:#0d2c31}
+.topology figcaption{font-size:.83rem;color:#cdf0e5;letter-spacing:.09em;text-transform:uppercase;margin:0 0 .65rem;font-weight:700}
+.route{list-style:none;margin:0;padding:0}
+.route li{background:#173c40;border:1px solid #3d665f;border-radius:.4rem;padding:.53rem .8rem;color:#f0fcf9}
+.route li+li{margin-top:.65rem}
+.route strong{display:block;line-height:1.3}.route span{font-size:.79rem;color:#c0ddd6}
+.layout{display:grid;grid-template-columns:14rem minmax(0,1fr);gap:1.8rem;align-items:start;padding:2rem 0 3rem}
+nav{position:sticky;top:1.15rem;max-height:calc(100vh - 2.3rem);overflow:auto;background:#e9f1ee;border:1px solid var(--line);border-radius:.7rem;padding:1rem .8rem}
+.nav-head{display:flex;align-items:center;justify-content:space-between;gap:.35rem;margin:0 0 .45rem}
+nav h2{margin:0;padding:0 .58rem;font:700 .79rem/1.4 "Inter","Segoe UI",sans-serif;letter-spacing:.085em;text-transform:uppercase;color:var(--muted)}
+.menu-toggle{display:grid;flex:none;place-items:center;width:2.25rem;height:2.25rem;padding:0;border:1px solid #a8c5bc;border-radius:.4rem;background:#f6faf8;color:var(--teal);cursor:pointer}
+.menu-toggle:hover{background:#d3e8df}
+.menu-toggle[hidden],nav ol[hidden]{display:none}
+.menu-arrow{width:.48rem;height:.48rem;border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(-135deg);margin-left:.2rem}
+.menu-toggle[aria-expanded="false"] .menu-arrow{transform:rotate(45deg);margin-left:0;margin-right:.2rem}
+.menu-collapsed .nav-head{margin-bottom:0}
+nav ol{list-style:none;padding:0;margin:0}
+nav a{display:block;padding:.32rem .58rem;border-radius:.35rem;font-size:.91rem;text-decoration:none;color:var(--ink)}
+nav a:hover,nav a[aria-current]{background:#d3e8df;text-decoration:underline}
+article{min-width:0}
+section{scroll-margin-top:.55rem;margin:0 0 1.2rem;background:var(--white);border:1px solid var(--line);border-radius:.85rem;padding:clamp(1.15rem,3.2vw,2.4rem)}
+section:last-child{margin-bottom:0}
+h2{font-size:clamp(1.65rem,3.4vw,2.45rem);margin:0 0 .8rem}
+h3{font-size:1.24rem;margin:1.7rem 0 .5rem}
+p{margin:.62rem 0 .9rem}
+ul,ol{padding-left:1.35rem;margin:.65rem 0 1rem}
+li+li{margin-top:.4rem}
+li p{margin:.3rem 0}
+.note{padding:.7rem .95rem;border-left:4px solid #278266;background:#edf7f2;border-radius:0 .4rem .4rem 0;margin:1rem 0}
+.note p{margin:0}
+.note.cost{background:var(--sand);border-color:#87651d}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin:.9rem 0 1.15rem}
+.card{padding:.85rem .9rem;background:#eef5f2;border:1px solid var(--line);border-radius:.52rem}
+.card h3{margin:0 0 .3rem;font-size:1.06rem}
+.card p{font-size:.94rem;margin:0}
+.table{max-width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:.5rem;margin:.8rem 0 1rem}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{padding:.6rem .75rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{background:#eaf2ef}
+tr:last-child>*{border-bottom:0}
+td:first-child{min-width:8rem}
+code,kbd,pre{font-family:"IBM Plex Mono","Cascadia Code",Consolas,monospace}
+:not(pre)>code,kbd{background:#edf3f1;padding:.09em .25em;border-radius:.22em;font-size:.89em;overflow-wrap:anywhere}
+.snippet{margin:.75rem 0 1rem;border-radius:.55rem;overflow:hidden;background:var(--code);color:#effbf7}
+.snippet figcaption{display:flex;min-height:2.35rem;justify-content:space-between;align-items:center;gap:.5rem;background:#1d3941;padding:.34rem .85rem;color:#d5ebe6;font-size:.82rem}
+.snippet button{background:#1d3941;color:#effbf7;border:1px solid #779a95;border-radius:.3rem;padding:.14rem .5rem;cursor:pointer;font:inherit}
+.snippet button:hover{background:#33575f}
+pre{margin:0;padding:.82rem .9rem 1rem;overflow:auto;tab-size:4;font-size:.86rem;line-height:1.56}
+pre code{font:inherit}
+.source{color:var(--muted);font-size:.88rem;margin:1rem 0 0}
+details{border:1px solid var(--line);border-radius:.5rem;margin:.9rem 0;padding:.62rem .82rem}
+summary{cursor:pointer;font-weight:700}
+summary + p{margin-top:.65rem}
+.log{display:grid;gap:.48rem;margin:.9rem 0;padding:.8rem;background:#f0f5f3;border-radius:.5rem}
+.log div{display:flex;flex-wrap:wrap;gap:.44rem;align-items:center}
+.log strong{min-width:6rem;font-size:.86rem}
+.log span{font:.8rem/1.4 "IBM Plex Mono","Cascadia Code",Consolas,monospace;padding:.3rem .48rem;background:white;border:1px solid #c7dbd4;border-radius:.35rem}
+.log .key{background:#d6efe4;border-color:#99c8b8}
+footer{border-top:1px solid var(--line);padding:1.15rem 0 1.65rem;font-size:.86rem;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;gap:1rem}
+@media(max-width:920px){.layout{grid-template-columns:11.6rem minmax(0,1fr);gap:.85rem}.cards{grid-template-columns:1fr}}
+@media(width > 710px){.layout.menu-collapsed{grid-template-columns:3.5rem minmax(0,1fr);gap:1rem}.menu-collapsed nav{padding:.55rem}.menu-collapsed .nav-head{justify-content:center}.menu-collapsed nav h2{display:none}}
+@media(max-width:710px){.wrap{width:calc(100% - 1.4rem)}.mast .wrap{font-size:.73rem}.hero .wrap,.layout{grid-template-columns:minmax(0,1fr)}.hero{padding:2rem 0}.topology{padding:.85rem}.layout{padding-top:.85rem}nav{position:static;max-height:none}nav ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}section{margin-bottom:.75rem}.table td:first-child{min-width:6rem}th,td{padding:.5rem}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+@media print{body{background:white;color:black;font-size:10pt}.wrap{width:100%}.hero,.mast{background:white;color:black}.hero .wrap,.layout{display:block}.hero{padding:.45rem 0}.lead,.mast strong{color:black}.topology,nav,.jump,.snippet button,footer a,.skip{display:none}section{border:0;padding:.35rem 0}h2,h3,figcaption{break-after:avoid}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:.4rem}.snippet,.snippet figcaption{background:#f4f4f4;color:black}.table{overflow:visible}tr{break-inside:avoid}a{color:black}}
+</style>
+</head>
+<body id="top">
+<a href="#guide" class="skip">Skip to guide</a>
+<header>
+<div class="mast"><div class="wrap"><strong>Kafka field guide</strong><span>Amazon Web Services · Java</span></div></div>
+<div class="hero">
+<div class="wrap">
+<div>
+<h1>Amazon MSK with Java</h1>
+<p class="lead">Understand Kafka’s partitioned log, connect to a private AWS cluster with IAM, and run a Java producer and consumer. Use the configuration tables and runbook when you take the same design to production.</p>
+<a class="jump" href="#start">Start the AWS lab <span aria-hidden="true">↓</span></a>
+</div>
+<figure class="topology">
+<figcaption>Orders event path</figcaption>
+<ol class="route">
+<li><strong>Java producer</strong><span>Publishes an event keyed by order ID</span></li>
+<li><strong>Private Amazon MSK cluster</strong><span>IAM authentication over TLS · replicated partitions</span></li>
+<li><strong>Java consumer group</strong><span>Processes events and commits progress by partition</span></li>
+</ol>
+</figure>
+</div>
+</div>
+</header>
+<div class="wrap layout">
+<nav aria-label="Guide contents">
+<div class="nav-head">
+<h2>On this page</h2>
+<button class="menu-toggle" type="button" aria-expanded="true" aria-controls="guide-links" aria-label="Collapse menu" title="Collapse menu" hidden>
+<span class="menu-arrow" aria-hidden="true"></span>
+</button>
+</div>
+<ol id="guide-links">
+<li><a href="#concepts">Kafka fundamentals</a></li>
+<li><a href="#choose">Choose MSK</a></li>
+<li><a href="#start">Create the cluster</a></li>
+<li><a href="#access">Network and IAM</a></li>
+<li><a href="#java">Run the Java lab</a></li>
+<li><a href="#delivery">Delivery and replay</a></li>
+<li><a href="#configure">Configure and tune</a></li>
+<li><a href="#operations">Operate in production</a></li>
+<li><a href="#troubleshoot">Troubleshoot</a></li>
+<li><a href="#cleanup">Clean up</a></li>
+<li><a href="#references">References</a></li>
+</ol>
+</nav>
+<main id="guide"><article>
+<section id="concepts">
+<h2>Kafka fundamentals</h2>
+<p>Apache Kafka stores streams of records in an append-only, partitioned log. Producers append records, and consumers read at their own pace. Multiple applications can read the same topic independently. Consuming a record leaves it in the log until its retention or compaction policy removes it.</p>
+<div class="cards">
+<div class="card"><h3>Topic</h3><p>A named stream such as <code>orders.v1</code>. A record has a key, value, timestamp and optional headers.</p></div>
+<div class="card"><h3>Partition</h3><p>A topic shard with ordered offsets. Partitions determine ordering boundaries and how much work a conventional consumer group can do in parallel.</p></div>
+<div class="card"><h3>Broker and replica</h3><p>A broker serves Kafka traffic. In the usual path, the partition leader serves requests. Follower replicas copy the log, and eligible followers can become leaders.</p></div>
+</div>
+<p>Kafka controllers manage cluster metadata such as partition leadership. Modern Kafka uses the KRaft controller quorum for this coordination. Your Java clients connect to broker listeners and discover partition leaders and coordinators through Kafka metadata.</p>
+<h3>Keys, offsets and groups</h3>
+<p>Use a stable business key when related events require ordering. For a producer using Kafka’s default key-aware partitioning with a fixed partition count, records keyed by the same order ID go to the same partition. Kafka orders appends within each partition. A consumer group normally assigns each partition to one member at a time, and different groups keep independent positions.</p>
+<div class="log" role="group" aria-label="Example topic offsets by partition">
+<div><strong>Partition 0</strong><span class="key">17 · order-1042 · placed</span><span class="key">18 · order-1042 · paid</span></div>
+<div><strong>Partition 1</strong><span>91 · order-715 · placed</span><span>92 · order-806 · shipped</span></div>
+<div><strong>Partition 2</strong><span>8 · order-912 · placed</span></div>
+</div>
+<p>Offsets are positions within a partition. After handling partition 0 through offset 18, the consumer commits 19 as the next position. That commit belongs to the group. A group with four members and three subscribed partitions has at least one idle member. Group membership or subscription changes can trigger a rebalance.</p>
+<h3>Retention, compaction and replication</h3>
+<ul>
+<li><strong>Delete retention.</strong> Kafka removes eligible log segments by age or size. Size-based retention applies per partition. Set the window to cover the longest expected outage, recovery or replay.</li>
+<li><strong>Log compaction.</strong> Kafka eventually keeps the latest value per key in the compacted part of the log. A keyed record with a null value is a tombstone. A compacted topic works for rebuilding current state. Use delete retention for a bounded event history and check product support before combining policies.</li>
+<li><strong>Durable acknowledgments.</strong> A replication factor of three, <code>min.insync.replicas=2</code> and producer <code>acks=all</code> are a common three-AZ Standard baseline. The leader waits for all current in-sync replicas (ISR). If fewer than two are in sync, Kafka rejects the write until the ISR recovers.</li>
+</ul>
+<p class="source"><a href="https://kafka.apache.org/42/design/design/">Apache Kafka design</a> · <a href="https://kafka.apache.org/42/configuration/topic-configs/">Kafka topic configuration</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/bestpractices.html">AWS Standard broker best practices</a></p>
+</section>
+
+<section id="choose">
+<h2>Choose an MSK deployment model</h2>
+<p>Amazon MSK manages the Kafka broker infrastructure. Your team owns event contracts, partitioning, client behavior, access policies, capacity planning and application recovery.</p>
+<div class="table" tabindex="0" role="region" aria-label="MSK deployment comparison"><table>
+<thead><tr><th scope="col">Option</th><th scope="col">Choose it when</th><th scope="col">Plan for</th></tr></thead>
+<tbody>
+<tr><th scope="row">Provisioned Standard</th><td>You need flexible broker settings, EBS capacity controls or supported tiered storage features.</td><td>Size brokers, partitions, EBS storage and throughput. Watch free space and rebalance data when needed.</td></tr>
+<tr><th scope="row">Provisioned Express</th><td>You want provisioned capacity with MSK-managed storage and fewer broker settings to tune.</td><td>Size throughput, partitions and connections. AWS manages several durability settings, including topic replication factor.</td></tr>
+<tr><th scope="row">Serverless</th><td>You want automatic capacity management and the workload fits Serverless quotas and supported features.</td><td>Use IAM authentication. Check partition, throughput, connection and topic-configuration limits. Use the Serverless pricing model for estimates.</td></tr>
+</tbody></table></div>
+<p>Check regional availability, Kafka versions, quotas and pricing before choosing. For the lab, use <strong>Provisioned Standard in three availability zones</strong> or follow the Serverless variant below. The Java example uses basic Kafka APIs and the classic consumer group protocol, so its client dependency version can differ from the broker version. Validate any newer protocol features on your exact MSK engine version and broker type.</p>
+<p class="source"><a href="https://docs.aws.amazon.com/msk/latest/developerguide/broker-instance-types.html">AWS broker types</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html">MSK-supported Kafka versions</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/limits.html">Service quotas</a> · <a href="https://aws.amazon.com/msk/pricing/">MSK pricing</a> · <a href="https://kafka.apache.org/42/getting-started/compatibility/">Kafka compatibility</a></p>
+</section>
+
+<section id="start">
+<h2>Create a private MSK cluster</h2>
+<p>Use a sandbox AWS account or environment where you have permissions to create MSK, IAM and VPC resources. Have an existing VPC with three private subnets in distinct availability zones for the Standard walkthrough, a client security group, and a host that can reach the broker network. Install JDK 17 or newer, Maven 3 and AWS CLI v2 on the client host. The shell examples use Bash unless labelled PowerShell.</p>
+<div class="note cost"><p>AWS resources in the lab can incur charges while they exist. Use the <a href="#cleanup">cleanup steps</a> when finished.</p></div>
+<h3>Provisioned Standard walkthrough</h3>
+<ol>
+<li>In the Amazon MSK console, choose the Region, <strong>Create cluster</strong>, then the custom creation workflow. Name the cluster <code>orders-lab</code> and choose <strong>Provisioned</strong> and <strong>Standard</strong>.</li>
+<li>Choose a supported engine version. For this lab, 3.9.x is a suitable Standard example if available. Use three availability zones and one broker per zone. Select a compatible lab-sized broker and storage allocation within the account budget. Keep the default broker configuration for the walkthrough.</li>
+<li>Select the VPC, three private subnets and the broker security group. Set up the security-group rules in <a href="#access">network and IAM</a>.</li>
+<li>Enable <strong>IAM role-based authentication</strong> and TLS client-to-broker traffic. Keep public access disabled and select the appropriate at-rest KMS key option for your environment.</li>
+<li>For the lab use the default CloudWatch monitoring level. Create the cluster. Wait until its status becomes <code>ACTIVE</code> and copy the cluster ARN from the cluster details.</li>
+</ol>
+<h3>Serverless variant</h3>
+<p>Choose <strong>Serverless</strong> instead, use the offered VPC and private subnets with your broker security group, and use IAM for authentication and authorization. Wait until <code>ACTIVE</code>. Continue with the private IAM endpoint and the same Java lab. For configuration changes, check the <a href="https://docs.aws.amazon.com/msk/latest/developerguide/serverless-config.html">Serverless topic configuration list</a>.</p>
+<p class="source"><a href="https://docs.aws.amazon.com/msk/latest/developerguide/create-cluster-console.html">Create a Provisioned cluster</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/create-serverless-cluster.html">Create a Serverless cluster</a></p>
+</section>
+
+<section id="access">
+<h2>Connect the client and grant IAM access</h2>
+<h3>Make the broker endpoints reachable</h3>
+<p>Run the lab from an EC2 instance, ECS task or other workload in the same VPC for the simplest path. For EC2, use an instance profile and a management path such as Systems Manager Session Manager if your environment supports it. Give the broker security group inbound TCP <code>9098</code> from the client security group for standard private IAM connectivity. Allow client egress and ensure routing, DNS resolution and any restrictive network ACLs let TCP and its return traffic through. Kafka discovers brokers from cluster metadata, so the client must be able to reach the advertised broker endpoints after bootstrap.</p>
+<p>For cross-VPC or cross-account access, use a supported private network path. With MSK managed multi-VPC private connectivity on supported Provisioned clusters, enable the correct authentication scheme, authorize the connection in the cluster policy, create the managed VPC connection and use the VPC connectivity bootstrap string and its returned ports. Cross-account access also requires the relevant principal permissions. Keep the endpoint returned for your network path intact.</p>
+<h3>Get the private IAM bootstrap brokers</h3>
+<figure class="snippet"><figcaption>Bash · AWS CLI</figcaption>
+<pre tabindex="0"><code>AWS_REGION=&#x27;us-east-1&#x27;
+CLUSTER_ARN=&#x27;arn:aws:kafka:us-east-1:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&#x27;
+
+MSK_BOOTSTRAP=$(aws kafka get-bootstrap-brokers \
+  --region &quot;$AWS_REGION&quot; --cluster-arn &quot;$CLUSTER_ARN&quot; \
+  --query BootstrapBrokerStringSaslIam --output text)
+export MSK_BOOTSTRAP
+printf &#x27;%s\n&#x27; &quot;$MSK_BOOTSTRAP&quot;
+</code></pre></figure>
+<p>Run this from the client shell if it has <code>kafka:GetBootstrapBrokers</code>, or execute it under an operator principal and set <code>MSK_BOOTSTRAP</code> on the client from the returned value. A missing value or <code>None</code> usually means the selected cluster, listener or network path does not expose that field. In the console, the cluster’s client information shows the available endpoints.</p>
+<h3>Set up the lab role</h3>
+<p>AWS API calls such as fetching connection information use the <code>kafka:</code> namespace. Kafka wire operations use <code>kafka-cluster:</code>. Attach the following combined policy to the IAM role whose credentials the Java client will use. Replace <code>REGION</code>, <code>ACCOUNT_ID</code> and <code>CLUSTER_UUID</code>, and replace <code>orders-lab</code> if you named the cluster differently. The UUID is the entire final segment in the cluster ARN. This template uses the commercial AWS partition.</p>
+<figure class="snippet"><figcaption>IAM policy · replace the ARN placeholders</figcaption>
+<pre tabindex="0"><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;kafka:GetBootstrapBrokers&quot;
+      ],
+      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&quot;
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;kafka-cluster:Connect&quot;,
+        &quot;kafka-cluster:WriteDataIdempotently&quot;
+      ],
+      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:cluster/orders-lab/CLUSTER_UUID&quot;
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;kafka-cluster:CreateTopic&quot;,
+        &quot;kafka-cluster:DescribeTopic&quot;,
+        &quot;kafka-cluster:WriteData&quot;,
+        &quot;kafka-cluster:ReadData&quot;
+      ],
+      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:topic/orders-lab/CLUSTER_UUID/orders.v1&quot;
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;kafka-cluster:DescribeGroup&quot;,
+        &quot;kafka-cluster:AlterGroup&quot;
+      ],
+      &quot;Resource&quot;: &quot;arn:aws:kafka:REGION:ACCOUNT_ID:group/orders-lab/CLUSTER_UUID/orders-demo-v1&quot;
+    }
+  ]
+}
+</code></pre></figure>
+<p>The combined role keeps the exercise short. In production, assign separate roles to topic provisioning, publishing and each consuming application. Scope permissions to the required topics and consumer-group IDs. For the sample idempotent producer, grant <code>WriteDataIdempotently</code> on the cluster ARN and <code>WriteData</code> on the topic ARN. Transactional producers require additional permissions on transactional-ID ARNs. Kafka ACL APIs may coexist on a cluster, while authorization of IAM identities uses IAM policies.</p>
+<p>The Amazon MSK IAM authentication library uses the AWS credential provider chain. Attach a workload role, or use short-lived development credentials via a configured AWS profile on a client with private reachability. Give the Java process a working credential source and confirm the identity with <code>aws sts get-caller-identity</code> in the same environment when STS is reachable. A profile backed by IAM Identity Center may need <code>aws sso login --profile YOUR_PROFILE</code> and the matching profile selected.</p>
+<p class="source"><a href="https://docs.aws.amazon.com/msk/latest/developerguide/port-info.html">MSK listener ports</a> · <a href="https://docs.aws.amazon.com/cli/latest/reference/kafka/get-bootstrap-brokers.html">Bootstrap endpoint fields</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html">Multi-VPC connectivity</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control-use-cases.html">IAM operation permissions</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/kafka-actions.html">IAM resource and action semantics</a> · <a href="https://github.com/aws/aws-msk-iam-auth">IAM Java library and credentials</a></p>
+</section>
+
+<section id="java">
+<h2>Build and run the Java lab</h2>
+<p>Create a Maven project directory with the two files below. The example pins Kafka Java clients <code>4.2.2</code> and Amazon MSK IAM authentication <code>2.3.8</code>. The same entry point can create and describe the topic, send one event, or run a consumer.</p>
+<figure class="snippet"><figcaption>pom.xml</figcaption>
+<pre tabindex="0"><code>&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;
+         xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;groupId&gt;example&lt;/groupId&gt;
+  &lt;artifactId&gt;msk-java-lab&lt;/artifactId&gt;
+  &lt;version&gt;1.0.0&lt;/version&gt;
+  &lt;properties&gt;
+    &lt;maven.compiler.release&gt;17&lt;/maven.compiler.release&gt;
+    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+  &lt;/properties&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.apache.kafka&lt;/groupId&gt;
+      &lt;artifactId&gt;kafka-clients&lt;/artifactId&gt;
+      &lt;version&gt;4.2.2&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;software.amazon.msk&lt;/groupId&gt;
+      &lt;artifactId&gt;aws-msk-iam-auth&lt;/artifactId&gt;
+      &lt;version&gt;2.3.8&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+      &lt;artifactId&gt;slf4j-simple&lt;/artifactId&gt;
+      &lt;version&gt;1.7.36&lt;/version&gt;
+      &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+  &lt;build&gt;
+    &lt;plugins&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+        &lt;version&gt;3.14.1&lt;/version&gt;
+      &lt;/plugin&gt;
+    &lt;/plugins&gt;
+  &lt;/build&gt;
+&lt;/project&gt;
+</code></pre></figure>
+<figure class="snippet"><figcaption>src/main/java/example/MskLab.java</figcaption>
+<pre tabindex="0"><code>package example;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.clients.consumer.CloseOptions;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.errors.TopicExistsException;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public final class MskLab {
+    private static final String TOPIC = &quot;orders.v1&quot;;
+    private static final String GROUP = &quot;orders-demo-v1&quot;;
+
+    public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException(&quot;Run with create, describe, produce, or consume&quot;);
+        }
+        switch (args[0]) {
+            case &quot;create&quot; -&gt; createTopic();
+            case &quot;describe&quot; -&gt; describeTopic();
+            case &quot;produce&quot; -&gt; produce();
+            case &quot;consume&quot; -&gt; consume();
+            default -&gt; throw new IllegalArgumentException(&quot;Unknown command: &quot; + args[0]);
+        }
+    }
+
+    private static boolean localMode() {
+        return &quot;local&quot;.equals(System.getenv(&quot;KAFKA_MODE&quot;));
+    }
+
+    private static Properties common(String clientId) {
+        Properties p = new Properties();
+        p.put(&quot;client.id&quot;, clientId);
+        if (localMode()) {
+            p.put(&quot;bootstrap.servers&quot;, &quot;localhost:9092&quot;);
+            p.put(&quot;security.protocol&quot;, &quot;PLAINTEXT&quot;);
+            return p;
+        }
+
+        String bootstrap = System.getenv(&quot;MSK_BOOTSTRAP&quot;);
+        if (bootstrap == null || bootstrap.isBlank()) {
+            throw new IllegalArgumentException(&quot;Set MSK_BOOTSTRAP to the IAM bootstrap brokers&quot;);
+        }
+        p.put(&quot;bootstrap.servers&quot;, bootstrap);
+        p.put(&quot;security.protocol&quot;, &quot;SASL_SSL&quot;);
+        p.put(&quot;sasl.mechanism&quot;, &quot;AWS_MSK_IAM&quot;);
+        p.put(&quot;sasl.jaas.config&quot;, &quot;software.amazon.msk.auth.iam.IAMLoginModule required;&quot;);
+        p.put(&quot;sasl.client.callback.handler.class&quot;,
+              &quot;software.amazon.msk.auth.iam.IAMClientCallbackHandler&quot;);
+        return p;
+    }
+
+    private static void createTopic() throws Exception {
+        short replicas = (short) (localMode() ? 1 : 3);
+        try (Admin admin = Admin.create(common(&quot;orders-lab-admin&quot;))) {
+            try {
+                admin.createTopics(List.of(new NewTopic(TOPIC, 3, replicas)))
+                     .all().get(30, TimeUnit.SECONDS);
+                System.out.println(&quot;Created &quot; + TOPIC);
+            } catch (ExecutionException failure) {
+                if (!(failure.getCause() instanceof TopicExistsException)) {
+                    throw failure;
+                }
+                System.out.println(TOPIC + &quot; already exists. Verify its settings with describe.&quot;);
+            }
+        }
+    }
+
+    private static void describeTopic() throws Exception {
+        try (Admin admin = Admin.create(common(&quot;orders-lab-admin&quot;))) {
+            TopicDescription topic = admin.describeTopics(List.of(TOPIC))
+                .topicNameValues().get(TOPIC).get(30, TimeUnit.SECONDS);
+            topic.partitions().forEach(partition -&gt; System.out.printf(
+                &quot;%s partition=%d replicas=%d inSync=%d%n&quot;, TOPIC, partition.partition(),
+                partition.replicas().size(), partition.isr().size()));
+        }
+    }
+
+    private static void produce() throws Exception {
+        Properties p = common(&quot;orders-lab-producer&quot;);
+        p.put(&quot;key.serializer&quot;, StringSerializer.class.getName());
+        p.put(&quot;value.serializer&quot;, StringSerializer.class.getName());
+        p.put(&quot;acks&quot;, &quot;all&quot;);
+        p.put(&quot;enable.idempotence&quot;, &quot;true&quot;);
+        p.put(&quot;compression.type&quot;, &quot;zstd&quot;);
+        p.put(&quot;linger.ms&quot;, &quot;5&quot;);
+        p.put(&quot;request.timeout.ms&quot;, &quot;10000&quot;);
+        p.put(&quot;delivery.timeout.ms&quot;, &quot;30000&quot;);
+        p.put(&quot;max.block.ms&quot;, &quot;15000&quot;);
+
+        String key = &quot;order-1042&quot;;
+        String eventId = UUID.randomUUID().toString();
+        String payload = &quot;&quot;&quot;
+            {&quot;eventId&quot;:&quot;%s&quot;,&quot;eventType&quot;:&quot;OrderPlaced&quot;,&quot;schemaVersion&quot;:1,
+             &quot;orderId&quot;:&quot;%s&quot;,&quot;occurredAt&quot;:&quot;%s&quot;}
+            &quot;&quot;&quot;.formatted(eventId, key, Instant.now()).replace(&quot;\n&quot;, &quot;&quot;);
+
+        try (KafkaProducer&lt;String, String&gt; producer = new KafkaProducer&lt;&gt;(p)) {
+            RecordMetadata result = producer.send(new ProducerRecord&lt;&gt;(TOPIC, key, payload)).get();
+            System.out.printf(&quot;Published event=%s %s-%d offset=%d%n&quot;, eventId,
+                              result.topic(), result.partition(), result.offset());
+        }
+    }
+
+    private static void consume() {
+        Properties p = common(&quot;orders-lab-consumer&quot;);
+        p.put(&quot;group.id&quot;, GROUP);
+        p.put(&quot;group.protocol&quot;, &quot;classic&quot;);
+        p.put(&quot;key.deserializer&quot;, StringDeserializer.class.getName());
+        p.put(&quot;value.deserializer&quot;, StringDeserializer.class.getName());
+        p.put(&quot;enable.auto.commit&quot;, &quot;false&quot;);
+        p.put(&quot;auto.offset.reset&quot;, &quot;earliest&quot;);
+        p.put(&quot;allow.auto.create.topics&quot;, &quot;false&quot;);
+        p.put(&quot;isolation.level&quot;, &quot;read_committed&quot;);
+        p.put(&quot;max.poll.records&quot;, &quot;100&quot;);
+        p.put(&quot;default.api.timeout.ms&quot;, &quot;10000&quot;);
+
+        AtomicBoolean running = new AtomicBoolean(true);
+        CountDownLatch stopped = new CountDownLatch(1);
+        Thread shutdown = new Thread(() -&gt; {
+            running.set(false);
+            try {
+                stopped.await(20, TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }, &quot;orders-consumer-shutdown&quot;);
+        Runtime.getRuntime().addShutdownHook(shutdown);
+
+        try {
+            KafkaConsumer&lt;String, String&gt; consumer = new KafkaConsumer&lt;&gt;(p);
+            try {
+                consumer.subscribe(List.of(TOPIC));
+                while (running.get()) {
+                    ConsumerRecords&lt;String, String&gt; batch = consumer.poll(Duration.ofMillis(500));
+                    for (ConsumerRecord&lt;String, String&gt; record : batch) {
+                        process(record);
+                    }
+                    if (!batch.nextOffsets().isEmpty()) {
+                        consumer.commitSync(batch.nextOffsets());
+                    }
+                }
+            } finally {
+                consumer.close(CloseOptions.timeout(Duration.ofSeconds(5)));
+            }
+        } finally {
+            stopped.countDown();
+        }
+    }
+
+    private static void process(ConsumerRecord&lt;String, String&gt; record) {
+        // Replace console output with a durable, idempotent business operation.
+        System.out.printf(&quot;Received %s-%d offset=%d key=%s value=%s%n&quot;,
+            record.topic(), record.partition(), record.offset(), record.key(), record.value());
+        if (System.out.checkError()) {
+            throw new IllegalStateException(&quot;Writing the demo output failed&quot;);
+        }
+    }
+}
+</code></pre></figure>
+<h3>Build, create the topic and send an event</h3>
+<p>In the project directory on the client host, run the commands below. In each new shell, set the same <code>MSK_BOOTSTRAP</code> value and credentials. The <code>create</code> command is safe to rerun for this topic and prints when it already exists. <code>describe</code> shows the expected three partitions and the replica and ISR counts.</p>
+<figure class="snippet"><figcaption>Bash · build and run</figcaption>
+<pre tabindex="0"><code>mvn -B -ntp compile org.apache.maven.plugins:maven-dependency-plugin:3.10.0:copy-dependencies
+CP=&#x27;target/classes:target/dependency/*&#x27;
+
+java -cp &quot;$CP&quot; example.MskLab create
+java -cp &quot;$CP&quot; example.MskLab describe
+java -cp &quot;$CP&quot; example.MskLab produce
+java -cp &quot;$CP&quot; example.MskLab consume
+</code></pre></figure>
+<details open><summary>PowerShell equivalents</summary>
+<p>Get the same private IAM bootstrap endpoint from the console or CLI and set <code>$env:MSK_BOOTSTRAP</code> in each PowerShell session. Use a semicolon to separate Java classpath entries.</p>
+<figure class="snippet"><figcaption>PowerShell · build and run</figcaption>
+<pre tabindex="0"><code>$env:MSK_BOOTSTRAP = &#x27;REPLACE_WITH_PRIVATE_IAM_BOOTSTRAP_STRING&#x27;
+mvn -B -ntp compile org.apache.maven.plugins:maven-dependency-plugin:3.10.0:copy-dependencies
+$labClassPath = &#x27;target/classes;target/dependency/*&#x27;
+
+java -cp $labClassPath example.MskLab create
+java -cp $labClassPath example.MskLab describe
+java -cp $labClassPath example.MskLab produce
+java -cp $labClassPath example.MskLab consume
+</code></pre></figure>
+</details>
+<h3>Check the result and try a restart</h3>
+<ol>
+<li>Expect one <code>Published</code> line from the producer with a partition and offset. The consumer prints one <code>Received</code> line with the same partition, offset, key and event ID. <code>earliest</code> lets the new group read the event already published.</li>
+<li>Leave the consumer running and produce another event from a second shell. The record shares the same key and partition and gets a later offset.</li>
+<li>Stop the consumer with <kbd>Ctrl+C</kbd> after allowing the batch commit to complete. Restart the same group and publish a third event. The group resumes at its committed position. Production processing should tolerate a repeat after an interrupted commit.</li>
+</ol>
+<details open><summary>Run locally with a disposable Kafka broker</summary>
+<p>For a local-only exercise with Docker, use the Apache Kafka image below. Leave the broker running in one terminal. In each lab terminal, run <code>export KAFKA_MODE=local</code> (Bash) or <code>$env:KAFKA_MODE='local'</code> (PowerShell), then run the same build and Java commands. The lab uses loopback, plaintext and one replica in this mode. Clear the variable before connecting to MSK (<code>unset KAFKA_MODE</code> or <code>Remove-Item Env:KAFKA_MODE</code>).</p>
+<figure class="snippet"><figcaption>Shell · local Kafka on loopback</figcaption>
+<pre tabindex="0"><code>docker run --rm --name kafka-lab -p 127.0.0.1:9092:9092 apache/kafka:4.2.2
+</code></pre></figure>
+</details>
+<p class="source"><a href="https://kafka.apache.org/42/getting-started/quickstart/">Apache Kafka quickstart</a> · <a href="https://github.com/aws/aws-msk-iam-auth/releases/tag/v2.3.8">IAM plugin release</a> · <a href="https://kafka.apache.org/42/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">KafkaConsumer API</a></p>
+</section>
+
+<section id="delivery">
+<h2>Design for retries, duplicates and replay</h2>
+<div class="table" tabindex="0" role="region" aria-label="Delivery semantics"><table>
+<thead><tr><th scope="col">Goal</th><th scope="col">Implementation</th><th scope="col">Failure behavior</th></tr></thead>
+<tbody>
+<tr><th scope="row">At least once</th><td>Finish durable processing, then commit the next offset. Make the operation idempotent.</td><td>Failure between the business write and the offset commit can replay records.</td></tr>
+<tr><th scope="row">At most once</th><td>Advance the committed offset before work where dropping a record is acceptable.</td><td>A crash after the commit can lose work.</td></tr>
+<tr><th scope="row">Kafka-to-Kafka exactly once</th><td>Use Kafka Streams exactly-once processing or a transactional producer that commits output and input offsets in one transaction. Downstream readers use <code>read_committed</code>.</td><td>Aborted output is hidden from committed readers. External effects need their own consistency controls.</td></tr>
+</tbody></table></div>
+<ul>
+<li><strong>Idempotency at the sink.</strong> Insert a stable event ID under a unique constraint in the same database transaction as the business update. On replay, recognize the existing ID and commit the Kafka offset. Advance the offset only after the durable transaction succeeds. Where a database update must also publish an event, use a transactional outbox and retain the event ID when forwarding the outbox entry.</li>
+<li><strong>Producer retries.</strong> Idempotent producer retries suppress duplicate writes for retried sends within the producer protocol. Re-submitting an event at the application level, including after a timeout with an unknown outcome, can still produce a duplicate. Reuse the same event ID across application-level retries. In the lab, every invocation intentionally generates a new test event ID.</li>
+<li><strong>Poison records.</strong> Define a bounded retry policy. Retry transient errors with backoff. For terminal errors, fail the partition or route the record with controlled access to a dead-letter topic. Preserve the original topic, partition, offset, event ID and error context. Advance the input only once the dead-letter write succeeds. If strict order matters, account for later records before routing failures away.</li>
+<li><strong>Replay.</strong> Use a separate group and isolated sink for safe backfills. To rewind a production group, stop its members, preview the reset, agree on the target and execute during an approved window. <code>auto.offset.reset=earliest</code> applies only if a usable committed offset is absent. The retention window limits what can be replayed.</li>
+</ul>
+<p>With Kafka transactions, give each live producer instance its own stable <code>transactional.id</code> and plan for fencing when a logical instance is replaced. A Java consume-transform-produce loop uses <code>initTransactions()</code>, <code>beginTransaction()</code>, sends output, passes the next offsets and consumer group metadata to <code>sendOffsetsToTransaction()</code>, then commits or aborts. On MSK, verify broker version and IAM transaction support first. AWS documents IAM support for <code>WriteTxnMarkers</code> on Kafka 3.8 and later.</p>
+<p class="source"><a href="https://kafka.apache.org/42/design/design/">Kafka delivery semantics and transactions</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/kafka-actions.html">MSK IAM transaction support</a></p>
+</section>
+
+<section id="configure">
+<h2>Configure topics, brokers and Java clients</h2>
+<h3>Topic and broker settings</h3>
+<div class="table" tabindex="0" role="region" aria-label="Kafka topic and broker settings"><table>
+<thead><tr><th scope="col">Setting</th><th scope="col">Starting decision</th><th scope="col">Trade-off</th></tr></thead>
+<tbody>
+<tr><th scope="row">Partitions</th><td>Use three in the lab. In production, estimate per-partition write and read throughput through a representative load test and choose enough parallelism for growth.</td><td>More partitions increase metadata, replica and recovery work. Increasing the count may change a key’s partition and break continuous per-key ordering across the change.</td></tr>
+<tr><th scope="row">Replication and ISR</th><td>On three-AZ Standard, start with RF 3 and minimum ISR 2. Verify actual defaults and overrides. Express protects some settings from change.</td><td>A stricter ISR requirement increases durability and can reduce write availability during replica outages.</td></tr>
+<tr><th scope="row"><code>cleanup.policy</code> and retention</th><td>Choose delete retention for event history, or supported compaction for a keyed state stream. Specify the replay window in topic settings.</td><td>Longer retention raises storage demand. Slow consumers can fall behind retained history.</td></tr>
+<tr><th scope="row">Message size</th><td>Prefer compact records. Coordinate broker or topic batch limits with producer request size, consumer fetch sizes and replica fetch settings when applicable.</td><td>Large records increase memory, latency and replication costs. Store large payloads externally and publish a reference when that fits the workload.</td></tr>
+<tr><th scope="row">Topic creation</th><td>Provision topics through repeatable infrastructure or an Admin workflow. On Standard, keep <code>auto.create.topics.enable=false</code> when your workflow provisions topics explicitly.</td><td>Explicit creation guards against accidental topics and makes retention, permissions, ownership and partition count reviewable.</td></tr>
+</tbody></table></div>
+<p>For Provisioned broker defaults, use MSK configurations and revisions. Review the allowed properties for your broker type and engine version. Create a configuration with the desired properties, record its ARN and revision, and apply it to an <code>ACTIVE</code> cluster using the current cluster version token. An MSK configuration revision and the cluster’s current version are different values. Check the MSK operation result, broker health and application SLOs after the update. Test changes in staging and plan for restarts where applicable.</p>
+<details open><summary>Apply a Provisioned configuration revision with the AWS CLI</summary>
+<p>Use an existing compatible configuration ARN and revision. Run the commands under an operator principal authorized to describe and update the cluster and inspect the resulting operation.</p>
+<figure class="snippet"><figcaption>Bash · apply and check a configuration revision</figcaption>
+<pre tabindex="0"><code>CONFIG_ARN=&#x27;REPLACE_WITH_MSK_CONFIGURATION_ARN&#x27;
+CONFIG_REVISION=1
+
+CLUSTER_VERSION=$(aws kafka describe-cluster-v2 --region &quot;$AWS_REGION&quot; \
+  --cluster-arn &quot;$CLUSTER_ARN&quot; --query &#x27;ClusterInfo.CurrentVersion&#x27; --output text)
+
+OPERATION_ARN=$(aws kafka update-cluster-configuration --region &quot;$AWS_REGION&quot; \
+  --cluster-arn &quot;$CLUSTER_ARN&quot; --current-version &quot;$CLUSTER_VERSION&quot; \
+  --configuration-info &quot;Arn=$CONFIG_ARN,Revision=$CONFIG_REVISION&quot; \
+  --query ClusterOperationArn --output text)
+
+aws kafka describe-cluster-operation --region &quot;$AWS_REGION&quot; \
+  --cluster-operation-arn &quot;$OPERATION_ARN&quot; \
+  --query &#x27;ClusterOperationInfo.OperationState&#x27; --output text
+</code></pre></figure>
+</details>
+<p>For topic-specific settings, use supported Kafka Admin APIs such as <code>incrementalAlterConfigs</code> and grant the topic dynamic-configuration IAM actions to the administering role. For example, on a topic with supported delete retention, <code>retention.ms=604800000</code> sets seven days. Retention takes effect through segment cleanup. Confirm the actual configuration after applying it.</p>
+<details open><summary>Inspect lag or change retention with the Kafka CLI</summary>
+<p>Install the Kafka client tools and add the AWS IAM library’s <code>-all.jar</code> to their classpath. Save the properties below as <code>client.properties</code>. The sample role can inspect its named group. To alter and verify retention, use a topic administrator with <code>DescribeTopicDynamicConfiguration</code> and <code>AlterTopicDynamicConfiguration</code> on the topic, plus <code>Connect</code> on the cluster.</p>
+<figure class="snippet"><figcaption>client.properties · Kafka CLI authentication</figcaption>
+<pre tabindex="0"><code>security.protocol=SASL_SSL
+sasl.mechanism=AWS_MSK_IAM
+sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;
+sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler
+</code></pre></figure>
+<figure class="snippet"><figcaption>Bash · from the Kafka client tools directory</figcaption>
+<pre tabindex="0"><code>export CLASSPATH=&#x27;/absolute/path/aws-msk-iam-auth-2.3.8-all.jar&#x27;
+
+bin/kafka-consumer-groups.sh --bootstrap-server &quot;$MSK_BOOTSTRAP&quot; \
+  --command-config client.properties --group orders-demo-v1 --describe
+
+bin/kafka-configs.sh --bootstrap-server &quot;$MSK_BOOTSTRAP&quot; \
+  --command-config client.properties --entity-type topics --entity-name orders.v1 \
+  --alter --add-config retention.ms=604800000
+
+bin/kafka-configs.sh --bootstrap-server &quot;$MSK_BOOTSTRAP&quot; \
+  --command-config client.properties --entity-type topics --entity-name orders.v1 \
+  --describe
+</code></pre></figure>
+</details>
+<h3>Java client tuning</h3>
+<div class="table" tabindex="0" role="region" aria-label="Java client settings"><table>
+<thead><tr><th scope="col">Client setting</th><th scope="col">What to do</th></tr></thead>
+<tbody>
+<tr><th scope="row">Producer reliability</th><td>Use <code>acks=all</code> and <code>enable.idempotence=true</code>. Keep retries enabled and <code>max.in.flight.requests.per.connection</code> at five or below. Bound total send time with <code>delivery.timeout.ms</code>, at least <code>request.timeout.ms + linger.ms</code>. Handle terminal errors and timeouts in the application.</td></tr>
+<tr><th scope="row">Producer batching</th><td>Keep one producer per process or configuration and share it across threads. Use asynchronous <code>send</code> with callbacks for throughput, control outstanding work and benchmark <code>batch.size</code>, <code>linger.ms</code> and compression. The synchronous send in the lab makes acknowledgment visible.</td></tr>
+<tr><th scope="row">Consumer progress</th><td>Choose a stable <code>group.id</code> for each independent application. Disable auto-commit when coordinating offsets with work. The Kafka consumer is generally thread-confined. Commit only the highest contiguous completed position per partition when parallelizing work.</td></tr>
+<tr><th scope="row">Poll and fetch</th><td>Size <code>max.poll.records</code> so even a slow batch fits within <code>max.poll.interval.ms</code>, including commit time. For heavier work, keep polling and use partition-aware queues and pause/resume with rebalance handling. Tune <code>fetch.min.bytes</code> and <code>fetch.max.wait.ms</code> when balancing latency and throughput.</td></tr>
+<tr><th scope="row">Offset resets and isolation</th><td>Use <code>earliest</code> for a new group that should read retained history, <code>latest</code> to start from new arrivals, or <code>none</code> to surface missing offsets. Use <code>read_committed</code> where aborted transactions must be hidden. Open transactions can delay visible progress.</td></tr>
+</tbody></table></div>
+<p class="source"><a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html">Standard MSK configuration</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-express-read-write.html">Express configuration</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/serverless-config.html">Serverless configuration</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-update-cluster-config.html">Apply a configuration revision</a> · <a href="https://kafka.apache.org/42/configuration/producer-configs/">Producer configuration</a> · <a href="https://kafka.apache.org/42/configuration/consumer-configs/">Consumer configuration</a></p>
+</section>
+
+<section id="operations">
+<h2>Operate MSK in production</h2>
+<h3>Schema and event contracts</h3>
+<p>Use a serializer and a schema registry where consumers need a reliable contract. AWS Glue Schema Registry offers Java integration for Kafka. Choose a compatibility policy and test schema changes with old and new consumers. Make event identity, key, event type, event time and business meaning explicit. Document who owns the topic and its retention policy. Keep sensitive content out of keys and logs, and give dead-letter topics appropriately restricted access and retention.</p>
+<h3>Capacity and monitoring</h3>
+<p>Size for peak ingress, consumer fan-out, partition skew, replanning after an AZ or broker failure and replay traffic. On Standard, a rough retained-storage estimate for delete-only topics is <em>compressed ingress bytes per second × retained seconds × replication factor</em>. For 5 MiB/s and three days at RF 3, that is about 3.7 TiB cluster-wide before overhead, headroom and uneven distribution. Benchmark with representative record sizes, keys, compression and network paths. Review broker, partition and connection quotas before adding consumers or increasing deployment churn.</p>
+<div class="table" tabindex="0" role="region" aria-label="Production monitoring signals"><table>
+<thead><tr><th scope="col">Signal</th><th scope="col">What to check</th></tr></thead>
+<tbody>
+<tr><th scope="row">Consumer progress</th><td>CloudWatch <code>MaxOffsetLag</code>, <code>SumOffsetLag</code> and <code>EstimatedMaxTimeLag</code> where available, plus application event age, records processed per second and downstream errors. Offset lag measures distance in offsets. An absent metric may indicate an unstable group, a missing committed offset or other emission constraints. Pair it with health and progress checks.</td></tr>
+<tr><th scope="row">Broker health</th><td>Offline and under-replicated partitions, ISR changes, request latency, throttling, broker CPU and connection rates where exposed. On Standard, watch storage usage and forecast exhaustion. Match alarms to the cluster type’s metric list.</td></tr>
+<tr><th scope="row">Java applications</th><td>Acknowledgment latency, send errors and timeouts, retries, poll-to-poll delay, rebalance count, commit failures, sink latency, duplicate rate and dead-letter volume. Set helpful client IDs and correlate alerts by topic and group.</td></tr>
+</tbody></table></div>
+<h3>Change, scale and recover</h3>
+<ul>
+<li>Use infrastructure as code for clusters and policies and a versioned workflow for topics and schemas. Review supported versions and end-of-support dates. Exercise broker rolling updates, producer or consumer restarts, IAM credential refresh and a replay before relying on those paths.</li>
+<li>When lag grows, look at lag per partition before scaling. Correct key skew or downstream bottlenecks and add group members only up to usable partition parallelism. Confirm the effect of partition-count changes on key routing. For Standard broker expansion, plan how partitions move to the added brokers and validate balance after the operation.</li>
+<li>Replication within one Region gives availability across broker failures and availability zones. For a regional recovery objective, evaluate MSK Replicator and measure replication lag, offset synchronization and duplicate tolerance. Write down RPO, RTO, endpoint changes and failback. Rehearse with a staging workload.</li>
+<li>Use MSK Connect for supported connector workloads and Kafka Streams for keyed joins, aggregates or stateful transformations when those suit the application. Each workload still needs its own identity, network path and operational checks.</li>
+</ul>
+<p class="source"><a href="https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs-serde-java.html">Glue Schema Registry Java integration</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/consumer-lag.html">MSK consumer lag</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/bestpractices-cw-alarms.html">Provisioned CloudWatch alarms</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/bestpractices-express.html">Express broker best practices</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-replicator-how-replication-works.html">MSK Replicator</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-connect.html">MSK Connect</a></p>
+</section>
+
+<section id="troubleshoot">
+<h2>Troubleshoot in connection order</h2>
+<div class="table" tabindex="0" role="region" aria-label="Troubleshooting runbook"><table>
+<thead><tr><th scope="col">Symptom</th><th scope="col">First checks</th></tr></thead>
+<tbody>
+<tr><th scope="row">No IAM bootstrap string</th><td>Confirm Region, cluster ARN, <code>ACTIVE</code> state, operator permission and IAM listener. Use <code>BootstrapBrokerStringSaslIam</code> for the walkthrough. Use the returned endpoint field appropriate to a managed multi-VPC or other connection path.</td></tr>
+<tr><th scope="row">DNS or connection timeout</th><td>Test from the application host. On Linux, try <code>getent hosts BROKER</code> and <code>nc -vz BROKER PORT</code> if installed. On Windows use <code>Test-NetConnection -ComputerName BROKER -Port PORT</code>. Check advertised brokers, routes, security groups and network ACLs. A successful TCP connection proves socket reachability only.</td></tr>
+<tr><th scope="row">TLS handshake failure</th><td>Check that the port matches the configured listener, that the JVM trusts the broker CA chain and that the hostname matches the certificate. Keep host verification enabled. Check for a traffic-inspection proxy changing certificates.</td></tr>
+<tr><th scope="row">SASL authentication failure</th><td>Confirm <code>SASL_SSL</code>, <code>AWS_MSK_IAM</code>, the IAM login module and callback class, an available credential source, the intended principal and correct host clock. Verify the endpoint belongs to the expected Region and that the principal can connect.</td></tr>
+<tr><th scope="row">Topic, group or cluster authorization failure</th><td>Match the denied operation to its IAM action and ARN type. Check the cluster UUID, topic and group names, policy boundaries or explicit denies, and the cluster-scoped idempotent-write grant. If using assume-role credentials, check which role the process actually obtained.</td></tr>
+<tr><th scope="row">No messages or unexpected replay</th><td>Check topic and partition, producer acknowledgment, exact group ID and committed offsets. Check <code>auto.offset.reset</code>, retention, open transactions, commit outcomes and rebalance frequency.</td></tr>
+<tr><th scope="row">Write timeouts or growing lag</th><td>Correlate ISR and leader health, broker throttle and throughput, and client retries. Check hot keys, sink latency, consumer poll timing and recent deploys. Restore capacity or reduce load while preserving processing and ordering guarantees.</td></tr>
+</tbody></table></div>
+<p class="source"><a href="https://docs.aws.amazon.com/msk/latest/developerguide/troubleshooting.html">AWS MSK troubleshooting</a> · <a href="https://github.com/aws/aws-msk-iam-auth#troubleshooting">IAM library troubleshooting</a></p>
+</section>
+
+<section id="cleanup">
+<h2>Clean up the lab</h2>
+<ol>
+<li>Stop the consumer and any remaining test producers. Save the data first if you need it. Deleting a topic or cluster removes its retained data.</li>
+<li>If you created a disposable MSK cluster, delete that cluster in the MSK console and monitor the status until it disappears. On a shared cluster, delete only lab-owned resources you are authorized to remove.</li>
+<li>Remove any lab-only client instance, EBS volumes, IAM role or policy, monitoring alarms, log groups, endpoints and security groups that you created. Check for retained resources in the same Region. A local Docker broker started with <code>--rm</code> is removed when stopped.</li>
+</ol>
+</section>
+
+<section id="references">
+<h2>References</h2>
+<ul>
+<li>Service setup and operations. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/what-is-msk.html">Amazon MSK developer guide</a></li>
+<li>Authentication, permissions and credentials. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html">MSK IAM access control</a> · <a href="https://github.com/aws/aws-msk-iam-auth">AWS Java authentication library</a></li>
+<li>Kafka records, partitions, durability and consumers. <a href="https://kafka.apache.org/42/design/design/">Apache Kafka design</a> · <a href="https://kafka.apache.org/42/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">Java consumer API</a></li>
+<li>Client and topic configuration. <a href="https://kafka.apache.org/42/configuration/producer-configs/">Producer</a> · <a href="https://kafka.apache.org/42/configuration/consumer-configs/">Consumer</a> · <a href="https://kafka.apache.org/42/configuration/topic-configs/">Topic</a></li>
+</ul>
+</section>
+</article></main>
+</div>
+<footer><div class="wrap"><span>Documentation checked 18 November 2026</span><a href="#top">Back to top ↑</a></div></footer>
+<script>
+const menuToggle = document.querySelector(".menu-toggle");
+const guideLinks = document.getElementById(menuToggle.getAttribute("aria-controls"));
+const guideLayout = menuToggle.closest(".layout");
+menuToggle.hidden = false;
+menuToggle.addEventListener("click", () => {
+  const collapsed = menuToggle.getAttribute("aria-expanded") === "true";
+  const label = collapsed ? "Expand menu" : "Collapse menu";
+  guideLinks.hidden = collapsed;
+  guideLayout.classList.toggle("menu-collapsed", collapsed);
+  menuToggle.setAttribute("aria-expanded", String(!collapsed));
+  menuToggle.setAttribute("aria-label", label);
+  menuToggle.title = label;
+});
+
+document.querySelectorAll(".snippet").forEach((figure) => {
+  if (!navigator.clipboard || !window.isSecureContext) return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "Copy";
+  const caption = figure.querySelector("figcaption");
+  button.setAttribute("aria-label", "Copy " + caption.textContent.trim());
+  caption.append(button);
+  button.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(figure.querySelector("code").textContent);
+      button.textContent = "Copied";
+    } catch {
+      button.textContent = "Select code to copy";
+    }
+    window.setTimeout(() => { button.textContent = "Copy"; }, 1800);
+  });
+});
+</script>
+</body>
+</html>

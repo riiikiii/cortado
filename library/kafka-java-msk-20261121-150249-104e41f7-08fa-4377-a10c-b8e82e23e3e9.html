@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0f766e">
+<title>Event-driven Java on Amazon MSK</title>
+<style>
+:root{
+  --bg:#f3f9f8; --surface:#ffffff; --surface-2:#e8f4f2; --surface-3:#d7ede9;
+  --ink:#05302d; --text:#1b3b38; --muted:#56716e; --line:#cde4e0;
+  --t900:#042f2e; --t800:#115e59; --t700:#0f766e; --t600:#0d9488; --t500:#14b8a6;
+  --t400:#2dd4bf; --t300:#5eead4; --t200:#99f6e4; --t100:#ccfbf1; --t50:#f0fdfa;
+  --coral:#d4553a; --coral-bg:#fdf1ed; --coral-line:#f3c7ba;
+  --code-bg:#052624; --code-text:#d9f7f2; --code-line:#0e3d3a;
+  --link:#0f766e;
+  --shadow:0 1px 2px rgba(4,47,46,.06), 0 6px 20px rgba(4,47,46,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --svg-node:#ffffff; --svg-node-2:#e8f4f2; --svg-stroke:#0f766e; --svg-text:#05302d; --svg-muted:#56716e; --svg-accent:#14b8a6; --svg-db:#ccfbf1; --svg-warn:#d4553a;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#031b1a; --surface:#062725; --surface-2:#0a3431; --surface-3:#0f413d;
+    --ink:#e8fffb; --text:#cfeee9; --muted:#8db3ae; --line:#16504b;
+    --coral:#ff8a6b; --coral-bg:#2a1714; --coral-line:#5a2a20;
+    --code-bg:#021413; --code-line:#0c2f2c;
+    --link:#5eead4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --svg-node:#082f2d; --svg-node-2:#0b3936; --svg-stroke:#2dd4bf; --svg-text:#e8fffb; --svg-muted:#8db3ae; --svg-accent:#5eead4; --svg-db:#0f4a45; --svg-warn:#ff8a6b;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){ body{font-size:17px} }
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+img,svg{max-width:100%}
+::selection{background:var(--t200); color:var(--t900)}
+
+/* progress */
+#progress{position:fixed; top:0; left:0; height:4px; width:0; z-index:60; background:linear-gradient(90deg,var(--t500),var(--t300)); box-shadow:0 0 8px rgba(20,184,166,.6); transition:width .1s linear}
+
+/* hero */
+.hero{position:relative; overflow:hidden; color:#eafffb; background:radial-gradient(1200px 500px at 85% -10%, rgba(94,234,212,.35), transparent 60%), linear-gradient(140deg,#031f1e 0%, #0b4a46 45%, #0f766e 80%, #14b8a6 120%); padding:calc(56px + env(safe-area-inset-top)) 24px 40px}
+.hero .net{position:absolute; inset:0; opacity:.22; pointer-events:none}
+.hero-inner{position:relative; max-width:760px; margin:0 auto}
+.kicker{display:inline-flex; gap:8px; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--t200); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); padding:6px 12px; border-radius:999px}
+.hero h1{font-family:var(--serif); font-weight:700; font-size:clamp(38px,7.4vw,58px); line-height:1.05; margin:18px 0 14px; letter-spacing:-.01em; color:#fff}
+.hero h1 em{font-style:italic; color:var(--t300)}
+.hero p.lede{font-size:20px; line-height:1.55; color:#d3f6f0; max-width:620px; margin:0 0 22px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font-size:14px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); color:#eafffb; white-space:nowrap}
+
+/* layout */
+main{max-width:740px; margin:0 auto; padding:0 22px 120px}
+@media (min-width:1100px){ main{margin-left:max(320px, calc(50vw - 370px + 140px)); margin-right:auto} .hero-inner{margin-left:max(298px, calc(50vw - 380px + 140px))} }
+section{scroll-margin-top:16px}
+h2,h3,h4{color:var(--ink); line-height:1.2}
+h2{font-family:var(--serif); font-size:31px; margin:56px 0 12px; letter-spacing:-.005em}
+h2 .num{display:inline-block; font-family:var(--sans); font-size:14px; font-weight:800; letter-spacing:.06em; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 8px; vertical-align:6px; margin-right:10px}
+@media (prefers-color-scheme: dark){ h2 .num{background:var(--surface-3); color:var(--t300)} }
+h3{font-size:21px; margin:32px 0 8px}
+p{margin:0 0 16px}
+ul,ol{padding-left:1.25em; margin:0 0 16px}
+li{margin:5px 0}
+strong{color:var(--ink)}
+hr{border:0; border-top:1px solid var(--line); margin:40px 0}
+.lead{font-size:20px; color:var(--ink)}
+.small{font-size:15px; color:var(--muted)}
+code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; word-break:break-word}
+
+/* how to read + level map */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 22px; margin:22px 0}
+.legend{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 18px; margin-top:10px}
+.legend div{display:flex; gap:10px; align-items:flex-start; font-size:15.5px; line-height:1.4}
+.legend .ico{flex:0 0 28px; height:28px; border-radius:8px; display:grid; place-items:center; font-size:15px}
+@media (max-width:520px){ .legend{grid-template-columns:1fr} }
+.climb{list-style:none; padding:0; margin:26px 0 8px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; position:relative}
+.climb::before{content:""; position:absolute; left:10%; right:10%; top:27px; height:3px; background:linear-gradient(90deg,var(--t200),var(--t600)); border-radius:3px}
+.climb li{position:relative; text-align:center; margin:0}
+.climb a{display:block; text-decoration:none; color:var(--text); padding:0 2px; min-height:44px}
+.climb .dot{width:56px; height:56px; border-radius:50%; margin:0 auto 8px; display:grid; place-items:center; font-weight:800; font-size:20px; color:#fff; background:var(--t700); border:4px solid var(--bg); box-shadow:0 0 0 2px var(--t300); position:relative}
+.climb li:nth-child(1) .dot{background:#5fb8ab} .climb li:nth-child(2) .dot{background:#2a9d8f} .climb li:nth-child(3) .dot{background:#14867a} .climb li:nth-child(4) .dot{background:#0f6b62} .climb li:nth-child(5) .dot{background:linear-gradient(135deg,#042f2e,#0f766e); box-shadow:0 0 0 2px var(--t400), 0 0 16px rgba(45,212,191,.6)}
+.climb .lv{display:block; font-size:12px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--t700)}
+@media (prefers-color-scheme: dark){ .climb .lv{color:var(--t300)} }
+.climb .nm{display:block; font-weight:700; color:var(--ink); font-size:15.5px; line-height:1.2}
+.climb .mins{display:block; font-size:13px; color:var(--muted)}
+@media (max-width:560px){ .climb{grid-template-columns:1fr; gap:4px} .climb::before{left:27px; right:auto; top:28px; bottom:28px; width:3px; height:auto; background:linear-gradient(180deg,var(--t200),var(--t600))} .climb a{display:flex; gap:14px; align-items:center; text-align:left; padding:6px 0} .climb .dot{margin:0; flex:0 0 56px} }
+
+/* level banners */
+.level{margin:72px -22px 8px; padding:34px 22px 28px; color:#eafffb; position:relative; overflow:hidden; background:linear-gradient(135deg,#042f2e,#0f766e)}
+@media (min-width:784px){ .level{margin-left:0; margin-right:0; border-radius:20px} }
+.level::after{content:attr(data-n); position:absolute; right:-6px; top:-34px; font-family:var(--serif); font-size:180px; font-weight:700; line-height:1; color:rgba(255,255,255,.07)}
+.level .tag{font-size:13px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--t200)}
+.level h2{color:#fff; margin:6px 0 10px; font-size:34px}
+.level p{color:#d4f5ef; margin:0 0 10px; max-width:560px}
+.level ul{margin:8px 0 0; padding-left:0; list-style:none; display:flex; flex-wrap:wrap; gap:8px}
+.level li{margin:0; font-size:14.5px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); padding:5px 11px; border-radius:999px}
+.level.l1{background:linear-gradient(135deg,#0b4f49,#2a9d8f)} .level.l2{background:linear-gradient(135deg,#073d3a,#1a8a7d)} .level.l3{background:linear-gradient(135deg,#053532,#0f766e)} .level.l4{background:linear-gradient(135deg,#042b29,#0d645d)} .level.l5{background:radial-gradient(600px 300px at 90% 0%, rgba(94,234,212,.35), transparent 70%), linear-gradient(135deg,#021a19,#0b4a46)}
+
+/* callouts */
+.callout{border-radius:12px; padding:16px 18px 14px 18px; margin:22px 0; border:1px solid var(--line); background:var(--surface); position:relative; box-shadow:var(--shadow)}
+.callout .h{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px}
+.callout p:last-child, .callout ul:last-child{margin-bottom:0}
+.callout.model{border-left:5px solid var(--t500)} .callout.model .h{color:var(--t700)}
+.callout.tip{border-left:5px solid var(--t800); background:linear-gradient(180deg,var(--t50),var(--surface))} .callout.tip .h{color:var(--t800)}
+.callout.warn{border-left:5px solid var(--coral); background:var(--coral-bg); border-color:var(--coral-line)} .callout.warn .h{color:var(--coral)}
+.callout.try{border-left:5px solid var(--t400); background:var(--surface-2)} .callout.try .h{color:var(--t700)}
+@media (prefers-color-scheme: dark){ .callout.tip{background:linear-gradient(180deg,#073330,var(--surface))} .callout.model .h,.callout.try .h{color:var(--t300)} .callout.tip .h{color:var(--t200)} }
+.ico{display:inline-grid; place-items:center; width:24px; height:24px; border-radius:7px; font-size:13px; color:#fff}
+.ico.m{background:var(--t500)} .ico.t{background:var(--t800)} .ico.w{background:var(--coral)} .ico.y{background:var(--t600)}
+
+/* code */
+.code{margin:20px 0; border-radius:12px; overflow:hidden; background:var(--code-bg); border:1px solid var(--code-line); box-shadow:var(--shadow)}
+.code .bar{display:flex; justify-content:space-between; align-items:center; padding:6px 8px 6px 14px; background:#073532; border-bottom:1px solid var(--code-line); font-family:var(--mono); font-size:12.5px; color:#8fd9cd}
+@media (prefers-color-scheme: dark){ .code .bar{background:#06201f} }
+.code .bar button{font:600 12.5px var(--sans); color:#cffaf2; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:8px; padding:8px 12px; min-height:36px; cursor:pointer}
+.code pre{margin:0; padding:14px 16px 16px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-family:var(--mono); font-size:13.4px; line-height:1.6; color:var(--code-text); tab-size:4}
+.code pre code{background:none; border:0; padding:0; font-size:inherit; word-break:normal; color:inherit}
+.tk-k{color:#2dd4bf; font-weight:600} .tk-t{color:#a7f3e6} .tk-s{color:#fde68a} .tk-c{color:#6fa59d; font-style:italic} .tk-a{color:#fca5a5} .tk-n{color:#fdba74} .tk-y{color:#5eead4}
+
+/* tables */
+.table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; min-width:560px}
+th,td{padding:10px 12px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line)}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink)}
+
+/* figures */
+figure{margin:24px 0; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 12px 10px; box-shadow:var(--shadow)}
+figcaption{font-size:14.5px; color:var(--muted); padding:8px 6px 2px; line-height:1.45}
+figure svg{display:block; width:100%; height:auto}
+.s-node{fill:var(--svg-node); stroke:var(--svg-stroke); stroke-width:1.6}
+.s-node2{fill:var(--svg-node-2); stroke:var(--svg-stroke); stroke-width:1.2}
+.s-db{fill:var(--svg-db); stroke:var(--svg-stroke); stroke-width:1.4}
+.s-line{stroke:var(--svg-stroke); stroke-width:1.6; fill:none}
+.s-dash{stroke:var(--svg-accent); stroke-width:1.8; fill:none; stroke-dasharray:5 4}
+.s-warn{stroke:var(--svg-warn); stroke-width:1.8; fill:none; stroke-dasharray:5 4}
+.s-t{fill:var(--svg-text); font:600 13px var(--sans)}
+.s-tb{fill:var(--svg-text); font:800 14px var(--sans)}
+.s-tm{fill:var(--svg-muted); font:500 11.5px var(--sans)}
+.s-tw{fill:var(--svg-warn); font:700 11.5px var(--sans)}
+.s-ta{fill:var(--svg-accent); font:700 11.5px var(--sans)}
+.s-fill{fill:var(--svg-accent)}
+.s-bus{fill:var(--t700)}
+
+/* widgets */
+.widget{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 16px; margin:24px 0; box-shadow:var(--shadow)}
+.widget h4{margin:0 0 4px; font-size:17px; display:flex; gap:8px; align-items:center}
+.widget .sub{font-size:14.5px; color:var(--muted); margin:0 0 12px}
+.toggle{display:flex; gap:12px; align-items:flex-start; padding:10px 4px; border-top:1px solid var(--line); font-size:16px; line-height:1.4; cursor:pointer; min-height:44px}
+.toggle input{width:24px; height:24px; accent-color:var(--t600); flex:0 0 24px; margin:0}
+.verdict{margin-top:12px; padding:14px 16px; border-radius:12px; background:var(--t50); border:1px solid var(--t200); font-size:16px; line-height:1.5}
+@media (prefers-color-scheme: dark){ .verdict{background:var(--surface-2); border-color:var(--line)} }
+.verdict b{color:var(--t800)} @media (prefers-color-scheme: dark){ .verdict b{color:var(--t300)} }
+.range{margin:12px 0}
+.range label{display:flex; justify-content:space-between; font-size:15px; font-weight:600; color:var(--ink)}
+.range output{font-family:var(--mono); color:var(--t700); font-weight:700} @media (prefers-color-scheme: dark){ .range output{color:var(--t300)} }
+input[type=range]{width:100%; height:44px; accent-color:var(--t600); margin:0}
+.meter{height:16px; border-radius:999px; background:var(--surface-3); overflow:hidden; margin:8px 0 6px}
+.meter span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--t500),var(--coral)); border-radius:999px; transition:width .25s}
+.big{font-family:var(--serif); font-size:40px; font-weight:700; color:var(--ink); line-height:1.1}
+.btns{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 6px}
+.btn{font:650 15px var(--sans); border-radius:10px; padding:11px 16px; min-height:44px; border:1px solid var(--t600); background:var(--t700); color:#fff; cursor:pointer}
+.btn.ghost{background:transparent; color:var(--t700)} @media (prefers-color-scheme: dark){ .btn.ghost{color:var(--t300); border-color:var(--t400)} }
+.btn.bad{background:var(--coral); border-color:var(--coral)}
+.cb-state{display:inline-block; font:800 14px var(--sans); letter-spacing:.08em; padding:6px 12px; border-radius:999px; background:var(--t100); color:var(--t800)}
+.cb-state.open{background:var(--coral-bg); color:var(--coral); border:1px solid var(--coral-line)}
+.cb-state.half{background:#fff4d6; color:#8a5a00} @media (prefers-color-scheme: dark){ .cb-state{background:var(--surface-3); color:var(--t200)} .cb-state.half{background:#3a2d0a; color:#ffd27a} }
+.dots{display:flex; gap:6px; margin:10px 0}
+.dots i{width:22px; height:22px; border-radius:50%; background:var(--surface-3); border:1px solid var(--line)}
+.dots i.ok{background:var(--t500); border-color:var(--t600)} .dots i.ko{background:var(--coral); border-color:var(--coral)}
+.cb-node{transition:all .2s}
+.cb-node.on rect{fill:var(--t600); stroke:var(--t800)} .cb-node.on text{fill:#fff}
+.cb-node.on.openn rect{fill:var(--coral); stroke:var(--coral)}
+.cb-node.on.halfn rect{fill:#e0a800; stroke:#b58600}
+.log{font-size:14.5px; color:var(--muted); min-height:44px; margin:6px 0 0}
+
+/* checklist */
+.check{list-style:none; padding:0; margin:0}
+.check li{margin:0; border-top:1px solid var(--line)}
+.check label{display:flex; gap:12px; align-items:flex-start; padding:11px 4px; cursor:pointer; font-size:16px; line-height:1.4; min-height:44px}
+.check input{width:24px; height:24px; accent-color:var(--t600); flex:0 0 24px; margin:0}
+.check input:checked + span{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--t400)}
+.count{font-family:var(--mono); font-weight:700; color:var(--t700)} @media (prefers-color-scheme: dark){ .count{color:var(--t300)} }
+
+/* quiz */
+.q{border-top:1px solid var(--line); padding:16px 0 6px}
+.q:first-child{border-top:0; padding-top:2px}
+.q p.qt{font-weight:650; color:var(--ink); margin-bottom:10px}
+.q .opts{display:grid; gap:8px}
+.q button{font:500 16px var(--sans); text-align:left; padding:12px 14px; min-height:44px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); cursor:pointer; line-height:1.35}
+.q button.right{background:#dcfaf3; border-color:var(--t500); color:var(--t900)}
+.q button.wrong{background:var(--coral-bg); border-color:var(--coral); color:var(--coral)}
+@media (prefers-color-scheme: dark){ .q button.right{background:#0d4a43; color:#e8fffb} }
+.q .why{display:none; font-size:15.5px; margin:10px 0 6px; padding:10px 12px; border-radius:10px; background:var(--surface-2); border-left:4px solid var(--t500)}
+.q.done .why{display:block}
+.score{font-size:17px; font-weight:700; color:var(--ink); margin-top:12px}
+
+/* glossary */
+dl.gloss{display:grid; grid-template-columns:1fr; gap:0; margin:16px 0}
+dl.gloss div{padding:12px 0; border-top:1px solid var(--line)}
+dl.gloss dt{font-weight:750; color:var(--ink)}
+dl.gloss dd{margin:2px 0 0; font-size:16.5px}
+.sources li{font-size:15.5px; line-height:1.45; margin:8px 0}
+
+/* stack cards */
+.grid2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:20px 0}
+@media (max-width:560px){ .grid2{grid-template-columns:1fr} }
+.mini{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow)}
+.mini h4{margin:0 0 2px; font-size:16.5px}
+.mini .v{font-family:var(--mono); font-size:12.5px; color:var(--t700); font-weight:700} @media (prefers-color-scheme: dark){ .mini .v{color:var(--t300)} }
+.mini p{font-size:15px; margin:6px 0 0; line-height:1.45}
+
+/* honeycomb */
+.honey{display:grid; gap:6px; margin:18px auto; max-width:520px; text-align:center; font-size:15px; font-weight:650}
+.honey div{border-radius:10px; padding:10px; color:#fff}
+.honey .e2e{width:40%; margin:0 auto; background:var(--coral)}
+.honey .ct{width:70%; margin:0 auto; background:var(--t800)}
+.honey .it{width:100%; margin:0 auto; background:var(--t600); padding:18px 10px}
+.honey .ut{width:62%; margin:0 auto; background:var(--t400); color:var(--t900)}
+
+/* toc */
+#tocBtn{position:fixed; right:calc(16px + env(safe-area-inset-right)); bottom:calc(16px + env(safe-area-inset-bottom)); z-index:50; display:flex; align-items:center; gap:8px; font:700 15px var(--sans); color:#fff; background:var(--t800); border:1px solid var(--t600); border-radius:999px; padding:12px 18px; min-height:48px; box-shadow:0 8px 24px rgba(4,47,46,.35); cursor:pointer}
+#tocBtn .pct{font-family:var(--mono); font-size:13px; color:var(--t200)}
+#scrim{position:fixed; inset:0; background:rgba(2,20,19,.45); z-index:54; opacity:0; pointer-events:none; transition:opacity .2s}
+#scrim.show{opacity:1; pointer-events:auto}
+#toc{position:fixed; top:0; right:0; bottom:0; width:min(340px,88vw); z-index:55; background:var(--surface); border-left:1px solid var(--line); transform:translateX(105%); transition:transform .25s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom)); box-shadow:-10px 0 30px rgba(4,47,46,.18)}
+#toc.open{transform:none}
+#toc .th{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+#toc .th b{font-family:var(--serif); font-size:22px; color:var(--ink)}
+#toc .close{font:700 22px var(--sans); background:none; border:0; color:var(--muted); min-width:44px; min-height:44px; cursor:pointer}
+#toc .grp{font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:16px 0 4px} @media (prefers-color-scheme: dark){ #toc .grp{color:var(--t300)} }
+#toc a{display:flex; gap:10px; align-items:center; text-decoration:none; color:var(--text); font-size:15.5px; line-height:1.3; padding:9px 8px; border-radius:8px; min-height:44px}
+#toc a:hover,#toc a.cur{background:var(--surface-2); color:var(--ink)}
+#toc a .ck{flex:0 0 20px; height:20px; border-radius:50%; border:2px solid var(--line); display:grid; place-items:center; font-size:11px; color:#fff}
+#toc a.seen .ck{background:var(--t500); border-color:var(--t500)}
+@media (min-width:1100px){
+  #toc{left:0; right:auto; width:290px; transform:none; border-left:0; border-right:1px solid var(--line); box-shadow:none; background:var(--surface)}
+  #toc .close{display:none}
+  #tocBtn,#scrim{display:none}
+}
+footer{max-width:740px; margin:0 auto; padding:30px 22px 120px; color:var(--muted); font-size:14.5px; border-top:1px solid var(--line)}
+@media (min-width:1100px){ footer{margin-left:max(320px, calc(50vw - 370px + 140px))} }
+@media print{ #toc,#tocBtn,#scrim,#progress,.code .bar button{display:none} main{margin:0 auto} .level{break-inside:avoid} }
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
+
+
+/* Single-column lesson and verbatim reader prompt */
+@media (min-width:1100px){main,footer,.hero .hero-inner{margin-inline:auto}}
+.hero-inner,main,footer{overflow-wrap:anywhere}
+.chip{max-width:100%;white-space:normal}
+.reader-prompt{margin:0 0 18px;padding:10px 14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(255,255,255,.08);color:#eafffb}
+.reader-prompt summary{font-size:14px;font-weight:700;cursor:pointer}
+.reader-prompt p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Additional declarations used inline in the reference. */
+.intro-title{margin-top:36px}
+.compact-bottom{margin-bottom:6px}
+.inverted-label{fill:#e8fffb;font:700 13px var(--sans)}
+.faint-dash{stroke-dasharray:2 4; opacity:.6}
+.label-halo{paint-order:stroke;stroke:var(--surface);stroke-width:4px}
+.warn-stroke{stroke:var(--svg-warn)}
+.warn-fill{fill:var(--svg-warn)}
+.accent-dash{fill:none; stroke:var(--svg-accent); stroke-width:1.6; stroke-dasharray:6 4}
+.tight-paragraph{margin:4px 0 0}
+.no-margin{margin:0}
+.compact-heading{margin-bottom:4px}
+.teal-ramp{background:linear-gradient(90deg,var(--t400),var(--t700))}
+</style>
+</head>
+<body>
+<header class="hero">
+<svg class="net" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g stroke="#99f6e4" stroke-width="1" fill="none">
+      <path d="M60 80 L190 140 L330 70 L470 150 L620 90 L760 170"/>
+      <path d="M190 140 L230 280 L380 320 L470 150 L560 300 L700 330"/>
+      <path d="M330 70 L380 320 M620 90 L560 300 M60 80 L100 250 L230 280"/>
+    </g>
+    <g fill="#ccfbf1">
+      <circle cx="60" cy="80" r="5"/><circle cx="190" cy="140" r="7"/><circle cx="330" cy="70" r="5"/><circle cx="470" cy="150" r="8"/><circle cx="620" cy="90" r="5"/><circle cx="760" cy="170" r="6"/><circle cx="230" cy="280" r="6"/><circle cx="380" cy="320" r="5"/><circle cx="560" cy="300" r="7"/><circle cx="700" cy="330" r="5"/><circle cx="100" cy="250" r="4"/>
+    </g>
+  </svg>
+  <div class="hero-inner">
+    <h1>Event-driven Java on <em>Amazon MSK</em></h1>
+    <details class="reader-prompt" open><summary>Your prompt</summary><p>create a guide to learn Kafka and implement an event driven system with Java and AWS managed Kafka. Include the setup, configuration, code and how to manage it and the options for doing so. Explain concepts of working with Kafka and the abilities you can use</p></details>
+    <p class="lede">An order for 100 shares receives fills of 40 and 60. The order screen shows 100 filled. Tomorrow a risk team wants the same events, and next month a developer needs to rebuild that screen after discovering a calculation error. Kafka can serve all three readers. The subtle part is what happens tonight when the order-screen service writes 40 to its database and crashes before it tells Kafka.</p>
+    <div class="chips"><span class="chip">25–30 min read · setup extra</span></div>
+  </div>
+</header>
+<main><p class="lead">After reading, you can build that service, predict which fill will replay, prove its quantity stays correct, and take the same Java clients from a single local broker to Amazon Managed Streaming for Apache Kafka (MSK) in London. The lab uses Java 21, Maven 3.9+, Bash, SQLite and Kafka 4.0.2 clients. AWS chooses the broker version on Serverless. Documentation checked 21 November 2026.</p>
+<div class="card">
+<strong>Run the example</strong>
+<p>
+<a href="data:application/zip;base64,UEsDBBQAAAAIAEZ3dV0uq2kiPwAAAD0AAAAXAAAAY2xpZW50LWxvY2FsLnByb3BlcnRpZXNLys8vKS4pSizQK04tKkstKrbNyU9OzMnILy6xsjSwNOIqTk0uLcosqdQrKMovyU/Oz7EN8HH09AtxjQjhAgBQSwMEFAAAAAgARnd1Xdj/zdqRAAAA1gAAABUAAABjbGllbnQtbXNrLnByb3BlcnRpZXOFzTEOwjAMBdCdU3ACXwB1qLqAaKcMjJVJ3dbUiSFOhOD0VJSd9X+9/418SZxfcE+a1atUrnZt71y7MzSBQH7GyBaq+uL6zp37U91t1Q3RwGsceapMx/zERIAB3xoh2AJY8gyMAVbR6sSx06EI7RM9CicaDtuMF6aYwaPIFf0C690glNYczf4ON1/d/PBxs7sPUEsDBBQAAAAIAEZ3dV0zZ1wSiAEAAEYFAAAHAAAAcG9tLnhtbLWUy1LDIBSG932KjnugaTveBrPTGReOLtQ9JSctLTeBtOrTG5JG06rU0XGXc/hhPr6chFpnlsDD8FlJ7S+OFiHYc0IUW4PGzDK+AGzcnNzd3pApHuHRUT4YDqkyBchHcF4YnTd9SnZ6MTR3prLXRV6AMpR0VVxhLoiS8VCXpZDSU9LrxMB6e0zWHr3unVoDW6jT4GMZWRpWbpQVEhx2IIF5yMcZJd8stfu2N8ezSsgCe1M5Dpeam0Loef5wf4VOKUlmIg3ZxaEFWNAFaP7B9956aRs9M7XZTvKKlSu2Y6lJ9rw0CcSlAB0+GWvC694LGe9Yi6T7HCkwb8qwYQ4wU+zVaKz8KsnGNh7VGSSYQqwKiyTeGE/w2Z/wordncILJJJV/kiIAWhYzngSa4OkZzvYG7TdMXpbTZRopJpAXykpIMmX4BE+ODxD16m4Am0nNqZXVXOhuBNsqNX7tl7LdlbxBk0TdN4XaLQf0ZpMv5Pah/oHww9TPGE9xlkDsnn1OSat48P53yAdvUEsDBBQAAAAIAEZ3dV3Zjh++5QUAALIQAAAYAAAAc3JjL21haW4vamF2YS9GaWxscy5qYXZhlVdhc9M4EP3eXyE8w4x9Fzyk3CdK4ErqQoaQlDgcMNBhFFtJRRXZleS0uWv+++3KcuIkDgVNJ5Xl1Wr19umtzOd5pgz5QRc0lDwLp1yw8I+TI14b1zdid8jwOQvPCkUNz+T2q8LwunmmZiHNaXLFwms6vaZhIjiTRodJJnUxZ+pXbHOVpUXygG02n2cy1ExxKvi/NjK0P8qLieAJSQTVmpxzITT574hA0waMEjLlkgoSG8XljIyHF70u6RAvm2sEQ+hw0fZODtr3BnE0GuMEz7NG2NxgbzAeEuvDZwvYx3eetiDulCnbuzHLgPxz2v8YxcR/1SL4F6x9DAekOxyc93vd8Xp2QM6GZDAcv+0N3qwNYWHYJPbcRl2Yi4ynZE659MtQv14SqmY6IOZKZbeaRHcJyxEkhwa2C5XlTBnONMlhT5Ld1ob84GRtaNSS+AuqCJdgB6AyHYJ1T+aFgeUYnfsX1FyF2dTHRb+2L4MgqC1kww1FRlOfy5rf1brHp8SPl9qweThjhsmF772OvYA8grAKIYIdV7Cu702yzGijaI4sWDClvRZp8BE4vGxOb7lJrkgZ5dPL3RgTqhnxNJOpR568JNjx85YF8uvxpes8qzp/Xda2spnumG49uH6Tk525KZvSQhicZDNms9ETgs2oOFUzcCLNOoe+jRHIVS3g7YG6OqqT2LLDbqee81ZFa8vS9ROy1XWRtFth/oRNLis0ucZEeFSIelTuLZN0ApLDUwbnGnKUMLQ1qtjawppvlRI4dr7Do3/hxl68BFi3gsOGZmXwsZMGpvygdWB8j6W4qGIJALI5EHa1kR2ENa1ktCrIANY/iXfvwS9idbLnDOAAT2tFszkoFwiQpf7OFMffrDCgglyaqQWU5I9T8vfj9LEEtOA5zCmk0DIhKAey6VSjt1/hQUXKRirMVFZsnrA+/C4BrAfIMIRquwdJQAuTWR3nBkkwpUKzBspYs3J/oWLwi8aMKigW2jTYz+ldmGdChCXMlozHTxvplU4gN2eKg3i8p5LOIEGQk24mJUvKc/YjnSTPoSJyw55jki0g2ymzaa7KW52oXTfWTNQaI8+YPsDV7Td7bN1sJBWwcjoJExBjw2LINkPF8PemYAPrkN2xpDDsY56CqV8vZ/XWHUWn44iMT1/3I9I7x2pEos+9eBy7Stc4i5CqhJFx9HlMLka996ejL+Rd9MV6GHzs9xsAsa0qmOXMtTWeLqyw0ZtotB4NGn3AXnYytNpW6eomoouJThSfML/PtcHiZc92sDP79gpyTnzUqCYwEf4JxarS2bhG/vnVhQk8x0BFmWq/vescG9Y+6yHkOprnZolZA3vDZcH2zacg+35Np56XyzfFhq1BUYAjaV1SDqSCuBW21caNNQhOvdE8F0s/nVT2B8xw617bC9lNAad/9wYQQz6+n56Po9H3T6PeOIJa3pxybHtV0x6CWskUdEISRfUVyTPAYZck2FZ7I+uMljoVL2WyK9mrhxW3RGOjKwSBqeTBVZbywLfKfy8r2Jq0N/7Qb5JfpMSUM5FqYOJw8gOW0qCBNwVXbJDJAVyjXOUJF1QUDHIX6hyUzfe+fbsHlXzSru2sfjN40N81W24xAdNahhIKJmfmCu9xx+T+3gUIVy/g+mtB5bUf4LBdZjPUsO0H7kNcwp4AaVSlemYh0VY6OqQnDUOBBzJrBg8uQLyrbgeO5i865GnwWwsDgeHAmmVjneESZNyUCp0rBiHUJLr8fNgT6nIOXBhMmQq/3dqgt0PBPdtjd0E5aIcAPGs13FkQAWe2XSIC0umQdpPK7CqMAFiQ8ZylpKyZzVFjU8wUSv78QG1BCV+A9kbVhGRTFYujftQdb3+HkfPR8H1ZwMint9Eo2tSrDnm15wILyt6XAobxa8lZh45k6riZDtsPBVPL5iKNiXgEU+BD686Up+RReUycWOK72SaAn0gjTMVdwxl0czD7xwcmPKijIIlT+PA0KA8WN9I7O1xxN70mmqQF0CQB/41EWR2tjv4HUEsBAhQDFAAAAAgARnd1XS6raSI/AAAAPQAAABcAAAAAAAAAAAAAAKSBAAAAAGNsaWVudC1sb2NhbC5wcm9wZXJ0aWVzUEsBAhQDFAAAAAgARnd1Xdj/zdqRAAAA1gAAABUAAAAAAAAAAAAAAKSBdAAAAGNsaWVudC1tc2sucHJvcGVydGllc1BLAQIUAxQAAAAIAEZ3dV0zZ1wSiAEAAEYFAAAHAAAAAAAAAAAAAACkgTgBAABwb20ueG1sUEsBAhQDFAAAAAgARnd1XdmOH77lBQAAshAAABgAAAAAAAAAAAAAAKSB5QIAAHNyYy9tYWluL2phdmEvRmlsbHMuamF2YVBLBQYAAAAABAAEAAMBAAAACQAAAAA=" download="fills-lab.zip">Download the Java lab (.zip)</a> · Maven project, complete client and both connection profiles. The files are embedded in this guide.
+</p>
+</div>
+<div class="level l1" data-n="1"><span class="tag">Stage 1 of 5</span><h2>Model the stream</h2><p>Follow one order through a partition and two independent readers.</p></div><section id="the-log-underneath-the-order-screen">
+<h2>The log underneath the order screen</h2>
+<p>A producer writes an immutable record to a <strong>topic</strong>, a named stream such as <code>oms.fills.v1</code>. A topic is split into <strong>partitions</strong>. Each partition has an ordered sequence of records, and the broker assigns each record an <strong>offset</strong> within that partition. A record carries a key, a value, a timestamp and optional headers. The broker stores bytes. Serializers translate application values into those bytes, and consumers must agree on how to interpret them.</p>
+<p>Use the order ID as the key. With Kafka’s ordinary keyed partitioning, identical serialized keys map to the same partition while the partition count and partitioning scheme stay fixed. This gives one append order for the fills of an order. Two producers can still race. An exchange timestamp or venue sequence can reveal that the first record received was the second fill executed. Capture those fields if the application must reconstruct venue order. Offset 17 in one partition has no temporal relationship to offset 17 in another.</p>
+<p>A <strong>consumer group</strong> is a named subscription with a durable checkpoint per topic-partition. In the classic group model used here, Kafka assigns each partition to at most one active member of that group at a time. Six partitions allow six members to do useful partition-level work. A seventh can wait for an assignment. A second group gets independent assignments and checkpoints over the same data. Acknowledging a RabbitMQ work item is a helpful analogy up to one specific point. Here, committing progress leaves the original record available to other groups and future replays.</p>
+<figure><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 360 174" role="img" aria-label="Both fills land in one partition. The ledger and risk groups read it independently."><rect x="30" y="8" width="300" height="54" rx="9" class="s-node2"></rect><text x="180" y="30" text-anchor="middle" class="s-tb">One partition · ORD-7</text><text x="180" y="50" text-anchor="middle" class="s-t">0 · F-101 (+40)　　 1 · F-102 (+60)</text><path d="M180 62 V84 H90 V105 M180 84 H270 V105" class="s-line"></path><rect x="9" y="105" width="162" height="56" rx="9" class="s-node"></rect><rect x="189" y="105" width="162" height="56" rx="9" class="s-node"></rect><text x="90" y="127" class="s-tb" text-anchor="middle">Ledger group</text><text x="90" y="148" class="s-t" text-anchor="middle">Next offset 2</text><text x="270" y="127" class="s-tb" text-anchor="middle">Risk group</text><text x="270" y="148" class="s-t" text-anchor="middle">Next offset 1</text></svg><figcaption>The ledger has processed both fills. Risk has processed the first and will resume at F-102. Each group can pause, restart or rebuild on its own schedule while the records remain available.</figcaption></figure><div class="table-wrap" tabindex="0" role="region" aria-label="State table"><table>
+<thead>
+<tr class="header">
+<th>State</th>
+<th>Who owns it</th>
+<th>What it tells you</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-head="State">Partition log</td>
+<td data-head="Who owns it">Broker leader and replicas</td>
+<td data-head="What it tells you">Which events remain available</td>
+</tr>
+<tr class="even">
+<td data-head="State">Current position</td>
+<td data-head="Who owns it">Running consumer</td>
+<td data-head="What it tells you">Where the next fetch continues after records returned by poll</td>
+</tr>
+<tr class="odd">
+<td data-head="State">Committed offset</td>
+<td data-head="Who owns it">Kafka group coordinator, persisted in an internal topic</td>
+<td data-head="What it tells you">Where a replacement group member resumes</td>
+</tr>
+<tr class="even">
+<td data-head="State">Fill ledger</td>
+<td data-head="Who owns it">Application database</td>
+<td data-head="What it tells you">Which business events have actually affected the projection</td>
+</tr>
+</tbody>
+</table>
+</div><p>The boundary between the last two rows explains most replay bugs. Kafka has no visibility into a JDBC transaction. A zero-lag dashboard cannot prove that your order screen contains the right answer. Reconcile an independent business measure such as fill count and quantity against the source of executions. <a href="https://kafka.apache.org/40/design/design/">Kafka design and delivery semantics</a></p>
+</section>
+<section id="design-the-event-before-the-topic">
+<h2>Design the event before the topic</h2>
+<p>Our event means “the source recorded a fill”. It carries a stable source-generated event ID, a positive integer number of shares, and an order ID. For the lab, UTF-8 key <code>ORD-7</code> and UTF-8 value <code>F-101|40</code> are sufficient. The next fill is <code>F-102|60</code>. IDs cannot contain the vertical bar. There is one venue, one order namespace and one unit of measure. The producer must reuse the same ID on resubmission. Generating a fresh UUID on each retry would defeat every duplicate check downstream.</p>
+<p>A real multi-venue contract also needs source namespace, instrument, execution timestamp, price, currency and quantity scale. Corrections and busts deserve their own event IDs and references to the original fill. Overwriting F-101 from 40 to 35 loses the distinction between a genuine correction and a producer reusing an ID. The lab treats that conflict as an error. Decide explicitly who can issue corrections and how consumers handle a correction that arrives before its original.</p>
+<p>JSON makes an incident easy to inspect. Avro or Protobuf with a schema registry gives you schema IDs and compatibility checks across deployments. For a rolling upgrade that deploys readers first, test the new reader against retained old events. For deployments where old readers also see new messages, test the reverse direction. A schema can preserve the integer type while changing “shares” to “lots”. Encode units and include semantic fixtures in CI. Retained events lengthen the period for which old meanings matter.</p>
+<p>Choose a delete-retained topic for fills. A <strong>compacted</strong> topic keyed by order can represent the latest order snapshot. Compaction eventually removes superseded values for a key. Rebuilding a fill ledger from that stream could leave you with only F-102. A null value on a compacted topic is a tombstone, used to signal deletion. Compaction is asynchronous and a reader can see multiple versions. A snapshot reader must still apply them in order. On Serverless, choose the cleanup policy at topic creation. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/serverless-config.html">MSK Serverless topic settings</a></p>
+</section>
+<div class="level l2" data-n="2"><span class="tag">Stage 2 of 5</span><h2>Build the Java projection</h2><p>Publish two fills, interrupt the consumer and inspect the durable result.</p></div><section id="build-and-run-the-local-system">
+<h2>Build and run the local system</h2>
+<p>Download the embedded lab files above and unpack them into one directory. Run the following from the directory containing <code>pom.xml</code>. Use a JDK with the compiler installed, Docker, and the sqlite3 CLI for inspection. Use fresh lab names for the first run. The local broker’s single replica makes it suitable for testing restart behaviour of the application. It cannot demonstrate broker failover.</p>
+<div class="code"><div class="bar">Bash</div><pre tabindex="0" aria-label="Scrollable code listing" class="bash"><code>docker run -d --name fills-kafka -p <span class="tk-n">127</span>.0.0.1:9092:9092 apache/kafka:4.0.2
+<span class="tk-c"># Once the broker is ready:
+</span>docker exec fills-kafka /opt/kafka/bin/kafka-topics.sh <span class="tk-s">\
+</span>  --bootstrap-server localhost:9092 --create --topic oms.fills.v1 <span class="tk-s">\
+</span>  --partitions <span class="tk-n">3</span> --replication-factor <span class="tk-n">1</span> --config retention.ms=<span class="tk-n">604800000</span>
+
+mvn -q package dependency:copy-dependencies
+CP=<span class="tk-s">'target/classes:target/dependency/*'</span>
+CFG=client-local.properties
+unset BS STOP_AFTER_WRITE
+java -cp <span class="tk-s">"</span>$CP<span class="tk-s">"</span> Fills send <span class="tk-s">"</span>$CFG<span class="tk-s">"</span> ORD-7 F-101 <span class="tk-n">40</span>
+java -cp <span class="tk-s">"</span>$CP<span class="tk-s">"</span> Fills send <span class="tk-s">"</span>$CFG<span class="tk-s">"</span> ORD-7 F-102 <span class="tk-n">60</span></code></pre>
+</div><aside class="callout tip"><div class="h">Read the acknowledgements</div><p>Illustrative output on a fresh partition is <code>ack pN @0</code>, then <code>ack pN @1</code>, where N is the actual partition number. At this point the broker has both fills and the ledger has applied neither. The group appears when you start its consumer.</p></aside><p>Expect two acknowledgements for the same partition and successive offsets on a fresh topic with no other writes. The producer waits for each acknowledgement so the second send follows the first. Reuse a long-lived producer in a service. Sending asynchronously and handling each completion lets the client batch records and overlap network round trips. A fire-and-forget HTTP endpoint that returns success before a failed send completes can quietly lose fills.</p>
+<p>The project has three runtime components. The Apache client implements the Kafka protocol, the AWS IAM library authenticates the same clients on MSK, and SQLite persists the effect independently of the consumer process. The local properties file contains just the bootstrap address and PLAINTEXT protocol. Keep that listener bound to the loopback interface. The listings and pinned build file are included in the embedded download. <a href="https://kafka.apache.org/40/getting-started/docker/">Apache Kafka Docker image</a> · <a href="https://github.com/aws/aws-msk-iam-auth">AWS IAM Java client</a></p>
+<section id="read-the-complete-java-client">
+<h3>Read the complete Java client</h3>
+<p>Trace one call through <code>send</code>, then follow the matching record through <code>poll</code>, <code>apply</code> and <code>commitSync</code>. JDBC defaults to auto-commit here. The INSERT is the entire durable business effect, and the primary key is its duplicate guard. The displayed quantity is a sum over these immutable rows. A design that also updates a separate order totals table must put both writes in one database transaction.</p>
+<div class="code"><div class="bar">Fills.java</div><pre tabindex="0" aria-label="Scrollable code listing" class="java"><code><span class="tk-k">import</span> java.nio.file.*;
+<span class="tk-k">import</span> java.sql.*;
+<span class="tk-k">import</span> java.time.Duration;
+<span class="tk-k">import</span> java.util.*;
+<span class="tk-k">import</span> org.apache.kafka.clients.consumer.*;
+<span class="tk-k">import</span> org.apache.kafka.clients.producer.*;
+<span class="tk-k">import</span> org.apache.kafka.common.serialization.*;
+
+<span class="tk-k">public</span> <span class="tk-k">class</span> <span class="tk-t">Fills</span> {
+    <span class="tk-k">static</span> <span class="tk-k">final</span> String TOPIC = <span class="tk-s">"</span><span class="tk-s">oms.fills.v1</span><span class="tk-s">"</span>;
+    <span class="tk-k">static</span> <span class="tk-k">final</span> String INSERT = <span class="tk-s">"""
+</span><span class="tk-s">        INSERT INTO fills(event_id, order_id, qty) VALUES (?, ?, ?)
+        ON CONFLICT(event_id) DO NOTHING
+        </span><span class="tk-s">"""</span>;
+
+    <span class="tk-k">public</span> <span class="tk-k">static</span> <span class="tk-k">void</span> main(String[] args) <span class="tk-k">throws</span> Exception {
+        Properties p = <span class="tk-k">new</span> Properties();
+        <span class="tk-k">try</span> (<span class="tk-k">var</span> in = Files.newInputStream(Path.of(args[<span class="tk-n">1</span>]))) {
+            p.load(in);
+        }
+        <span class="tk-k">if</span> (System.getenv(<span class="tk-s">"</span><span class="tk-s">BS</span><span class="tk-s">"</span>) != <span class="tk-k">null</span>)
+            p.put(<span class="tk-s">"</span><span class="tk-s">bootstrap.servers</span><span class="tk-s">"</span>, System.getenv(<span class="tk-s">"</span><span class="tk-s">BS</span><span class="tk-s">"</span>));
+
+        <span class="tk-k">switch</span> (args[<span class="tk-n">0</span>]) {
+            <span class="tk-k">case</span> <span class="tk-s">"</span><span class="tk-s">send</span><span class="tk-s">"</span> -&gt; send(p, args[<span class="tk-n">2</span>], args[<span class="tk-n">3</span>], args[<span class="tk-n">4</span>]);
+            <span class="tk-k">case</span> <span class="tk-s">"</span><span class="tk-s">consume</span><span class="tk-s">"</span> -&gt; consume(p, args[<span class="tk-n">2</span>], args[<span class="tk-n">3</span>]);
+            <span class="tk-k">default</span> -&gt; <span class="tk-k">throw</span> <span class="tk-k">new</span> IllegalArgumentException(<span class="tk-s">"</span><span class="tk-s">send or consume</span><span class="tk-s">"</span>);
+        }
+    }
+
+    <span class="tk-k">static</span> <span class="tk-k">void</span> send(Properties p, String order, String id, String qty)
+            <span class="tk-k">throws</span> Exception {
+        p.put(<span class="tk-s">"</span><span class="tk-s">acks</span><span class="tk-s">"</span>, <span class="tk-s">"</span><span class="tk-s">all</span><span class="tk-s">"</span>);
+        p.put(<span class="tk-s">"</span><span class="tk-s">enable.idempotence</span><span class="tk-s">"</span>, <span class="tk-s">"</span><span class="tk-s">true</span><span class="tk-s">"</span>);
+        <span class="tk-k">try</span> (<span class="tk-k">var</span> producer = <span class="tk-k">new</span> KafkaProducer&lt;&gt;(p,
+                <span class="tk-k">new</span> StringSerializer(), <span class="tk-k">new</span> StringSerializer())) {
+            <span class="tk-k">var</span> record = <span class="tk-k">new</span> ProducerRecord&lt;&gt;(TOPIC, order, id + <span class="tk-s">"</span><span class="tk-s">|</span><span class="tk-s">"</span> + qty);
+            <span class="tk-k">var</span> ack = producer.send(record).get();
+            System.out.printf(<span class="tk-s">"</span><span class="tk-s">ack p%d @%d%n</span><span class="tk-s">"</span>, ack.partition(), ack.offset());
+        }
+    }
+
+    <span class="tk-k">static</span> <span class="tk-k">void</span> consume(Properties p, String group, String file)
+            <span class="tk-k">throws</span> Exception {
+        p.put(<span class="tk-s">"</span><span class="tk-s">group.id</span><span class="tk-s">"</span>, group);
+        p.put(<span class="tk-s">"</span><span class="tk-s">enable.auto.commit</span><span class="tk-s">"</span>, <span class="tk-s">"</span><span class="tk-s">false</span><span class="tk-s">"</span>);
+        p.put(<span class="tk-s">"</span><span class="tk-s">auto.offset.reset</span><span class="tk-s">"</span>, <span class="tk-s">"</span><span class="tk-s">earliest</span><span class="tk-s">"</span>);
+        p.put(<span class="tk-s">"</span><span class="tk-s">max.poll.records</span><span class="tk-s">"</span>, <span class="tk-s">"</span><span class="tk-s">20</span><span class="tk-s">"</span>);
+        <span class="tk-k">try</span> (<span class="tk-k">var</span> db = DriverManager.getConnection(<span class="tk-s">"</span><span class="tk-s">jdbc:sqlite:</span><span class="tk-s">"</span> + file);
+             <span class="tk-k">var</span> consumer = <span class="tk-k">new</span> KafkaConsumer&lt;&gt;(p,
+                 <span class="tk-k">new</span> StringDeserializer(), <span class="tk-k">new</span> StringDeserializer())) {
+            <span class="tk-k">try</span> (<span class="tk-k">var</span> ddl = db.createStatement()) {
+                ddl.executeUpdate(<span class="tk-s">"""
+</span><span class="tk-s">                    CREATE TABLE IF NOT EXISTS fills(
+                      event_id TEXT PRIMARY KEY NOT NULL,
+                      order_id TEXT NOT NULL, qty INTEGER NOT NULL)
+                    </span><span class="tk-s">"""</span>);
+            }
+            consumer.subscribe(List.of(TOPIC));
+            <span class="tk-k">while</span> (<span class="tk-k">true</span>) {
+                <span class="tk-k">var</span> batch = consumer.poll(Duration.ofSeconds(<span class="tk-n">1</span>));
+                <span class="tk-k">if</span> (batch.isEmpty()) <span class="tk-k">continue</span>;
+                <span class="tk-k">for</span> (<span class="tk-k">var</span> record : batch) {
+                    System.out.printf(<span class="tk-s">"</span><span class="tk-s">read p%d @%d%n</span><span class="tk-s">"</span>,
+                        <span class="tk-k">record</span>.<span class="tk-t">partition</span>(), record.offset());
+                    apply(db, record);
+                    <span class="tk-k">if</span> (<span class="tk-s">"</span><span class="tk-s">1</span><span class="tk-s">"</span>.equals(System.getenv(<span class="tk-s">"</span><span class="tk-s">STOP_AFTER_WRITE</span><span class="tk-s">"</span>)))
+                        <span class="tk-k">throw</span> <span class="tk-k">new</span> IllegalStateException(<span class="tk-s">"</span><span class="tk-s">lab crash point</span><span class="tk-s">"</span>);
+                }
+                consumer.commitSync();
+            }
+        }
+    }
+
+    <span class="tk-k">static</span> <span class="tk-k">void</span> apply(Connection db, ConsumerRecord&lt;String,String&gt; record)
+            <span class="tk-k">throws</span> SQLException {
+        <span class="tk-k">var</span> fields = Objects.requireNonNull(record.value()).split(<span class="tk-s">"</span><span class="tk-s">\\</span><span class="tk-s">|</span><span class="tk-s">"</span>, -<span class="tk-n">1</span>);
+        String order = Objects.requireNonNull(record.key());
+        <span class="tk-k">if</span> (fields.length != <span class="tk-n">2</span> || fields[<span class="tk-n">0</span>].isBlank() || order.isBlank())
+            <span class="tk-k">throw</span> <span class="tk-k">new</span> IllegalArgumentException(<span class="tk-s">"</span><span class="tk-s">invalid fill</span><span class="tk-s">"</span>);
+        <span class="tk-k">int</span> qty = Integer.parseInt(fields[<span class="tk-n">1</span>]);
+        <span class="tk-k">if</span> (qty &lt;= <span class="tk-n">0</span>) <span class="tk-k">throw</span> <span class="tk-k">new</span> IllegalArgumentException(<span class="tk-s">"</span><span class="tk-s">invalid quantity</span><span class="tk-s">"</span>);
+        <span class="tk-k">try</span> (<span class="tk-k">var</span> insert = db.prepareStatement(INSERT)) {
+            insert.setString(<span class="tk-n">1</span>, fields[<span class="tk-n">0</span>]);
+            insert.setString(<span class="tk-n">2</span>, order);
+            insert.setInt(<span class="tk-n">3</span>, qty);
+            <span class="tk-k">if</span> (insert.executeUpdate() == <span class="tk-n">1</span>) {
+                System.out.println(<span class="tk-s">"</span><span class="tk-s">applied </span><span class="tk-s">"</span> + fields[<span class="tk-n">0</span>]);
+                <span class="tk-k">return</span>;
+            }
+        }
+        <span class="tk-k">try</span> (<span class="tk-k">var</span> check = db.prepareStatement(<span class="tk-s">"""
+</span><span class="tk-s">                SELECT order_id, qty FROM fills WHERE event_id = ?
+                </span><span class="tk-s">"""</span>)) {
+            check.setString(<span class="tk-n">1</span>, fields[<span class="tk-n">0</span>]);
+            <span class="tk-k">try</span> (<span class="tk-k">var</span> row = check.executeQuery()) {
+                <span class="tk-k">if</span> (!row.next() || !order.equals(row.getString(<span class="tk-n">1</span>))
+                        || qty != row.getInt(<span class="tk-n">2</span>))
+                    <span class="tk-k">throw</span> <span class="tk-k">new</span> IllegalStateException(<span class="tk-s">"</span><span class="tk-s">conflicting event ID</span><span class="tk-s">"</span>);
+            }
+        }
+        System.out.println(<span class="tk-s">"</span><span class="tk-s">duplicate </span><span class="tk-s">"</span> + fields[<span class="tk-n">0</span>]);
+    }
+}
+</code></pre>
+</div><p>A conflicting payload terminates the consumer before it can commit the poll. An identical ID, order and quantity produces a duplicate diagnostic and allows processing to continue. In a multi-instance service use a shared durable database, for example PostgreSQL on RDS. A SQLite file on each ECS task would split the ledger on a rebalance and lose the duplicate guard on task replacement. The SQL pattern transfers directly, but the connection lifecycle, concurrency and deployment need to change.</p>
+</section>
+<section id="stop-at-the-hardest-boundary">
+<h3>Stop at the hardest boundary</h3>
+<div class="code"><div class="bar">Bash</div><pre tabindex="0" aria-label="Scrollable code listing" class="bash"><code>STOP_AFTER_WRITE=<span class="tk-n">1</span> java -cp <span class="tk-s">"</span>$CP<span class="tk-s">"</span> Fills consume <span class="tk-s">"</span>$CFG<span class="tk-s">"</span> ledger-v1 fills.db
+<span class="tk-c"># Expected exception after the first durable insert.
+</span>sqlite3 fills.db <span class="tk-s">'select event_id,order_id,qty from fills;'</span>
+java -cp <span class="tk-s">"</span>$CP<span class="tk-s">"</span> Fills consume <span class="tk-s">"</span>$CFG<span class="tk-s">"</span> ledger-v1 fills.db</code></pre>
+</div><p>Leave the restarted consumer running. In another terminal, from the same directory, run the query below. The first process’s environment setting applied to that invocation only. The lab deliberately throws an exception. Closing a consumer with auto-commit disabled does not commit this unfinished batch.</p>
+<div class="code"><div class="bar">SQLite</div><pre tabindex="0" aria-label="Scrollable code listing" class="sql"><code><span class="tk-c">-- sqlite3 fills.db
+</span><span class="tk-k">SELECT</span> order_id, <span class="tk-k">COUNT</span>(*) <span class="tk-k">AS</span> fills, <span class="tk-k">SUM</span>(qty) <span class="tk-k">AS</span> filled_qty
+<span class="tk-k">FROM</span> fills <span class="tk-k">GROUP</span> <span class="tk-k">BY</span> order_id;
+<span class="tk-c">-- Expected: ORD-7 | 2 | 100</span></code></pre>
+</div><div class="table-wrap" tabindex="0" role="region" aria-label="Moment on the selected partition table"><table>
+<thead>
+<tr class="header">
+<th>Moment on the selected partition</th>
+<th>Durable rows</th>
+<th>Next group offset</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-head="Moment on the selected partition">Both sends acknowledged on a fresh topic</td>
+<td data-head="Durable rows">None</td>
+<td data-head="Next group offset">Unset</td>
+</tr>
+<tr class="even">
+<td data-head="Moment on the selected partition">Poll returns offset 0, SQLite inserts F-101, process exits</td>
+<td data-head="Durable rows">F-101</td>
+<td data-head="Next group offset">Unset</td>
+</tr>
+<tr class="odd">
+<td data-head="Moment on the selected partition">Restart starts at earliest, reads 0 again</td>
+<td data-head="Durable rows">F-101, unchanged</td>
+<td data-head="Next group offset">Unset until poll completes</td>
+</tr>
+<tr class="even">
+<td data-head="Moment on the selected partition">Offset 1 processed and its poll committed</td>
+<td data-head="Durable rows">F-101 and F-102</td>
+<td data-head="Next group offset">2</td>
+</tr>
+</tbody>
+</table>
+</div><p>The table assumes both records are available in the restarted poll for its third row. Smaller polls can add an intermediate commit of 1. In both cases the committed value after processing offset 1 is <strong>2</strong>. It names the next position to consume. There may be gaps in offsets in other workloads. Group position is a coordinate, not a count of business events.</p>
+<p>If you reverse the order and commit the poll before writing SQLite, a crash can leave a missing fill that normal restart skips. With database-first processing, a crash can repeat work, but a stable event ID and unique constraint absorb the repeat. Two fresh producer sends with F-101 also yield two genuine Kafka records at different offsets. Producer idempotence protects a producer’s protocol-level retries. Only the business ID connects those two independent sends.</p>
+<div class="card"><h3 class="no-margin">What survives the crash?</h3><p>Assume both records arrived in one poll. Expand each observation in sequence.</p>
+<details open><summary><strong>1 · Immediately after poll()</strong></summary><p>The consumer can return both records and advance its in-memory position to 2. Its loop has yet to call SQLite. There is no committed offset for this fresh group.</p></details>
+<details><summary><strong>2 · After the first insert and forced exit</strong></summary><p>SQLite holds F-101 and the displayed quantity is 40. The in-memory position disappears. On restart there is still no checkpoint, so the configured earliest policy selects the first retained record.</p></details>
+<details><summary><strong>3 · After replay and commitSync()</strong></summary><p>The second insert attempt for F-101 hits its primary key. The consumer compares the stored payload, accepts the exact duplicate and applies F-102. SQLite now holds 100 shares across two rows. Kafka records 2 as the next offset. A third start with this group waits for new data.</p></details></div></section>
+</section>
+<div class="level l3" data-n="3"><span class="tag">Stage 3 of 5</span><h2>Connect to Amazon MSK</h2><p>Choose a cluster, provision private connectivity and test each workload identity.</p></div><section id="move-the-same-program-to-amazon-msk">
+<h2>Move the same program to Amazon MSK</h2>
+<p>For the cloud lab choose <strong>MSK Serverless in eu-west-2</strong>, with a client machine in the same VPC. It removes broker sizing from the first implementation and requires IAM access control. The AWS control plane creates the cluster and returns endpoints. Kafka’s data plane carries the records and group operations. Being able to see a cluster in the AWS console only establishes the former.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Option table"><table>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>What you manage</th>
+<th>When it earns its cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-head="Option">Serverless</td>
+<td data-head="What you manage">Topic design, clients, IAM, quotas</td>
+<td data-head="When it earns its cost">Uncertain traffic and a small operations team. Check fixed cluster and partition charges as well as data charges.</td>
+</tr>
+<tr class="even">
+<td data-head="Option">Provisioned, Standard brokers</td>
+<td data-head="What you manage">Broker count and size, storage sizing and supported broker settings</td>
+<td data-head="When it earns its cost">Specific broker settings, storage choices or predictable utilisation justify capacity planning.</td>
+</tr>
+<tr class="odd">
+<td data-head="Option">Provisioned, Express brokers</td>
+<td data-head="What you manage">Broker size and count with MSK-managed storage</td>
+<td data-head="When it earns its cost">Sustained high throughput where managed storage and the supported Express configuration suit the workload. Benchmark replay and live traffic together.</td>
+</tr>
+</tbody>
+</table>
+</div><p>For sizing, measure bytes and skew. At 500 fills/s and 600 bytes/fill, seven days carry about 181.44 GB of logical payload before compression, protocol overhead and replication. Three independent readers scanning everything can drive about three times the producer payload in reads. Include recovery reads, storage, client compute, networking and monitoring in the London estimate. An idle Serverless cluster still accrues hourly charges. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/broker-instance-types.html">Broker comparison</a> · <a href="https://aws.amazon.com/msk/pricing/">Regional pricing</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/limits.html">Service quotas</a></p>
+<section id="provision-a-private-connection">
+<h3>Provision a private connection</h3>
+<ol type="1">
+<li>Select London in the AWS console. In an existing VPC with DNS support and hostnames enabled, select private subnets in at least two distinct Availability Zones. Give the client its own security group. Give the MSK cluster a different group allowing inbound TCP 9098 from the client group. Ensure client egress, routes and network ACLs permit the connection and return traffic.</li>
+<li>In Amazon MSK choose <strong>Create cluster</strong>, select custom creation and <strong>Serverless</strong>, name it <code>fills-lab</code>, select those subnets and the cluster security group, and create it. Wait for the active state. A team can declare the same cluster as an <code>AWS::MSK::ServerlessCluster</code> with IAM client authentication and VPC configurations in CloudFormation, or manage it with CDK or Terraform. Keep topic and client deployments separate from cluster replacement.</li>
+<li>Use a Linux EC2 instance in the client group with an instance role, accessed through your usual private management path. Install the JDK, Maven, AWS CLI v2 and Kafka 4.0.2 binary distribution there. Provide controlled access to dependencies, or upload a prebuilt lab and runtime dependencies. Copy the lab to that machine. All following commands run there. Bootstrap discovery can work from a laptop with AWS credentials even when the laptop cannot reach a single broker.</li>
+<li>Copy the cluster ARN from its details page, then retrieve the private IAM endpoint list. Preserve the returned hostnames and ports. The initial bootstrap connection retrieves metadata, after which the client connects to the advertised endpoints for its partitions. Connecting successfully to just one seed does not establish reachability to every endpoint.</li>
+</ol>
+<div class="code"><div class="bar">Bash</div><pre tabindex="0" aria-label="Scrollable code listing" class="bash"><code>export AWS_REGION=eu-west-2
+export ARN=<span class="tk-s">'replace-with-the-cluster-arn'</span>
+aws sts get-caller-identity
+export BS=<span class="tk-s">"</span><span class="tk-k">$(</span>aws kafka get-bootstrap-brokers --cluster-arn <span class="tk-s">"</span>$ARN<span class="tk-s">"</span> <span class="tk-s">\
+</span>  --query BootstrapBrokerStringSaslIam --output text<span class="tk-k">)</span><span class="tk-s">"</span>
+printf <span class="tk-s">'%s\n'</span> <span class="tk-s">"</span>$BS<span class="tk-s">"</span></code></pre>
+</div><p>Expect a hostname or comma-separated list with the IAM listener port. Stop if the output is empty or None. The caller looking it up needs <code>kafka:GetBootstrapBrokers</code> on the cluster. A runtime that receives the endpoint as deployment configuration can omit that lookup. The application still needs its own broker permissions. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html">MSK Serverless overview</a> · <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-msk-serverlesscluster.html">CloudFormation resource</a></p>
+</section>
+<section id="give-each-identity-the-correct-scope">
+<h3>Give each identity the correct scope</h3>
+<p>For a cluster ARN ending in <code>cluster/fills-lab/UUID</code>, construct topic and group resources with the same partition, region, account, name and UUID, changing the resource type and adding the topic or group name. Example suffixes are <code>topic/fills-lab/UUID/oms.fills.v1</code> and <code>group/fills-lab/UUID/ledger-v1</code>. A replay role needs its replay group too. Attach identity policies with Effect Allow and the following data-plane actions, scoped to their matching resource types. Prefix each action in the table with <code>kafka-cluster:</code>.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Principal table"><table>
+<thead>
+<tr class="header">
+<th>Principal</th>
+<th>Cluster resource</th>
+<th>Topic or group resources</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-head="Principal">Topic provisioner</td>
+<td data-head="Cluster resource">Connect</td>
+<td data-head="Topic or group resources">CreateTopic and DescribeTopic on the topic. Add DescribeTopicDynamicConfiguration and AlterTopicDynamicConfiguration for config management.</td>
+</tr>
+<tr class="even">
+<td data-head="Principal">Fill publisher</td>
+<td data-head="Cluster resource">Connect, WriteDataIdempotently</td>
+<td data-head="Topic or group resources">DescribeTopic and WriteData on the fill topic. Check the AWS topic-scoped idempotence policy example when applying restricted permissions.</td>
+</tr>
+<tr class="odd">
+<td data-head="Principal">Ledger reader</td>
+<td data-head="Cluster resource">Connect</td>
+<td data-head="Topic or group resources">DescribeTopic and ReadData on the topic. DescribeGroup and AlterGroup on its group.</td>
+</tr>
+<tr class="even">
+<td data-head="Principal">Replay operator</td>
+<td data-head="Cluster resource">Connect</td>
+<td data-head="Topic or group resources">Topic read/describe and group describe/alter limited to the groups this operator can reposition.</td>
+</tr>
+</tbody>
+</table>
+</div><p>The publisher uses no transactional ID. If introducing transactions, include the AWS-documented transactional-ID permissions and validate the full policy against the actual client and cluster. IAM data-plane permissions and Kafka ACLs are different authorisation mechanisms. For the Serverless IAM path, grant the IAM actions. Prefer separate workload roles for publishing, consuming and administration in production. A dedicated lab instance can assume the appropriate role for each step. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control-use-cases.html">AWS action matrix</a> · <a href="https://docs.aws.amazon.com/msk/latest/developerguide/create-iam-access-control-policies.html">AWS identity policy examples and idempotence caveats</a></p>
+<aside class="callout tip"><div class="h">Verify the role in two steps</div><p>On the client host, <code>aws sts get-caller-identity</code> identifies the AWS CLI caller. Check the application’s credential provider or named profile separately if it differs. A successful bootstrap lookup verifies a control-plane permission. A successful acknowledged send under the publishing role and a committed read under the consuming role verify the two data-plane paths. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/kafka-actions.html">AWS action dependencies and resource types</a>.</p></aside></section>
+<section id="configure-the-client-and-create-the-topic">
+<h3>Configure the client and create the topic</h3>
+<p>The included <code>client-msk.properties</code> selects TLS and the AWS SASL mechanism. The callback signs authentication using credentials available to the workload. With an EC2 instance profile or an ECS task role, the credentials can rotate. Avoid embedding long-lived keys in the properties file.</p>
+<div class="code"><div class="bar">client-msk.properties</div><pre tabindex="0" aria-label="Scrollable code listing" class="properties"><code>security.protocol=<span class="tk-s">SASL_SSL</span>
+sasl.mechanism=<span class="tk-s">AWS_MSK_IAM</span>
+sasl.jaas.config=<span class="tk-s">software.amazon.msk.auth.iam.IAMLoginModule required;</span>
+sasl.client.callback.handler.class=<span class="tk-s">software.amazon.msk.auth.iam.IAMClientCallbackHandler</span>
+</code></pre>
+</div><p>Install the matching AWS IAM <strong>all</strong> JAR from the official release in the Kafka distribution’s <code>libs</code> directory. The CLI is a separate JVM from your application, so Maven dependencies on the application classpath do not make the plugin available to the CLI. Set <code>KAFKA_HOME</code> to the unpacked binary distribution. Run topic creation with the provisioning identity and application commands with their corresponding identities.</p>
+<div class="code"><div class="bar">Bash</div><pre tabindex="0" aria-label="Scrollable code listing" class="bash"><code>CFG=client-msk.properties
+BIN=<span class="tk-s">"</span>$KAFKA_HOME<span class="tk-s">/bin</span><span class="tk-s">"</span>
+CONN=(--bootstrap-server <span class="tk-s">"</span>$BS<span class="tk-s">"</span> --command-config <span class="tk-s">"</span>$CFG<span class="tk-s">"</span>)
+<span class="tk-s">"</span>$BIN<span class="tk-s">/kafka-topics.sh</span><span class="tk-s">"</span> <span class="tk-s">"</span><span class="tk-s">${</span>CONN[@]<span class="tk-s">}</span><span class="tk-s">"</span> --create --topic oms.fills.v1 <span class="tk-s">\
+</span>  --partitions <span class="tk-n">3</span> --config retention.ms=<span class="tk-n">604800000</span>
+<span class="tk-s">"</span>$BIN<span class="tk-s">/kafka-topics.sh</span><span class="tk-s">"</span> <span class="tk-s">"</span><span class="tk-s">${</span>CONN[@]<span class="tk-s">}</span><span class="tk-s">"</span> --describe --topic oms.fills.v1
+
+mvn -q package dependency:copy-dependencies
+CP=<span class="tk-s">'target/classes:target/dependency/*'</span>
+java -cp <span class="tk-s">"</span>$CP<span class="tk-s">"</span> Fills send <span class="tk-s">"</span>$CFG<span class="tk-s">"</span> ORD-7 F-101 <span class="tk-n">40</span>
+java -cp <span class="tk-s">"</span>$CP<span class="tk-s">"</span> Fills send <span class="tk-s">"</span>$CFG<span class="tk-s">"</span> ORD-7 F-102 <span class="tk-n">60</span>
+java -cp <span class="tk-s">"</span>$CP<span class="tk-s">"</span> Fills consume <span class="tk-s">"</span>$CFG<span class="tk-s">"</span> ledger-v1 msk-fills.db</code></pre>
+</div><p>The same query against <code>msk-fills.db</code> should show two fills totalling 100. Use a fresh database for the cloud run. On Serverless let the service choose replication settings. On a three-broker Standard deployment a common starting point is replication factor 3, minimum in-sync replicas 2 and producer acknowledgements set to all. In a healthy three-replica set, all current in-sync replicas acknowledge. When only one remains, the minimum of two causes writes to fail, favouring durability over write availability. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-serverless-create-topic.html">AWS Serverless topic walkthrough</a> · <a href="https://github.com/aws/aws-msk-iam-auth/releases">IAM plugin releases</a></p>
+</section>
+</section>
+<div class="level l4" data-n="4"><span class="tag">Stage 4 of 5</span><h2>Operate and rebuild</h2><p>Set the processing budget, measure lag and rebuild beside the live group.</p></div><section id="tune-the-client-for-the-failure-you-can-tolerate">
+<h2>Tune the client for the failure you can tolerate</h2>
+<p>Kafka batches per partition. Increasing <code>linger.ms</code> gives a partially filled batch more time to accumulate records. More batching can improve compression and throughput at the price of waiting under light load. In Kafka 4.0 the producer default linger is 5 ms. Compare producer queue time, broker request latency and end-to-end latency separately. Compression such as LZ4 or Zstandard trades CPU for lower network and storage use. Large individual messages still need compatible producer, topic and fetch limits. For a PDF or a large source file, publish an immutable object reference, checksum and schema version instead.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Setting or choice table"><table>
+<thead>
+<tr class="header">
+<th>Setting or choice</th>
+<th>Effect</th>
+<th>Decision for this service</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-head="Setting or choice">acks=0, 1 or all</td>
+<td data-head="Effect">No broker acknowledgement, leader acknowledgement, or acknowledgement from the in-sync replicas</td>
+<td data-head="Decision for this service">Use all and check the future. A timeout can leave the outcome ambiguous.</td>
+</tr>
+<tr class="even">
+<td data-head="Setting or choice">enable.idempotence</td>
+<td data-head="Effect">Producer sequences suppress duplicates from retried batches</td>
+<td data-head="Decision for this service">Explicit true. Requires all acknowledgements, retries enabled and at most five in-flight requests per connection.</td>
+</tr>
+<tr class="odd">
+<td data-head="Setting or choice">enable.auto.commit</td>
+<td data-head="Effect">Java default true allows the client to advance checkpoints as polling progresses</td>
+<td data-head="Decision for this service">False. Commit only after all records returned by the poll are durably handled.</td>
+</tr>
+<tr class="even">
+<td data-head="Setting or choice">auto.offset.reset</td>
+<td data-head="Effect">Applies when there is no valid checkpoint. Java default latest begins at the end.</td>
+<td data-head="Decision for this service">Earliest for lab and rebuilds. Consider none for a critical production group so missing history raises an incident.</td>
+</tr>
+<tr class="odd">
+<td data-head="Setting or choice">max.poll.records / max.poll.interval.ms</td>
+<td data-head="Effect">Bound records delivered per poll and time available between polls for group membership</td>
+<td data-head="Decision for this service">Begin with small batches. Include downstream tail latency and retry time in the processing budget.</td>
+</tr>
+</tbody>
+</table>
+</div><p>Suppose 20 records each take 400 ms sequentially in the database. That batch occupies the consumer for about eight seconds before Kafka commit overhead. At five seconds per database call under stress it takes 100 seconds. A retry on every row can double that. If a consumer exceeds the poll interval, another member may take its partitions and the first one’s commit may fail. Its database writes survive. The duplicate guard now also protects against overlapping attempts. Keep the consumer on one thread. If delegating work, pause or bound intake, track the completed prefix for each partition, and commit only that prefix. Committing offset 13 while offset 11 is still running can skip 11 after a crash. <a href="https://kafka.apache.org/40/configuration/producer-configs/">Producer options</a> · <a href="https://kafka.apache.org/40/configuration/consumer-configs/">Consumer options</a></p>
+</section>
+<section id="replay-without-disturbing-live-orders">
+<h2>Replay without disturbing live orders</h2>
+<p>For a repaired projection, use a fresh group and an empty destination. Run <code>java -cp "$CP" Fills consume "$CFG" ledger-rebuild-v2 rebuild.db</code> in a second shell with the same environment. Both groups read the topic independently. The original application can continue serving queries. If you reuse its database, the event-ID constraint will absorb the very inserts you wanted the new calculation to perform. For a live cutover, identify a vector of end offsets, one per partition. Wait for the rebuild to reach those offsets, reconcile counts and quantities at a comparable boundary, then switch reads while the new group continues tailing.</p>
+<aside class="callout model"><div class="h">A rebuild has one target per partition</div><p>Suppose you capture end offsets <code>P0=120</code> and <code>P1=80</code>. A rebuild checkpoint of <code>(120,75)</code> still leaves positions 75 through 79 on P1 to cover. A checkpoint of <code>(125,75)</code> gives the same total as the target and is still behind on P1. Compare each component. If you need an exact point-in-time reconciliation, bound both projections to the same cut or compare their ledgers filtered by source partition and offset. The sample SQLite schema would need those extra columns.</p></aside><p>To rewind the <strong>same</strong> group, record the current offsets first, stop all group members and disable their automatic restart. Use the following on the AWS client with the earlier Bash variables. For local use, run the same Kafka tools inside the broker container with <code>--bootstrap-server localhost:9092</code> and omit the MSK command-config. The reset changes Kafka checkpoints. The downstream database and any external notifications keep their existing state.</p>
+<div class="code"><div class="bar">Bash</div><pre tabindex="0" aria-label="Scrollable code listing" class="bash"><code>GROUPS_CLI=<span class="tk-s">"</span>$BIN<span class="tk-s">/kafka-consumer-groups.sh</span><span class="tk-s">"</span>
+<span class="tk-s">"</span>$GROUPS_CLI<span class="tk-s">"</span> <span class="tk-s">"</span><span class="tk-s">${</span>CONN[@]<span class="tk-s">}</span><span class="tk-s">"</span> --describe --group ledger-v1
+RESET=(--group ledger-v1 --topic oms.fills.v1 --reset-offsets)
+<span class="tk-s">"</span>$GROUPS_CLI<span class="tk-s">"</span> <span class="tk-s">"</span><span class="tk-s">${</span>CONN[@]<span class="tk-s">}</span><span class="tk-s">"</span> <span class="tk-s">"</span><span class="tk-s">${</span>RESET[@]<span class="tk-s">}</span><span class="tk-s">"</span> --to-earliest --dry-run
+<span class="tk-c"># After reviewing each partition's proposed position:
+</span><span class="tk-s">"</span>$GROUPS_CLI<span class="tk-s">"</span> <span class="tk-s">"</span><span class="tk-s">${</span>CONN[@]<span class="tk-s">}</span><span class="tk-s">"</span> <span class="tk-s">"</span><span class="tk-s">${</span>RESET[@]<span class="tk-s">}</span><span class="tk-s">"</span> --to-earliest --execute</code></pre>
+</div><p>Use a timestamp rewind for an incident window, or explicit partition offsets when you have exact coordinates. A timestamp lookup uses Kafka record timestamps, which can differ from the execution time inside the payload. A Java consumer can also assign partitions and seek to offsets for a bounded diagnostic reader without repositioning the live group. “Earliest” means the oldest retained record. Deleting old segments, enforcing a size limit, or compaction may already have removed information. For longer rebuild horizons keep an independently reconciled archive or a baseline snapshot with exact partition checkpoints. <a href="https://kafka.apache.org/40/operations/basic-kafka-operations/">Kafka offset reset options</a></p>
+<p>To inspect a rebuild, run the describe command above with <code>--group ledger-rebuild-v2</code>. Read <code>CURRENT-OFFSET</code> as the committed next position and <code>LOG-END-OFFSET</code> as the reported end. In this simple append-only lab, their difference tracks remaining fills. With gaps, transactions or filtering, use the difference as an offset distance and measure business records separately. <a href="https://kafka.apache.org/40/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">Kafka 4.0.2 consumer positions</a>.</p></section>
+<section id="run-it-as-a-service">
+<h2>Run it as a service</h2>
+<p>Use an ECS service on Fargate for a long-running Java consumer if the team wants explicit control of polling, database batches and shutdown. Use its <strong>task role</strong> for broker access. The ECS execution role handles platform tasks such as image pulls. Put replicas in private subnets that can reach all brokers and the same durable ledger. Give a terminating task time to stop intake, finish or abandon the current batch, commit completed work and close the client. The example exits safely through redelivery, but has no orchestrator-specific draining hook. A service restart must tolerate a repeated batch.</p>
+<p>Spring for Apache Kafka is an alternative when the team already operates Spring Boot. A listener container owns polling, partition assignment and commits. Configure its acknowledgement and error handling modes around the same database boundary. With a record listener, an exception must reach the container if processing failed. Catching it, logging and returning normally can turn a poison fill into a silently skipped one. AWS Lambda’s MSK event source mapping is another option for short batch handlers. The mapping owns polling and checkpoints. Account for batch retry, execution time limits and database connection pressure. EKS gives fine control if a Kubernetes platform already exists. The choice of deployment changes operational responsibility, while the event-ID constraint remains necessary.</p>
+<p>For an existing OMS database, the publishing side has its own crash window. If the OMS commits the fill and then the process dies before publishing, Kafka never receives it. Insert an <strong>outbox row</strong> with the fill in the same database transaction, giving it the durable event ID. A relay or change-data-capture connector such as Debezium publishes the committed row. If the relay crashes after Kafka acknowledges but before it records progress, it republishes the same event ID. Test both sides of that failure. MSK Connect can host compatible Kafka Connect source or sink plugins. Examine each connector’s own checkpoint and delivery guarantees, alongside what the destination does on retries. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-connect.html">MSK Connect</a> · <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-msk.html">Lambda with MSK</a></p>
+<section id="diagnose-from-the-partition-inward">
+<h3>Diagnose from the partition inward</h3>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Symptom table"><table>
+<thead>
+<tr class="header">
+<th>Symptom</th>
+<th>Distinguishing observation</th>
+<th>Operator action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-head="Symptom">Client times out before metadata arrives</td>
+<td data-head="Distinguishing observation">From the client subnet, check DNS and TCP to the returned endpoints. Compare with a successful AWS API call.</td>
+<td data-head="Operator action">Correct private routing, group rules, DNS or the listener selected.</td>
+</tr>
+<tr class="even">
+<td data-head="Symptom">SASL fails, or topic/group authorisation fails</td>
+<td data-head="Distinguishing observation">Missing callback class occurs locally. A broker authorisation error names an operation or resource.</td>
+<td data-head="Operator action">Check CLI JAR, actual workload identity, ARN including cluster UUID, and group or topic action.</td>
+</tr>
+<tr class="odd">
+<td data-head="Symptom">Lag grows on one partition</td>
+<td data-head="Distinguishing observation">One hot order key or one repeated failing record. Compare partition rates and the last attempted offset.</td>
+<td data-head="Operator action">Fix the handler or data. Extra group members cannot split one assigned partition.</td>
+</tr>
+<tr class="even">
+<td data-head="Symptom">Lag grows everywhere</td>
+<td data-head="Distinguishing observation">Compare input rate, DB write latency, rebalance rate and client throttling.</td>
+<td data-head="Operator action">Address the measured bottleneck, then increase concurrency up to the partition count.</td>
+</tr>
+<tr class="odd">
+<td data-head="Symptom">Lag disappears from CloudWatch</td>
+<td data-head="Distinguishing observation">A group can lack metrics while unstable or before committing.</td>
+<td data-head="Operator action">Inspect group membership and committed offsets directly. Missing metrics do not establish zero lag.</td>
+</tr>
+<tr class="even">
+<td data-head="Symptom">Kafka lag is low but totals are wrong</td>
+<td data-head="Distinguishing observation">Compare source IDs, duplicate counts, quantities and conflicting payloads.</td>
+<td data-head="Operator action">Repair the contract or projection and rebuild into a separate target.</td>
+</tr>
+</tbody>
+</table>
+</div><aside class="callout tip"><div class="h">Estimate time to recover</div><p>In an append-only partition, suppose 24,000 fills are waiting, 200 arrive each second and the consumer durably applies 320 per second. The backlog shrinks by 120 per second, so recovery takes about 200 seconds. Dividing by 320 gives 75 seconds and ignores arrivals. At 180 applied per second the backlog grows by 20 per second. A spare consumer in the same group cannot take half of this partition. Measure sink latency and key skew before scaling the service.</p></aside><p>Alert on oldest unprocessed event age against the business freshness target, sustained per-partition lag, failed sends, commit failures and DB latency. Label logs with group, topic, partition, offset and event ID. Avoid putting event IDs in metric dimensions where every fill would create a new time series. On provisioned brokers also track offline or under-replicated partitions, storage headroom where applicable and broker saturation. The metric set depends on cluster type and monitoring level. For app-level latency, measure event time to durably applied time and check clock synchronisation. <a href="https://docs.aws.amazon.com/msk/latest/developerguide/consumer-lag.html">MSK lag metrics and emission conditions</a></p>
+<p>A broken record needs a policy. For an authoritative order projection, stop and alert on an unparseable fill or conflicting ID. Skipping one fill could make a completed order appear tradable. For an analytics feed that can tolerate a gap, quarantine the original bytes with topic, partition, offset, error and schema ID. Make quarantine durable before advancing the source checkpoint, deduplicate quarantine entries by source coordinate and expose a redrive process. Moving failures to a retry topic allows later records to overtake them. That is acceptable only when the downstream business rule permits it.</p>
+<p>A broker replica protects against some infrastructure failures. It also replicates accidental application writes. Keep deletion permissions separate, version topic definitions, rehearse restoring the archive, and test a consumer deployment through a rebalance. Before increasing partitions, remember that a hash modulo a new partition count can place future events for an existing order on a different partition. When per-order sequence is strict, drain and cut over to a versioned topic with a defined boundary or introduce an explicit sequence and reconciliation design.</p>
+</section>
+</section>
+<div class="level l5" data-n="5"><span class="tag">Stage 5 of 5</span><h2>Move the commit boundary</h2><p>Compare a database projection with a Kafka-to-Kafka transaction.</p></div><section id="change-the-destination-change-the-guarantee">
+<h2>Change the destination, change the guarantee</h2>
+<p>Suppose the risk team wants a derived Kafka topic of accepted fills. The source and destination are now both in Kafka. With the ledger approach a worker can publish a derived fill, die before committing its source offset and publish it again on restart. A unique row in SQLite cannot protect another team’s Kafka consumer. This is where a Kafka transaction changes the outcome.</p>
+<p>Assign a stable, distinct transactional ID to each logical producer instance, initialise its transactions and disable consumer auto-commit. Begin a transaction, publish derived records, then call <code>sendOffsetsToTransaction</code> with the next offsets for each completed partition and the consumer’s group metadata. Commit the transaction. Configure downstream readers with <code>isolation.level=read_committed</code>. If the transaction aborts, discard or rewind the consumer’s in-memory position to the committed offsets before retrying. A fenced producer must close. Kafka Streams can coordinate these steps with <code>processing.guarantee=exactly_once_v2</code>. Check broker support, permissions and internal topic configuration for the chosen MSK type.</p>
+<aside class="callout model"><div class="h">Choose the identity that survives a retry</div><p>A source coordinate such as <code>(topic, partition, offset)</code> identifies one physical record. <code>F-101</code> identifies the business fill across independent submissions. A group offset records progress for one reader. Use the coordinate to find the incident, the business ID to protect the ledger and the group checkpoint to resume.</p></aside><p>Trace offset 17 producing derived event D17. Before commit, a read-committed downstream reader cannot consume D17 and the source group’s durable position still points to 17. A successful commit makes the output eligible for that reader and moves the checkpoint to 18 atomically. If the process dies and its transaction aborts, a replacement starts at 17 and can emit D17 again. Only the committed attempt is visible to read-committed readers. An HTTP request or JDBC update issued within this code path still requires its own duplicate and recovery design. <a href="https://kafka.apache.org/40/design/design/">Kafka transactions and Streams semantics</a></p>
+<p>Kafka Streams also provides keyed aggregations, joins, windows and recoverable local state stores. For example, grouping fill deltas by order builds a running quantity, while a windowed aggregate can compute executed volume by instrument over five minutes. A change of key can require a repartition topic. A state-store changelog allows a new worker to restore its state after assignment moves. Set event-time and lateness policies explicitly for delayed executions. Two separately published copies of F-101 are two distinct source records even under exactly-once processing. A business-level deduplication stage still matters.</p>
+<div class="card">
+<strong>Choose the commit boundary from the destination.</strong> For this order screen, SQLite owns the durable fill and the primary key makes replay safe. For a Kafka-to-Kafka derivative, the broker can commit output and input offsets together. For a broker API, email or payment instruction, start with the recipient’s idempotency and reconciliation contract before promising a delivery guarantee.
+</div>
+<section id="close-the-lab">
+<h3>Close the lab</h3>
+<p>Stop the local consumer with Ctrl-C. Remove the disposable broker with <code>docker rm -f fills-kafka</code> after you have finished inspecting it. Keep the SQLite files if you want to inspect the ledger. For a disposable AWS lab, delete the MSK cluster and terminate the lab EC2 instance, or delete the dedicated infrastructure stack. Review lab-only storage, networking and logs for continuing charges. Deleting the cluster removes its topic history. Preserve any evidence you intend to keep first.</p>
+</section>
+</section>
+<p class="small">Verification</p><p>The Java listing matches the embedded Maven project. The SQL crash-and-replay trace was exercised against a reopened SQLite database and produced two rows totalling 100 shares. The Bash listings passed shell syntax checks. The sizing and recovery-time examples were recalculated. Java compilation, broker interactions and AWS deployment were not run for this revision.</p></main>
+</body>
+</html>

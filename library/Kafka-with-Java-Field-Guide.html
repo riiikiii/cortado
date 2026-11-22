@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-GB" xml:lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Kafka with Java</title>
+  <style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+  <style type="text/css">html{background:#f2f6f8;color:#1b3040}body{max-width:60rem;margin:2.5rem auto;padding:4vw;background:white;font:17px/1.62 system-ui,sans-serif}h1,h2,h3{line-height:1.2;color:#10354c}h1{font-size:3.3rem;margin-bottom:.4rem}h2{margin-top:3rem;border-top:2px solid #168691;padding-top:1rem}h3{margin-top:2rem}a{color:#086c80}pre{overflow-x:auto;padding:1rem;background:#eff4f6;font-size:.86em;line-height:1.55}code{overflow-wrap:anywhere}pre code{overflow-wrap:normal}table{border-collapse:collapse;width:100%;display:block;overflow-x:auto;font-size:.93em}th,td{padding:.6rem .8rem;text-align:left;border-bottom:1px solid #d2dfe4;vertical-align:top}th{background:#eaf3f4}nav{padding:1rem;background:#f3f8f9}nav ul{list-style:none;padding-left:1.2rem}.subtitle{font-size:1.3rem;color:#436578}@media(max-width:650px){body{margin:0;padding:1rem;font-size:16px}h1{font-size:2.4rem}}
+</style>
+<style>
+*{box-sizing:border-box}html{background:#eef3f2;scroll-behavior:smooth;scroll-padding:24px}body{margin:0 auto;padding:0;max-width:1450px;font:17px/1.65 'Atkinson Hyperlegible Next',system-ui,sans-serif;color:#243b42;background:#fff}
+header#title-block-header{margin:0;background:#10383e;color:#ecf4ef;padding:clamp(32px,6vw,82px);display:grid;grid-template-columns:1.1fr 1fr;gap:38px;align-items:center}
+h1.title{font:normal clamp(52px,7vw,96px)/.98 Georgia,serif;letter-spacing:-.055em;color:#fff;margin:0 0 18px}.subtitle{font-size:clamp(18px,2vw,25px);color:#c7ddd8;line-height:1.4;max-width:38ch;margin:0 0 24px}
+.download,button{display:inline-block;font:600 14px/1.4 system-ui;cursor:pointer;border-radius:6px;padding:9px 14px;border:1px solid #90b8b1}.download{background:#c3f6df;color:#153a34;text-decoration:none}button{background:transparent;color:inherit}button:focus-visible,a:focus-visible{outline:3px solid #e58b36;outline-offset:3px}
+figure{margin:0;background:#194951;padding:20px 24px;border-radius:10px;border:1px solid #477177}figcaption{font-weight:650;margin-bottom:15px}.row{display:flex;gap:5px}.cell{flex:1;text-align:center;padding:6px 0;border:1px solid #7e9b9d;border-radius:4px;font-family:monospace}.done{background:#aee5c8;color:#14392c}.next{background:#ffe4a8;color:#483614;border-color:#ffe4a8}.status{font-size:14px;color:#e1eeea;min-height:2.8em;margin:12px 0}.steps{display:flex;gap:8px;flex-wrap:wrap}.steps button{font-size:13px}.layout{display:grid;grid-template-columns:minmax(190px,245px) minmax(0,1fr);gap:clamp(20px,4vw,68px);padding:30px clamp(18px,5vw,76px) 70px}.layout nav{background:transparent;position:sticky;top:18px;max-height:95vh;overflow:auto;align-self:start;padding:15px 0}.layout nav ul{padding:0;margin:8px 0}.layout nav li{padding:5px 0;line-height:1.35}.layout nav a{color:#315861;text-decoration:none;font-size:14px}.layout nav a:hover{text-decoration:underline}summary{cursor:pointer;font-weight:700}.layout main{min-width:0;max-width:920px}h2{font:normal clamp(30px,3.5vw,48px)/1.12 Georgia,serif;letter-spacing:-.04em;color:#113e46;margin:2.1em 0 .5em;padding:.7em 0 0;border-top:1px solid #b6cac7}main>section:first-child h2{margin-top:0;border:0}h3{font-size:1.35em;color:#20555a}table{border-collapse:separate;border-spacing:0;border:1px solid #dae5e2;border-radius:8px}th{background:#dcece7;color:#174b46}tr:nth-child(even){background:#f6f9f8}td,th{padding:10px 13px}code{font-size:.9em}p code,td code,li code{background:#edf3f0;padding:.08em .25em;border-radius:3px}div.sourceCode{margin:0;overflow:visible}.snippet{margin:20px 0;border:1px solid #c4d4d1;border-radius:8px;overflow:hidden;background:#f5f8f7}.bar{display:flex;align-items:center;justify-content:space-between;background:#dfeae7;color:#264e4c;font:600 12px system-ui;padding:7px 12px;letter-spacing:.04em}.bar button{font-size:12px;padding:3px 10px}.snippet pre{margin:0;padding:14px 16px;background:#f5f8f7;white-space:pre;line-height:1.6}.snippet code{font-size:13px}a{color:#00676b}
+@media(max-width:850px){header#title-block-header{grid-template-columns:1fr;gap:24px}.layout{display:block}.layout nav{position:static;max-height:none;padding:0 0 20px}.layout main{max-width:100%}.snippet pre{max-width:100%}}@media print{body{font-size:11pt}.layout{display:block;padding:0}.layout nav,.bar button,.steps,.download{display:none}header#title-block-header{display:block;color:#123;background:white;padding:0}h1.title,.subtitle{color:#123}figure{display:none}pre{white-space:pre-wrap!important}h2,h3{break-after:avoid}}
+</style></head>
+<body>
+<header id="title-block-header">
+<div><h1 class="title">Kafka with Java</h1>
+<p class="subtitle">Build a trade-fill consumer, replay its history and
+operate the cluster</p>
+<a class="download" download="Kafka-Java-lab.zip" href="data:application/zip;base64,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">Download the Java project ↓</a></div><figure aria-label="Interactive consumer offset example"><figcaption>Partition 2 · committed offset</figcaption><div class="row"><span class="cell done">40</span><span class="cell done">41</span><span class="cell next">42</span><span class="cell">43</span><span class="cell">44</span><span class="cell">45</span></div><p class="status" aria-live="polite">The group has committed 42. Its next read starts at the highlighted offset.</p><div class="steps"><button id="advance">Poll 3 records</button><button id="reset">Restart consumer</button></div></figure></header>
+<div class="layout"><nav id="TOC" role="doc-toc">
+<details open><summary>Contents</summary><ul>
+<li><a href="#what-you-will-build" id="toc-what-you-will-build">1. What
+you will build</a></li>
+<li><a href="#start-kafka-and-create-the-topic" id="toc-start-kafka-and-create-the-topic">2. Start Kafka and create the
+topic</a></li>
+<li><a href="#build-and-run-the-java-application" id="toc-build-and-run-the-java-application">3. Build and run the Java
+application</a></li>
+<li><a href="#choose-a-replay-strategy" id="toc-choose-a-replay-strategy">4. Choose a replay strategy</a></li>
+<li><a href="#make-replay-safe-for-a-database-backed-application" id="toc-make-replay-safe-for-a-database-backed-application">5. Make
+replay safe for a database-backed application</a></li>
+<li><a href="#operate-and-troubleshoot-kafka" id="toc-operate-and-troubleshoot-kafka">6. Operate and troubleshoot
+Kafka</a></li>
+<li><a href="#move-from-the-laptop-to-production" id="toc-move-from-the-laptop-to-production">7. Move from the laptop to
+production</a></li>
+<li><a href="#check-your-understanding" id="toc-check-your-understanding">8. Check your understanding</a></li>
+<li><a href="#reference-material" id="toc-reference-material">Reference
+material</a></li>
+</ul>
+</details></nav>
+<main><section id="what-you-will-build" class="level2">
+<h2>1. What you will build</h2>
+<p>An OMS publishes six fills for two orders. A Java service reads them
+and records its progress. You will restart that service, replay the
+fills three ways, and check exactly what moved. The application uses the
+native Kafka client so you can see where your code takes responsibility
+for delivery. The example project contains every file, including the
+full source shown below.</p>
+<p><strong>Stack:</strong> JDK 21, Maven 3.9+, Docker with Compose v2,
+Apache Kafka 4.4.0 in KRaft mode. Run the shell commands in Bash (macOS,
+Linux or WSL2) from the extracted project root. Java runs on the host.
+The Kafka CLI runs inside the broker container. Allow time for Maven and
+Docker to download dependencies on the first run.</p>
+<table>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>In the fill service</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Topic</td>
+<td><code>trade.fills.v1</code> holds an append-only sequence
+<strong>per partition</strong>. Reading a fill leaves it available to
+other readers.</td>
+</tr>
+<tr class="even">
+<td>Key</td>
+<td><code>ORD-A</code> puts that order’s fills on the same partition
+under the default keyed partitioner and a stable partition count.
+Multiple orders can share one partition.</td>
+</tr>
+<tr class="odd">
+<td>Partition and offset</td>
+<td><code>(trade.fills.v1, 2, 41)</code> identifies one log position.
+Offset 41 in partition 0 is unrelated. Concurrent producers still need a
+business sequence if causal order matters.</td>
+</tr>
+<tr class="even">
+<td>Consumer group</td>
+<td>Instances with group ID <code>positions-v1</code> share the
+partitions. Another group, such as <code>surveillance-v1</code>, can
+independently read all of them.</td>
+</tr>
+<tr class="odd">
+<td>Commit</td>
+<td>A checkpoint per group, topic and partition. It records the
+<strong>next</strong> offset to read on resumption. Your database
+transaction has its own commit.</td>
+</tr>
+<tr class="even">
+<td>Retention</td>
+<td>The broker decides how long records remain available. A slow or
+stopped consumer cannot hold them indefinitely.</td>
+</tr>
+</tbody>
+</table>
+<p>Coming from RabbitMQ, think about what happens when the handler
+succeeds. A queue acknowledgement normally lets the broker remove that
+delivery from the queue. Here, success advances one group’s checkpoint.
+That separation enables both independent subscribers and historical
+replay.</p>
+</section>
+<section id="start-kafka-and-create-the-topic" class="level2">
+<h2>2. Start Kafka and create the topic</h2>
+<p>The project’s Compose service publishes port 9092 on loopback. The
+official image’s default single-node setup supplies a combined broker
+and KRaft controller. The broker serves data, while the controller
+manages cluster metadata. You can stop and start this container between
+exercises. Treat container recreation as a fresh lab.</p>
+<div class="snippet"><div class="bar"><span>YAML</span><button type="button">Copy</button></div><div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">services</span><span class="kw">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">kafka</span><span class="kw">:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">image</span><span class="kw">:</span><span class="at"> apache/kafka:4.4.0</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">"127.0.0.1:9092:9092"</span></span></code></pre></div>
+</div><div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose up <span class="at">-d</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Define once per shell. -T keeps CSV exports free of terminal formatting.</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">k()</span> <span class="kw">{</span> <span class="bu">local</span> <span class="va">tool</span><span class="op">=</span><span class="st">"</span><span class="va">$1</span><span class="st">"</span><span class="kw">;</span> <span class="bu">shift</span><span class="kw">;</span> <span class="ex">docker</span> compose exec <span class="at">-T</span> kafka <span class="st">"/opt/kafka/bin/</span><span class="va">$tool</span><span class="st">.sh"</span> <span class="at">--bootstrap-server</span> localhost:9092 <span class="st">"</span><span class="va">$@</span><span class="st">"</span><span class="kw">;</span> <span class="kw">}</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-topics <span class="at">--list</span></span></code></pre></div>
+</div><p>If Kafka is still starting, inspect
+<code>docker compose logs --tail=50 kafka</code> and repeat the list
+command. An empty list on a new cluster is fine.</p>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-topics <span class="at">--create</span> <span class="at">--if-not-exists</span> <span class="at">--topic</span> trade.fills.v1 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--partitions</span> 3 <span class="at">--replication-factor</span> 1 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--config</span> cleanup.policy=delete <span class="at">--config</span> retention.ms=604800000</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-topics <span class="at">--describe</span> <span class="at">--topic</span> trade.fills.v1</span></code></pre></div>
+</div><p>Expect three partition rows, each with a leader and one in-sync
+replica (ISR). Seven days is the lab retention window. Three partitions
+let at most three group members actively read this topic at once. One
+broker gives no failover. Re-running topic creation with
+<code>--if-not-exists</code> does not reconcile an existing topic’s
+configuration.</p>
+<p><strong>Networking:</strong> <code>bootstrap.servers</code> is the
+initial contact point. The broker then advertises addresses the client
+must be able to reach. A Java container would resolve
+<code>localhost</code> to itself. For a containerised app and a host app
+together, configure separate internal and external advertised listeners,
+such as <code>kafka:29092</code> and <code>localhost:9092</code>, with
+corresponding listener bindings and security protocols. The supplied
+Compose setup is for the host-based client.</p>
+</section>
+<section id="build-and-run-the-java-application" class="level2">
+<h2>3. Build and run the Java application</h2>
+<p>The ZIP contains <code>pom.xml</code>, <code>compose.yaml</code>, and
+two files under <code>src/main/java/lab/</code>. Maven compiles for Java
+21 and pins <code>org.apache.kafka:kafka-clients:4.4.0</code>. Use a JDK
+for Maven. Check <code>mvn -version</code> if the compiler rejects
+release 21.</p>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mvn</span> <span class="at">-q</span> compile</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">run()</span> <span class="kw">{</span> <span class="ex">mvn</span> <span class="at">-q</span> exec:java <span class="st">"-Dexec.args=</span><span class="va">$*</span><span class="st">"</span><span class="kw">;</span> <span class="kw">}</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">run</span> produce</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">run</span> consume positions-v1 20</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">run</span> consume positions-v1 10</span></code></pre></div>
+</div><p>On an empty topic, the producer prints six broker acknowledgements
+with partition and offset. The first consumer should print six JSON
+payloads within its 20-second window. The second should print none if no
+new fills arrived and the first finished committing. If initial group
+formation takes longer, rerun the consumer. Order within each partition
+is stable. Output order across partitions may vary. <strong>Run the
+producer once</strong> for the exercise. Running it twice intentionally
+appends another six records with the same business IDs.</p>
+<section id="the-complete-producer-and-consumer" class="level3">
+<h3>The complete producer and consumer</h3>
+<div class="snippet"><div class="bar"><span>JAVA</span><button type="button">Copy</button></div><div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span><span class="im"> lab</span><span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">java</span><span class="op">.</span><span class="im">time</span><span class="op">.</span><span class="im">Duration</span><span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">java</span><span class="op">.</span><span class="im">time</span><span class="op">.</span><span class="im">Instant</span><span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">java</span><span class="op">.</span><span class="im">util</span><span class="op">.</span><span class="im">List</span><span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">java</span><span class="op">.</span><span class="im">util</span><span class="op">.</span><span class="im">Properties</span><span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">org</span><span class="op">.</span><span class="im">apache</span><span class="op">.</span><span class="im">kafka</span><span class="op">.</span><span class="im">clients</span><span class="op">.</span><span class="im">consumer</span><span class="op">.*;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">org</span><span class="op">.</span><span class="im">apache</span><span class="op">.</span><span class="im">kafka</span><span class="op">.</span><span class="im">clients</span><span class="op">.</span><span class="im">producer</span><span class="op">.*;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">org</span><span class="op">.</span><span class="im">apache</span><span class="op">.</span><span class="im">kafka</span><span class="op">.</span><span class="im">common</span><span class="op">.</span><span class="im">serialization</span><span class="op">.*;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> Trades <span class="op">{</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> TOPIC <span class="op">=</span> <span class="st">"trade.fills.v1"</span><span class="op">;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">static</span> <span class="bu">Properties</span> <span class="fu">base</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="dt">var</span> p <span class="op">=</span> <span class="kw">new</span> <span class="bu">Properties</span><span class="op">();</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"bootstrap.servers"</span><span class="op">,</span> <span class="bu">System</span><span class="op">.</span><span class="fu">getenv</span><span class="op">().</span><span class="fu">getOrDefault</span><span class="op">(</span><span class="st">"KAFKA_BOOTSTRAP"</span><span class="op">,</span> <span class="st">"localhost:9092"</span><span class="op">));</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> p<span class="op">;</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">static</span> <span class="dt">void</span> <span class="fu">publish</span><span class="op">()</span> <span class="kw">throws</span> <span class="bu">Exception</span> <span class="op">{</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="dt">var</span> p <span class="op">=</span> <span class="fu">base</span><span class="op">();</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"key.serializer"</span><span class="op">,</span> StringSerializer<span class="op">.</span><span class="fu">class</span><span class="op">.</span><span class="fu">getName</span><span class="op">());</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"value.serializer"</span><span class="op">,</span> StringSerializer<span class="op">.</span><span class="fu">class</span><span class="op">.</span><span class="fu">getName</span><span class="op">());</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"acks"</span><span class="op">,</span> <span class="st">"all"</span><span class="op">);</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"enable.idempotence"</span><span class="op">,</span> <span class="st">"true"</span><span class="op">);</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> <span class="op">(</span><span class="dt">var</span> producer <span class="op">=</span> <span class="kw">new</span> KafkaProducer<span class="op">&lt;</span><span class="bu">String</span><span class="op">,</span> <span class="bu">String</span><span class="op">&gt;(</span>p<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;=</span> <span class="dv">6</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>                <span class="bu">String</span> order <span class="op">=</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">1</span> <span class="op">?</span> <span class="st">"ORD-A"</span> <span class="op">:</span> <span class="st">"ORD-B"</span><span class="op">;</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>                <span class="bu">String</span> fill <span class="op">=</span> <span class="st">"FILL-"</span> <span class="op">+</span> i<span class="op">;</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>                <span class="bu">String</span> body <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="st">                    {"schemaVersion":1,"fillId":"%s","orderId":"%s","quantity":%d}</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="st">                    """</span><span class="op">.</span><span class="fu">formatted</span><span class="op">(</span>fill<span class="op">,</span> order<span class="op">,</span> i <span class="op">*</span> <span class="dv">10</span><span class="op">).</span><span class="fu">strip</span><span class="op">();</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>                <span class="dt">var</span> ack <span class="op">=</span> producer<span class="op">.</span><span class="fu">send</span><span class="op">(</span><span class="kw">new</span> ProducerRecord<span class="op">&lt;&gt;(</span>TOPIC<span class="op">,</span> order<span class="op">,</span> body<span class="op">)).</span><span class="fu">get</span><span class="op">();</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>                <span class="bu">System</span><span class="op">.</span><span class="fu">out</span><span class="op">.</span><span class="fu">printf</span><span class="op">(</span><span class="st">"</span><span class="sc">%s</span><span class="st"> </span><span class="sc">%s</span><span class="st"> -&gt; partition=</span><span class="sc">%d</span><span class="st"> offset=</span><span class="sc">%d%n</span><span class="st">"</span><span class="op">,</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>                        fill<span class="op">,</span> order<span class="op">,</span> ack<span class="op">.</span><span class="fu">partition</span><span class="op">(),</span> ack<span class="op">.</span><span class="fu">offset</span><span class="op">());</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    <span class="dt">static</span> <span class="bu">Properties</span> <span class="fu">reader</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>        <span class="dt">var</span> p <span class="op">=</span> <span class="fu">base</span><span class="op">();</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"key.deserializer"</span><span class="op">,</span> StringDeserializer<span class="op">.</span><span class="fu">class</span><span class="op">.</span><span class="fu">getName</span><span class="op">());</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"value.deserializer"</span><span class="op">,</span> StringDeserializer<span class="op">.</span><span class="fu">class</span><span class="op">.</span><span class="fu">getName</span><span class="op">());</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"enable.auto.commit"</span><span class="op">,</span> <span class="st">"false"</span><span class="op">);</span></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> p<span class="op">;</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    <span class="dt">static</span> <span class="dt">void</span> <span class="fu">consume</span><span class="op">(</span><span class="bu">String</span> group<span class="op">,</span> <span class="dt">int</span> seconds<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>        <span class="dt">var</span> p <span class="op">=</span> <span class="fu">reader</span><span class="op">();</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"group.id"</span><span class="op">,</span> group<span class="op">);</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"auto.offset.reset"</span><span class="op">,</span> <span class="st">"earliest"</span><span class="op">);</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"max.poll.records"</span><span class="op">,</span> <span class="st">"100"</span><span class="op">);</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> <span class="op">(</span><span class="dt">var</span> consumer <span class="op">=</span> <span class="kw">new</span> KafkaConsumer<span class="op">&lt;</span><span class="bu">String</span><span class="op">,</span> <span class="bu">String</span><span class="op">&gt;(</span>p<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>            consumer<span class="op">.</span><span class="fu">subscribe</span><span class="op">(</span><span class="bu">List</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span>TOPIC<span class="op">));</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>            <span class="dt">var</span> deadline <span class="op">=</span> Instant<span class="op">.</span><span class="fu">now</span><span class="op">().</span><span class="fu">plusSeconds</span><span class="op">(</span>seconds<span class="op">);</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>            <span class="cf">while</span> <span class="op">(</span>Instant<span class="op">.</span><span class="fu">now</span><span class="op">().</span><span class="fu">isBefore</span><span class="op">(</span>deadline<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>                <span class="dt">var</span> batch <span class="op">=</span> consumer<span class="op">.</span><span class="fu">poll</span><span class="op">(</span><span class="bu">Duration</span><span class="op">.</span><span class="fu">ofMillis</span><span class="op">(</span><span class="dv">500</span><span class="op">));</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>                <span class="cf">for</span> <span class="op">(</span><span class="dt">var</span> r <span class="op">:</span> batch<span class="op">)</span> <span class="fu">print</span><span class="op">(</span>r<span class="op">);</span> <span class="co">// Replace with a durable, idempotent write.</span></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(!</span>batch<span class="op">.</span><span class="fu">isEmpty</span><span class="op">())</span> consumer<span class="op">.</span><span class="fu">commitSync</span><span class="op">(</span>batch<span class="op">.</span><span class="fu">nextOffsets</span><span class="op">());</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>    <span class="dt">static</span> <span class="dt">void</span> <span class="fu">print</span><span class="op">(</span>ConsumerRecord<span class="op">&lt;</span><span class="bu">String</span><span class="op">,</span> <span class="bu">String</span><span class="op">&gt;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a>        <span class="bu">System</span><span class="op">.</span><span class="fu">out</span><span class="op">.</span><span class="fu">printf</span><span class="op">(</span><span class="st">"</span><span class="sc">%s</span><span class="st"> [</span><span class="sc">%d</span><span class="st">] @</span><span class="sc">%d</span><span class="st"> key=</span><span class="sc">%s</span><span class="st"> </span><span class="sc">%s%n</span><span class="st">"</span><span class="op">,</span></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>                r<span class="op">.</span><span class="fu">topic</span><span class="op">(),</span> r<span class="op">.</span><span class="fu">partition</span><span class="op">(),</span> r<span class="op">.</span><span class="fu">offset</span><span class="op">(),</span> r<span class="op">.</span><span class="fu">key</span><span class="op">(),</span> r<span class="op">.</span><span class="fu">value</span><span class="op">());</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span><span class="op">(</span><span class="bu">String</span><span class="op">[]</span> args<span class="op">)</span> <span class="kw">throws</span> <span class="bu">Exception</span> <span class="op">{</span></span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>args<span class="op">.</span><span class="fu">length</span> <span class="op">==</span> <span class="dv">1</span> <span class="op">&amp;&amp;</span> args<span class="op">[</span><span class="dv">0</span><span class="op">].</span><span class="fu">equals</span><span class="op">(</span><span class="st">"produce"</span><span class="op">))</span> <span class="fu">publish</span><span class="op">();</span></span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>args<span class="op">.</span><span class="fu">length</span> <span class="op">==</span> <span class="dv">3</span> <span class="op">&amp;&amp;</span> args<span class="op">[</span><span class="dv">0</span><span class="op">].</span><span class="fu">equals</span><span class="op">(</span><span class="st">"consume"</span><span class="op">))</span></span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>            <span class="fu">consume</span><span class="op">(</span>args<span class="op">[</span><span class="dv">1</span><span class="op">],</span> <span class="bu">Integer</span><span class="op">.</span><span class="fu">parseInt</span><span class="op">(</span>args<span class="op">[</span><span class="dv">2</span><span class="op">]));</span></span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>args<span class="op">.</span><span class="fu">length</span> <span class="op">==</span> <span class="dv">1</span> <span class="op">&amp;&amp;</span> args<span class="op">[</span><span class="dv">0</span><span class="op">].</span><span class="fu">equals</span><span class="op">(</span><span class="st">"snapshot"</span><span class="op">))</span> Snapshot<span class="op">.</span><span class="fu">run</span><span class="op">();</span></span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">IllegalArgumentException</span><span class="op">(</span><span class="st">"Use produce | consume GROUP SECONDS | snapshot"</span><span class="op">);</span></span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</div><p><strong>Producer.</strong> The key selects the partition. The value
+contains the business event. <code>send().get()</code> waits for the
+acknowledgement and surfaces delivery failures to the caller. It makes
+the six sends easy to follow. For throughput, reuse one thread-safe
+producer, send asynchronously, handle failed callbacks and track
+outstanding sends through shutdown. Batching, compression and
+<code>linger.ms</code> trade some latency and CPU for throughput.
+Measure the trade-off with real record sizes.</p>
+<p><strong>Idempotence.</strong> Kafka can suppress duplicates generated
+by client retries with producer idempotence enabled. Generating the same
+fill again is a new application-level send. Keep a stable event ID
+across retries, corrections and upstream recovery, with distinct IDs for
+genuinely distinct events. Use a versioned schema and compatibility
+checks for long-lived topics. Historical bytes must remain decodable
+during a rebuild. The example uses a fixed JSON template for controlled
+inputs. Use a JSON serializer or a schema-aware format for arbitrary
+input.</p>
+<p><strong>Consumer.</strong> <code>poll()</code> advances the local
+position as it returns data. The example processes the entire batch,
+then commits its returned next offsets. If processing throws, the loop
+exits before committing that batch. On restart it can receive
+already-processed records again. If you catch and suppress the exception
+and then commit the whole batch, you can skip a failed fill. In a
+service, use a long-running poll loop and graceful shutdown. Keep the
+consumer on one thread; another thread can call <code>wakeup()</code> to
+interrupt a blocking poll. Let the owner finish or abort the current
+unit of work and close the client.</p>
+</section>
+<section id="read-the-offsets-yourself" class="level3">
+<h3>Read the offsets yourself</h3>
+<p>Suppose partition 2 has retained offsets 37 through 45, with a log
+end of 46. The group has committed 42. A poll returns 42, 43 and 44.</p>
+<table>
+<colgroup>
+<col style="width: 21%">
+<col style="width: 28%">
+<col style="width: 28%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Moment</th>
+<th style="text-align: right;">Local next position</th>
+<th style="text-align: right;">Committed next offset</th>
+<th>What a replacement consumer reads first</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Before polling</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">42</td>
+<td>42</td>
+</tr>
+<tr class="even">
+<td>Poll returned, database write running</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">42</td>
+<td>42</td>
+</tr>
+<tr class="odd">
+<td>Database committed, process dies before Kafka commit</td>
+<td style="text-align: right;">45 before crash</td>
+<td style="text-align: right;">42</td>
+<td>42, so the write must tolerate duplicates</td>
+</tr>
+<tr class="even">
+<td>Kafka commit succeeds after database commit</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">45</td>
+<td>45</td>
+</tr>
+</tbody>
+</table>
+<p>The CLI would show lag of one offset unit in the last row. Offset
+differences can include gaps due to transactions or compaction. They are
+neither exact business-event counts nor elapsed time. For latency, also
+measure the age of the records your handler completes.</p>
+</section>
+</section>
+<section id="choose-a-replay-strategy" class="level2">
+<h2>4. Choose a replay strategy</h2>
+<table>
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Goal</th>
+<th>Mechanism</th>
+<th>Impact on live processing</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Rebuild a positions table with new logic</td>
+<td>Fresh group and fresh output table</td>
+<td>Live group continues independently. Both readers add load.</td>
+</tr>
+<tr class="even">
+<td>Repair the live group’s checkpoint</td>
+<td>Stop all group members, preview, then reset selected partitions</td>
+<td>Changes where the production group resumes. Reprocessed side effects
+require a plan.</td>
+</tr>
+<tr class="odd">
+<td>Audit a fixed input range</td>
+<td>Manual assignment, explicit start and exclusive end per
+partition</td>
+<td>No group offsets change. The audit terminates while new fills can
+continue arriving.</td>
+</tr>
+<tr class="even">
+<td>Retry a transient downstream failure</td>
+<td>Retry the failed work without committing past it</td>
+<td>Preserves order on the affected partition. A prolonged failure can
+delay later fills.</td>
+</tr>
+</tbody>
+</table>
+<section id="a.-rebuild-using-a-new-consumer-group" class="level3">
+<h3>A. Rebuild using a new consumer group</h3>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">run</span> consume positions-rebuild-001 20</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-rebuild-001</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1</span></code></pre></div>
+</div><p>The new group receives the six retained fills because its offsets are
+initially absent and the client chooses <code>earliest</code>. Reusing
+that new group resumes from its own commits. Changing
+<code>auto.offset.reset</code> on the original group does nothing to
+valid checkpoints. The setting is a fallback when a checkpoint is absent
+or out of range. Use <code>none</code> for a critical processor where an
+unexpected missing checkpoint should stop the service for
+investigation.</p>
+<p>For a real rebuild, write to a versioned shadow table. Record target
+end offsets per partition, keep processing new arrivals, and reconcile
+both projections at the <strong>same offsets</strong>. For the lab’s six
+unique fills, expect three fills and 90 units for ORD-A, and three fills
+and 120 units for ORD-B. Validate event IDs and quantities, then switch
+readers to the new projection. A fresh group alone does not isolate
+database writes, notifications or external API calls.</p>
+</section>
+<section id="b.-reset-an-existing-groups-committed-offsets" class="level3">
+<h3>B. Reset an existing group’s committed offsets</h3>
+<p>The timed consumer exits on its own. For a deployed service, stop
+<strong>every</strong> replica and suspend automatic restarts. Verify
+zero active members and inspect the current offsets first. Use the lab
+group for the following commands.</p>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1 <span class="at">--state</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--reset-offsets</span> <span class="at">--group</span> positions-v1 <span class="dt">\</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--topic</span> trade.fills.v1 <span class="at">--to-current</span> <span class="at">--dry-run</span> <span class="at">--export</span> <span class="op">&gt;</span> positions-before.csv</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> positions-before.csv</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--reset-offsets</span> <span class="at">--group</span> positions-v1 <span class="dt">\</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--topic</span> trade.fills.v1 <span class="at">--to-earliest</span> <span class="at">--dry-run</span></span></code></pre></div>
+</div><p>Check the group, topic, partitions and proposed offsets. Preserve the
+CLI description as well as the CSV. A partition with no prior checkpoint
+is a distinct state, so an exported numeric offset for it is not an
+exact backup of that absence. Earliest means the oldest <strong>still
+retained</strong> offset for each partition.</p>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--reset-offsets</span> <span class="at">--group</span> positions-v1 <span class="dt">\</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--topic</span> trade.fills.v1 <span class="at">--to-earliest</span> <span class="at">--execute</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ex">run</span> consume positions-v1 20</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1</span></code></pre></div>
+</div><p>On the original lab data you should see six records again, followed
+by zero lag on partitions with committed offsets. A reset changes no
+broker records. A forward reset can skip unprocessed work; a backward
+reset can repeat completed effects.</p>
+<p><strong>More precise targets</strong> (preview only):</p>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example only: choose a partition and offset from your own producer output.</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--reset-offsets</span> <span class="at">--group</span> positions-v1 <span class="dt">\</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--topic</span> trade.fills.v1:0 <span class="at">--to-offset</span> 1 <span class="at">--dry-run</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Interpret the example timestamp in UTC by setting the CLI JVM timezone.</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose exec <span class="at">-T</span> <span class="at">-e</span> KAFKA_OPTS=-Duser.timezone=UTC kafka <span class="dt">\</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  /opt/kafka/bin/kafka-consumer-groups.sh <span class="at">--bootstrap-server</span> localhost:9092 <span class="dt">\</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--reset-offsets</span> <span class="at">--group</span> positions-v1 <span class="at">--topic</span> trade.fills.v1 <span class="dt">\</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--to-datetime</span> 2026-11-20T09:30:00.000 <span class="at">--dry-run</span></span></code></pre></div>
+</div><p>Time-based lookup uses Kafka record timestamps. They can reflect
+producer creation or broker append time. For an exchange-time audit,
+select a sufficiently broad input range and filter on the exchange
+timestamp in the payload. Late arrivals can put an old business event at
+a new Kafka offset.</p>
+<p><strong>Restore checkpoint positions.</strong> Stop the group again.
+Compare saved offsets against the current earliest and latest offsets. A
+position that has aged out cannot restore expired history. Inspect the
+candidate plan before applying it.</p>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose cp positions-before.csv kafka:/tmp/positions-before.csv</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--reset-offsets</span> <span class="at">--group</span> positions-v1 <span class="dt">\</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--from-file</span> /tmp/positions-before.csv <span class="at">--dry-run</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># After checking the preview:</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--reset-offsets</span> <span class="at">--group</span> positions-v1 <span class="dt">\</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--from-file</span> /tmp/positions-before.csv <span class="at">--execute</span></span></code></pre></div>
+</div><p>Restoring a checkpoint cannot undo database mutations, messages
+published, emails sent or trades submitted during a replay. Reconcile
+those separately.</p>
+</section>
+<section id="c.-run-a-bounded-read-only-audit-in-java" class="level3">
+<h3>C. Run a bounded, read-only audit in Java</h3>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">run</span> snapshot</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1</span></code></pre></div>
+</div><p>This reader discovers partitions, assigns them directly, captures an
+exclusive end for each, and seeks each partition to its retained start.
+It prints only records below those ends. It never commits and needs no
+group ID. Completion uses the <strong>consumer position</strong>, so a
+gap or empty partition does not require an invented “last message”. The
+demo has a 60-second deadline and reports incomplete work if
+exceeded.</p>
+<div class="snippet"><div class="bar"><span>JAVA</span><button type="button">Copy</button></div><div class="sourceCode" id="cb12"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span><span class="im"> lab</span><span class="op">;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">java</span><span class="op">.</span><span class="im">time</span><span class="op">.</span><span class="im">Duration</span><span class="op">;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">java</span><span class="op">.</span><span class="im">time</span><span class="op">.</span><span class="im">Instant</span><span class="op">;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">java</span><span class="op">.</span><span class="im">util</span><span class="op">.</span><span class="im">HashSet</span><span class="op">;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">org</span><span class="op">.</span><span class="im">apache</span><span class="op">.</span><span class="im">kafka</span><span class="op">.</span><span class="im">clients</span><span class="op">.</span><span class="im">consumer</span><span class="op">.</span><span class="im">KafkaConsumer</span><span class="op">;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">org</span><span class="op">.</span><span class="im">apache</span><span class="op">.</span><span class="im">kafka</span><span class="op">.</span><span class="im">common</span><span class="op">.</span><span class="im">TopicPartition</span><span class="op">;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Snapshot <span class="op">{</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">static</span> <span class="dt">void</span> <span class="fu">run</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="dt">var</span> p <span class="op">=</span> Trades<span class="op">.</span><span class="fu">reader</span><span class="op">();</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"auto.offset.reset"</span><span class="op">,</span> <span class="st">"none"</span><span class="op">);</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">put</span><span class="op">(</span><span class="st">"isolation.level"</span><span class="op">,</span> <span class="st">"read_committed"</span><span class="op">);</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> <span class="op">(</span><span class="dt">var</span> c <span class="op">=</span> <span class="kw">new</span> KafkaConsumer<span class="op">&lt;</span><span class="bu">String</span><span class="op">,</span> <span class="bu">String</span><span class="op">&gt;(</span>p<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>            <span class="dt">var</span> partitions <span class="op">=</span> c<span class="op">.</span><span class="fu">partitionsFor</span><span class="op">(</span>Trades<span class="op">.</span><span class="fu">TOPIC</span><span class="op">).</span><span class="fu">stream</span><span class="op">()</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>                    <span class="op">.</span><span class="fu">map</span><span class="op">(</span>info <span class="op">-&gt;</span> <span class="kw">new</span> <span class="fu">TopicPartition</span><span class="op">(</span>info<span class="op">.</span><span class="fu">topic</span><span class="op">(),</span> info<span class="op">.</span><span class="fu">partition</span><span class="op">())).</span><span class="fu">toList</span><span class="op">();</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span><span class="fu">assign</span><span class="op">(</span>partitions<span class="op">);</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>            <span class="dt">var</span> starts <span class="op">=</span> c<span class="op">.</span><span class="fu">beginningOffsets</span><span class="op">(</span>partitions<span class="op">);</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>            <span class="dt">var</span> ends <span class="op">=</span> c<span class="op">.</span><span class="fu">endOffsets</span><span class="op">(</span>partitions<span class="op">);</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>            <span class="dt">var</span> pending <span class="op">=</span> <span class="kw">new</span> <span class="bu">HashSet</span><span class="op">&lt;&gt;(</span>partitions<span class="op">);</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><span class="dt">var</span> tp <span class="op">:</span> partitions<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>                c<span class="op">.</span><span class="fu">seek</span><span class="op">(</span>tp<span class="op">,</span> starts<span class="op">.</span><span class="fu">get</span><span class="op">(</span>tp<span class="op">));</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>                <span class="bu">System</span><span class="op">.</span><span class="fu">out</span><span class="op">.</span><span class="fu">printf</span><span class="op">(</span><span class="st">"</span><span class="sc">%s</span><span class="st"> [</span><span class="sc">%d</span><span class="st">, </span><span class="sc">%d</span><span class="st">)</span><span class="sc">%n</span><span class="st">"</span><span class="op">,</span> tp<span class="op">,</span> starts<span class="op">.</span><span class="fu">get</span><span class="op">(</span>tp<span class="op">),</span> ends<span class="op">.</span><span class="fu">get</span><span class="op">(</span>tp<span class="op">));</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>            <span class="dt">var</span> deadline <span class="op">=</span> Instant<span class="op">.</span><span class="fu">now</span><span class="op">().</span><span class="fu">plusSeconds</span><span class="op">(</span><span class="dv">60</span><span class="op">);</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">while</span> <span class="op">(!</span>pending<span class="op">.</span><span class="fu">isEmpty</span><span class="op">())</span> <span class="op">{</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>                <span class="cf">for</span> <span class="op">(</span><span class="dt">var</span> tp <span class="op">:</span> <span class="kw">new</span> <span class="bu">HashSet</span><span class="op">&lt;&gt;(</span>pending<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> <span class="op">(</span>c<span class="op">.</span><span class="fu">position</span><span class="op">(</span>tp<span class="op">)</span> <span class="op">&gt;=</span> ends<span class="op">.</span><span class="fu">get</span><span class="op">(</span>tp<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>                        c<span class="op">.</span><span class="fu">pause</span><span class="op">(</span>java<span class="op">.</span><span class="fu">util</span><span class="op">.</span><span class="fu">Set</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span>tp<span class="op">));</span></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>                        pending<span class="op">.</span><span class="fu">remove</span><span class="op">(</span>tp<span class="op">);</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>                    <span class="op">}</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>pending<span class="op">.</span><span class="fu">isEmpty</span><span class="op">())</span> <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>Instant<span class="op">.</span><span class="fu">now</span><span class="op">().</span><span class="fu">isAfter</span><span class="op">(</span>deadline<span class="op">))</span></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">IllegalStateException</span><span class="op">(</span><span class="st">"Replay incomplete: "</span> <span class="op">+</span> pending<span class="op">);</span></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>                <span class="cf">for</span> <span class="op">(</span><span class="dt">var</span> r <span class="op">:</span> c<span class="op">.</span><span class="fu">poll</span><span class="op">(</span><span class="bu">Duration</span><span class="op">.</span><span class="fu">ofMillis</span><span class="op">(</span><span class="dv">500</span><span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>                    <span class="dt">var</span> tp <span class="op">=</span> <span class="kw">new</span> <span class="fu">TopicPartition</span><span class="op">(</span>r<span class="op">.</span><span class="fu">topic</span><span class="op">(),</span> r<span class="op">.</span><span class="fu">partition</span><span class="op">());</span></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> <span class="op">(</span>r<span class="op">.</span><span class="fu">offset</span><span class="op">()</span> <span class="op">&lt;</span> ends<span class="op">.</span><span class="fu">get</span><span class="op">(</span>tp<span class="op">))</span> Trades<span class="op">.</span><span class="fu">print</span><span class="op">(</span>r<span class="op">);</span></span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</div><p>Suppose the captured end for partition 2 is 46. A fetch can return
+offsets 44, 45, 46 and 47 if new records arrived after capture. Only 44
+and 45 belong in the audit. Capturing the ends gives a vector of
+per-partition boundaries. It does <strong>not</strong> establish an
+atomic business-time snapshot across partitions. With
+<code>read_committed</code>, the end used here is the last stable
+offset, so an open transaction can hold it back.</p>
+<p>For repeatable runs, persist topic identity, per-partition starts and
+ends, isolation level, decoder version and output destination. The demo
+captures fresh bounds on each invocation. To audit from a UTC instant,
+call <code>offsetsForTimes</code> with epoch milliseconds for every
+partition. An entry can be null when there is no matching record. Use
+the captured end for that partition, cap returned starts at that end,
+and validate retained bounds. Plan a backfill source if retention or
+compaction can remove the evidence during the job.</p>
+</section>
+</section>
+<section id="make-replay-safe-for-a-database-backed-application" class="level2">
+<h2>5. Make replay safe for a database-backed application</h2>
+<p>Consider a positions service adding a fill quantity to an order’s
+cumulative filled quantity. Replaying a +50 fill blindly adds another
+50. A database unique constraint can make the handler safe even when two
+attempts overlap. Below is PostgreSQL SQL with JDBC bind placeholders in
+order: event ID, order ID, quantity. Scope the deduplication table to
+this projection. Use one connection and transaction, confirm its commit,
+then let the Java consumer commit the offset.</p>
+<div class="snippet"><div class="bar"><span>SQL</span><button type="button">Copy</button></div><div class="sourceCode" id="cb13"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> applied_fill (</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    fill_id text <span class="kw">PRIMARY</span> <span class="kw">KEY</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> filled_quantity (</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    order_id text <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    quantity bigint <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- One statement for each fill in the application transaction.</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="kw">WITH</span> accepted <span class="kw">AS</span> (</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INSERT</span> <span class="kw">INTO</span> applied_fill (fill_id) <span class="kw">VALUES</span> (?)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> CONFLICT (fill_id) DO <span class="kw">NOTHING</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">RETURNING</span> fill_id</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> filled_quantity (order_id, quantity)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">CAST</span>(? <span class="kw">AS</span> text), <span class="fu">CAST</span>(? <span class="kw">AS</span> bigint) <span class="kw">FROM</span> accepted</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ON</span> CONFLICT (order_id) DO <span class="kw">UPDATE</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> quantity <span class="op">=</span> filled_quantity.quantity <span class="op">+</span> EXCLUDED.quantity;</span></code></pre></div>
+</div><p>If the DB commit succeeds and the Kafka commit fails, retrying sees
+the event ID and performs no second increment. If the DB rolls back,
+neither the event ID nor the increment survives. Keep deduplication
+history for the full supported replay horizon. Rebuild a fresh
+projection with a matching empty deduplication table. If the source can
+reuse fill IDs, use a sufficiently scoped key such as venue plus
+execution ID. Corrections and busts need explicit events and business
+rules.</p>
+<table>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Output</th>
+<th>Suitable boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Kafka input → PostgreSQL</td>
+<td>Database transaction and stable unique event ID, followed by offset
+commit.</td>
+</tr>
+<tr class="even">
+<td>Kafka input → Kafka output</td>
+<td>Transactional producer: begin transaction, send results, call
+<code>sendOffsetsToTransaction(batch.nextOffsets(), consumer.groupMetadata())</code>,
+then commit the transaction. Give each active producer a unique
+transactional ID stable across its restarts. Configure downstream
+readers with <code>read_committed</code>. Abort and rewind/recreate the
+consumer before retrying failed work.</td>
+</tr>
+<tr class="odd">
+<td>Database change → Kafka</td>
+<td>Write an outbox record in the same DB transaction as the change.
+Publish it through CDC or a relay. Downstream readers still need a
+duplicate policy.</td>
+</tr>
+<tr class="even">
+<td>External trading or notification API</td>
+<td>Use an externally enforced idempotency key or reconcile ambiguous
+outcomes before retrying. Historical projection rebuilds should have
+outbound execution disabled.</td>
+</tr>
+</tbody>
+</table>
+<p>A poison record needs an explicit policy. For transient errors, use
+bounded retries, backoff and monitoring. For a permanent schema or
+validation failure, either halt that partition or durably quarantine the
+original bytes, key, headers, topic, partition, offset and error.
+Advance past it only when the chosen policy permits it. Quarantining a
+fill may make later per-order state wrong until you repair it.
+Deserialisation errors can occur inside <code>poll()</code> before a
+record reaches your handler. A byte-array consumer with application
+decoding is one way to preserve the raw payload.</p>
+</section>
+<section id="operate-and-troubleshoot-kafka" class="level2">
+<h2>6. Operate and troubleshoot Kafka</h2>
+<section id="daily-inspection-commands" class="level3">
+<h3>Daily inspection commands</h3>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-topics <span class="at">--list</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-topics <span class="at">--describe</span> <span class="at">--topic</span> trade.fills.v1</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-configs <span class="at">--entity-type</span> topics <span class="at">--entity-name</span> trade.fills.v1 <span class="at">--describe</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-get-offsets <span class="at">--topic</span> trade.fills.v1 <span class="at">--time</span> earliest</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-get-offsets <span class="at">--topic</span> trade.fills.v1 <span class="at">--time</span> latest</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--list</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-consumer-groups <span class="at">--describe</span> <span class="at">--group</span> positions-v1 <span class="at">--members</span> <span class="at">--verbose</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-metadata-quorum describe <span class="at">--status</span></span></code></pre></div>
+</div><p>Run the membership command while a longer consumer is active
+(<code>run consume positions-v1 120</code> in a second shell with the
+same function definition). Start another instance with the same group to
+watch partition ownership move. A third instance can own the remaining
+partition, but a partition with no records still contributes no
+throughput. Different groups have independent assignments.</p>
+<p><strong>Change retention</strong> in the lab and verify the applied
+override:</p>
+<div class="snippet"><div class="bar"><span>BASH</span><button type="button">Copy</button></div><div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-configs <span class="at">--entity-type</span> topics <span class="at">--entity-name</span> trade.fills.v1 <span class="dt">\</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--alter</span> <span class="at">--add-config</span> retention.ms=1209600000</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="ex">k</span> kafka-configs <span class="at">--entity-type</span> topics <span class="at">--entity-name</span> trade.fills.v1 <span class="at">--describe</span></span></code></pre></div>
+</div><p>This sets 14 days for future availability. Increasing retention
+cannot recover records already deleted. A byte limit can trigger removal
+sooner and operates per partition. Deletion works on eligible log
+segments, so expiry time is approximate. A compacted topic eventually
+retains the latest value per key, subject to tombstones and any delete
+policy. Keying a compacted fills topic by order ID could erase earlier
+individual fills. For replayable execution history use a
+deletion-retained event topic with suitable archival, and use a separate
+compacted topic for current order state.</p>
+</section>
+<section id="incident-triage" class="level3">
+<h3>Incident triage</h3>
+<table>
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Observation</th>
+<th>Inspect</th>
+<th>Action to test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bootstrap connects but produce/fetch times out</td>
+<td>Advertised listener hostnames, DNS, port reachability from the
+<strong>client</strong>, TLS and ACL errors</td>
+<td>Test the returned broker endpoints from the application
+network.</td>
+</tr>
+<tr class="even">
+<td>Restart reads nothing</td>
+<td>Correct group, committed positions, topic end and partition
+assignment</td>
+<td>Try the read-only audit. A valid checkpoint at the end explains an
+idle consumer.</td>
+</tr>
+<tr class="odd">
+<td>Lag grows on one partition</td>
+<td>Key distribution, oldest unprocessed event, handler latency and
+downstream locks</td>
+<td>Resolve the hot key or slow dependency. Another group member cannot
+split one partition.</td>
+</tr>
+<tr class="even">
+<td>Lag grows everywhere</td>
+<td>Ingress versus processing rate, DB pool saturation, throttling, GC
+and consumer CPU</td>
+<td>Reduce the bottleneck. Add consumers up to available partitions when
+parallelism helps.</td>
+</tr>
+<tr class="odd">
+<td>Frequent rebalances or commit failures</td>
+<td>Deployment churn, time between polls,
+<code>max.poll.interval.ms</code>, batch duration</td>
+<td>Reduce <code>max.poll.records</code>, bound handler latency and stop
+cleanly. Avoid committing work after partition ownership is lost.</td>
+</tr>
+<tr class="even">
+<td>Missing historical events</td>
+<td>Earliest offsets, retention, compaction, old schema
+compatibility</td>
+<td>Recover from a verified archive. New group IDs cannot recreate
+deleted history.</td>
+</tr>
+<tr class="odd">
+<td>Producer reports insufficient replicas</td>
+<td>ISR size, offline brokers, disk and network health</td>
+<td>Restore replication health. Lowering minimum ISR trades away
+durability.</td>
+</tr>
+<tr class="even">
+<td>Read-committed consumer stalls despite writes</td>
+<td>Open transactions, transactional producer failures, last stable
+offset</td>
+<td>Resolve the producer or transaction timeout and compare the two
+isolation levels during diagnosis.</td>
+</tr>
+</tbody>
+</table>
+<p>For a backlog of 900,000 offset units with approximately one record
+per offset, ingress of 2,000/s and sustained processing of 5,000/s,
+estimated catch-up is 900,000 / (5,000 − 2,000) = 300 seconds. Calculate
+this per partition too. A single slow partition can determine the finish
+time, and the estimate assumes stable rates.</p>
+</section>
+</section>
+<section id="move-from-the-laptop-to-production" class="level2">
+<h2>7. Move from the laptop to production</h2>
+<table>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Decision</th>
+<th>Practical starting point and trade-off</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Cluster and storage</td>
+<td>Use a managed service or design separate KRaft controllers and
+brokers across failure domains. Three voting controllers tolerate one
+unavailable voter. Configure persistent storage, rack awareness,
+capacity headroom and an independently tested recovery plan.</td>
+</tr>
+<tr class="even">
+<td>Replication and acknowledgement</td>
+<td>A common three-broker topic configuration is replication factor 3,
+<code>min.insync.replicas=2</code>, and producer <code>acks=all</code>.
+With only one in-sync replica left, writes fail. An acknowledgement
+covers all current in-sync replicas, subject to the configured
+minimum.</td>
+</tr>
+<tr class="odd">
+<td>Topic ownership</td>
+<td>Declare topics, ACLs, retention, partition count and owners in
+version control. Restrict automatic topic creation. Increasing
+partitions can remap existing keys for future records, so plan for
+per-key order during migration.</td>
+</tr>
+<tr class="even">
+<td>Security</td>
+<td>Use TLS with hostname verification and an authentication mechanism
+supported by your cluster. Give producer, consumer, replay and admin
+identities the operations they actually need. Restrict topic writes and
+consumer-group modifications independently. Supply credentials via your
+runtime secret mechanism.</td>
+</tr>
+<tr class="odd">
+<td>Retention capacity</td>
+<td>Estimate compressed ingress bytes/s × retention seconds ×
+replication factor across the cluster. Add space for segments awaiting
+cleanup, skew, reassignment and failures. Validate the busiest broker
+and partition.</td>
+</tr>
+<tr class="even">
+<td>Monitoring</td>
+<td>Track offline partitions, under-replicated partitions, under-min-ISR
+partitions, controller quorum health, broker disk headroom, producer
+error/latency, consumer lag <strong>and event age</strong>, rebalance
+frequency and downstream success. Alert against the time left before
+retention removes unread data.</td>
+</tr>
+<tr class="odd">
+<td>Schema and recovery</td>
+<td>Publish schema evolution rules, sample old records in compatibility
+tests, preserve archives and rehearse restoring a projection to known
+partition boundaries. Broker replication alone cannot undo an accidental
+deletion.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Configuring a secured Java client:</strong> merge a mounted
+Java properties file into <code>base()</code> before creating a producer
+or consumer. The following snippet goes immediately before
+<code>return p;</code> and allows the configured cluster to override the
+local bootstrap address. An operator can reuse the same file with Kafka
+admin tools using <code>--command-config /path/client.properties</code>
+where that file is accessible to the CLI process.</p>
+<div class="snippet"><div class="bar"><span>JAVA</span><button type="button">Copy</button></div><div class="sourceCode" id="cb16"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">String</span> file <span class="op">=</span> <span class="bu">System</span><span class="op">.</span><span class="fu">getenv</span><span class="op">(</span><span class="st">"KAFKA_CLIENT_CONFIG"</span><span class="op">);</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>file <span class="op">!=</span> <span class="kw">null</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">(</span><span class="dt">var</span> in <span class="op">=</span> java<span class="op">.</span><span class="fu">nio</span><span class="op">.</span><span class="fu">file</span><span class="op">.</span><span class="fu">Files</span><span class="op">.</span><span class="fu">newInputStream</span><span class="op">(</span>java<span class="op">.</span><span class="fu">nio</span><span class="op">.</span><span class="fu">file</span><span class="op">.</span><span class="fu">Path</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span>file<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        p<span class="op">.</span><span class="fu">load</span><span class="op">(</span>in<span class="op">);</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">catch</span> <span class="op">(</span>java<span class="op">.</span><span class="fu">io</span><span class="op">.</span><span class="fu">IOException</span> ex<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> <span class="kw">new</span> java<span class="op">.</span><span class="fu">io</span><span class="op">.</span><span class="fu">UncheckedIOException</span><span class="op">(</span><span class="st">"Cannot read Kafka client configuration"</span><span class="op">,</span> ex<span class="op">);</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</div><div class="snippet"><div class="bar"><span>PROPERTIES</span><button type="button">Copy</button></div><pre class="properties"><code># Example shape for a cluster configured for mutual TLS.
+bootstrap.servers=broker-a.example:9093,broker-b.example:9093
+security.protocol=SSL
+ssl.truststore.type=PKCS12
+ssl.truststore.location=/run/secrets/kafka-trust.p12
+ssl.keystore.type=PKCS12
+ssl.keystore.location=/run/secrets/kafka-client.p12
+# Supply the store/key passwords in the protected runtime configuration.</code></pre>
+</div><p>For a SASL-authenticated cluster, follow its mechanism-specific
+settings (for example SASL_SSL with SCRAM or a cloud identity provider).
+A client-side properties change requires a matching broker listener,
+certificate trust and identity permissions.</p>
+<section id="if-your-service-uses-spring-boot" class="level3">
+<h3>If your service uses Spring Boot</h3>
+<p>The Kafka semantics above carry across. Spring Boot’s
+<code>KafkaTemplate</code> wraps the producer and
+<code>@KafkaListener</code> delegates polling, acknowledgements and
+rebalances to a listener container. Use the Spring Kafka dependency
+version managed by your Boot release. A practical mapping for a record
+listener is <code>spring.kafka.consumer.enable-auto-commit=false</code>
+and <code>spring.kafka.listener.ack-mode=record</code>. Put the
+transactional database write inside the handler or a service it calls
+and let failures propagate to the configured error handler. Review
+retries and dead-letter recovery explicitly. The container can advance
+offsets after successful recovery, which matters when rebuilding
+financial state. A new listener group or an offline CLI reset works on
+the same broker-side group offsets described above.</p>
+</section>
+</section>
+<section id="check-your-understanding" class="level2">
+<h2>8. Check your understanding</h2>
+<ol type="1">
+<li><strong>You change the live group’s fallback to earliest and
+restart. Why no replay?</strong> Its committed positions are valid, so
+the fallback is never used.</li>
+<li><strong>A fill is written to PostgreSQL and the process dies. What
+happens?</strong> If the Kafka offset commit did not complete, the fill
+may return. An atomic insert of the fill ID and the corresponding state
+change makes retry safe.</li>
+<li><strong>How do you verify yesterday’s fills without moving today’s
+consumer?</strong> Use a separate reader with explicit partition bounds,
+filter on business time and disable outbound side effects. Compare both
+counts and business totals.</li>
+<li><strong>Why can a replay report zero lag yet produce the wrong
+position?</strong> Zero lag measures checkpoint progress. It says
+nothing about skipped records, duplicate effects, rejected schemas or
+incorrect aggregation.</li>
+<li><strong>How do you pause the local lab and keep its data?</strong>
+Run <code>docker compose stop</code> and resume with
+<code>docker compose start</code> using the same container. Removing the
+container can discard the lab data.</li>
+</ol>
+</section>
+<section id="reference-material" class="level2">
+<h2>Reference material</h2>
+<ul>
+<li><a href="https://kafka.apache.org/44/getting-started/quickstart/">Apache
+Kafka 4.4 quick start</a></li>
+<li><a href="https://kafka.apache.org/44/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">KafkaConsumer
+API: positions, commits, assignment and seeking</a></li>
+<li><a href="https://kafka.apache.org/44/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html">KafkaProducer
+API: sending, acknowledgements and transactions</a></li>
+<li><a href="https://kafka.apache.org/44/configuration/consumer-configs/">Consumer
+configuration</a> and <a href="https://kafka.apache.org/44/configuration/producer-configs/">producer
+configuration</a></li>
+<li><a href="https://kafka.apache.org/44/operations/basic-kafka-operations/">Consumer-group
+administration, reset scenarios and CLI examples</a></li>
+<li><a href="https://kafka.apache.org/44/configuration/topic-configs/">Topic
+retention, compaction and ISR configuration</a></li>
+<li><a href="https://kafka.apache.org/44/operations/monitoring/">Monitoring</a>
+and <a href="https://kafka.apache.org/44/security/security-overview/">security</a></li>
+<li><a href="https://docs.spring.io/spring-kafka/reference/kafka/receiving-messages/message-listener-container.html">Spring
+Kafka listener containers and offset commits</a></li>
+</ul>
+</section>
+</main></div><script>
+const cells=[...document.querySelectorAll('.cell')],msg=document.querySelector('.status'),advance=document.querySelector('#advance');
+let stage=0; const notes=['The group has committed 42. Its next read starts at the highlighted offset.','Poll returned 42–44. The local position is 45. A restart still resumes at 42.','The database write succeeded. Restart now to see why the handler needs deduplication.','The group committed 45. A restart now resumes at 45.'];
+function render(){cells.forEach((c,i)=>{let next=stage<3?2:5;c.className='cell'+(i<next?' done':i===next?' next':'')});msg.textContent=notes[stage];advance.textContent=['Poll 3 records','Write to database','Commit offsets','Reset example'][stage]}
+advance.onclick=()=>{stage=(stage+1)%4;render()};document.querySelector('#reset').onclick=()=>{let prior=stage;stage=stage===3?3:0;render();msg.textContent=prior===3?'Restarted at 45. The previous batch was committed.':prior===2?'Restarted at 42. The database already contains this batch.':'Restarted at 42. The stored checkpoint is still 42.'};
+for(const b of document.querySelectorAll('.bar button'))b.onclick=async()=>{const v=b.closest('.snippet').querySelector('code').textContent;try{await navigator.clipboard.writeText(v);b.textContent='Copied'}catch{const r=document.createRange();r.selectNodeContents(b.closest('.snippet').querySelector('code'));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected'}setTimeout(()=>b.textContent='Copy',1400)};
+if(matchMedia('(max-width:850px)').matches)document.querySelector('nav details').open=false;
+</script></body>
+</html>
