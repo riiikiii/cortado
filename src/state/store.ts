@@ -72,6 +72,11 @@ interface State {
   toast?: { message: string; id: number };
   /** The library this site publishes from the repo, once checked. Null when there is none. */
   siteLibrary: SiteLibraryInfo | null;
+  /**
+   * Whether the service worker serves vault files to this page yet. Guides, PDFs and images load
+   * through it, so they wait while it's 'pending' (only on a first launch, while it installs).
+   */
+  sw: 'pending' | 'ok' | 'unsupported' | 'failed';
 
   init(): Promise<void>;
   setActiveVault(id: string | null): Promise<void>;
@@ -186,6 +191,7 @@ export const useStore = create<State>((set, get) => {
     picker: null,
     sync: { running: false },
     siteLibrary: null,
+    sw: typeof navigator !== 'undefined' && navigator.serviceWorker?.controller ? 'ok' : 'pending',
 
     async init() {
       const vaults = await db.vaults.toArray();
@@ -479,6 +485,17 @@ useStore.subscribe((s, prev) => {
   if (s.recent !== prev.recent) localStorage.setItem(recentKey(s.activeVaultId), JSON.stringify(s.recent));
   if (s.progress !== prev.progress) localStorage.setItem(progressKey(s.activeVaultId), JSON.stringify(s.progress));
 });
+
+// Home-screen apps on the iPad are usually resumed rather than relaunched, so also look for
+// library updates when Cortado comes back to the foreground (at most every few minutes).
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    const s = useStore.getState();
+    const vault = s.vaults.find((v) => v.id === s.activeVaultId);
+    if (document.visibilityState !== 'visible' || vault?.provider !== 'site' || !navigator.onLine || s.sync.running) return;
+    if (Date.now() - (vault.lastSyncedAt ?? 0) > 5 * 60_000) void s.runSync({ quiet: true });
+  });
+}
 
 /** A lesson's display title: its own heading or <title>, else the file name without its number. */
 export function useTitle(path: string): string {
