@@ -57,7 +57,6 @@ img,svg{max-width:100%}
 
 /* layout */
 main{max-width:740px; margin:0 auto; padding:0 22px 120px}
-@media (min-width:1100px){ main{margin-left:max(320px, calc(50vw - 370px + 140px)); margin-right:auto} .hero-inner{margin-left:max(298px, calc(50vw - 380px + 140px))} }
 section{scroll-margin-top:16px}
 h2,h3,h4{color:var(--ink); line-height:1.2}
 h2{font-family:var(--serif); font-size:31px; margin:56px 0 12px; letter-spacing:-.005em}
@@ -226,28 +225,19 @@ dl.gloss dd{margin:2px 0 0; font-size:16.5px}
 .honey .ut{width:62%; margin:0 auto; background:var(--t400); color:var(--t900)}
 
 /* toc */
-#tocBtn{position:fixed; right:calc(16px + env(safe-area-inset-right)); bottom:calc(16px + env(safe-area-inset-bottom)); z-index:50; display:flex; align-items:center; gap:8px; font:700 15px var(--sans); color:#fff; background:var(--t800); border:1px solid var(--t600); border-radius:999px; padding:12px 18px; min-height:48px; box-shadow:0 8px 24px rgba(4,47,46,.35); cursor:pointer}
-#tocBtn .pct{font-family:var(--mono); font-size:13px; color:var(--t200)}
-#scrim{position:fixed; inset:0; background:rgba(2,20,19,.45); z-index:54; opacity:0; pointer-events:none; transition:opacity .2s}
-#scrim.show{opacity:1; pointer-events:auto}
-#toc{position:fixed; top:0; right:0; bottom:0; width:min(340px,88vw); z-index:55; background:var(--surface); border-left:1px solid var(--line); transform:translateX(105%); transition:transform .25s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom)); box-shadow:-10px 0 30px rgba(4,47,46,.18)}
-#toc.open{transform:none}
-#toc .th{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
-#toc .th b{font-family:var(--serif); font-size:22px; color:var(--ink)}
-#toc .close{font:700 22px var(--sans); background:none; border:0; color:var(--muted); min-width:44px; min-height:44px; cursor:pointer}
-#toc .grp{font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:16px 0 4px} @media (prefers-color-scheme: dark){ #toc .grp{color:var(--t300)} }
-#toc a{display:flex; gap:10px; align-items:center; text-decoration:none; color:var(--text); font-size:15.5px; line-height:1.3; padding:9px 8px; border-radius:8px; min-height:44px}
+#toc{margin:28px 0 8px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow)}
+#toc summary{display:flex; justify-content:space-between; align-items:center; cursor:pointer; list-style:none; font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink)}
+#toc summary::-webkit-details-marker{display:none}
+#toc summary::after{content:"▾"; font:700 16px var(--sans); color:var(--muted); transition:transform .2s}
+#toc details:not([open]) summary::after{transform:rotate(-90deg)}
+#tocList{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px 20px; margin-top:14px; padding-top:14px; border-top:1px solid var(--line)}
+#toc .grp{font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px} @media (prefers-color-scheme: dark){ #toc .grp{color:var(--t300)} }
+#toc a{display:flex; gap:8px; align-items:flex-start; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; padding:5px 6px; border-radius:8px}
 #toc a:hover,#toc a.cur{background:var(--surface-2); color:var(--ink)}
-#toc a .ck{flex:0 0 20px; height:20px; border-radius:50%; border:2px solid var(--line); display:grid; place-items:center; font-size:11px; color:#fff}
+#toc a .ck{flex:0 0 18px; height:18px; margin-top:1px; border-radius:50%; border:2px solid var(--line); display:grid; place-items:center; font-size:10px; color:#fff}
 #toc a.seen .ck{background:var(--t500); border-color:var(--t500)}
-@media (min-width:1100px){
-  #toc{left:0; right:auto; width:290px; transform:none; border-left:0; border-right:1px solid var(--line); box-shadow:none; background:var(--surface)}
-  #toc .close{display:none}
-  #tocBtn,#scrim{display:none}
-}
 footer{max-width:740px; margin:0 auto; padding:30px 22px 120px; color:var(--muted); font-size:14.5px; border-top:1px solid var(--line)}
-@media (min-width:1100px){ footer{margin-left:max(320px, calc(50vw - 370px + 140px))} }
-@media print{ #toc,#tocBtn,#scrim,#progress,.code .bar button{display:none} main{margin:0 auto} .level{break-inside:avoid} }
+@media print{ #toc,#progress,.code .bar button{display:none} main{margin:0 auto} .level{break-inside:avoid} }
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
 </style>
 </head>
@@ -279,6 +269,13 @@ footer{max-width:740px; margin:0 auto; padding:30px 22px 120px; color:var(--mute
 </header>
 
 <main id="top">
+
+<nav id="toc" aria-label="Contents">
+  <details open>
+    <summary>Contents</summary>
+    <div id="tocList"></div>
+  </details>
+</nav>
 
 <section id="intro" data-toc="How to use this guide" data-group="Start">
   <h2 style="margin-top:36px">The climb</h2>
@@ -1165,13 +1162,6 @@ void handle(Request request) {
   <p><strong>Microservices with Java: Zero to Guru</strong> · Teal Teas edition · Facts checked against official release notes and docs on 20 November 2026. Versions move quickly: confirm the current Spring Cloud release train for your Spring Boot version on start.spring.io before you pin dependencies.</p>
 </footer>
 
-<button id="tocBtn" type="button" aria-controls="toc" aria-expanded="false">☰ Contents <span class="pct" id="pct">0%</span></button>
-<div id="scrim"></div>
-<nav id="toc" aria-label="Contents">
-  <div class="th"><b>Contents</b><button class="close" type="button" aria-label="Close contents">×</button></div>
-  <div id="tocList"></div>
-</nav>
-
 <script>
 (function(){
   "use strict";
@@ -1251,20 +1241,18 @@ void handle(Request request) {
   }
 
   /* ---------- table of contents ---------- */
-  var list = $("#tocList"), secs = $$("section[data-toc]"), links = {}, lastGroup = null;
+  var list = $("#tocList"), secs = $$("section[data-toc]"), links = {}, lastGroup = null, grpBox = null;
   secs.forEach(function(s){
     var g = s.getAttribute("data-group");
-    if (g !== lastGroup){ var h = document.createElement("div"); h.className = "grp"; h.textContent = g; list.appendChild(h); lastGroup = g; }
+    if (g !== lastGroup){
+      grpBox = document.createElement("div"); grpBox.className = "toc-grp";
+      var h = document.createElement("div"); h.className = "grp"; h.textContent = g;
+      grpBox.appendChild(h); list.appendChild(grpBox); lastGroup = g;
+    }
     var a = document.createElement("a"); a.href = "#" + s.id;
     a.innerHTML = '<span class="ck">✓</span><span></span>'; a.lastChild.textContent = s.getAttribute("data-toc");
-    list.appendChild(a); links[s.id] = a;
+    grpBox.appendChild(a); links[s.id] = a;
   });
-  var toc = $("#toc"), scrim = $("#scrim"), tbtn = $("#tocBtn");
-  function openToc(o){ toc.classList.toggle("open", o); scrim.classList.toggle("show", o); tbtn.setAttribute("aria-expanded", o ? "true" : "false"); }
-  tbtn.addEventListener("click", function(){ openToc(!toc.classList.contains("open")); });
-  scrim.addEventListener("click", function(){ openToc(false); });
-  $("#toc .close").addEventListener("click", function(){ openToc(false); });
-  list.addEventListener("click", function(e){ if (e.target.closest("a") && window.innerWidth < 1100) openToc(false); });
   var seen = store.get("msj-seen") || {};
   Object.keys(seen).forEach(function(id){ if (links[id]) links[id].classList.add("seen"); });
   if ("IntersectionObserver" in window){
@@ -1281,11 +1269,11 @@ void handle(Request request) {
   }
 
   /* ---------- reading progress ---------- */
-  var bar = $("#progress"), pct = $("#pct"), ticking = false;
+  var bar = $("#progress"), ticking = false;
   function onScroll(){
     var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
     var p = max > 0 ? Math.min(100, Math.max(0, (h.scrollTop || document.body.scrollTop) / max * 100)) : 0;
-    bar.style.width = p + "%"; pct.textContent = Math.round(p) + "%"; ticking = false;
+    bar.style.width = p + "%"; ticking = false;
   }
   window.addEventListener("scroll", function(){ if (!ticking){ ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
   onScroll();

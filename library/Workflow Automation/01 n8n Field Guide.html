@@ -22,7 +22,7 @@ a:hover{color:var(--rust)}
 .mast a{color:#ffb6a1;font-size:.88rem}
 .hero{background:var(--green);color:#f9f8ef;border-bottom:5px solid var(--orange)}
 .hero-grid{min-height:429px;padding-block:3.5rem;display:grid;grid-template-columns:1.08fr 1fr;align-items:center;gap:clamp(1.5rem,6vw,6rem)}
-.eyebrow,.kicker,.diagram-label,.contents-toggle,.codebar,.chip{font:700 .73rem/1.5 var(--mono);letter-spacing:.075em;text-transform:uppercase}
+.eyebrow,.kicker,.diagram-label,.contents-heading,.codebar,.chip{font:700 .73rem/1.5 var(--mono);letter-spacing:.075em;text-transform:uppercase}
 .eyebrow{color:#ffac92;margin:0 0 1.15rem}
 h1,h2,h3,h4,p{margin-top:0}
 h1,h2{font-family:var(--serif);font-weight:normal;letter-spacing:-.05em}
@@ -44,22 +44,14 @@ h4{font-size:1rem;margin:1.1rem 0 .4rem}
 .diagram-node:first-child{background:#ffe2d5;border-color:#ffa789}
 .diagram-arrow{font-size:1.26rem;font-weight:700;color:#ffb197}
 .diagram figcaption{margin-top:1rem;font-size:.87rem;color:#dcebe0;background:#102b26;width:fit-content;padding-inline:.3rem}
-.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:clamp(1.65rem,5vw,5rem);align-items:start;padding-block:2.8rem 4.5rem}
-.layout.contents-collapsed{grid-template-columns:3rem minmax(0,1fr);gap:clamp(1rem,2.5vw,2rem)}
-.contents{position:sticky;top:1.2rem;max-height:calc(100vh - 2.4rem);overflow:auto;padding:1rem 1rem 1.1rem;border:1px solid var(--rule);background:var(--surface);border-radius:.65rem}
-.contents-toggle{display:flex;align-items:center;gap:.5rem;width:100%;min-height:2.25rem;margin:0 0 .55rem;padding:.3rem .48rem;border:1px solid #d0dcd0;border-radius:.35rem;background:#edf2e9;color:#305846;text-align:left;cursor:pointer}
-.contents-toggle[hidden],.contents ol[hidden]{display:none}
-.contents-toggle:hover{background:var(--mint);color:#174631;border-color:#9db5a3}
-.contents-chevron{width:.47rem;height:.47rem;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);flex:none;margin-inline:.15rem .05rem}
-.contents-toggle[aria-expanded="false"] .contents-chevron{transform:rotate(225deg)}
-.contents-collapsed .contents{padding:.28rem;overflow:visible}
-.contents-collapsed .contents-toggle{margin:0;justify-content:center}
-.contents-collapsed .contents-toggle-label{display:none}
-.contents ol{margin:0;padding:0;list-style:none;counter-reset:chapter}
+.layout{display:block;max-width:960px;padding-block:2.2rem 4.5rem}
+.contents{padding:1.1rem 1.25rem 1.2rem;margin:0 0 2.2rem;border:1px solid var(--rule);border-top:3px solid #7c9c87;background:var(--surface);border-radius:.65rem}
+.contents-heading{color:var(--rust);margin:0 0 .55rem}
+.contents ol{margin:0;padding:0;list-style:none;counter-reset:chapter;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.15rem 1.2rem}
 .contents li{counter-increment:chapter;margin:0}
-.contents a{display:grid;grid-template-columns:1.65rem 1fr;gap:.12rem;color:var(--ink);font-size:.88rem;line-height:1.35;padding:.43rem .26rem;text-decoration:none;border-radius:.26rem}
+.contents a{display:grid;grid-template-columns:1.65rem 1fr;gap:.12rem;color:var(--ink);font-size:.89rem;line-height:1.35;padding:.4rem .32rem;text-decoration:none;border-radius:.26rem}
 .contents a::before{content:counter(chapter,decimal-leading-zero);font:.73rem/1.6 var(--mono);color:var(--rust)}
-.contents a:hover,.contents a[aria-current="location"]{background:var(--mint);color:#174631}
+.contents a:hover{background:var(--mint);color:#174631}
 main{min-width:0}
 .chapter{border-bottom:1px solid var(--rule);padding:0 0 2.45rem;margin:0 0 2.65rem}
 .chapter:last-child{margin-bottom:0}
@@ -120,9 +112,8 @@ details.readmore p{margin:.6rem 0 .25rem}
 .foot{border-top:1px solid var(--rule);padding:1.35rem 0;color:var(--muted);font-size:.88rem}
 .foot .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .foot p{margin:0}
-@media(max-width:950px){.layout{grid-template-columns:184px minmax(0,1fr);gap:1.5rem}.contents{padding:.8rem}.hero-grid{gap:1.8rem}.diagram{padding:.9rem}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:700px){.wrap{width:calc(100% - 2rem)}.hero-grid{grid-template-columns:1fr;padding-block:2.3rem;gap:1.6rem}.diagram{max-width:480px;width:100%}.diagram-node{min-height:72px}.layout{display:block;padding-top:1.25rem}.contents{position:static;max-height:none;margin-bottom:1.6rem}.contents ol{columns:2;column-gap:.8rem}.contents li{break-inside:avoid}.chapter{padding-bottom:1.65rem;margin-bottom:1.9rem}.checklist{grid-template-columns:1fr}}
-@media(max-width:700px){.contents-toggle{width:auto}.contents-chevron{transform:rotate(135deg)}.contents-toggle[aria-expanded="false"] .contents-chevron{transform:rotate(315deg)}.contents-collapsed .contents{width:max-content;max-width:100%}.contents-collapsed .contents-toggle-label{display:inline}}
+@media(max-width:950px){.hero-grid{gap:1.8rem}.diagram{padding:.9rem}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.wrap{width:calc(100% - 2rem)}.hero-grid{grid-template-columns:1fr;padding-block:2.3rem;gap:1.6rem}.diagram{max-width:480px;width:100%}.diagram-node{min-height:72px}.layout{padding-top:1.25rem}.contents{margin-bottom:1.6rem;padding:.9rem 1rem}.chapter{padding-bottom:1.65rem;margin-bottom:1.9rem}.checklist{grid-template-columns:1fr}}
 @media(max-width:440px){.cards,.cards.two{grid-template-columns:1fr}.diagram-flow{gap:.25rem}.diagram-node{padding:.48rem .34rem}.diagram-node span{font-size:.61rem}.diagram-arrow{font-size:.9rem}.contents a{font-size:.79rem}.stack-small th,.stack-small td{padding:.48rem .5rem}.stack-small table{font-size:.85rem}}
 @media print{body{background:#fff;color:#111;font-size:10pt}.wrap{width:100%}.mast,.contents,.hero-links,.copy,.demo form,.foot a{display:none!important}.hero{background:white;color:#111;border-bottom:2pt solid #888}.hero .eyebrow,.hero p:not(.eyebrow){color:#333}.hero-grid{display:block;min-height:0;padding:0 0 8pt}.diagram{display:none}.layout{display:block;padding-block:12pt}.chapter{margin:0 0 12pt;padding-bottom:12pt}h1{font-size:38pt}h2{font-size:23pt}h3,h4,h2{break-after:avoid}.flow,.card,.callout,.checklist label{break-inside:avoid}.snippet,.codebar{background:#f4f4f4;color:#111;border-color:#888;break-inside:avoid}pre{white-space:pre-wrap;overflow-wrap:anywhere}tr{break-inside:avoid}a{color:#111}}
 </style>
@@ -153,9 +144,7 @@ details.readmore p{margin:.6rem 0 .25rem}
 </header>
 <div class="wrap layout">
 <nav class="contents" aria-label="Guide contents">
-  <button class="contents-toggle" type="button" aria-expanded="true" aria-controls="contents-links" aria-label="Hide contents" title="Hide contents" hidden>
-    <span class="contents-chevron" aria-hidden="true"></span><span class="contents-toggle-label">Hide contents</span>
-  </button>
+  <p class="contents-heading">Contents</p>
     <ol id="contents-links">
       <li><a href="#concepts">How n8n works</a></li>
       <li><a href="#setup">Set up n8n</a></li>
@@ -590,37 +579,6 @@ routeDemo.addEventListener('submit', event => {
   const urgent = priority >= 7;
   routeResult.value = 'priority ' + priority + ' → urgent = ' + urgent + ' → ' + urgent + ' output';
 });
-const chapters = [...document.querySelectorAll('.chapter')];
-const chapterLinks = [...document.querySelectorAll('.contents a')];
-const contentsToggle = document.querySelector('.contents-toggle');
-const contentsLinks = document.getElementById('contents-links');
-const layout = contentsToggle.closest('.layout');
-contentsToggle.addEventListener('click', () => {
-  const expanded = contentsToggle.getAttribute('aria-expanded') === 'true';
-  const label = expanded ? 'Show contents' : 'Hide contents';
-  contentsToggle.setAttribute('aria-expanded', String(!expanded));
-  contentsToggle.setAttribute('aria-label', label);
-  contentsToggle.title = label;
-  contentsToggle.querySelector('.contents-toggle-label').textContent = label;
-  contentsLinks.hidden = expanded;
-  layout.classList.toggle('contents-collapsed', expanded);
-});
-contentsToggle.hidden = false;
-let pendingFrame = false;
-function updateContents() {
-  const current = chapters.findLast(chapter => chapter.getBoundingClientRect().top <= 116) ?? chapters[0];
-  for (const link of chapterLinks) {
-    if (link.hash === '#' + current.id) link.setAttribute('aria-current', 'location');
-    else link.removeAttribute('aria-current');
-  }
-  pendingFrame = false;
-}
-window.addEventListener('scroll', () => {
-  if (pendingFrame) return;
-  pendingFrame = true;
-  requestAnimationFrame(updateContents);
-}, { passive: true });
-updateContents();
 </script>
 </body>
 </html>
