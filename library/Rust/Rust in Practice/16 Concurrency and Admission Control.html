@@ -164,73 +164,80 @@ section > p, section > ul, section > ol {max-width:76ch}
 .chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
 .hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
 @media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+
+/* Offline token colours. Inline code follows the page theme; listings have a dark surface. */
+code.syntax {--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
+@media(prefers-color-scheme:dark){code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}}
+pre code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}
+.syntax .rk{color:var(--kw)}.syntax .rs{color:var(--str)}.syntax .ri{color:var(--num)}.syntax .rf{color:var(--fn)}.syntax .rt{color:var(--ty)}.syntax .rc{color:var(--cm);font-style:italic}.syntax .ro{color:var(--op)}.syntax .rn{color:var(--nm)}.syntax .re{color:var(--err)}
+html[data-theme="dark"] :not(pre)>code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa} html:is([data-theme="light"],[data-theme="sepia"]) :not(pre)>code.syntax{--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
 </style></head><body id="top">
 <header><div class="head"><div class="mast"><span>Rust in Practice · 16 / 21</span></div>
 <div class="hero"><div><h1>Concurrency and Admission Control</h1><p>Distinguish a memory-safe race from a correct business result.</p></div>
 <div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>two handlers</span></div><div class="trace"><b>Observe</b><span>one unique constraint</span></div><div class="trace"><b>Result</b><span>one create</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html">← 15 Smart Pointers and Shared Ownership</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="17%20Async%20Rust%20and%20Blocking%20Work.html">17 Async Rust and Blocking Work →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#fearless-concurrency">Fearless Concurrency</a><a href="#using-threads-to-run-code-simultaneously-1">Using Threads to Run Code Simultaneously</a><a href="#transfer-data-between-threads-with-message-passing-1">Transfer Data Between Threads with Message Passing</a><a href="#shared-state-concurrency-1">Shared-State Concurrency</a><a href="#extensible-concurrency-with-send-and-sync-1">Extensible Concurrency with Send and Sync</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Distinguish a memory-safe race from a correct business result</h2><p>Safe Rust can prevent data races while allowing two logical operations to observe the same state and make incompatible decisions. A read-then-insert protocol in application memory has this weakness even if each individual read or write is protected by a lock. The store delegates uniqueness to the database and runs insert, comparison and commit on one connection inside an immediate transaction. This remains meaningful when more than one process opens the same file.</p><figure class="code"><figcaption>src/store.rs</figcaption><pre><code><span class="k">use</span><span class="w"> </span><span class="k">crate</span><span class="p">::</span><span class="n">domain</span><span class="p">::</span><span class="n">Order</span><span class="p">;</span>
-<span class="k">use</span><span class="w"> </span><span class="n">rusqlite</span><span class="p">::{</span><span class="n">Connection</span><span class="p">,</span><span class="w"> </span><span class="n">TransactionBehavior</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="p">};</span>
-<span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::{</span>
-<span class="w">    </span><span class="n">path</span><span class="p">::{</span><span class="n">Path</span><span class="p">,</span><span class="w"> </span><span class="n">PathBuf</span><span class="p">},</span>
-<span class="w">    </span><span class="n">time</span><span class="p">::</span><span class="n">Duration</span><span class="p">,</span>
-<span class="p">};</span>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html">← 15 Smart Pointers and Shared Ownership</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="17%20Async%20Rust%20and%20Blocking%20Work.html">17 Async Rust and Blocking Work →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#fearless-concurrency">Fearless Concurrency</a><a href="#using-threads-to-run-code-simultaneously-1">Using Threads to Run Code Simultaneously</a><a href="#transfer-data-between-threads-with-message-passing-1">Transfer Data Between Threads with Message Passing</a><a href="#shared-state-concurrency-1">Shared-State Concurrency</a><a href="#extensible-concurrency-with-send-and-sync-1">Extensible Concurrency with Send and Sync</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Distinguish a memory-safe race from a correct business result</h2><p>Safe Rust can prevent data races while allowing two logical operations to observe the same state and make incompatible decisions. A read-then-insert protocol in application memory has this weakness even if each individual read or write is protected by a lock. The store delegates uniqueness to the database and runs insert, comparison and commit on one connection inside an immediate transaction. This remains meaningful when more than one process opens the same file.</p><figure class="code"><figcaption>src/store.rs</figcaption><pre><code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">domain</span><span class="ro">::</span><span class="rt">Order</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">rusqlite</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rt">Connection</span><span class="ro">,</span> <span class="rt">TransactionBehavior</span><span class="ro">,</span> <span class="rn">params</span><span class="ro">}</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span>
+    <span class="rn">path</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rt">Path</span><span class="ro">,</span> <span class="rt">PathBuf</span><span class="ro">}</span><span class="ro">,</span>
+    <span class="rn">time</span><span class="ro">::</span><span class="rt">Duration</span><span class="ro">,</span>
+<span class="ro">}</span><span class="ro">;</span>
 
-<span class="cp">#[derive(Debug, PartialEq, Eq)]</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Outcome</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">Created</span><span class="p">,</span>
-<span class="w">    </span><span class="n">Replay</span><span class="p">,</span>
-<span class="w">    </span><span class="n">Conflict</span><span class="p">,</span>
-<span class="p">}</span>
+<span class="rc">#[</span><span class="rc">derive(Debug, PartialEq, Eq)</span><span class="rc">]</span>
+<span class="rk">pub</span> <span class="rk">enum</span> <span class="rt">Outcome</span> <span class="ro">{</span>
+    <span class="rt">Created</span><span class="ro">,</span>
+    <span class="rt">Replay</span><span class="ro">,</span>
+    <span class="rt">Conflict</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-<span class="cp">#[derive(Clone)]</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Store</span><span class="p">(</span><span class="n">PathBuf</span><span class="p">);</span>
+<span class="rc">#[</span><span class="rc">derive(Clone)</span><span class="rc">]</span>
+<span class="rk">pub</span> <span class="rk">struct</span> <span class="rt">Store</span><span class="ro">(</span><span class="rt">PathBuf</span><span class="ro">)</span><span class="ro">;</span>
 
-<span class="k">impl</span><span class="w"> </span><span class="n">Store</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Path</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">rusqlite</span><span class="p">::</span><span class="nb">Result</span><span class="o">&lt;</span><span class="bp">Self</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">Self</span><span class="p">(</span><span class="n">path</span><span class="p">.</span><span class="n">to_owned</span><span class="p">());</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="n">connect</span><span class="p">()</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="n">db</span><span class="p">.</span><span class="n">execute_batch</span><span class="p">(</span>
-<span class="w">            </span><span class="s">"CREATE TABLE IF NOT EXISTS orders (</span>
-<span class="s">            id TEXT PRIMARY KEY NOT NULL,</span>
-<span class="s">            quantity INTEGER NOT NULL CHECK(quantity BETWEEN 1 AND 4294967295)</span>
-<span class="s">        )"</span><span class="p">,</span>
-<span class="w">        </span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
-<span class="w">    </span><span class="p">}</span>
+<span class="rk">impl</span> <span class="rt">Store</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">open</span><span class="ro">(</span><span class="rn">path</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Path</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">rusqlite</span><span class="ro">::</span><span class="rt">Result</span><span class="ro">&lt;</span><span class="rt">Self</span><span class="ro">&gt;</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">store</span> <span class="ro">=</span> <span class="rt">Self</span><span class="ro">(</span><span class="rn">path</span><span class="ro">.</span><span class="rn">to_owned</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rk">let</span> <span class="rn">db</span> <span class="ro">=</span> <span class="rn">store</span><span class="ro">.</span><span class="rn">connect</span><span class="ro">(</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rn">db</span><span class="ro">.</span><span class="rn">execute_batch</span><span class="ro">(</span>
+            <span class="rs">"</span><span class="rs">CREATE TABLE IF NOT EXISTS orders (
+            id TEXT PRIMARY KEY NOT NULL,
+            quantity INTEGER NOT NULL CHECK(quantity BETWEEN 1 AND 4294967295)
+        )</span><span class="rs">"</span><span class="ro">,</span>
+        <span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rt">Ok</span><span class="ro">(</span><span class="rn">store</span><span class="ro">)</span>
+    <span class="ro">}</span>
 
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">rusqlite</span><span class="p">::</span><span class="nb">Result</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Connection</span><span class="p">::</span><span class="n">open</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="n">db</span><span class="p">.</span><span class="n">busy_timeout</span><span class="p">(</span><span class="n">Duration</span><span class="p">::</span><span class="n">from_millis</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
-<span class="w">    </span><span class="p">}</span>
+    <span class="rk">fn</span> <span class="rf">connect</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">rusqlite</span><span class="ro">::</span><span class="rt">Result</span><span class="ro">&lt;</span><span class="rt">Connection</span><span class="ro">&gt;</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">db</span> <span class="ro">=</span> <span class="rt">Connection</span><span class="ro">::</span><span class="rn">open</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">.</span><span class="ri">0</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rn">db</span><span class="ro">.</span><span class="rn">busy_timeout</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_millis</span><span class="ro">(</span><span class="ri">500</span><span class="ro">)</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rt">Ok</span><span class="ro">(</span><span class="rn">db</span><span class="ro">)</span>
+    <span class="ro">}</span>
 
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">submit</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Order</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">rusqlite</span><span class="p">::</span><span class="nb">Result</span><span class="o">&lt;</span><span class="n">Outcome</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">connect</span><span class="p">()</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">tx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">db</span><span class="p">.</span><span class="n">transaction_with_behavior</span><span class="p">(</span><span class="n">TransactionBehavior</span><span class="p">::</span><span class="n">Immediate</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">inserted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tx</span><span class="p">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">            </span><span class="s">"INSERT INTO orders(id, quantity) VALUES (?1, ?2)</span>
-<span class="s">             ON CONFLICT(id) DO NOTHING"</span><span class="p">,</span>
-<span class="w">            </span><span class="n">params</span><span class="o">!</span><span class="p">[</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">(),</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">()],</span>
-<span class="w">        </span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">outcome</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">inserted</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">Outcome</span><span class="p">::</span><span class="n">Created</span>
-<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">existing</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tx</span><span class="p">.</span><span class="n">query_row</span><span class="p">(</span>
-<span class="w">                </span><span class="s">"SELECT quantity FROM orders WHERE id = ?1"</span><span class="p">,</span>
-<span class="w">                </span><span class="p">[</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">()],</span>
-<span class="w">                </span><span class="o">|</span><span class="n">row</span><span class="o">|</span><span class="w"> </span><span class="n">row</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-<span class="w">            </span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="n">existing</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="n">Outcome</span><span class="p">::</span><span class="n">Replay</span>
-<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="n">Outcome</span><span class="p">::</span><span class="n">Conflict</span>
-<span class="w">            </span><span class="p">}</span>
-<span class="w">        </span><span class="p">};</span>
-<span class="w">        </span><span class="n">tx</span><span class="p">.</span><span class="n">commit</span><span class="p">()</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="n">outcome</span><span class="p">)</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="p">}</span>
+    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">submit</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">,</span> <span class="rn">order</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Order</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">rusqlite</span><span class="ro">::</span><span class="rt">Result</span><span class="ro">&lt;</span><span class="rt">Outcome</span><span class="ro">&gt;</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">db</span> <span class="ro">=</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">connect</span><span class="ro">(</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rk">let</span> <span class="rn">tx</span> <span class="ro">=</span> <span class="rn">db</span><span class="ro">.</span><span class="rn">transaction_with_behavior</span><span class="ro">(</span><span class="rt">TransactionBehavior</span><span class="ro">::</span><span class="rt">Immediate</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rk">let</span> <span class="rn">inserted</span> <span class="ro">=</span> <span class="rn">tx</span><span class="ro">.</span><span class="rn">execute</span><span class="ro">(</span>
+            <span class="rs">"</span><span class="rs">INSERT INTO orders(id, quantity) VALUES (?1, ?2)
+             ON CONFLICT(id) DO NOTHING</span><span class="rs">"</span><span class="ro">,</span>
+            <span class="rn">params</span><span class="ro">!</span><span class="ro">[</span><span class="rn">order</span><span class="ro">.</span><span class="rn">id</span><span class="ro">(</span><span class="ro">)</span><span class="ro">,</span> <span class="rn">order</span><span class="ro">.</span><span class="rn">quantity</span><span class="ro">(</span><span class="ro">)</span><span class="ro">]</span><span class="ro">,</span>
+        <span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rk">let</span> <span class="rn">outcome</span> <span class="ro">=</span> <span class="rk">if</span> <span class="rn">inserted</span> <span class="ro">=</span><span class="ro">=</span> <span class="ri">1</span> <span class="ro">{</span>
+            <span class="rt">Outcome</span><span class="ro">::</span><span class="rt">Created</span>
+        <span class="ro">}</span> <span class="rk">else</span> <span class="ro">{</span>
+            <span class="rk">let</span> <span class="rn">existing</span><span class="ro">:</span> <span class="rt">u32</span> <span class="ro">=</span> <span class="rn">tx</span><span class="ro">.</span><span class="rn">query_row</span><span class="ro">(</span>
+                <span class="rs">"</span><span class="rs">SELECT quantity FROM orders WHERE id = ?1</span><span class="rs">"</span><span class="ro">,</span>
+                <span class="ro">[</span><span class="rn">order</span><span class="ro">.</span><span class="rn">id</span><span class="ro">(</span><span class="ro">)</span><span class="ro">]</span><span class="ro">,</span>
+                <span class="ro">|</span><span class="rn">row</span><span class="ro">|</span> <span class="rn">row</span><span class="ro">.</span><span class="rn">get</span><span class="ro">(</span><span class="ri">0</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+            <span class="rk">if</span> <span class="rn">existing</span> <span class="ro">=</span><span class="ro">=</span> <span class="rn">order</span><span class="ro">.</span><span class="rn">quantity</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+                <span class="rt">Outcome</span><span class="ro">::</span><span class="rt">Replay</span>
+            <span class="ro">}</span> <span class="rk">else</span> <span class="ro">{</span>
+                <span class="rt">Outcome</span><span class="ro">::</span><span class="rt">Conflict</span>
+            <span class="ro">}</span>
+        <span class="ro">}</span><span class="ro">;</span>
+        <span class="rn">tx</span><span class="ro">.</span><span class="rn">commit</span><span class="ro">(</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rt">Ok</span><span class="ro">(</span><span class="rn">outcome</span><span class="ro">)</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 </code></pre></figure><p>Trace two simultaneous submissions. The first writer takes the write transaction, inserts and commits. A second writer that acquires the lock in time sees a conflict on the unique key, reads the existing quantity and returns Replay. If it exhausts the busy timeout it returns a transient error instead. The guarantee is one accepted row, not that every request succeeds on the first attempt. The application semaphore limits work within one instance; it cannot replace the database constraint.</p><h3>Construct a discriminating load experiment</h3><p>Run a burst against the same id, then another against different ids. With distinct ids, conflicts on the application key disappear, yet SQLite still coordinates writers. If latency remains high, the bottleneck may be database write capacity rather than a hot business key. Change one variable at a time and capture successful writes, replays, conflicts and busy responses separately. Counting requests per second without classifying outcomes can make a service look faster simply because it rejects more work. The lab deliberately opens a connection for each database operation to clarify the scope; production tuning should measure that overhead before adding a pool.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://www.sqlite.org/lang_transaction.html">www.sqlite.org/lang_transaction.html</a> · <a href="https://www.sqlite.org/lang_upsert.html">www.sqlite.org/lang_upsert.html</a></p></section><div class="book"><h2 id="fearless-concurrency"><a class="header" href="#fearless-concurrency">Fearless Concurrency</a></h2>
 <p>Handling concurrent programming safely and efficiently is another of Rust’s
 major goals. <em>Concurrent programming</em>, in which different parts of a program
@@ -275,7 +282,7 @@ for your situation and requirements.</p>
 <li><em>Message-passing</em> concurrency, where channels send messages between threads</li>
 <li><em>Shared-state</em> concurrency, where multiple threads have access to some piece
 of data</li>
-<li>The <code>Sync</code> and <code>Send</code> traits, which extend Rust’s concurrency guarantees to
+<li>The <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> traits, which extend Rust’s concurrency guarantees to
 user-defined types as well as types provided by the standard library</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -311,29 +318,29 @@ implementation, whereby a program uses one operating system thread per one
 language thread. There are crates that implement other models of threading that
 make different trade-offs to the 1:1 model. (Rust’s async system, which we will
 see in the next chapter, provides another approach to concurrency as well.)</p>
-<h4 id="creating-a-new-thread-with-spawn"><a class="header" href="#creating-a-new-thread-with-spawn">Creating a New Thread with <code>spawn</code></a></h4>
-<p>To create a new thread, we call the <code>thread::spawn</code> function and pass it a
+<h4 id="creating-a-new-thread-with-spawn"><a class="header" href="#creating-a-new-thread-with-spawn">Creating a New Thread with <code class="syntax" data-syntax="rust"><span class="rn">spawn</span></code></a></h4>
+<p>To create a new thread, we call the <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> function and pass it a
 closure (we talked about closures in Chapter 13) containing the code we want to
 run in the new thread. The example in Listing 16-1 prints some text from a main
 thread and other text from a new thread.</p>
 <figure class="listing" id="listing-16-1">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::thread;
-use std::time::Duration;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">time</span><span class="ro">::</span><span class="rt">Duration</span><span class="ro">;</span>
 
-fn main() {
-    thread::spawn(|| {
-        for i in 1..10 {
-            println!("hi number {i} from the spawned thread!");
-            thread::sleep(Duration::from_millis(1));
-        }
-    });
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">for</span> <span class="rn">i</span> <span class="rk">in</span> <span class="ri">1</span><span class="ro">..</span><span class="ri">10</span> <span class="ro">{</span>
+            <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi number {i} from the spawned thread!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_millis</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    for i in 1..5 {
-        println!("hi number {i} from the main thread!");
-        thread::sleep(Duration::from_millis(1));
-    }
-}</code></pre>
+    <span class="rk">for</span> <span class="rn">i</span> <span class="rk">in</span> <span class="ri">1</span><span class="ro">..</span><span class="ri">5</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi number {i} from the main thread!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_millis</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-16-1">Listing 16-1</a>: Creating a new thread to print one thing while the main thread prints something else</figcaption>
 </figure>
 <p>Note that when the main thread of a Rust program completes, all spawned threads
@@ -343,22 +350,22 @@ following:</p>
 <!-- Not extracting output because changes to this output aren't significant;
 the changes are likely to be due to the threads running differently rather than
 changes in the compiler -->
-<pre><code class="language-text">hi number 1 from the main thread!
-hi number 1 from the spawned thread!
-hi number 2 from the main thread!
-hi number 2 from the spawned thread!
-hi number 3 from the main thread!
-hi number 3 from the spawned thread!
-hi number 4 from the main thread!
-hi number 4 from the spawned thread!
-hi number 5 from the spawned thread!
+<pre><code class="language-text syntax" data-syntax="output">hi number <span class="ri">1</span> from the main thread!
+hi number <span class="ri">1</span> from the spawned thread!
+hi number <span class="ri">2</span> from the main thread!
+hi number <span class="ri">2</span> from the spawned thread!
+hi number <span class="ri">3</span> from the main thread!
+hi number <span class="ri">3</span> from the spawned thread!
+hi number <span class="ri">4</span> from the main thread!
+hi number <span class="ri">4</span> from the spawned thread!
+hi number <span class="ri">5</span> from the spawned thread!
 </code></pre>
-<p>The calls to <code>thread::sleep</code> force a thread to stop its execution for a short
+<p>The calls to <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span></code> force a thread to stop its execution for a short
 duration, allowing a different thread to run. The threads will probably take
 turns, but that isn’t guaranteed: It depends on how your operating system
 schedules the threads. In this run, the main thread printed first, even though
 the print statement from the spawned thread appears first in the code. And even
-though we told the spawned thread to print until <code>i</code> is <code>9</code>, it only got to <code>5</code>
+though we told the spawned thread to print until <code class="syntax" data-syntax="rust"><span class="rn">i</span></code> is <code class="syntax" data-syntax="rust"><span class="ri">9</span></code>, it only got to <code class="syntax" data-syntax="rust"><span class="ri">5</span></code>
 before the main thread shut down.</p>
 <p>If you run this code and only see output from the main thread, or don’t see any
 overlap, try increasing the numbers in the ranges to create more opportunities
@@ -371,110 +378,110 @@ the time due to the main thread ending, but because there is no guarantee on
 the order in which threads run, we also can’t guarantee that the spawned thread
 will get to run at all!</p>
 <p>We can fix the problem of the spawned thread not running or of it ending
-prematurely by saving the return value of <code>thread::spawn</code> in a variable. The
-return type of <code>thread::spawn</code> is <code>JoinHandle&lt;T&gt;</code>. A <code>JoinHandle&lt;T&gt;</code> is an
-owned value that, when we call the <code>join</code> method on it, will wait for its
-thread to finish. Listing 16-2 shows how to use the <code>JoinHandle&lt;T&gt;</code> of the
-thread we created in Listing 16-1 and how to call <code>join</code> to make sure the
-spawned thread finishes before <code>main</code> exits.</p>
+prematurely by saving the return value of <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> in a variable. The
+return type of <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> is <code class="syntax" data-syntax="rust"><span class="rt">JoinHandle</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>. A <code class="syntax" data-syntax="rust"><span class="rt">JoinHandle</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> is an
+owned value that, when we call the <code class="syntax" data-syntax="rust"><span class="rn">join</span></code> method on it, will wait for its
+thread to finish. Listing 16-2 shows how to use the <code class="syntax" data-syntax="rust"><span class="rt">JoinHandle</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> of the
+thread we created in Listing 16-1 and how to call <code class="syntax" data-syntax="rust"><span class="rn">join</span></code> to make sure the
+spawned thread finishes before <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> exits.</p>
 <figure class="listing" id="listing-16-2">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::thread;
-use std::time::Duration;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">time</span><span class="ro">::</span><span class="rt">Duration</span><span class="ro">;</span>
 
-fn main() {
-    let handle = thread::spawn(|| {
-        for i in 1..10 {
-            println!("hi number {i} from the spawned thread!");
-            thread::sleep(Duration::from_millis(1));
-        }
-    });
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">for</span> <span class="rn">i</span> <span class="rk">in</span> <span class="ri">1</span><span class="ro">..</span><span class="ri">10</span> <span class="ro">{</span>
+            <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi number {i} from the spawned thread!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_millis</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    for i in 1..5 {
-        println!("hi number {i} from the main thread!");
-        thread::sleep(Duration::from_millis(1));
-    }
+    <span class="rk">for</span> <span class="rn">i</span> <span class="rk">in</span> <span class="ri">1</span><span class="ro">..</span><span class="ri">5</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi number {i} from the main thread!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_millis</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    handle.join().unwrap();
-}</code></pre>
-<figcaption><a href="#listing-16-2">Listing 16-2</a>: Saving a <code>JoinHandle&lt;T&gt;</code> from <code>thread::spawn</code> to guarantee the thread is run to completion</figcaption>
+    <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-2">Listing 16-2</a>: Saving a <code class="syntax" data-syntax="rust"><span class="rt">JoinHandle</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> from <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> to guarantee the thread is run to completion</figcaption>
 </figure>
-<p>Calling <code>join</code> on the handle blocks the thread currently running until the
+<p>Calling <code class="syntax" data-syntax="rust"><span class="rn">join</span></code> on the handle blocks the thread currently running until the
 thread represented by the handle terminates. <em>Blocking</em> a thread means that
 thread is prevented from performing work or exiting. Because we’ve put the call
-to <code>join</code> after the main thread’s <code>for</code> loop, running Listing 16-2 should
+to <code class="syntax" data-syntax="rust"><span class="rn">join</span></code> after the main thread’s <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop, running Listing 16-2 should
 produce output similar to this:</p>
 <!-- Not extracting output because changes to this output aren't significant;
 the changes are likely to be due to the threads running differently rather than
 changes in the compiler -->
-<pre><code class="language-text">hi number 1 from the main thread!
-hi number 2 from the main thread!
-hi number 1 from the spawned thread!
-hi number 3 from the main thread!
-hi number 2 from the spawned thread!
-hi number 4 from the main thread!
-hi number 3 from the spawned thread!
-hi number 4 from the spawned thread!
-hi number 5 from the spawned thread!
-hi number 6 from the spawned thread!
-hi number 7 from the spawned thread!
-hi number 8 from the spawned thread!
-hi number 9 from the spawned thread!
+<pre><code class="language-text syntax" data-syntax="output">hi number <span class="ri">1</span> from the main thread!
+hi number <span class="ri">2</span> from the main thread!
+hi number <span class="ri">1</span> from the spawned thread!
+hi number <span class="ri">3</span> from the main thread!
+hi number <span class="ri">2</span> from the spawned thread!
+hi number <span class="ri">4</span> from the main thread!
+hi number <span class="ri">3</span> from the spawned thread!
+hi number <span class="ri">4</span> from the spawned thread!
+hi number <span class="ri">5</span> from the spawned thread!
+hi number <span class="ri">6</span> from the spawned thread!
+hi number <span class="ri">7</span> from the spawned thread!
+hi number <span class="ri">8</span> from the spawned thread!
+hi number <span class="ri">9</span> from the spawned thread!
 </code></pre>
 <p>The two threads continue alternating, but the main thread waits because of the
-call to <code>handle.join()</code> and does not end until the spawned thread is finished.</p>
-<p>But let’s see what happens when we instead move <code>handle.join()</code> before the
-<code>for</code> loop in <code>main</code>, like this:</p>
+call to <code class="syntax" data-syntax="rust"><span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span></code> and does not end until the spawned thread is finished.</p>
+<p>But let’s see what happens when we instead move <code class="syntax" data-syntax="rust"><span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span></code> before the
+<code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop in <code class="syntax" data-syntax="rust"><span class="rn">main</span></code>, like this:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::thread;
-use std::time::Duration;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">time</span><span class="ro">::</span><span class="rt">Duration</span><span class="ro">;</span>
 
-fn main() {
-    let handle = thread::spawn(|| {
-        for i in 1..10 {
-            println!("hi number {i} from the spawned thread!");
-            thread::sleep(Duration::from_millis(1));
-        }
-    });
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">for</span> <span class="rn">i</span> <span class="rk">in</span> <span class="ri">1</span><span class="ro">..</span><span class="ri">10</span> <span class="ro">{</span>
+            <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi number {i} from the spawned thread!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_millis</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    handle.join().unwrap();
+    <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    for i in 1..5 {
-        println!("hi number {i} from the main thread!");
-        thread::sleep(Duration::from_millis(1));
-    }
-}</code></pre>
+    <span class="rk">for</span> <span class="rn">i</span> <span class="rk">in</span> <span class="ri">1</span><span class="ro">..</span><span class="ri">5</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi number {i} from the main thread!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_millis</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
 </figure>
 <p>The main thread will wait for the spawned thread to finish and then run its
-<code>for</code> loop, so the output won’t be interleaved anymore, as shown here:</p>
+<code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop, so the output won’t be interleaved anymore, as shown here:</p>
 <!-- Not extracting output because changes to this output aren't significant;
 the changes are likely to be due to the threads running differently rather than
 changes in the compiler -->
-<pre><code class="language-text">hi number 1 from the spawned thread!
-hi number 2 from the spawned thread!
-hi number 3 from the spawned thread!
-hi number 4 from the spawned thread!
-hi number 5 from the spawned thread!
-hi number 6 from the spawned thread!
-hi number 7 from the spawned thread!
-hi number 8 from the spawned thread!
-hi number 9 from the spawned thread!
-hi number 1 from the main thread!
-hi number 2 from the main thread!
-hi number 3 from the main thread!
-hi number 4 from the main thread!
+<pre><code class="language-text syntax" data-syntax="output">hi number <span class="ri">1</span> from the spawned thread!
+hi number <span class="ri">2</span> from the spawned thread!
+hi number <span class="ri">3</span> from the spawned thread!
+hi number <span class="ri">4</span> from the spawned thread!
+hi number <span class="ri">5</span> from the spawned thread!
+hi number <span class="ri">6</span> from the spawned thread!
+hi number <span class="ri">7</span> from the spawned thread!
+hi number <span class="ri">8</span> from the spawned thread!
+hi number <span class="ri">9</span> from the spawned thread!
+hi number <span class="ri">1</span> from the main thread!
+hi number <span class="ri">2</span> from the main thread!
+hi number <span class="ri">3</span> from the main thread!
+hi number <span class="ri">4</span> from the main thread!
 </code></pre>
-<p>Small details, such as where <code>join</code> is called, can affect whether or not your
+<p>Small details, such as where <code class="syntax" data-syntax="rust"><span class="rn">join</span></code> is called, can affect whether or not your
 threads run at the same time.</p>
-<h4 id="using-move-closures-with-threads"><a class="header" href="#using-move-closures-with-threads">Using <code>move</code> Closures with Threads</a></h4>
-<p>We’ll often use the <code>move</code> keyword with closures passed to <code>thread::spawn</code>
+<h4 id="using-move-closures-with-threads"><a class="header" href="#using-move-closures-with-threads">Using <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> Closures with Threads</a></h4>
+<p>We’ll often use the <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> keyword with closures passed to <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code>
 because the closure will then take ownership of the values it uses from the
 environment, thus transferring ownership of those values from one thread to
 another. In <a href="13%20Closures%20and%20Iterator%20Pipelines.html#capturing-references-or-moving-ownership">“Capturing References or Moving Ownership”</a><!-- ignore
---> in Chapter 13, we discussed <code>move</code> in the context of closures. Now we’ll
-concentrate more on the interaction between <code>move</code> and <code>thread::spawn</code>.</p>
-<p>Notice in Listing 16-1 that the closure we pass to <code>thread::spawn</code> takes no
+--> in Chapter 13, we discussed <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> in the context of closures. Now we’ll
+concentrate more on the interaction between <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code>.</p>
+<p>Notice in Listing 16-1 that the closure we pass to <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> takes no
 arguments: We’re not using any data from the main thread in the spawned
 thread’s code. To use data from the main thread in the spawned thread, the
 spawned thread’s closure must capture the values it needs. Listing 16-3 shows
@@ -482,146 +489,146 @@ an attempt to create a vector in the main thread and use it in the spawned
 thread. However, this won’t work yet, as you’ll see in a moment.</p>
 <figure class="listing" id="listing-16-3">
 <span class="file-name">Filename: src/main.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::thread;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let v = vec![1, 2, 3];
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">v</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">]</span><span class="ro">;</span>
 
-    let handle = thread::spawn(|| {
-        println!("Here's a vector: {v:?}");
-    });
+    <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Here's a vector: {v:?}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    handle.join().unwrap();
-}</code></pre>
+    <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-16-3">Listing 16-3</a>: Attempting to use a vector created by the main thread in another thread</figcaption>
 </figure>
-<p>The closure uses <code>v</code>, so it will capture <code>v</code> and make it part of the closure’s
-environment. Because <code>thread::spawn</code> runs this closure in a new thread, we
-should be able to access <code>v</code> inside that new thread. But when we compile this
+<p>The closure uses <code class="syntax" data-syntax="rust"><span class="rn">v</span></code>, so it will capture <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> and make it part of the closure’s
+environment. Because <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> runs this closure in a new thread, we
+should be able to access <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> inside that new thread. But when we compile this
 example, we get the following error:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling threads v0.1.0 (file:///projects/threads)
-error[E0373]: closure may outlive the current function, but it borrows `v`, which is owned by the current function
- --&gt; src/main.rs:6:32
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> threads v0.<span class="ri">1.0</span> (file:///projects/threads)
+<span class="re">error[E0373]</span>: closure may outlive the current function, but it borrows <span class="rs">`v`</span>, which is owned by the current function
+ --&gt; src/main.rs:<span class="ri">6</span>:<span class="ri">32</span>
   |
-6 |     let handle = thread::spawn(|| {
-  |                                ^^ may outlive borrowed value `v`
-7 |         println!("Here's a vector: {v:?}");
-  |                                     - `v` is borrowed here
+<span class="ri">6</span> |     let handle = thread::spawn(|| {
+  |                                ^^ may outlive borrowed value <span class="rs">`v`</span>
+<span class="ri">7</span> |         println!("Here's a vector: {v:?}");
+  |                                     - <span class="rs">`v`</span> is borrowed here
   |
-note: function requires argument type to outlive `'static`
- --&gt; src/main.rs:6:18
+<span class="rk">note</span>: function requires argument type to outlive <span class="rs">`'static`</span>
+ --&gt; src/main.rs:<span class="ri">6</span>:<span class="ri">18</span>
   |
-6 |       let handle = thread::spawn(|| {
+<span class="ri">6</span> |       let handle = thread::spawn(|| {
   |  __________________^
-7 | |         println!("Here's a vector: {v:?}");
-8 | |     });
+<span class="ri">7</span> | |         println!("Here's a vector: {v:?}");
+<span class="ri">8</span> | |     });
   | |______^
-help: to force the closure to take ownership of `v` (and any other referenced variables), use the `move` keyword
+<span class="rk">help</span>: to force the closure to take ownership of <span class="rs">`v`</span> (and any other referenced variables), use the <span class="rs">`move`</span> keyword
   |
-6 |     let handle = thread::spawn(move || {
+<span class="ri">6</span> |     let handle = thread::spawn(move || {
   |                                ++++
 
-For more information about this error, try `rustc --explain E0373`.
-error: could not compile `threads` (bin "threads") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0373`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`threads`</span> (bin "threads") due to <span class="ri">1</span> previous error
 </code></pre>
-<p>Rust <em>infers</em> how to capture <code>v</code>, and because <code>println!</code> only needs a reference
-to <code>v</code>, the closure tries to borrow <code>v</code>. However, there’s a problem: Rust can’t
+<p>Rust <em>infers</em> how to capture <code class="syntax" data-syntax="rust"><span class="rn">v</span></code>, and because <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> only needs a reference
+to <code class="syntax" data-syntax="rust"><span class="rn">v</span></code>, the closure tries to borrow <code class="syntax" data-syntax="rust"><span class="rn">v</span></code>. However, there’s a problem: Rust can’t
 tell how long the spawned thread will run, so it doesn’t know whether the
-reference to <code>v</code> will always be valid.</p>
-<p>Listing 16-4 provides a scenario that’s more likely to have a reference to <code>v</code>
+reference to <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> will always be valid.</p>
+<p>Listing 16-4 provides a scenario that’s more likely to have a reference to <code class="syntax" data-syntax="rust"><span class="rn">v</span></code>
 that won’t be valid.</p>
 <figure class="listing" id="listing-16-4">
 <span class="file-name">Filename: src/main.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::thread;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let v = vec![1, 2, 3];
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">v</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">]</span><span class="ro">;</span>
 
-    let handle = thread::spawn(|| {
-        println!("Here's a vector: {v:?}");
-    });
+    <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Here's a vector: {v:?}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    drop(v); // oh no!
-
-    handle.join().unwrap();
-}</code></pre>
-<figcaption><a href="#listing-16-4">Listing 16-4</a>: A thread with a closure that attempts to capture a reference to <code>v</code> from a main thread that drops <code>v</code></figcaption>
+    <span class="rt">drop</span><span class="ro">(</span><span class="rn">v</span><span class="ro">)</span><span class="ro">;</span> <span class="rc">// oh no!
+</span>
+    <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-4">Listing 16-4</a>: A thread with a closure that attempts to capture a reference to <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> from a main thread that drops <code class="syntax" data-syntax="rust"><span class="rn">v</span></code></figcaption>
 </figure>
 <p>If Rust allowed us to run this code, there’s a possibility that the spawned
 thread would be immediately put in the background without running at all. The
-spawned thread has a reference to <code>v</code> inside, but the main thread immediately
-drops <code>v</code>, using the <code>drop</code> function we discussed in Chapter 15. Then, when the
-spawned thread starts to execute, <code>v</code> is no longer valid, so a reference to it
+spawned thread has a reference to <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> inside, but the main thread immediately
+drops <code class="syntax" data-syntax="rust"><span class="rn">v</span></code>, using the <code class="syntax" data-syntax="rust"><span class="rt">drop</span></code> function we discussed in Chapter 15. Then, when the
+spawned thread starts to execute, <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> is no longer valid, so a reference to it
 is also invalid. Oh no!</p>
 <p>To fix the compiler error in Listing 16-3, we can use the error message’s
 advice:</p>
 <!-- manual-regeneration
 after automatic regeneration, look at listings/ch16-fearless-concurrency/listing-16-03/output.txt and copy the relevant part
 -->
-<pre><code class="language-text">help: to force the closure to take ownership of `v` (and any other referenced variables), use the `move` keyword
+<pre><code class="language-text syntax" data-syntax="output"><span class="rk">help</span>: to force the closure to take ownership of <span class="rs">`v`</span> (and any other referenced variables), use the <span class="rs">`move`</span> keyword
   |
-6 |     let handle = thread::spawn(move || {
+<span class="ri">6</span> |     let handle = thread::spawn(move || {
   |                                ++++
 </code></pre>
-<p>By adding the <code>move</code> keyword before the closure, we force the closure to take
+<p>By adding the <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> keyword before the closure, we force the closure to take
 ownership of the values it’s using rather than allowing Rust to infer that it
 should borrow the values. The modification to Listing 16-3 shown in Listing
 16-5 will compile and run as we intend.</p>
 <figure class="listing" id="listing-16-5">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::thread;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let v = vec![1, 2, 3];
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">v</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">]</span><span class="ro">;</span>
 
-    let handle = thread::spawn(move || {
-        println!("Here's a vector: {v:?}");
-    });
+    <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Here's a vector: {v:?}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    handle.join().unwrap();
-}</code></pre>
-<figcaption><a href="#listing-16-5">Listing 16-5</a>: Using the <code>move</code> keyword to force a closure to take ownership of the values it uses</figcaption>
+    <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-5">Listing 16-5</a>: Using the <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> keyword to force a closure to take ownership of the values it uses</figcaption>
 </figure>
 <p>We might be tempted to try the same thing to fix the code in Listing 16-4 where
-the main thread called <code>drop</code> by using a <code>move</code> closure. However, this fix will
+the main thread called <code class="syntax" data-syntax="rust"><span class="rt">drop</span></code> by using a <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> closure. However, this fix will
 not work because what Listing 16-4 is trying to do is disallowed for a
-different reason. If we added <code>move</code> to the closure, we would move <code>v</code> into the
-closure’s environment, and we could no longer call <code>drop</code> on it in the main
+different reason. If we added <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> to the closure, we would move <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> into the
+closure’s environment, and we could no longer call <code class="syntax" data-syntax="rust"><span class="rt">drop</span></code> on it in the main
 thread. We would get this compiler error instead:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling threads v0.1.0 (file:///projects/threads)
-error[E0382]: use of moved value: `v`
-  --&gt; src/main.rs:10:10
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> threads v0.<span class="ri">1.0</span> (file:///projects/threads)
+<span class="re">error[E0382]</span>: use of moved value: <span class="rs">`v`</span>
+  --&gt; src/main.rs:<span class="ri">10</span>:<span class="ri">10</span>
    |
- 4 |     let v = vec![1, 2, 3];
-   |         - move occurs because `v` has type `Vec&lt;i32&gt;`, which does not implement the `Copy` trait
- 5 |
- 6 |     let handle = thread::spawn(move || {
+ <span class="ri">4</span> |     let v = vec![<span class="ri">1</span>, <span class="ri">2</span>, <span class="ri">3</span>];
+   |         - move occurs because <span class="rs">`v`</span> has type <span class="rs">`Vec&lt;i32&gt;`</span>, which does not implement the <span class="rs">`Copy`</span> trait
+ <span class="ri">5</span> |
+ <span class="ri">6</span> |     let handle = thread::spawn(move || {
    |                                ------- value moved into closure here
- 7 |         println!("Here's a vector: {v:?}");
+ <span class="ri">7</span> |         println!("Here's a vector: {v:?}");
    |                                     - variable moved due to use in closure
 ...
-10 |     drop(v); // oh no!
+<span class="ri">10</span> |     drop(v); // oh no!
    |          ^ value used here after move
    |
-help: consider cloning the value before moving it into the closure
+<span class="rk">help</span>: consider cloning the value before moving it into the closure
    |
- 6 ~     let value = v.clone();
- 7 ~     let handle = thread::spawn(move || {
- 8 ~         println!("Here's a vector: {value:?}");
+ <span class="ri">6</span> ~     let value = v.clone();
+ <span class="ri">7</span> ~     let handle = thread::spawn(move || {
+ <span class="ri">8</span> ~         println!("Here's a vector: {value:?}");
    |
 
-For more information about this error, try `rustc --explain E0382`.
-error: could not compile `threads` (bin "threads") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0382`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`threads`</span> (bin "threads") due to <span class="ri">1</span> previous error
 </code></pre>
 <p>Rust’s ownership rules have saved us again! We got an error from the code in
-Listing 16-3 because Rust was being conservative and only borrowing <code>v</code> for the
+Listing 16-3 because Rust was being conservative and only borrowing <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> for the
 thread, which meant the main thread could theoretically invalidate the spawned
-thread’s reference. By telling Rust to move ownership of <code>v</code> to the spawned
-thread, we’re guaranteeing to Rust that the main thread won’t use <code>v</code> anymore.
+thread’s reference. By telling Rust to move ownership of <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> to the spawned
+thread, we’re guaranteeing to Rust that the main thread won’t use <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> anymore.
 If we change Listing 16-4 in the same way, we’re then violating the ownership
-rules when we try to use <code>v</code> in the main thread. The <code>move</code> keyword overrides
+rules when we try to use <code class="syntax" data-syntax="rust"><span class="rn">v</span></code> in the main thread. The <code class="syntax" data-syntax="rust"><span class="rk">move</span></code> keyword overrides
 Rust’s conservative default of borrowing; it doesn’t let us violate the
 ownership rules.</p>
 <p>Now that we’ve covered what threads are and the methods supplied by the thread
@@ -659,14 +666,14 @@ Note that this won’t compile yet because Rust can’t tell what type of values
 want to send over the channel.</p>
 <figure class="listing" id="listing-16-6">
 <span class="file-name">Filename: src/main.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::sync::mpsc;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">mpsc</span><span class="ro">;</span>
 
-fn main() {
-    let (tx, rx) = mpsc::channel();
-}</code></pre>
-<figcaption><a href="#listing-16-6">Listing 16-6</a>: Creating a channel and assigning the two halves to <code>tx</code> and <code>rx</code></figcaption>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="ro">(</span><span class="rn">tx</span><span class="ro">,</span> <span class="rn">rx</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-6">Listing 16-6</a>: Creating a channel and assigning the two halves to <code class="syntax" data-syntax="rust"><span class="rn">tx</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">rx</span></code></figcaption>
 </figure>
-<p>We create a new channel using the <code>mpsc::channel</code> function; <code>mpsc</code> stands for
+<p>We create a new channel using the <code class="syntax" data-syntax="rust"><span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span></code> function; <code class="syntax" data-syntax="rust"><span class="rn">mpsc</span></code> stands for
 <em>multiple producer, single consumer</em>. In short, the way Rust’s standard library
 implements channels means a channel can have multiple <em>sending</em> ends that
 produce values but only one <em>receiving</em> end that consumes those values. Imagine
@@ -674,42 +681,42 @@ multiple streams flowing together into one big river: Everything sent down any
 of the streams will end up in one river at the end. We’ll start with a single
 producer for now, but we’ll add multiple producers when we get this example
 working.</p>
-<p>The <code>mpsc::channel</code> function returns a tuple, the first element of which is the
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span></code> function returns a tuple, the first element of which is the
 sending end—the transmitter—and the second element of which is the receiving
-end—the receiver. The abbreviations <code>tx</code> and <code>rx</code> are traditionally used in
+end—the receiver. The abbreviations <code class="syntax" data-syntax="rust"><span class="rn">tx</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">rx</span></code> are traditionally used in
 many fields for <em>transmitter</em> and <em>receiver</em>, respectively, so we name our
-variables as such to indicate each end. We’re using a <code>let</code> statement with a
+variables as such to indicate each end. We’re using a <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statement with a
 pattern that destructures the tuples; we’ll discuss the use of patterns in
-<code>let</code> statements and destructuring in Chapter 19. For now, know that using a
-<code>let</code> statement in this way is a convenient approach to extract the pieces of
-the tuple returned by <code>mpsc::channel</code>.</p>
+<code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statements and destructuring in Chapter 19. For now, know that using a
+<code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statement in this way is a convenient approach to extract the pieces of
+the tuple returned by <code class="syntax" data-syntax="rust"><span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span></code>.</p>
 <p>Let’s move the transmitting end into a spawned thread and have it send one
 string so that the spawned thread is communicating with the main thread, as
 shown in Listing 16-7. This is like putting a rubber duck in the river upstream
 or sending a chat message from one thread to another.</p>
 <figure class="listing" id="listing-16-7">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::sync::mpsc;
-use std::thread;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">mpsc</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let (tx, rx) = mpsc::channel();
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="ro">(</span><span class="rn">tx</span><span class="ro">,</span> <span class="rn">rx</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    thread::spawn(move || {
-        let val = String::from("hi");
-        tx.send(val).unwrap();
-    });
-}</code></pre>
-<figcaption><a href="#listing-16-7">Listing 16-7</a>: Moving <code>tx</code> to a spawned thread and sending <code>"hi"</code></figcaption>
+    <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">val</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">tx</span><span class="ro">.</span><span class="rn">send</span><span class="ro">(</span><span class="rn">val</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-7">Listing 16-7</a>: Moving <code class="syntax" data-syntax="rust"><span class="rn">tx</span></code> to a spawned thread and sending <code class="syntax" data-syntax="rust"><span class="rs">"</span><span class="rs">hi</span><span class="rs">"</span></code></figcaption>
 </figure>
-<p>Again, we’re using <code>thread::spawn</code> to create a new thread and then using <code>move</code>
-to move <code>tx</code> into the closure so that the spawned thread owns <code>tx</code>. The spawned
+<p>Again, we’re using <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> to create a new thread and then using <code class="syntax" data-syntax="rust"><span class="rk">move</span></code>
+to move <code class="syntax" data-syntax="rust"><span class="rn">tx</span></code> into the closure so that the spawned thread owns <code class="syntax" data-syntax="rust"><span class="rn">tx</span></code>. The spawned
 thread needs to own the transmitter to be able to send messages through the
 channel.</p>
-<p>The transmitter has a <code>send</code> method that takes the value we want to send. The
-<code>send</code> method returns a <code>Result&lt;T, E&gt;</code> type, so if the receiver has already
+<p>The transmitter has a <code class="syntax" data-syntax="rust"><span class="rn">send</span></code> method that takes the value we want to send. The
+<code class="syntax" data-syntax="rust"><span class="rn">send</span></code> method returns a <code class="syntax" data-syntax="rust"><span class="rt">Result</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">,</span> <span class="rt">E</span><span class="ro">&gt;</span></code> type, so if the receiver has already
 been dropped and there’s nowhere to send a value, the send operation will
-return an error. In this example, we’re calling <code>unwrap</code> to panic in case of an
+return an error. In this example, we’re calling <code class="syntax" data-syntax="rust"><span class="rn">unwrap</span></code> to panic in case of an
 error. But in a real application, we would handle it properly: Return to
 Chapter 9 to review strategies for proper error handling.</p>
 <p>In Listing 16-8, we’ll get the value from the receiver in the main thread. This
@@ -717,35 +724,35 @@ is like retrieving the rubber duck from the water at the end of the river or
 receiving a chat message.</p>
 <figure class="listing" id="listing-16-8">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::sync::mpsc;
-use std::thread;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">mpsc</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let (tx, rx) = mpsc::channel();
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="ro">(</span><span class="rn">tx</span><span class="ro">,</span> <span class="rn">rx</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    thread::spawn(move || {
-        let val = String::from("hi");
-        tx.send(val).unwrap();
-    });
+    <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">val</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">tx</span><span class="ro">.</span><span class="rn">send</span><span class="ro">(</span><span class="rn">val</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    let received = rx.recv().unwrap();
-    println!("Got: {received}");
-}</code></pre>
-<figcaption><a href="#listing-16-8">Listing 16-8</a>: Receiving the value <code>"hi"</code> in the main thread and printing it</figcaption>
+    <span class="rk">let</span> <span class="rn">received</span> <span class="ro">=</span> <span class="rn">rx</span><span class="ro">.</span><span class="rn">recv</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Got: {received}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-8">Listing 16-8</a>: Receiving the value <code class="syntax" data-syntax="rust"><span class="rs">"</span><span class="rs">hi</span><span class="rs">"</span></code> in the main thread and printing it</figcaption>
 </figure>
-<p>The receiver has two useful methods: <code>recv</code> and <code>try_recv</code>. We’re using <code>recv</code>,
+<p>The receiver has two useful methods: <code class="syntax" data-syntax="rust"><span class="rn">recv</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">try_recv</span></code>. We’re using <code class="syntax" data-syntax="rust"><span class="rn">recv</span></code>,
 short for <em>receive</em>, which will block the main thread’s execution and wait
-until a value is sent down the channel. Once a value is sent, <code>recv</code> will
-return it in a <code>Result&lt;T, E&gt;</code>. When the transmitter closes, <code>recv</code> will return
+until a value is sent down the channel. Once a value is sent, <code class="syntax" data-syntax="rust"><span class="rn">recv</span></code> will
+return it in a <code class="syntax" data-syntax="rust"><span class="rt">Result</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">,</span> <span class="rt">E</span><span class="ro">&gt;</span></code>. When the transmitter closes, <code class="syntax" data-syntax="rust"><span class="rn">recv</span></code> will return
 an error to signal that no more values will be coming.</p>
-<p>The <code>try_recv</code> method doesn’t block, but will instead return a <code>Result&lt;T, E&gt;</code>
-immediately: an <code>Ok</code> value holding a message if one is available and an <code>Err</code>
-value if there aren’t any messages this time. Using <code>try_recv</code> is useful if
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">try_recv</span></code> method doesn’t block, but will instead return a <code class="syntax" data-syntax="rust"><span class="rt">Result</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">,</span> <span class="rt">E</span><span class="ro">&gt;</span></code>
+immediately: an <code class="syntax" data-syntax="rust"><span class="rt">Ok</span></code> value holding a message if one is available and an <code class="syntax" data-syntax="rust"><span class="rt">Err</span></code>
+value if there aren’t any messages this time. Using <code class="syntax" data-syntax="rust"><span class="rn">try_recv</span></code> is useful if
 this thread has other work to do while waiting for messages: We could write a
-loop that calls <code>try_recv</code> every so often, handles a message if one is
+loop that calls <code class="syntax" data-syntax="rust"><span class="rn">try_recv</span></code> every so often, handles a message if one is
 available, and otherwise does other work for a little while until checking
 again.</p>
-<p>We’ve used <code>recv</code> in this example for simplicity; we don’t have any other work
+<p>We’ve used <code class="syntax" data-syntax="rust"><span class="rn">recv</span></code> in this example for simplicity; we don’t have any other work
 for the main thread to do other than wait for messages, so blocking the main
 thread is appropriate.</p>
 <p>When we run the code in Listing 16-8, we’ll see the value printed from the main
@@ -753,7 +760,7 @@ thread:</p>
 <!-- Not extracting output because changes to this output aren't significant;
 the changes are likely to be due to the threads running differently rather than
 changes in the compiler -->
-<pre><code class="language-text">Got: hi
+<pre><code class="language-text syntax" data-syntax="output">Got: hi
 </code></pre>
 <p>Perfect!</p>
 <!-- Old headings. Do not remove or links may break. -->
@@ -763,50 +770,50 @@ changes in the compiler -->
 write safe, concurrent code. Preventing errors in concurrent programming is the
 advantage of thinking about ownership throughout your Rust programs. Let’s do
 an experiment to show how channels and ownership work together to prevent
-problems: We’ll try to use a <code>val</code> value in the spawned thread <em>after</em> we’ve
+problems: We’ll try to use a <code class="syntax" data-syntax="rust"><span class="rn">val</span></code> value in the spawned thread <em>after</em> we’ve
 sent it down the channel. Try compiling the code in Listing 16-9 to see why
 this code isn’t allowed.</p>
 <figure class="listing" id="listing-16-9">
 <span class="file-name">Filename: src/main.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::sync::mpsc;
-use std::thread;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">mpsc</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let (tx, rx) = mpsc::channel();
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="ro">(</span><span class="rn">tx</span><span class="ro">,</span> <span class="rn">rx</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    thread::spawn(move || {
-        let val = String::from("hi");
-        tx.send(val).unwrap();
-        println!("val is {val}");
-    });
+    <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">val</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">tx</span><span class="ro">.</span><span class="rn">send</span><span class="ro">(</span><span class="rn">val</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">val is {val}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    let received = rx.recv().unwrap();
-    println!("Got: {received}");
-}</code></pre>
-<figcaption><a href="#listing-16-9">Listing 16-9</a>: Attempting to use <code>val</code> after we’ve sent it down the channel</figcaption>
+    <span class="rk">let</span> <span class="rn">received</span> <span class="ro">=</span> <span class="rn">rx</span><span class="ro">.</span><span class="rn">recv</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Got: {received}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-9">Listing 16-9</a>: Attempting to use <code class="syntax" data-syntax="rust"><span class="rn">val</span></code> after we’ve sent it down the channel</figcaption>
 </figure>
-<p>Here, we try to print <code>val</code> after we’ve sent it down the channel via <code>tx.send</code>.
+<p>Here, we try to print <code class="syntax" data-syntax="rust"><span class="rn">val</span></code> after we’ve sent it down the channel via <code class="syntax" data-syntax="rust"><span class="rn">tx</span><span class="ro">.</span><span class="rn">send</span></code>.
 Allowing this would be a bad idea: Once the value has been sent to another
 thread, that thread could modify or drop it before we try to use the value
 again. Potentially, the other thread’s modifications could cause errors or
 unexpected results due to inconsistent or nonexistent data. However, Rust gives
 us an error if we try to compile the code in Listing 16-9:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling message-passing v0.1.0 (file:///projects/message-passing)
-error[E0382]: borrow of moved value: `val`
-  --&gt; src/main.rs:10:27
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> message-passing v0.<span class="ri">1.0</span> (file:///projects/message-passing)
+<span class="re">error[E0382]</span>: borrow of moved value: <span class="rs">`val`</span>
+  --&gt; src/main.rs:<span class="ri">10</span>:<span class="ri">27</span>
    |
- 8 |         let val = String::from("hi");
-   |             --- move occurs because `val` has type `String`, which does not implement the `Copy` trait
- 9 |         tx.send(val).unwrap();
+ <span class="ri">8</span> |         let val = String::from("hi");
+   |             --- move occurs because <span class="rs">`val`</span> has type <span class="rs">`String`</span>, which does not implement the <span class="rs">`Copy`</span> trait
+ <span class="ri">9</span> |         tx.send(val).unwrap();
    |                 --- value moved here
-10 |         println!("val is {val}");
+<span class="ri">10</span> |         println!("val is {val}");
    |                           ^^^ value borrowed here after move
 
-For more information about this error, try `rustc --explain E0382`.
-error: could not compile `message-passing` (bin "message-passing") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0382`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`message-passing`</span> (bin "message-passing") due to <span class="ri">1</span> previous error
 </code></pre>
-<p>Our concurrency mistake has caused a compile-time error. The <code>send</code> function
+<p>Our concurrency mistake has caused a compile-time error. The <code class="syntax" data-syntax="rust"><span class="rn">send</span></code> function
 takes ownership of its parameter, and when the value is moved the receiver
 takes ownership of it. This stops us from accidentally using the value again
 after sending it; the ownership system checks that everything is okay.</p>
@@ -820,109 +827,109 @@ Listing 16-8 is running concurrently: The spawned thread will now send multiple
 messages and pause for a second between each message.</p>
 <figure class="listing" id="listing-16-10">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust noplayground">use std::sync::mpsc;
-use std::thread;
-use std::time::Duration;
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">mpsc</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">time</span><span class="ro">::</span><span class="rt">Duration</span><span class="ro">;</span>
 
-fn main() {
-    let (tx, rx) = mpsc::channel();
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="ro">(</span><span class="rn">tx</span><span class="ro">,</span> <span class="rn">rx</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    thread::spawn(move || {
-        let vals = vec![
-            String::from("hi"),
-            String::from("from"),
-            String::from("the"),
-            String::from("thread"),
-        ];
+    <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">vals</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">from</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">the</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">thread</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="ro">]</span><span class="ro">;</span>
 
-        for val in vals {
-            tx.send(val).unwrap();
-            thread::sleep(Duration::from_secs(1));
-        }
-    });
+        <span class="rk">for</span> <span class="rn">val</span> <span class="rk">in</span> <span class="rn">vals</span> <span class="ro">{</span>
+            <span class="rn">tx</span><span class="ro">.</span><span class="rn">send</span><span class="ro">(</span><span class="rn">val</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_secs</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-    for received in rx {
-        println!("Got: {received}");
-    }
-}</code></pre>
+    <span class="rk">for</span> <span class="rn">received</span> <span class="rk">in</span> <span class="rn">rx</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Got: {received}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-16-10">Listing 16-10</a>: Sending multiple messages and pausing between each one</figcaption>
 </figure>
 <p>This time, the spawned thread has a vector of strings that we want to send to
 the main thread. We iterate over them, sending each individually, and pause
-between each by calling the <code>thread::sleep</code> function with a <code>Duration</code> value of
+between each by calling the <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span></code> function with a <code class="syntax" data-syntax="rust"><span class="rt">Duration</span></code> value of
 one second.</p>
-<p>In the main thread, we’re not calling the <code>recv</code> function explicitly anymore:
-Instead, we’re treating <code>rx</code> as an iterator. For each value received, we’re
+<p>In the main thread, we’re not calling the <code class="syntax" data-syntax="rust"><span class="rn">recv</span></code> function explicitly anymore:
+Instead, we’re treating <code class="syntax" data-syntax="rust"><span class="rn">rx</span></code> as an iterator. For each value received, we’re
 printing it. When the channel is closed, iteration will end.</p>
 <p>When running the code in Listing 16-10, you should see the following output
 with a one-second pause in between each line:</p>
 <!-- Not extracting output because changes to this output aren't significant;
 the changes are likely to be due to the threads running differently rather than
 changes in the compiler -->
-<pre><code class="language-text">Got: hi
+<pre><code class="language-text syntax" data-syntax="output">Got: hi
 Got: from
 Got: the
 Got: thread
 </code></pre>
-<p>Because we don’t have any code that pauses or delays in the <code>for</code> loop in the
+<p>Because we don’t have any code that pauses or delays in the <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop in the
 main thread, we can tell that the main thread is waiting to receive values from
 the spawned thread.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="creating-multiple-producers-by-cloning-the-transmitter"></a></p>
 <h4 id="creating-multiple-producers"><a class="header" href="#creating-multiple-producers">Creating Multiple Producers</a></h4>
-<p>Earlier we mentioned that <code>mpsc</code> was an acronym for <em>multiple producer, single
-consumer</em>. Let’s put <code>mpsc</code> to use and expand the code in Listing 16-10 to
+<p>Earlier we mentioned that <code class="syntax" data-syntax="rust"><span class="rn">mpsc</span></code> was an acronym for <em>multiple producer, single
+consumer</em>. Let’s put <code class="syntax" data-syntax="rust"><span class="rn">mpsc</span></code> to use and expand the code in Listing 16-10 to
 create multiple threads that all send values to the same receiver. We can do so
 by cloning the transmitter, as shown in Listing 16-11.</p>
 <figure class="listing" id="listing-16-11">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust noplayground"><span class="boring">use std::sync::mpsc;
-</span><span class="boring">use std::thread;
-</span><span class="boring">use std::time::Duration;
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="boring"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">mpsc</span><span class="ro">;</span>
+</span><span class="boring"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
+</span><span class="boring"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">time</span><span class="ro">::</span><span class="rt">Duration</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">fn main() {
-</span>    // --snip--
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span>    <span class="rc">// --snip--
+</span>
+    <span class="rk">let</span> <span class="ro">(</span><span class="rn">tx</span><span class="ro">,</span> <span class="rn">rx</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">mpsc</span><span class="ro">::</span><span class="rn">channel</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    let (tx, rx) = mpsc::channel();
+    <span class="rk">let</span> <span class="rn">tx1</span> <span class="ro">=</span> <span class="rn">tx</span><span class="ro">.</span><span class="rn">clone</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">vals</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">hi</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">from</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">the</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">thread</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="ro">]</span><span class="ro">;</span>
 
-    let tx1 = tx.clone();
-    thread::spawn(move || {
-        let vals = vec![
-            String::from("hi"),
-            String::from("from"),
-            String::from("the"),
-            String::from("thread"),
-        ];
+        <span class="rk">for</span> <span class="rn">val</span> <span class="rk">in</span> <span class="rn">vals</span> <span class="ro">{</span>
+            <span class="rn">tx1</span><span class="ro">.</span><span class="rn">send</span><span class="ro">(</span><span class="rn">val</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_secs</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-        for val in vals {
-            tx1.send(val).unwrap();
-            thread::sleep(Duration::from_secs(1));
-        }
-    });
+    <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">vals</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">more</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">messages</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">for</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">you</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="ro">]</span><span class="ro">;</span>
 
-    thread::spawn(move || {
-        let vals = vec![
-            String::from("more"),
-            String::from("messages"),
-            String::from("for"),
-            String::from("you"),
-        ];
+        <span class="rk">for</span> <span class="rn">val</span> <span class="rk">in</span> <span class="rn">vals</span> <span class="ro">{</span>
+            <span class="rn">tx</span><span class="ro">.</span><span class="rn">send</span><span class="ro">(</span><span class="rn">val</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span><span class="ro">(</span><span class="rt">Duration</span><span class="ro">::</span><span class="rn">from_secs</span><span class="ro">(</span><span class="ri">1</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
 
-        for val in vals {
-            tx.send(val).unwrap();
-            thread::sleep(Duration::from_secs(1));
-        }
-    });
+    <span class="rk">for</span> <span class="rn">received</span> <span class="rk">in</span> <span class="rn">rx</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Got: {received}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    for received in rx {
-        println!("Got: {received}");
-    }
-
-    // --snip--
-<span class="boring">}</span></code></pre>
+    <span class="rc">// --snip--
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
 <figcaption><a href="#listing-16-11">Listing 16-11</a>: Sending multiple messages from multiple producers</figcaption>
 </figure>
-<p>This time, before we create the first spawned thread, we call <code>clone</code> on the
+<p>This time, before we create the first spawned thread, we call <code class="syntax" data-syntax="rust"><span class="rn">clone</span></code> on the
 transmitter. This will give us a new transmitter we can pass to the first
 spawned thread. We pass the original transmitter to a second spawned thread.
 This gives us two threads, each sending different messages to the one receiver.</p>
@@ -930,7 +937,7 @@ This gives us two threads, each sending different messages to the one receiver.<
 <!-- Not extracting output because changes to this output aren't significant;
 the changes are likely to be due to the threads running differently rather than
 changes in the compiler -->
-<pre><code class="language-text">Got: hi
+<pre><code class="language-text syntax" data-syntax="output">Got: hi
 Got: more
 Got: from
 Got: messages
@@ -941,7 +948,7 @@ Got: you
 </code></pre>
 <p>You might see the values in another order, depending on your system. This is
 what makes concurrency interesting as well as difficult. If you experiment with
-<code>thread::sleep</code>, giving it various values in the different threads, each run
+<code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">sleep</span></code>, giving it various values in the different threads, each run
 will be more nondeterministic and create different output each time.</p>
 <p>Now that we’ve looked at how channels work, let’s look at a different method of
 concurrency.</p>
@@ -990,332 +997,332 @@ as planned!</p>
 <p>Management of mutexes can be incredibly tricky to get right, which is why so
 many people are enthusiastic about channels. However, thanks to Rust’s type
 system and ownership rules, you can’t get locking and unlocking wrong.</p>
-<h5 id="the-api-of-mutext"><a class="header" href="#the-api-of-mutext">The API of <code>Mutex&lt;T&gt;</code></a></h5>
+<h5 id="the-api-of-mutext"><a class="header" href="#the-api-of-mutext">The API of <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code></a></h5>
 <p>As an example of how to use a mutex, let’s start by using a mutex in a
 single-threaded context, as shown in Listing 16-12.</p>
 <figure class="listing" id="listing-16-12">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::sync::Mutex;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rt">Mutex</span><span class="ro">;</span>
 
-fn main() {
-    let m = Mutex::new(5);
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">m</span> <span class="ro">=</span> <span class="rt">Mutex</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ri">5</span><span class="ro">)</span><span class="ro">;</span>
 
-    {
-        let mut num = m.lock().unwrap();
-        *num = 6;
-    }
+    <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">num</span> <span class="ro">=</span> <span class="rn">m</span><span class="ro">.</span><span class="rn">lock</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">*</span><span class="rn">num</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    println!("m = {m:?}");
-}</code></pre>
-<figcaption><a href="#listing-16-12">Listing 16-12</a>: Exploring the API of <code>Mutex&lt;T&gt;</code> in a single-threaded context for simplicity</figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">m = {m:?}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-12">Listing 16-12</a>: Exploring the API of <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> in a single-threaded context for simplicity</figcaption>
 </figure>
-<p>As with many types, we create a <code>Mutex&lt;T&gt;</code> using the associated function <code>new</code>.
-To access the data inside the mutex, we use the <code>lock</code> method to acquire the
+<p>As with many types, we create a <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> using the associated function <code class="syntax" data-syntax="rust"><span class="rn">new</span></code>.
+To access the data inside the mutex, we use the <code class="syntax" data-syntax="rust"><span class="rn">lock</span></code> method to acquire the
 lock. This call will block the current thread so that it can’t do any work
 until it’s our turn to have the lock.</p>
-<p>The call to <code>lock</code> would fail if another thread holding the lock panicked. In
+<p>The call to <code class="syntax" data-syntax="rust"><span class="rn">lock</span></code> would fail if another thread holding the lock panicked. In
 that case, no one would ever be able to get the lock, so we’ve chosen to
-<code>unwrap</code> and have this thread panic if we’re in that situation.</p>
-<p>After we’ve acquired the lock, we can treat the return value, named <code>num</code> in
+<code class="syntax" data-syntax="rust"><span class="rn">unwrap</span></code> and have this thread panic if we’re in that situation.</p>
+<p>After we’ve acquired the lock, we can treat the return value, named <code class="syntax" data-syntax="rust"><span class="rn">num</span></code> in
 this case, as a mutable reference to the data inside. The type system ensures
-that we acquire a lock before using the value in <code>m</code>. The type of <code>m</code> is
-<code>Mutex&lt;i32&gt;</code>, not <code>i32</code>, so we <em>must</em> call <code>lock</code> to be able to use the <code>i32</code>
-value. We can’t forget; the type system won’t let us access the inner <code>i32</code>
+that we acquire a lock before using the value in <code class="syntax" data-syntax="rust"><span class="rn">m</span></code>. The type of <code class="syntax" data-syntax="rust"><span class="rn">m</span></code> is
+<code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">i32</span><span class="ro">&gt;</span></code>, not <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>, so we <em>must</em> call <code class="syntax" data-syntax="rust"><span class="rn">lock</span></code> to be able to use the <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>
+value. We can’t forget; the type system won’t let us access the inner <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>
 otherwise.</p>
-<p>The call to <code>lock</code> returns a type called <code>MutexGuard</code>, wrapped in a
-<code>LockResult</code> that we handled with the call to <code>unwrap</code>. The <code>MutexGuard</code> type
-implements <code>Deref</code> to point at our inner data; the type also has a <code>Drop</code>
-implementation that releases the lock automatically when a <code>MutexGuard</code> goes
+<p>The call to <code class="syntax" data-syntax="rust"><span class="rn">lock</span></code> returns a type called <code class="syntax" data-syntax="rust"><span class="rt">MutexGuard</span></code>, wrapped in a
+<code class="syntax" data-syntax="rust"><span class="rt">LockResult</span></code> that we handled with the call to <code class="syntax" data-syntax="rust"><span class="rn">unwrap</span></code>. The <code class="syntax" data-syntax="rust"><span class="rt">MutexGuard</span></code> type
+implements <code class="syntax" data-syntax="rust"><span class="rt">Deref</span></code> to point at our inner data; the type also has a <code class="syntax" data-syntax="rust"><span class="rt">Drop</span></code>
+implementation that releases the lock automatically when a <code class="syntax" data-syntax="rust"><span class="rt">MutexGuard</span></code> goes
 out of scope, which happens at the end of the inner scope. As a result, we
 don’t risk forgetting to release the lock and blocking the mutex from being
 used by other threads because the lock release happens automatically.</p>
 <p>After dropping the lock, we can print the mutex value and see that we were able
-to change the inner <code>i32</code> to <code>6</code>.</p>
+to change the inner <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code> to <code class="syntax" data-syntax="rust"><span class="ri">6</span></code>.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="sharing-a-mutext-between-multiple-threads"></a></p>
-<h5 id="shared-access-to-mutext"><a class="header" href="#shared-access-to-mutext">Shared Access to <code>Mutex&lt;T&gt;</code></a></h5>
-<p>Now let’s try to share a value between multiple threads using <code>Mutex&lt;T&gt;</code>. We’ll
+<h5 id="shared-access-to-mutext"><a class="header" href="#shared-access-to-mutext">Shared Access to <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code></a></h5>
+<p>Now let’s try to share a value between multiple threads using <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>. We’ll
 spin up 10 threads and have them each increment a counter value by 1, so the
 counter goes from 0 to 10. The example in Listing 16-13 will have a compiler
-error, and we’ll use that error to learn more about using <code>Mutex&lt;T&gt;</code> and how
+error, and we’ll use that error to learn more about using <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> and how
 Rust helps us use it correctly.</p>
 <figure class="listing" id="listing-16-13">
 <span class="file-name">Filename: src/main.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::sync::Mutex;
-use std::thread;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rt">Mutex</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let counter = Mutex::new(0);
-    let mut handles = vec![];
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">counter</span> <span class="ro">=</span> <span class="rt">Mutex</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ri">0</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">handles</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span><span class="ro">]</span><span class="ro">;</span>
 
-    for _ in 0..10 {
-        let handle = thread::spawn(move || {
-            let mut num = counter.lock().unwrap();
+    <span class="rk">for</span> <span class="rn">_</span> <span class="rk">in</span> <span class="ri">0</span><span class="ro">..</span><span class="ri">10</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+            <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">num</span> <span class="ro">=</span> <span class="rn">counter</span><span class="ro">.</span><span class="rn">lock</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-            *num += 1;
-        });
-        handles.push(handle);
-    }
+            <span class="ro">*</span><span class="rn">num</span> <span class="ro">+</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
+        <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">handles</span><span class="ro">.</span><span class="rn">push</span><span class="ro">(</span><span class="rn">handle</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    <span class="rk">for</span> <span class="rn">handle</span> <span class="rk">in</span> <span class="rn">handles</span> <span class="ro">{</span>
+        <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    println!("Result: {}", *counter.lock().unwrap());
-}</code></pre>
-<figcaption><a href="#listing-16-13">Listing 16-13</a>: Ten threads, each incrementing a counter guarded by a <code>Mutex&lt;T&gt;</code></figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Result: {}</span><span class="rs">"</span><span class="ro">,</span> <span class="ro">*</span><span class="rn">counter</span><span class="ro">.</span><span class="rn">lock</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-13">Listing 16-13</a>: Ten threads, each incrementing a counter guarded by a <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code></figcaption>
 </figure>
-<p>We create a <code>counter</code> variable to hold an <code>i32</code> inside a <code>Mutex&lt;T&gt;</code>, as we did
+<p>We create a <code class="syntax" data-syntax="rust"><span class="rn">counter</span></code> variable to hold an <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code> inside a <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>, as we did
 in Listing 16-12. Next, we create 10 threads by iterating over a range of
-numbers. We use <code>thread::spawn</code> and give all the threads the same closure: one
-that moves the counter into the thread, acquires a lock on the <code>Mutex&lt;T&gt;</code> by
-calling the <code>lock</code> method, and then adds 1 to the value in the mutex. When a
-thread finishes running its closure, <code>num</code> will go out of scope and release the
+numbers. We use <code class="syntax" data-syntax="rust"><span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span></code> and give all the threads the same closure: one
+that moves the counter into the thread, acquires a lock on the <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> by
+calling the <code class="syntax" data-syntax="rust"><span class="rn">lock</span></code> method, and then adds 1 to the value in the mutex. When a
+thread finishes running its closure, <code class="syntax" data-syntax="rust"><span class="rn">num</span></code> will go out of scope and release the
 lock so that another thread can acquire it.</p>
 <p>In the main thread, we collect all the join handles. Then, as we did in Listing
-16-2, we call <code>join</code> on each handle to make sure all the threads finish. At
+16-2, we call <code class="syntax" data-syntax="rust"><span class="rn">join</span></code> on each handle to make sure all the threads finish. At
 that point, the main thread will acquire the lock and print the result of this
 program.</p>
 <p>We hinted that this example wouldn’t compile. Now let’s find out why!</p>
-<pre><code class="language-console">$ cargo run
-   Compiling shared-state v0.1.0 (file:///projects/shared-state)
-error[E0382]: borrow of moved value: `counter`
-  --&gt; src/main.rs:21:29
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> shared-state v0.<span class="ri">1.0</span> (file:///projects/shared-state)
+<span class="re">error[E0382]</span>: borrow of moved value: <span class="rs">`counter`</span>
+  --&gt; src/main.rs:<span class="ri">21</span>:<span class="ri">29</span>
    |
- 5 |     let counter = Mutex::new(0);
-   |         ------- move occurs because `counter` has type `std::sync::Mutex&lt;i32&gt;`, which does not implement the `Copy` trait
+ <span class="ri">5</span> |     let counter = Mutex::new(<span class="ri">0</span>);
+   |         ------- move occurs because <span class="rs">`counter`</span> has type <span class="rs">`std::sync::Mutex&lt;i32&gt;`</span>, which does not implement the <span class="rs">`Copy`</span> trait
 ...
- 8 |     for _ in 0..10 {
+ <span class="ri">8</span> |     for _ in <span class="ri">0</span>..<span class="ri">10</span> {
    |     -------------- inside of this loop
- 9 |         let handle = thread::spawn(move || {
+ <span class="ri">9</span> |         let handle = thread::spawn(move || {
    |                                    ------- value moved into closure here, in previous iteration of loop
 ...
-21 |     println!("Result: {}", *counter.lock().unwrap());
+<span class="ri">21</span> |     println!("Result: {}", *counter.lock().unwrap());
    |                             ^^^^^^^ value borrowed here after move
 
-For more information about this error, try `rustc --explain E0382`.
-error: could not compile `shared-state` (bin "shared-state") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0382`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`shared-state`</span> (bin "shared-state") due to <span class="ri">1</span> previous error
 </code></pre>
-<p>The error message states that the <code>counter</code> value was moved in the previous
+<p>The error message states that the <code class="syntax" data-syntax="rust"><span class="rn">counter</span></code> value was moved in the previous
 iteration of the loop. Rust is telling us that we can’t move the ownership of
-lock <code>counter</code> into multiple threads. Let’s fix the compiler error with the
+lock <code class="syntax" data-syntax="rust"><span class="rn">counter</span></code> into multiple threads. Let’s fix the compiler error with the
 multiple-ownership method we discussed in Chapter 15.</p>
 <h5 id="multiple-ownership-with-multiple-threads"><a class="header" href="#multiple-ownership-with-multiple-threads">Multiple Ownership with Multiple Threads</a></h5>
 <p>In Chapter 15, we gave a value to multiple owners by using the smart pointer
-<code>Rc&lt;T&gt;</code> to create a reference-counted value. Let’s do the same here and see
-what happens. We’ll wrap the <code>Mutex&lt;T&gt;</code> in <code>Rc&lt;T&gt;</code> in Listing 16-14 and clone
-the <code>Rc&lt;T&gt;</code> before moving ownership to the thread.</p>
+<code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> to create a reference-counted value. Let’s do the same here and see
+what happens. We’ll wrap the <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> in <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> in Listing 16-14 and clone
+the <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> before moving ownership to the thread.</p>
 <figure class="listing" id="listing-16-14">
 <span class="file-name">Filename: src/main.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::rc::Rc;
-use std::sync::Mutex;
-use std::thread;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">rc</span><span class="ro">::</span><span class="rt">Rc</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rt">Mutex</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let counter = Rc::new(Mutex::new(0));
-    let mut handles = vec![];
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">counter</span> <span class="ro">=</span> <span class="rt">Rc</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="rt">Mutex</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ri">0</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">handles</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span><span class="ro">]</span><span class="ro">;</span>
 
-    for _ in 0..10 {
-        let counter = Rc::clone(&amp;counter);
-        let handle = thread::spawn(move || {
-            let mut num = counter.lock().unwrap();
+    <span class="rk">for</span> <span class="rn">_</span> <span class="rk">in</span> <span class="ri">0</span><span class="ro">..</span><span class="ri">10</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">counter</span> <span class="ro">=</span> <span class="rt">Rc</span><span class="ro">::</span><span class="rn">clone</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">counter</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+            <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">num</span> <span class="ro">=</span> <span class="rn">counter</span><span class="ro">.</span><span class="rn">lock</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-            *num += 1;
-        });
-        handles.push(handle);
-    }
+            <span class="ro">*</span><span class="rn">num</span> <span class="ro">+</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
+        <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">handles</span><span class="ro">.</span><span class="rn">push</span><span class="ro">(</span><span class="rn">handle</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    <span class="rk">for</span> <span class="rn">handle</span> <span class="rk">in</span> <span class="rn">handles</span> <span class="ro">{</span>
+        <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    println!("Result: {}", *counter.lock().unwrap());
-}</code></pre>
-<figcaption><a href="#listing-16-14">Listing 16-14</a>: Attempting to use <code>Rc&lt;T&gt;</code> to allow multiple threads to own the <code>Mutex&lt;T&gt;</code></figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Result: {}</span><span class="rs">"</span><span class="ro">,</span> <span class="ro">*</span><span class="rn">counter</span><span class="ro">.</span><span class="rn">lock</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-14">Listing 16-14</a>: Attempting to use <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> to allow multiple threads to own the <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code></figcaption>
 </figure>
 <p>Once again, we compile and get… different errors! The compiler is teaching us
 a lot:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling shared-state v0.1.0 (file:///projects/shared-state)
-error[E0277]: `Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;` cannot be sent between threads safely
-  --&gt; src/main.rs:11:36
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> shared-state v0.<span class="ri">1.0</span> (file:///projects/shared-state)
+<span class="re">error[E0277]</span>: <span class="rs">`Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;`</span> cannot be sent between threads safely
+  --&gt; src/main.rs:<span class="ri">11</span>:<span class="ri">36</span>
    |
-11 |           let handle = thread::spawn(move || {
+<span class="ri">11</span> |           let handle = thread::spawn(move || {
    |                        ------------- ^------
    |                        |             |
-   |  ______________________|_____________within this `{closure@src/main.rs:11:36: 11:43}`
+   |  ______________________|_____________within this <span class="rs">`{closure@src/main.rs:11:36: 11:43}`</span>
    | |                      |
    | |                      required by a bound introduced by this call
-12 | |             let mut num = counter.lock().unwrap();
-13 | |
-14 | |             *num += 1;
-15 | |         });
-   | |_________^ `Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;` cannot be sent between threads safely
+<span class="ri">12</span> | |             let mut num = counter.lock().unwrap();
+<span class="ri">13</span> | |
+<span class="ri">14</span> | |             *num += <span class="ri">1</span>;
+<span class="ri">15</span> | |         });
+   | |_________^ <span class="rs">`Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;`</span> cannot be sent between threads safely
    |
-   = help: within `{closure@src/main.rs:11:36: 11:43}`, the trait `Send` is not implemented for `Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;`
-note: required because it's used within this closure
-  --&gt; src/main.rs:11:36
+   = <span class="rk">help</span>: within <span class="rs">`{closure@src/main.rs:11:36: 11:43}`</span>, the trait <span class="rs">`Send`</span> is not implemented for <span class="rs">`Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;`</span>
+<span class="rk">note</span>: required because it's used within this closure
+  --&gt; src/main.rs:<span class="ri">11</span>:<span class="ri">36</span>
    |
-11 |         let handle = thread::spawn(move || {
+<span class="ri">11</span> |         let handle = thread::spawn(move || {
    |                                    ^^^^^^^
-note: required by a bound in `spawn`
-  --&gt; /rustc/88d9e12ae178fab0fb5cc050a94da85685d449ea/library/std/src/thread/functions.rs:125:0
+<span class="rk">note</span>: required by a bound in <span class="rs">`spawn`</span>
+  --&gt; /rustc/88d9e12ae178fab0fb5cc050a94da85685d449ea/library/std/src/thread/functions.rs:<span class="ri">125</span>:<span class="ri">0</span>
 
-For more information about this error, try `rustc --explain E0277`.
-error: could not compile `shared-state` (bin "shared-state") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0277`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`shared-state`</span> (bin "shared-state") due to <span class="ri">1</span> previous error
 </code></pre>
 <p>Wow, that error message is very wordy! Here’s the important part to focus on:
-<code>`Rc&lt;Mutex&lt;i32&gt;&gt;` cannot be sent between threads safely</code>. The compiler is
-also telling us the reason why: <code>the trait `Send` is not implemented for `Rc&lt;Mutex&lt;i32&gt;&gt;`</code>. We’ll talk about <code>Send</code> in the next section: It’s one of
+<code class="syntax" data-syntax="rust">`<span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">i32</span><span class="ro">&gt;</span><span class="ro">&gt;</span>` <span class="rn">cannot</span> <span class="rn">be</span> <span class="rn">sent</span> <span class="rn">between</span> <span class="rn">threads</span> <span class="rn">safely</span></code>. The compiler is
+also telling us the reason why: <code class="syntax" data-syntax="rust"><span class="rn">the</span> <span class="rk">trait</span> `<span class="rt">Send</span>` <span class="rn">is</span> <span class="rn">not</span> <span class="rn">implemented</span> <span class="rk">for</span> `<span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">i32</span><span class="ro">&gt;</span><span class="ro">&gt;</span>`</code>. We’ll talk about <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> in the next section: It’s one of
 the traits that ensures that the types we use with threads are meant for use in
 concurrent situations.</p>
-<p>Unfortunately, <code>Rc&lt;T&gt;</code> is not safe to share across threads. When <code>Rc&lt;T&gt;</code>
-manages the reference count, it adds to the count for each call to <code>clone</code> and
+<p>Unfortunately, <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> is not safe to share across threads. When <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>
+manages the reference count, it adds to the count for each call to <code class="syntax" data-syntax="rust"><span class="rn">clone</span></code> and
 subtracts from the count when each clone is dropped. But it doesn’t use any
 concurrency primitives to make sure that changes to the count can’t be
 interrupted by another thread. This could lead to wrong counts—subtle bugs that
 could in turn lead to memory leaks or a value being dropped before we’re done
-with it. What we need is a type that is exactly like <code>Rc&lt;T&gt;</code>, but that makes
+with it. What we need is a type that is exactly like <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>, but that makes
 changes to the reference count in a thread-safe way.</p>
-<h5 id="atomic-reference-counting-with-arct"><a class="header" href="#atomic-reference-counting-with-arct">Atomic Reference Counting with <code>Arc&lt;T&gt;</code></a></h5>
-<p>Fortunately, <code>Arc&lt;T&gt;</code> <em>is</em> a type like <code>Rc&lt;T&gt;</code> that is safe to use in
+<h5 id="atomic-reference-counting-with-arct"><a class="header" href="#atomic-reference-counting-with-arct">Atomic Reference Counting with <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code></a></h5>
+<p>Fortunately, <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> <em>is</em> a type like <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> that is safe to use in
 concurrent situations. The <em>a</em> stands for <em>atomic</em>, meaning it’s an <em>atomically
 reference-counted</em> type. Atomics are an additional kind of concurrency
 primitive that we won’t cover in detail here: See the standard library
-documentation for <a href="https://doc.rust-lang.org/stable/std/sync/atomic/index.html"><code>std::sync::atomic</code></a><!-- ignore --> for more
+documentation for <a href="https://doc.rust-lang.org/stable/std/sync/atomic/index.html"><code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">atomic</span></code></a><!-- ignore --> for more
 details. At this point, you just need to know that atomics work like primitive
 types but are safe to share across threads.</p>
 <p>You might then wonder why all primitive types aren’t atomic and why standard
-library types aren’t implemented to use <code>Arc&lt;T&gt;</code> by default. The reason is that
+library types aren’t implemented to use <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> by default. The reason is that
 thread safety comes with a performance penalty that you only want to pay when
 you really need to. If you’re just performing operations on values within a
 single thread, your code can run faster if it doesn’t have to enforce the
 guarantees atomics provide.</p>
-<p>Let’s return to our example: <code>Arc&lt;T&gt;</code> and <code>Rc&lt;T&gt;</code> have the same API, so we fix
-our program by changing the <code>use</code> line, the call to <code>new</code>, and the call to
-<code>clone</code>. The code in Listing 16-15 will finally compile and run.</p>
+<p>Let’s return to our example: <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> have the same API, so we fix
+our program by changing the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> line, the call to <code class="syntax" data-syntax="rust"><span class="rn">new</span></code>, and the call to
+<code class="syntax" data-syntax="rust"><span class="rn">clone</span></code>. The code in Listing 16-15 will finally compile and run.</p>
 <figure class="listing" id="listing-16-15">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::sync::{Arc, Mutex};
-use std::thread;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rt">Arc</span><span class="ro">,</span> <span class="rt">Mutex</span><span class="ro">}</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">thread</span><span class="ro">;</span>
 
-fn main() {
-    let counter = Arc::new(Mutex::new(0));
-    let mut handles = vec![];
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">counter</span> <span class="ro">=</span> <span class="rt">Arc</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="rt">Mutex</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ri">0</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">handles</span> <span class="ro">=</span> <span class="rf">vec!</span><span class="ro">[</span><span class="ro">]</span><span class="ro">;</span>
 
-    for _ in 0..10 {
-        let counter = Arc::clone(&amp;counter);
-        let handle = thread::spawn(move || {
-            let mut num = counter.lock().unwrap();
+    <span class="rk">for</span> <span class="rn">_</span> <span class="rk">in</span> <span class="ri">0</span><span class="ro">..</span><span class="ri">10</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">counter</span> <span class="ro">=</span> <span class="rt">Arc</span><span class="ro">::</span><span class="rn">clone</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">counter</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rk">let</span> <span class="rn">handle</span> <span class="ro">=</span> <span class="rn">thread</span><span class="ro">::</span><span class="rn">spawn</span><span class="ro">(</span><span class="rk">move</span> <span class="ro">|</span><span class="ro">|</span> <span class="ro">{</span>
+            <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">num</span> <span class="ro">=</span> <span class="rn">counter</span><span class="ro">.</span><span class="rn">lock</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-            *num += 1;
-        });
-        handles.push(handle);
-    }
+            <span class="ro">*</span><span class="rn">num</span> <span class="ro">+</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
+        <span class="ro">}</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rn">handles</span><span class="ro">.</span><span class="rn">push</span><span class="ro">(</span><span class="rn">handle</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    <span class="rk">for</span> <span class="rn">handle</span> <span class="rk">in</span> <span class="rn">handles</span> <span class="ro">{</span>
+        <span class="rn">handle</span><span class="ro">.</span><span class="rn">join</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    println!("Result: {}", *counter.lock().unwrap());
-}</code></pre>
-<figcaption><a href="#listing-16-15">Listing 16-15</a>: Using an <code>Arc&lt;T&gt;</code> to wrap the <code>Mutex&lt;T&gt;</code> to be able to share ownership across multiple threads</figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Result: {}</span><span class="rs">"</span><span class="ro">,</span> <span class="ro">*</span><span class="rn">counter</span><span class="ro">.</span><span class="rn">lock</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">unwrap</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-16-15">Listing 16-15</a>: Using an <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> to wrap the <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> to be able to share ownership across multiple threads</figcaption>
 </figure>
 <p>This code will print the following:</p>
 <!-- Not extracting output because changes to this output aren't significant;
 the changes are likely to be due to the threads running differently rather than
 changes in the compiler -->
-<pre><code class="language-text">Result: 10
+<pre><code class="language-text syntax" data-syntax="output">Result: <span class="ri">10</span>
 </code></pre>
 <p>We did it! We counted from 0 to 10, which may not seem very impressive, but it
-did teach us a lot about <code>Mutex&lt;T&gt;</code> and thread safety. You could also use this
+did teach us a lot about <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> and thread safety. You could also use this
 program’s structure to do more complicated operations than just incrementing a
 counter. Using this strategy, you can divide a calculation into independent
-parts, split those parts across threads, and then use a <code>Mutex&lt;T&gt;</code> to have each
+parts, split those parts across threads, and then use a <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> to have each
 thread update the final result with its part.</p>
 <p>Note that if you are doing simple numerical operations, there are types simpler
-than <code>Mutex&lt;T&gt;</code> types provided by the <a href="https://doc.rust-lang.org/stable/std/sync/atomic/index.html"><code>std::sync::atomic</code> module of the
+than <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> types provided by the <a href="https://doc.rust-lang.org/stable/std/sync/atomic/index.html"><code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">sync</span><span class="ro">::</span><span class="rn">atomic</span></code> module of the
 standard library</a><!-- ignore -->. These types provide safe, concurrent,
-atomic access to primitive types. We chose to use <code>Mutex&lt;T&gt;</code> with a primitive
-type for this example so that we could concentrate on how <code>Mutex&lt;T&gt;</code> works.</p>
+atomic access to primitive types. We chose to use <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> with a primitive
+type for this example so that we could concentrate on how <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> works.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="similarities-between-refcelltrct-and-mutextarct"></a></p>
-<h4 id="comparing-refcelltrct-and-mutextarct"><a class="header" href="#comparing-refcelltrct-and-mutextarct">Comparing <code>RefCell&lt;T&gt;</code>/<code>Rc&lt;T&gt;</code> and <code>Mutex&lt;T&gt;</code>/<code>Arc&lt;T&gt;</code></a></h4>
-<p>You might have noticed that <code>counter</code> is immutable but that we could get a
-mutable reference to the value inside it; this means <code>Mutex&lt;T&gt;</code> provides
-interior mutability, as the <code>Cell</code> family does. In the same way we used
-<code>RefCell&lt;T&gt;</code> in Chapter 15 to allow us to mutate contents inside an <code>Rc&lt;T&gt;</code>, we
-use <code>Mutex&lt;T&gt;</code> to mutate contents inside an <code>Arc&lt;T&gt;</code>.</p>
+<h4 id="comparing-refcelltrct-and-mutextarct"><a class="header" href="#comparing-refcelltrct-and-mutextarct">Comparing <code class="syntax" data-syntax="rust"><span class="rt">RefCell</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>/<code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>/<code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code></a></h4>
+<p>You might have noticed that <code class="syntax" data-syntax="rust"><span class="rn">counter</span></code> is immutable but that we could get a
+mutable reference to the value inside it; this means <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> provides
+interior mutability, as the <code class="syntax" data-syntax="rust"><span class="rt">Cell</span></code> family does. In the same way we used
+<code class="syntax" data-syntax="rust"><span class="rt">RefCell</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> in Chapter 15 to allow us to mutate contents inside an <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>, we
+use <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> to mutate contents inside an <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>.</p>
 <p>Another detail to note is that Rust can’t protect you from all kinds of logic
-errors when you use <code>Mutex&lt;T&gt;</code>. Recall from Chapter 15 that using <code>Rc&lt;T&gt;</code> came
-with the risk of creating reference cycles, where two <code>Rc&lt;T&gt;</code> values refer to
-each other, causing memory leaks. Similarly, <code>Mutex&lt;T&gt;</code> comes with the risk of
+errors when you use <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>. Recall from Chapter 15 that using <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> came
+with the risk of creating reference cycles, where two <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> values refer to
+each other, causing memory leaks. Similarly, <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> comes with the risk of
 creating <em>deadlocks</em>. These occur when an operation needs to lock two resources
 and two threads have each acquired one of the locks, causing them to wait for
 each other forever. If you’re interested in deadlocks, try creating a Rust
 program that has a deadlock; then, research deadlock mitigation strategies for
 mutexes in any language and have a go at implementing them in Rust. The
-standard library API documentation for <code>Mutex&lt;T&gt;</code> and <code>MutexGuard</code> offers
+standard library API documentation for <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">MutexGuard</span></code> offers
 useful information.</p>
-<p>We’ll round out this chapter by talking about the <code>Send</code> and <code>Sync</code> traits and
+<p>We’ll round out this chapter by talking about the <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> traits and
 how we can use them with custom types.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h2 id="extensible-concurrency-with-send-and-sync-1"><a href="#extensible-concurrency-with-send-and-sync-1" class="header">Extensible Concurrency with Send and Sync</a></h2>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="extensible-concurrency-with-the-sync-and-send-traits"></a>
 <a id="extensible-concurrency-with-the-send-and-sync-traits"></a></p>
-<h3 id="extensible-concurrency-with-send-and-sync"><a class="header" href="#extensible-concurrency-with-send-and-sync">Extensible Concurrency with <code>Send</code> and <code>Sync</code></a></h3>
+<h3 id="extensible-concurrency-with-send-and-sync"><a class="header" href="#extensible-concurrency-with-send-and-sync">Extensible Concurrency with <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code></a></h3>
 <p>Interestingly, almost every concurrency feature we’ve talked about so far in
 this chapter has been part of the standard library, not the language. Your
 options for handling concurrency are not limited to the language or the
 standard library; you can write your own concurrency features or use those
 written by others.</p>
 <p>However, among the key concurrency concepts that are embedded in the language
-rather than the standard library are the <code>std::marker</code> traits <code>Send</code> and <code>Sync</code>.</p>
+rather than the standard library are the <code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">marker</span></code> traits <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code>.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="allowing-transference-of-ownership-between-threads-with-send"></a></p>
 <h4 id="transferring-ownership-between-threads"><a class="header" href="#transferring-ownership-between-threads">Transferring Ownership Between Threads</a></h4>
-<p>The <code>Send</code> marker trait indicates that ownership of values of the type
-implementing <code>Send</code> can be transferred between threads. Almost every Rust type
-implements <code>Send</code>, but there are some exceptions, including <code>Rc&lt;T&gt;</code>: This
-cannot implement <code>Send</code> because if you cloned an <code>Rc&lt;T&gt;</code> value and tried to
+<p>The <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> marker trait indicates that ownership of values of the type
+implementing <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> can be transferred between threads. Almost every Rust type
+implements <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code>, but there are some exceptions, including <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>: This
+cannot implement <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> because if you cloned an <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> value and tried to
 transfer ownership of the clone to another thread, both threads might update
-the reference count at the same time. For this reason, <code>Rc&lt;T&gt;</code> is implemented
+the reference count at the same time. For this reason, <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> is implemented
 for use in single-threaded situations where you don’t want to pay the
 thread-safe performance penalty.</p>
 <p>Therefore, Rust’s type system and trait bounds ensure that you can never
-accidentally send an <code>Rc&lt;T&gt;</code> value across threads unsafely. When we tried to do
-this in Listing 16-14, we got the error <code>the trait `Send` is not implemented for `Rc&lt;Mutex&lt;i32&gt;&gt;`</code>. When we switched to <code>Arc&lt;T&gt;</code>, which does implement
-<code>Send</code>, the code compiled.</p>
-<p>Any type composed entirely of <code>Send</code> types is automatically marked as <code>Send</code> as
-well. Almost all primitive types are <code>Send</code>, aside from raw pointers, which
+accidentally send an <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> value across threads unsafely. When we tried to do
+this in Listing 16-14, we got the error <code class="syntax" data-syntax="rust"><span class="rn">the</span> <span class="rk">trait</span> `<span class="rt">Send</span>` <span class="rn">is</span> <span class="rn">not</span> <span class="rn">implemented</span> <span class="rk">for</span> `<span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">i32</span><span class="ro">&gt;</span><span class="ro">&gt;</span>`</code>. When we switched to <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>, which does implement
+<code class="syntax" data-syntax="rust"><span class="rt">Send</span></code>, the code compiled.</p>
+<p>Any type composed entirely of <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> types is automatically marked as <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> as
+well. Almost all primitive types are <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code>, aside from raw pointers, which
 we’ll discuss in Chapter 20.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="allowing-access-from-multiple-threads-with-sync"></a></p>
 <h4 id="accessing-from-multiple-threads"><a class="header" href="#accessing-from-multiple-threads">Accessing from Multiple Threads</a></h4>
-<p>The <code>Sync</code> marker trait indicates that it is safe for the type implementing
-<code>Sync</code> to be referenced from multiple threads. In other words, any type <code>T</code>
-implements <code>Sync</code> if <code>&amp;T</code> (an immutable reference to <code>T</code>) implements <code>Send</code>,
-meaning the reference can be sent safely to another thread. Similar to <code>Send</code>,
-primitive types all implement <code>Sync</code>, and types composed entirely of types that
-implement <code>Sync</code> also implement <code>Sync</code>.</p>
-<p>The smart pointer <code>Rc&lt;T&gt;</code> also doesn’t implement <code>Sync</code> for the same reasons
-that it doesn’t implement <code>Send</code>. The <code>RefCell&lt;T&gt;</code> type (which we talked about
-in Chapter 15) and the family of related <code>Cell&lt;T&gt;</code> types don’t implement
-<code>Sync</code>. The implementation of borrow checking that <code>RefCell&lt;T&gt;</code> does at runtime
-is not thread-safe. The smart pointer <code>Mutex&lt;T&gt;</code> implements <code>Sync</code> and can be
+<p>The <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> marker trait indicates that it is safe for the type implementing
+<code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> to be referenced from multiple threads. In other words, any type <code class="syntax" data-syntax="rust"><span class="rt">T</span></code>
+implements <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> if <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">T</span></code> (an immutable reference to <code class="syntax" data-syntax="rust"><span class="rt">T</span></code>) implements <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code>,
+meaning the reference can be sent safely to another thread. Similar to <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code>,
+primitive types all implement <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code>, and types composed entirely of types that
+implement <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> also implement <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code>.</p>
+<p>The smart pointer <code class="syntax" data-syntax="rust"><span class="rt">Rc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> also doesn’t implement <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> for the same reasons
+that it doesn’t implement <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code>. The <code class="syntax" data-syntax="rust"><span class="rt">RefCell</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> type (which we talked about
+in Chapter 15) and the family of related <code class="syntax" data-syntax="rust"><span class="rt">Cell</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> types don’t implement
+<code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code>. The implementation of borrow checking that <code class="syntax" data-syntax="rust"><span class="rt">RefCell</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> does at runtime
+is not thread-safe. The smart pointer <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> implements <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> and can be
 used to share access with multiple threads, as you saw in <a href="#shared-access-to-mutext">“Shared Access to
-<code>Mutex&lt;T&gt;</code>”</a><!-- ignore -->.</p>
-<h4 id="implementing-send-and-sync-manually-is-unsafe"><a class="header" href="#implementing-send-and-sync-manually-is-unsafe">Implementing <code>Send</code> and <code>Sync</code> Manually Is Unsafe</a></h4>
-<p>Because types composed entirely of other types that implement the <code>Send</code> and
-<code>Sync</code> traits also automatically implement <code>Send</code> and <code>Sync</code>, we don’t have to
+<code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>”</a><!-- ignore -->.</p>
+<h4 id="implementing-send-and-sync-manually-is-unsafe"><a class="header" href="#implementing-send-and-sync-manually-is-unsafe">Implementing <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> Manually Is Unsafe</a></h4>
+<p>Because types composed entirely of other types that implement the <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> and
+<code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> traits also automatically implement <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code>, we don’t have to
 implement those traits manually. As marker traits, they don’t even have any
 methods to implement. They’re just useful for enforcing invariants related to
 concurrency.</p>
 <p>Manually implementing these traits involves implementing unsafe Rust code.
 We’ll talk about using unsafe Rust code in Chapter 20; for now, the important
-information is that building new concurrent types not made up of <code>Send</code> and
-<code>Sync</code> parts requires careful thought to uphold the safety guarantees. <a href="https://doc.rust-lang.org/stable/nomicon/index.html">“The
+information is that building new concurrent types not made up of <code class="syntax" data-syntax="rust"><span class="rt">Send</span></code> and
+<code class="syntax" data-syntax="rust"><span class="rt">Sync</span></code> parts requires careful thought to uphold the safety guarantees. <a href="https://doc.rust-lang.org/stable/nomicon/index.html">“The
 Rustonomicon”</a> has more information about these guarantees and how to
 uphold them.</p>
 <h3 id="summary-15"><a class="header" href="#summary-15">Summary</a></h3>
@@ -1329,7 +1336,7 @@ These evolve more quickly than the standard library, so be sure to search
 online for the current, state-of-the-art crates to use in multithreaded
 situations.</p>
 <p>The Rust standard library provides channels for message passing and smart
-pointer types, such as <code>Mutex&lt;T&gt;</code> and <code>Arc&lt;T&gt;</code>, that are safe to use in
+pointer types, such as <code class="syntax" data-syntax="rust"><span class="rt">Mutex</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Arc</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">&gt;</span></code>, that are safe to use in
 concurrent contexts. The type system and the borrow checker ensure that the
 code using these solutions won’t end up with data races or invalid references.
 Once you get your code to compile, you can rest assured that it will happily

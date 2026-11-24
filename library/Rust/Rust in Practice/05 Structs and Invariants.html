@@ -164,46 +164,53 @@ section > p, section > ul, section > ol {max-width:76ch}
 .chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
 .hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
 @media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+
+/* Offline token colours. Inline code follows the page theme; listings have a dark surface. */
+code.syntax {--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
+@media(prefers-color-scheme:dark){code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}}
+pre code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}
+.syntax .rk{color:var(--kw)}.syntax .rs{color:var(--str)}.syntax .ri{color:var(--num)}.syntax .rf{color:var(--fn)}.syntax .rt{color:var(--ty)}.syntax .rc{color:var(--cm);font-style:italic}.syntax .ro{color:var(--op)}.syntax .rn{color:var(--nm)}.syntax .re{color:var(--err)}
+html[data-theme="dark"] :not(pre)>code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa} html:is([data-theme="light"],[data-theme="sepia"]) :not(pre)>code.syntax{--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
 </style></head><body id="top">
 <header><div class="head"><div class="mast"><span>Rust in Practice · 05 / 21</span></div>
 <div class="hero"><div><h1>Structs and Invariants</h1><p>Use private fields to protect data after validation.</p></div>
 <div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>&quot;A-1&quot;, 30</span></div><div class="trace"><b>Observe</b><span>Order::new</span></div><div class="trace"><b>Result</b><span>validated Order</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="04%20Ownership%20and%20Borrowing.html">← 04 Ownership and Borrowing</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="06%20Enums%20and%20Exhaustiveness.html">06 Enums and Exhaustiveness →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#using-structs-to-structure-related-data">Using Structs to Structure Related Data</a><a href="#defining-and-instantiating-structs-1">Defining and Instantiating Structs</a><a href="#an-example-program-using-structs-1">An Example Program Using Structs</a><a href="#methods-1">Methods</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Use private fields to protect data after validation</h2><p>The wire shape carries a String and a u32. The domain shape carries a String and a NonZeroU32. Only the domain module constructs the latter struct directly. A caller holding an Order can trust its quantity and read its id without allocating. The two types have almost identical fields yet deliberately different responsibilities. Adding a second input adapter, such as a CSV importer, should reuse Order::new rather than duplicate its checks.</p><figure class="code"><figcaption>src/domain.rs</figcaption><pre><code><span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">num</span><span class="p">::</span><span class="n">NonZeroU32</span><span class="p">;</span>
-<span class="k">use</span><span class="w"> </span><span class="n">thiserror</span><span class="p">::</span><span class="n">Error</span><span class="p">;</span>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="04%20Ownership%20and%20Borrowing.html">← 04 Ownership and Borrowing</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="06%20Enums%20and%20Exhaustiveness.html">06 Enums and Exhaustiveness →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#using-structs-to-structure-related-data">Using Structs to Structure Related Data</a><a href="#defining-and-instantiating-structs-1">Defining and Instantiating Structs</a><a href="#an-example-program-using-structs-1">An Example Program Using Structs</a><a href="#methods-1">Methods</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Use private fields to protect data after validation</h2><p>The wire shape carries a String and a u32. The domain shape carries a String and a NonZeroU32. Only the domain module constructs the latter struct directly. A caller holding an Order can trust its quantity and read its id without allocating. The two types have almost identical fields yet deliberately different responsibilities. Adding a second input adapter, such as a CSV importer, should reuse Order::new rather than duplicate its checks.</p><figure class="code"><figcaption>src/domain.rs</figcaption><pre><code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">num</span><span class="ro">::</span><span class="rt">NonZeroU32</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">thiserror</span><span class="ro">::</span><span class="rt">Error</span><span class="ro">;</span>
 
-<span class="cp">#[derive(Debug, Error)]</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Invalid</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="cp">#[error(</span><span class="s">"id must contain 1–64 ASCII letters, digits, or hyphens"</span><span class="cp">)]</span>
-<span class="w">    </span><span class="n">Id</span><span class="p">,</span>
-<span class="w">    </span><span class="cp">#[error(</span><span class="s">"quantity must be positive"</span><span class="cp">)]</span>
-<span class="w">    </span><span class="n">Quantity</span><span class="p">,</span>
-<span class="p">}</span>
+<span class="rc">#[</span><span class="rc">derive(Debug, Error)</span><span class="rc">]</span>
+<span class="rk">pub</span> <span class="rk">enum</span> <span class="rt">Invalid</span> <span class="ro">{</span>
+    <span class="rc">#[</span><span class="rc">error(</span><span class="rs">"</span><span class="rs">id must contain 1–64 ASCII letters, digits, or hyphens</span><span class="rs">"</span><span class="rc">)</span><span class="rc">]</span>
+    <span class="rt">Id</span><span class="ro">,</span>
+    <span class="rc">#[</span><span class="rc">error(</span><span class="rs">"</span><span class="rs">quantity must be positive</span><span class="rs">"</span><span class="rc">)</span><span class="rc">]</span>
+    <span class="rt">Quantity</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-<span class="cp">#[derive(Debug)]</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Order</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
-<span class="w">    </span><span class="n">quantity</span><span class="p">:</span><span class="w"> </span><span class="nc">NonZeroU32</span><span class="p">,</span>
-<span class="p">}</span>
+<span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+<span class="rk">pub</span> <span class="rk">struct</span> <span class="rt">Order</span> <span class="ro">{</span>
+    <span class="rn">id</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+    <span class="rn">quantity</span><span class="ro">:</span> <span class="rt">NonZeroU32</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-<span class="k">impl</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">new</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="n">quantity</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="bp">Self</span><span class="p">,</span><span class="w"> </span><span class="n">Invalid</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="n">id</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span>
-<span class="w">            </span><span class="o">||</span><span class="w"> </span><span class="n">id</span><span class="p">.</span><span class="n">len</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">64</span>
-<span class="w">            </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">id</span><span class="p">.</span><span class="n">bytes</span><span class="p">().</span><span class="n">all</span><span class="p">(</span><span class="o">|</span><span class="n">b</span><span class="o">|</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">is_ascii_alphanumeric</span><span class="p">()</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">b'-'</span><span class="p">)</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="n">Invalid</span><span class="p">::</span><span class="n">Id</span><span class="p">);</span>
-<span class="w">        </span><span class="p">}</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NonZeroU32</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="n">quantity</span><span class="p">).</span><span class="n">ok_or</span><span class="p">(</span><span class="n">Invalid</span><span class="p">::</span><span class="n">Quantity</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="bp">Self</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">quantity</span><span class="w"> </span><span class="p">})</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">id</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="n">id</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">quantity</span><span class="p">.</span><span class="n">get</span><span class="p">()</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="p">}</span>
+<span class="rk">impl</span> <span class="rt">Order</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">new</span><span class="ro">(</span><span class="rn">id</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span> <span class="rn">quantity</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">Result</span><span class="ro">&lt;</span><span class="rt">Self</span><span class="ro">,</span> <span class="rt">Invalid</span><span class="ro">&gt;</span> <span class="ro">{</span>
+        <span class="rk">if</span> <span class="rn">id</span><span class="ro">.</span><span class="rn">is_empty</span><span class="ro">(</span><span class="ro">)</span>
+            <span class="ro">|</span><span class="ro">|</span> <span class="rn">id</span><span class="ro">.</span><span class="rn">len</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">&gt;</span> <span class="ri">64</span>
+            <span class="ro">|</span><span class="ro">|</span> <span class="ro">!</span><span class="rn">id</span><span class="ro">.</span><span class="rn">bytes</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">all</span><span class="ro">(</span><span class="ro">|</span><span class="rn">b</span><span class="ro">|</span> <span class="rn">b</span><span class="ro">.</span><span class="rn">is_ascii_alphanumeric</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">|</span><span class="ro">|</span> <span class="rn">b</span> <span class="ro">=</span><span class="ro">=</span> <span class="rs">b'-'</span><span class="ro">)</span>
+        <span class="ro">{</span>
+            <span class="rk">return</span> <span class="rt">Err</span><span class="ro">(</span><span class="rt">Invalid</span><span class="ro">::</span><span class="rt">Id</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="ro">}</span>
+        <span class="rk">let</span> <span class="rn">quantity</span> <span class="ro">=</span> <span class="rt">NonZeroU32</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="rn">quantity</span><span class="ro">)</span><span class="ro">.</span><span class="rn">ok_or</span><span class="ro">(</span><span class="rt">Invalid</span><span class="ro">::</span><span class="rt">Quantity</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+        <span class="rt">Ok</span><span class="ro">(</span><span class="rt">Self</span> <span class="ro">{</span> <span class="rn">id</span><span class="ro">,</span> <span class="rn">quantity</span> <span class="ro">}</span><span class="ro">)</span>
+    <span class="ro">}</span>
+    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">id</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rk">&amp;</span><span class="rt">str</span> <span class="ro">{</span>
+        <span class="ro">&amp;</span><span class="rt">self</span><span class="ro">.</span><span class="rn">id</span>
+    <span class="ro">}</span>
+    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">quantity</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+        <span class="rt">self</span><span class="ro">.</span><span class="rn">quantity</span><span class="ro">.</span><span class="rn">get</span><span class="ro">(</span><span class="ro">)</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 </code></pre></figure><p>The identifier accepts ASCII letters, digits and a hyphen with a maximum of 64 bytes. Restricting to ASCII makes the length rule unambiguous here. It would be the wrong rule for a human name. Notice that the String already exists when validation begins. Consuming it on success saves allocating a second one. On error it is dropped. An editor that needs to redisplay the user&#x27;s original input can validate a borrow before transferring ownership.</p><h3>Choose the validation surface</h3><p>The constructor establishes rules that depend only on its arguments. Whether A-1 has already been accepted depends on external state and cannot be proven by checking a string. Keep that question out of the constructor even if both failures are colloquially called invalid orders. Otherwise constructing a value becomes a database operation whose result can become stale immediately. The separation is visible in the status contract. Quantity zero fails even on a brand-new database. A changed quantity for a previously accepted id becomes a conflict only after storage comparison. Being able to explain that difference makes the module boundaries easier to defend.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/std/num/type.NonZeroU32.html">doc.rust-lang.org/std/num/type.NonZeroU32.html</a></p></section><div class="book"><h2 id="using-structs-to-structure-related-data"><a class="header" href="#using-structs-to-structure-related-data">Using Structs to Structure Related Data</a></h2>
 <p>A <em>struct</em>, or <em>structure</em>, is a custom data type that lets you package
 together and name multiple related values that make up a meaningful group. If
@@ -225,26 +232,26 @@ pieces of a struct can be different types. Unlike with tuples, in a struct
 you’ll name each piece of data so it’s clear what the values mean. Adding these
 names means that structs are more flexible than tuples: You don’t have to rely
 on the order of the data to specify or access the values of an instance.</p>
-<p>To define a struct, we enter the keyword <code>struct</code> and name the entire struct. A
+<p>To define a struct, we enter the keyword <code class="syntax" data-syntax="rust"><span class="rk">struct</span></code> and name the entire struct. A
 struct’s name should describe the significance of the pieces of data being
 grouped together. Then, inside curly brackets, we define the names and types of
 the pieces of data, which we call <em>fields</em>. For example, Listing 5-1 shows a
 struct that stores information about a user account.</p>
 <figure class="listing" id="listing-5-1">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">struct User {
-    active: bool,
-    username: String,
-    email: String,
-    sign_in_count: u64,
-}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+    <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+    <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+<span class="ro">}</span>
 <span class="boring">
-</span><span class="boring">fn main() {}</span></code></pre>
-<figcaption><a href="#listing-5-1">Listing 5-1</a>: A <code>User</code> struct definition</figcaption>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-5-1">Listing 5-1</a>: A <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> struct definition</figcaption>
 </figure>
 <p>To use a struct after we’ve defined it, we create an <em>instance</em> of that struct
 by specifying concrete values for each of the fields. We create an instance by
-stating the name of the struct and then add curly brackets containing <em><code>key: value</code></em> pairs, where the keys are the names of the fields and the values are the
+stating the name of the struct and then add curly brackets containing <em><code class="syntax" data-syntax="rust"><span class="rn">key</span><span class="ro">:</span> <span class="rt">value</span></code></em> pairs, where the keys are the names of the fields and the values are the
 data we want to store in those fields. We don’t have to specify the fields in
 the same order in which we declared them in the struct. In other words, the
 struct definition is like a general template for the type, and instances fill
@@ -252,84 +259,84 @@ in that template with particular data to create values of the type. For
 example, we can declare a particular user as shown in Listing 5-2.</p>
 <figure class="listing" id="listing-5-2">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
-</span><span class="boring">    active: bool,
-</span><span class="boring">    username: String,
-</span><span class="boring">    email: String,
-</span><span class="boring">    sign_in_count: u64,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>fn main() {
-    let user1 = User {
-        active: true,
-        username: String::from("someusername123"),
-        email: String::from("someone@example.com"),
-        sign_in_count: 1,
-    };
-}</code></pre>
-<figcaption><a href="#listing-5-2">Listing 5-2</a>: Creating an instance of the <code>User</code> struct</figcaption>
+</span><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">user1</span> <span class="ro">=</span> <span class="rt">User</span> <span class="ro">{</span>
+        <span class="rn">active</span><span class="ro">:</span> <span class="rt">true</span><span class="ro">,</span>
+        <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someusername123</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someone@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="ri">1</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-2">Listing 5-2</a>: Creating an instance of the <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> struct</figcaption>
 </figure>
 <p>To get a specific value from a struct, we use dot notation. For example, to
-access this user’s email address, we use <code>user1.email</code>. If the instance is
+access this user’s email address, we use <code class="syntax" data-syntax="rust"><span class="rn">user1</span><span class="ro">.</span><span class="rn">email</span></code>. If the instance is
 mutable, we can change a value by using the dot notation and assigning into a
-particular field. Listing 5-3 shows how to change the value in the <code>email</code>
-field of a mutable <code>User</code> instance.</p>
+particular field. Listing 5-3 shows how to change the value in the <code class="syntax" data-syntax="rust"><span class="rn">email</span></code>
+field of a mutable <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> instance.</p>
 <figure class="listing" id="listing-5-3">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
-</span><span class="boring">    active: bool,
-</span><span class="boring">    username: String,
-</span><span class="boring">    email: String,
-</span><span class="boring">    sign_in_count: u64,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>fn main() {
-    let mut user1 = User {
-        active: true,
-        username: String::from("someusername123"),
-        email: String::from("someone@example.com"),
-        sign_in_count: 1,
-    };
+</span><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">user1</span> <span class="ro">=</span> <span class="rt">User</span> <span class="ro">{</span>
+        <span class="rn">active</span><span class="ro">:</span> <span class="rt">true</span><span class="ro">,</span>
+        <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someusername123</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someone@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="ri">1</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    user1.email = String::from("anotheremail@example.com");
-}</code></pre>
-<figcaption><a href="#listing-5-3">Listing 5-3</a>: Changing the value in the <code>email</code> field of a <code>User</code> instance</figcaption>
+    <span class="rn">user1</span><span class="ro">.</span><span class="rn">email</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">anotheremail@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-3">Listing 5-3</a>: Changing the value in the <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> field of a <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> instance</figcaption>
 </figure>
 <p>Note that the entire instance must be mutable; Rust doesn’t allow us to mark
 only certain fields as mutable. As with any expression, we can construct a new
 instance of the struct as the last expression in the function body to
 implicitly return that new instance.</p>
-<p>Listing 5-4 shows a <code>build_user</code> function that returns a <code>User</code> instance with
-the given email and username. The <code>active</code> field gets the value <code>true</code>, and the
-<code>sign_in_count</code> gets a value of <code>1</code>.</p>
+<p>Listing 5-4 shows a <code class="syntax" data-syntax="rust"><span class="rn">build_user</span></code> function that returns a <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> instance with
+the given email and username. The <code class="syntax" data-syntax="rust"><span class="rn">active</span></code> field gets the value <code class="syntax" data-syntax="rust"><span class="rk">true</span></code>, and the
+<code class="syntax" data-syntax="rust"><span class="rn">sign_in_count</span></code> gets a value of <code class="syntax" data-syntax="rust"><span class="ri">1</span></code>.</p>
 <figure class="listing" id="listing-5-4">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
-</span><span class="boring">    active: bool,
-</span><span class="boring">    username: String,
-</span><span class="boring">    email: String,
-</span><span class="boring">    sign_in_count: u64,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>fn build_user(email: String, username: String) -&gt; User {
-    User {
-        active: true,
-        username: username,
-        email: email,
-        sign_in_count: 1,
-    }
-}
+</span><span class="rk">fn</span> <span class="rf">build_user</span><span class="ro">(</span><span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span> <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">User</span> <span class="ro">{</span>
+    <span class="rt">User</span> <span class="ro">{</span>
+        <span class="rn">active</span><span class="ro">:</span> <span class="rt">true</span><span class="ro">,</span>
+        <span class="rn">username</span><span class="ro">:</span> <span class="rt">username</span><span class="ro">,</span>
+        <span class="rn">email</span><span class="ro">:</span> <span class="rt">email</span><span class="ro">,</span>
+        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="ri">1</span><span class="ro">,</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 <span class="boring">
-</span><span class="boring">fn main() {
-</span><span class="boring">    let user1 = build_user(
-</span><span class="boring">        String::from("someone@example.com"),
-</span><span class="boring">        String::from("someusername123"),
-</span><span class="boring">    );
-</span><span class="boring">}</span></code></pre>
-<figcaption><a href="#listing-5-4">Listing 5-4</a>: A <code>build_user</code> function that takes an email and username and returns a <code>User</code> instance</figcaption>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">user1</span> <span class="ro">=</span> <span class="rn">build_user</span><span class="ro">(</span>
+</span><span class="boring">        <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someone@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someusername123</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-5-4">Listing 5-4</a>: A <code class="syntax" data-syntax="rust"><span class="rn">build_user</span></code> function that takes an email and username and returns a <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> instance</figcaption>
 </figure>
 <p>It makes sense to name the function parameters with the same name as the struct
-fields, but having to repeat the <code>email</code> and <code>username</code> field names and
+fields, but having to repeat the <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">username</span></code> field names and
 variables is a bit tedious. If the struct had more fields, repeating each name
 would get even more annoying. Luckily, there’s a convenient shorthand!</p>
 <!-- Old headings. Do not remove or links may break. -->
@@ -337,123 +344,123 @@ would get even more annoying. Luckily, there’s a convenient shorthand!</p>
 <h4 id="using-the-field-init-shorthand"><a class="header" href="#using-the-field-init-shorthand">Using the Field Init Shorthand</a></h4>
 <p>Because the parameter names and the struct field names are exactly the same in
 Listing 5-4, we can use the <em>field init shorthand</em> syntax to rewrite
-<code>build_user</code> so that it behaves exactly the same but doesn’t have the
-repetition of <code>username</code> and <code>email</code>, as shown in Listing 5-5.</p>
+<code class="syntax" data-syntax="rust"><span class="rn">build_user</span></code> so that it behaves exactly the same but doesn’t have the
+repetition of <code class="syntax" data-syntax="rust"><span class="rn">username</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">email</span></code>, as shown in Listing 5-5.</p>
 <figure class="listing" id="listing-5-5">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
-</span><span class="boring">    active: bool,
-</span><span class="boring">    username: String,
-</span><span class="boring">    email: String,
-</span><span class="boring">    sign_in_count: u64,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>fn build_user(email: String, username: String) -&gt; User {
-    User {
-        active: true,
-        username,
-        email,
-        sign_in_count: 1,
-    }
-}
+</span><span class="rk">fn</span> <span class="rf">build_user</span><span class="ro">(</span><span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span> <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">User</span> <span class="ro">{</span>
+    <span class="rt">User</span> <span class="ro">{</span>
+        <span class="rn">active</span><span class="ro">:</span> <span class="rt">true</span><span class="ro">,</span>
+        <span class="rn">username</span><span class="ro">,</span>
+        <span class="rn">email</span><span class="ro">,</span>
+        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="ri">1</span><span class="ro">,</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 <span class="boring">
-</span><span class="boring">fn main() {
-</span><span class="boring">    let user1 = build_user(
-</span><span class="boring">        String::from("someone@example.com"),
-</span><span class="boring">        String::from("someusername123"),
-</span><span class="boring">    );
-</span><span class="boring">}</span></code></pre>
-<figcaption><a href="#listing-5-5">Listing 5-5</a>: A <code>build_user</code> function that uses field init shorthand because the <code>username</code> and <code>email</code> parameters have the same name as struct fields</figcaption>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">user1</span> <span class="ro">=</span> <span class="rn">build_user</span><span class="ro">(</span>
+</span><span class="boring">        <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someone@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someusername123</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-5-5">Listing 5-5</a>: A <code class="syntax" data-syntax="rust"><span class="rn">build_user</span></code> function that uses field init shorthand because the <code class="syntax" data-syntax="rust"><span class="rn">username</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> parameters have the same name as struct fields</figcaption>
 </figure>
-<p>Here, we’re creating a new instance of the <code>User</code> struct, which has a field
-named <code>email</code>. We want to set the <code>email</code> field’s value to the value in the
-<code>email</code> parameter of the <code>build_user</code> function. Because the <code>email</code> field and
-the <code>email</code> parameter have the same name, we only need to write <code>email</code> rather
-than <code>email: email</code>.</p>
+<p>Here, we’re creating a new instance of the <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> struct, which has a field
+named <code class="syntax" data-syntax="rust"><span class="rn">email</span></code>. We want to set the <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> field’s value to the value in the
+<code class="syntax" data-syntax="rust"><span class="rn">email</span></code> parameter of the <code class="syntax" data-syntax="rust"><span class="rn">build_user</span></code> function. Because the <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> field and
+the <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> parameter have the same name, we only need to write <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> rather
+than <code class="syntax" data-syntax="rust"><span class="rn">email</span><span class="ro">:</span> <span class="rt">email</span></code>.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="creating-instances-from-other-instances-with-struct-update-syntax"></a></p>
 <h4 id="creating-instances-with-struct-update-syntax"><a class="header" href="#creating-instances-with-struct-update-syntax">Creating Instances with Struct Update Syntax</a></h4>
 <p>It’s often useful to create a new instance of a struct that includes most of
 the values from another instance of the same type, but changes some of them.
 You can do this using struct update syntax.</p>
-<p>First, in Listing 5-6 we show how to create a new <code>User</code> instance in <code>user2</code> in
-the regular way, without the update syntax. We set a new value for <code>email</code> but
-otherwise use the same values from <code>user1</code> that we created in Listing 5-2.</p>
+<p>First, in Listing 5-6 we show how to create a new <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> instance in <code class="syntax" data-syntax="rust"><span class="rn">user2</span></code> in
+the regular way, without the update syntax. We set a new value for <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> but
+otherwise use the same values from <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code> that we created in Listing 5-2.</p>
 <figure class="listing" id="listing-5-6">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
-</span><span class="boring">    active: bool,
-</span><span class="boring">    username: String,
-</span><span class="boring">    email: String,
-</span><span class="boring">    sign_in_count: u64,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>fn main() {
-    // --snip--
-<span class="boring">
-</span><span class="boring">    let user1 = User {
-</span><span class="boring">        email: String::from("someone@example.com"),
-</span><span class="boring">        username: String::from("someusername123"),
-</span><span class="boring">        active: true,
-</span><span class="boring">        sign_in_count: 1,
-</span><span class="boring">    };
+</span><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">user1</span> <span class="ro">=</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someone@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someusername123</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">active</span><span class="ro">:</span> <span class="rt">true</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="ri">1</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
 </span>
-    let user2 = User {
-        active: user1.active,
-        username: user1.username,
-        email: String::from("another@example.com"),
-        sign_in_count: user1.sign_in_count,
-    };
-}</code></pre>
-<figcaption><a href="#listing-5-6">Listing 5-6</a>: Creating a new <code>User</code> instance using all but one of the values from <code>user1</code></figcaption>
+    <span class="rk">let</span> <span class="rn">user2</span> <span class="ro">=</span> <span class="rt">User</span> <span class="ro">{</span>
+        <span class="rn">active</span><span class="ro">:</span> <span class="rt">user1</span><span class="ro">.</span><span class="rn">active</span><span class="ro">,</span>
+        <span class="rn">username</span><span class="ro">:</span> <span class="rt">user1</span><span class="ro">.</span><span class="rn">username</span><span class="ro">,</span>
+        <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">another@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">user1</span><span class="ro">.</span><span class="rn">sign_in_count</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-6">Listing 5-6</a>: Creating a new <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> instance using all but one of the values from <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code></figcaption>
 </figure>
 <p>Using struct update syntax, we can achieve the same effect with less code, as
-shown in Listing 5-7. The syntax <code>..</code> specifies that the remaining fields not
+shown in Listing 5-7. The syntax <code class="syntax" data-syntax="rust"><span class="ro">..</span></code> specifies that the remaining fields not
 explicitly set should have the same value as the fields in the given instance.</p>
 <figure class="listing" id="listing-5-7">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
-</span><span class="boring">    active: bool,
-</span><span class="boring">    username: String,
-</span><span class="boring">    email: String,
-</span><span class="boring">    sign_in_count: u64,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>fn main() {
-    // --snip--
-<span class="boring">
-</span><span class="boring">    let user1 = User {
-</span><span class="boring">        email: String::from("someone@example.com"),
-</span><span class="boring">        username: String::from("someusername123"),
-</span><span class="boring">        active: true,
-</span><span class="boring">        sign_in_count: 1,
-</span><span class="boring">    };
+</span><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">user1</span> <span class="ro">=</span> <span class="rt">User</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someone@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">username</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">someusername123</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">active</span><span class="ro">:</span> <span class="rt">true</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="ri">1</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
 </span>
-    let user2 = User {
-        email: String::from("another@example.com"),
-        ..user1
-    };
-}</code></pre>
-<figcaption><a href="#listing-5-7">Listing 5-7</a>: Using struct update syntax to set a new <code>email</code> value for a <code>User</code> instance but to use the rest of the values from <code>user1</code></figcaption>
+    <span class="rk">let</span> <span class="rn">user2</span> <span class="ro">=</span> <span class="rt">User</span> <span class="ro">{</span>
+        <span class="rn">email</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">another@example.com</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="ro">..</span><span class="rn">user1</span>
+    <span class="ro">}</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-7">Listing 5-7</a>: Using struct update syntax to set a new <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> value for a <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> instance but to use the rest of the values from <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code></figcaption>
 </figure>
-<p>The code in Listing 5-7 also creates an instance in <code>user2</code> that has a
-different value for <code>email</code> but has the same values for the <code>username</code>,
-<code>active</code>, and <code>sign_in_count</code> fields from <code>user1</code>. The <code>..user1</code> must come last
+<p>The code in Listing 5-7 also creates an instance in <code class="syntax" data-syntax="rust"><span class="rn">user2</span></code> that has a
+different value for <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> but has the same values for the <code class="syntax" data-syntax="rust"><span class="rn">username</span></code>,
+<code class="syntax" data-syntax="rust"><span class="rn">active</span></code>, and <code class="syntax" data-syntax="rust"><span class="rn">sign_in_count</span></code> fields from <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code>. The <code class="syntax" data-syntax="rust"><span class="ro">..</span><span class="rn">user1</span></code> must come last
 to specify that any remaining fields should get their values from the
-corresponding fields in <code>user1</code>, but we can choose to specify values for as
+corresponding fields in <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code>, but we can choose to specify values for as
 many fields as we want in any order, regardless of the order of the fields in
 the struct’s definition.</p>
-<p>Note that the struct update syntax uses <code>=</code> like an assignment; this is because
+<p>Note that the struct update syntax uses <code class="syntax" data-syntax="rust"><span class="ro">=</span></code> like an assignment; this is because
 it moves the data, just as we saw in the <a href="04%20Ownership%20and%20Borrowing.html#variables-and-data-interacting-with-move">“Variables and Data Interacting with
 Move”</a><!-- ignore --> section. In this example, we can no longer use
-<code>user1</code> after creating <code>user2</code> because the <code>String</code> in the <code>username</code> field of
-<code>user1</code> was moved into <code>user2</code>. If we had given <code>user2</code> new <code>String</code> values for
-both <code>email</code> and <code>username</code>, and thus only used the <code>active</code> and <code>sign_in_count</code>
-values from <code>user1</code>, then <code>user1</code> would still be valid after creating <code>user2</code>.
-Both <code>active</code> and <code>sign_in_count</code> are types that implement the <code>Copy</code> trait, so
+<code class="syntax" data-syntax="rust"><span class="rn">user1</span></code> after creating <code class="syntax" data-syntax="rust"><span class="rn">user2</span></code> because the <code class="syntax" data-syntax="rust"><span class="rt">String</span></code> in the <code class="syntax" data-syntax="rust"><span class="rn">username</span></code> field of
+<code class="syntax" data-syntax="rust"><span class="rn">user1</span></code> was moved into <code class="syntax" data-syntax="rust"><span class="rn">user2</span></code>. If we had given <code class="syntax" data-syntax="rust"><span class="rn">user2</span></code> new <code class="syntax" data-syntax="rust"><span class="rt">String</span></code> values for
+both <code class="syntax" data-syntax="rust"><span class="rn">email</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">username</span></code>, and thus only used the <code class="syntax" data-syntax="rust"><span class="rn">active</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">sign_in_count</span></code>
+values from <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code>, then <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code> would still be valid after creating <code class="syntax" data-syntax="rust"><span class="rn">user2</span></code>.
+Both <code class="syntax" data-syntax="rust"><span class="rn">active</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">sign_in_count</span></code> are types that implement the <code class="syntax" data-syntax="rust"><span class="rt">Copy</span></code> trait, so
 the behavior we discussed in the <a href="04%20Ownership%20and%20Borrowing.html#stack-only-data-copy">“Stack-Only Data: Copy”</a><!-- ignore -->
-section would apply. We can also still use <code>user1.email</code> in this example,
-because its value was not moved out of <code>user1</code>.</p>
+section would apply. We can also still use <code class="syntax" data-syntax="rust"><span class="rn">user1</span><span class="ro">.</span><span class="rn">email</span></code> in this example,
+because its value was not moved out of <code class="syntax" data-syntax="rust"><span class="rn">user1</span></code>.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="using-tuple-structs-without-named-fields-to-create-different-types"></a></p>
 <h4 id="creating-different-types-with-tuple-structs"><a class="header" href="#creating-different-types-with-tuple-structs">Creating Different Types with Tuple Structs</a></h4>
@@ -463,61 +470,61 @@ names associated with their fields; rather, they just have the types of the
 fields. Tuple structs are useful when you want to give the whole tuple a name
 and make the tuple a different type from other tuples, and when naming each
 field as in a regular struct would be verbose or redundant.</p>
-<p>To define a tuple struct, start with the <code>struct</code> keyword and the struct name
+<p>To define a tuple struct, start with the <code class="syntax" data-syntax="rust"><span class="rk">struct</span></code> keyword and the struct name
 followed by the types in the tuple. For example, here we define and use two
-tuple structs named <code>Color</code> and <code>Point</code>:</p>
+tuple structs named <code class="syntax" data-syntax="rust"><span class="rt">Color</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Point</span></code>:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">struct Color(i32, i32, i32);
-struct Point(i32, i32, i32);
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">struct</span> <span class="rt">Color</span><span class="ro">(</span><span class="rt">i32</span><span class="ro">,</span> <span class="rt">i32</span><span class="ro">,</span> <span class="rt">i32</span><span class="ro">)</span><span class="ro">;</span>
+<span class="rk">struct</span> <span class="rt">Point</span><span class="ro">(</span><span class="rt">i32</span><span class="ro">,</span> <span class="rt">i32</span><span class="ro">,</span> <span class="rt">i32</span><span class="ro">)</span><span class="ro">;</span>
 
-fn main() {
-    let black = Color(0, 0, 0);
-    let origin = Point(0, 0, 0);
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">black</span> <span class="ro">=</span> <span class="rt">Color</span><span class="ro">(</span><span class="ri">0</span><span class="ro">,</span> <span class="ri">0</span><span class="ro">,</span> <span class="ri">0</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">origin</span> <span class="ro">=</span> <span class="rt">Point</span><span class="ro">(</span><span class="ri">0</span><span class="ro">,</span> <span class="ri">0</span><span class="ro">,</span> <span class="ri">0</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 </figure>
-<p>Note that the <code>black</code> and <code>origin</code> values are different types because they’re
+<p>Note that the <code class="syntax" data-syntax="rust"><span class="rn">black</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">origin</span></code> values are different types because they’re
 instances of different tuple structs. Each struct you define is its own type,
 even though the fields within the struct might have the same types. For
-example, a function that takes a parameter of type <code>Color</code> cannot take a
-<code>Point</code> as an argument, even though both types are made up of three <code>i32</code>
+example, a function that takes a parameter of type <code class="syntax" data-syntax="rust"><span class="rt">Color</span></code> cannot take a
+<code class="syntax" data-syntax="rust"><span class="rt">Point</span></code> as an argument, even though both types are made up of three <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>
 values. Otherwise, tuple struct instances are similar to tuples in that you can
-destructure them into their individual pieces, and you can use a <code>.</code> followed
+destructure them into their individual pieces, and you can use a <code class="syntax" data-syntax="rust"><span class="ro">.</span></code> followed
 by the index to access an individual value. Unlike tuples, tuple structs
 require you to name the type of the struct when you destructure them. For
-example, we would write <code>let Point(x, y, z) = origin;</code> to destructure the
-values in the <code>origin</code> point into variables named <code>x</code>, <code>y</code>, and <code>z</code>.</p>
+example, we would write <code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rt">Point</span><span class="ro">(</span><span class="rn">x</span><span class="ro">,</span> <span class="rn">y</span><span class="ro">,</span> <span class="rn">z</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">origin</span><span class="ro">;</span></code> to destructure the
+values in the <code class="syntax" data-syntax="rust"><span class="rn">origin</span></code> point into variables named <code class="syntax" data-syntax="rust"><span class="rn">x</span></code>, <code class="syntax" data-syntax="rust"><span class="rn">y</span></code>, and <code class="syntax" data-syntax="rust"><span class="rn">z</span></code>.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="unit-like-structs-without-any-fields"></a></p>
 <h4 id="defining-unit-like-structs"><a class="header" href="#defining-unit-like-structs">Defining Unit-Like Structs</a></h4>
 <p>You can also define structs that don’t have any fields! These are called
-<em>unit-like structs</em> because they behave similarly to <code>()</code>, the unit type that
+<em>unit-like structs</em> because they behave similarly to <code class="syntax" data-syntax="rust"><span class="ro">(</span><span class="ro">)</span></code>, the unit type that
 we mentioned in <a href="03%20Values%20and%20Control%20Flow.html#the-tuple-type">“The Tuple Type”</a><!-- ignore --> section. Unit-like
 structs can be useful when you need to implement a trait on some type but don’t
 have any data that you want to store in the type itself. We’ll discuss traits
 in Chapter 10. Here’s an example of declaring and instantiating a unit struct
-named <code>AlwaysEqual</code>:</p>
+named <code class="syntax" data-syntax="rust"><span class="rt">AlwaysEqual</span></code>:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">struct AlwaysEqual;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">struct</span> <span class="rt">AlwaysEqual</span><span class="ro">;</span>
 
-fn main() {
-    let subject = AlwaysEqual;
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">subject</span> <span class="ro">=</span> <span class="rt">AlwaysEqual</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 </figure>
-<p>To define <code>AlwaysEqual</code>, we use the <code>struct</code> keyword, the name we want, and
+<p>To define <code class="syntax" data-syntax="rust"><span class="rt">AlwaysEqual</span></code>, we use the <code class="syntax" data-syntax="rust"><span class="rk">struct</span></code> keyword, the name we want, and
 then a semicolon. No need for curly brackets or parentheses! Then, we can get
-an instance of <code>AlwaysEqual</code> in the <code>subject</code> variable in a similar way: using
+an instance of <code class="syntax" data-syntax="rust"><span class="rt">AlwaysEqual</span></code> in the <code class="syntax" data-syntax="rust"><span class="rn">subject</span></code> variable in a similar way: using
 the name we defined, without any curly brackets or parentheses. Imagine that
 later we’ll implement behavior for this type such that every instance of
-<code>AlwaysEqual</code> is always equal to every instance of any other type, perhaps to
+<code class="syntax" data-syntax="rust"><span class="rt">AlwaysEqual</span></code> is always equal to every instance of any other type, perhaps to
 have a known result for testing purposes. We wouldn’t need any data to
 implement that behavior! You’ll see in Chapter 10 how to define traits and
 implement them on any type, including unit-like structs.</p>
 <section class="note" aria-role="note">
 <h4 id="ownership-of-struct-data"><a class="header" href="#ownership-of-struct-data">Ownership of Struct Data</a></h4>
-<p>In the <code>User</code> struct definition in Listing 5-1, we used the owned <code>String</code>
-type rather than the <code>&amp;str</code> string slice type. This is a deliberate choice
+<p>In the <code class="syntax" data-syntax="rust"><span class="rt">User</span></code> struct definition in Listing 5-1, we used the owned <code class="syntax" data-syntax="rust"><span class="rt">String</span></code>
+type rather than the <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">str</span></code> string slice type. This is a deliberate choice
 because we want each instance of this struct to own all of its data and for
 that data to be valid for as long as the entire struct is valid.</p>
 <p>It’s also possible for structs to store references to data owned by something
@@ -529,58 +536,58 @@ in a struct without specifying lifetimes, like the following in
 <figure class="listing">
 <span class="file-name">Filename: src/main.rs</span>
 <!-- CAN'T EXTRACT SEE https://github.com/rust-lang/mdBook/issues/1127 -->
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">struct User {
-    active: bool,
-    username: &amp;str,
-    email: &amp;str,
-    sign_in_count: u64,
-}
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">struct</span> <span class="rt">User</span> <span class="ro">{</span>
+    <span class="rn">active</span><span class="ro">:</span> <span class="rt">bool</span><span class="ro">,</span>
+    <span class="rn">username</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">str</span><span class="ro">,</span>
+    <span class="rn">email</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">str</span><span class="ro">,</span>
+    <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="rt">u64</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-fn main() {
-    let user1 = User {
-        active: true,
-        username: "someusername123",
-        email: "someone@example.com",
-        sign_in_count: 1,
-    };
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">user1</span> <span class="ro">=</span> <span class="rt">User</span> <span class="ro">{</span>
+        <span class="rn">active</span><span class="ro">:</span> <span class="rt">true</span><span class="ro">,</span>
+        <span class="rn">username</span><span class="ro">:</span> <span class="rs">"</span><span class="rs">someusername123</span><span class="rs">"</span><span class="ro">,</span>
+        <span class="rn">email</span><span class="ro">:</span> <span class="rs">"</span><span class="rs">someone@example.com</span><span class="rs">"</span><span class="ro">,</span>
+        <span class="rn">sign_in_count</span><span class="ro">:</span> <span class="ri">1</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 </figure>
 <p>The compiler will complain that it needs lifetime specifiers:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling structs v0.1.0 (file:///projects/structs)
-error[E0106]: missing lifetime specifier
- --&gt; src/main.rs:3:15
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> structs v0.<span class="ri">1.0</span> (file:///projects/structs)
+<span class="re">error[E0106]</span>: missing lifetime specifier
+ --&gt; src/main.rs:<span class="ri">3</span>:<span class="ri">15</span>
   |
-3 |     username: &amp;str,
+<span class="ri">3</span> |     username: &amp;str,
   |               ^ expected named lifetime parameter
   |
-help: consider introducing a named lifetime parameter
+<span class="rk">help</span>: consider introducing a named lifetime parameter
   |
-1 ~ struct User&lt;'a&gt; {
-2 |     active: bool,
-3 ~     username: &amp;'a str,
+<span class="ri">1</span> ~ struct User&lt;'a&gt; {
+<span class="ri">2</span> |     active: bool,
+<span class="ri">3</span> ~     username: &amp;'a str,
   |
 
-error[E0106]: missing lifetime specifier
- --&gt; src/main.rs:4:12
+<span class="re">error[E0106]</span>: missing lifetime specifier
+ --&gt; src/main.rs:<span class="ri">4</span>:<span class="ri">12</span>
   |
-4 |     email: &amp;str,
+<span class="ri">4</span> |     email: &amp;str,
   |            ^ expected named lifetime parameter
   |
-help: consider introducing a named lifetime parameter
+<span class="rk">help</span>: consider introducing a named lifetime parameter
   |
-1 ~ struct User&lt;'a&gt; {
-2 |     active: bool,
-3 |     username: &amp;str,
-4 ~     email: &amp;'a str,
+<span class="ri">1</span> ~ struct User&lt;'a&gt; {
+<span class="ri">2</span> |     active: bool,
+<span class="ri">3</span> |     username: &amp;str,
+<span class="ri">4</span> ~     email: &amp;'a str,
   |
 
-For more information about this error, try `rustc --explain E0106`.
-error: could not compile `structs` (bin "structs") due to 2 previous errors
+For more information about this error, try <span class="rs">`rustc --explain E0106`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`structs`</span> (bin "structs") due to <span class="ri">2</span> previous errors
 </code></pre>
 <p>In Chapter 10, we’ll discuss how to fix these errors so that you can store
 references in structs, but for now, we’ll fix errors like these using owned
-types like <code>String</code> instead of references like <code>&amp;str</code>.</p>
+types like <code class="syntax" data-syntax="rust"><span class="rt">String</span></code> instead of references like <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">str</span></code>.</p>
 </section>
 <!-- manual-regeneration
 for the error above
@@ -600,46 +607,46 @@ of the rectangle. Listing 5-8 shows a short program with one way of doing
 exactly that in our project’s <em>src/main.rs</em>.</p>
 <figure class="listing" id="listing-5-8">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let width1 = 30;
-    let height1 = 50;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">width1</span> <span class="ro">=</span> <span class="ri">30</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">height1</span> <span class="ro">=</span> <span class="ri">50</span><span class="ro">;</span>
 
-    println!(
-        "The area of the rectangle is {} square pixels.",
-        area(width1, height1)
-    );
-}
+    <span class="rf">println!</span><span class="ro">(</span>
+        <span class="rs">"</span><span class="rs">The area of the rectangle is {} square pixels.</span><span class="rs">"</span><span class="ro">,</span>
+        <span class="rn">area</span><span class="ro">(</span><span class="rn">width1</span><span class="ro">,</span> <span class="rn">height1</span><span class="ro">)</span>
+    <span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn area(width: u32, height: u32) -&gt; u32 {
-    width * height
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">area</span><span class="ro">(</span><span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span> <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+    <span class="rn">width</span> <span class="ro">*</span> <span class="rn">height</span>
+<span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-5-8">Listing 5-8</a>: Calculating the area of a rectangle specified by separate width and height variables</figcaption>
 </figure>
-<p>Now, run this program using <code>cargo run</code>:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling rectangles v0.1.0 (file:///projects/rectangles)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.42s
-     Running `target/debug/rectangles`
-The area of the rectangle is 1500 square pixels.
+<p>Now, run this program using <code class="syntax" data-syntax="bash">cargo run</code>:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> rectangles v0.<span class="ri">1.0</span> (file:///projects/rectangles)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.42s
+<span class="rk">     Running</span> <span class="rs">`target/debug/rectangles`</span>
+The area of the rectangle is <span class="ri">1500</span> square pixels.
 </code></pre>
 <p>This code succeeds in figuring out the area of the rectangle by calling the
-<code>area</code> function with each dimension, but we can do more to make this code clear
+<code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function with each dimension, but we can do more to make this code clear
 and readable.</p>
-<p>The issue with this code is evident in the signature of <code>area</code>:</p>
-<pre><code class="language-rust ignore"><span class="boring">fn main() {
-</span><span class="boring">    let width1 = 30;
-</span><span class="boring">    let height1 = 50;
+<p>The issue with this code is evident in the signature of <code class="syntax" data-syntax="rust"><span class="rn">area</span></code>:</p>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">width1</span> <span class="ro">=</span> <span class="ri">30</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">height1</span> <span class="ro">=</span> <span class="ri">50</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!(
-</span><span class="boring">        "The area of the rectangle is {} square pixels.",
-</span><span class="boring">        area(width1, height1)
-</span><span class="boring">    );
-</span><span class="boring">}
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span>
+</span><span class="boring">        <span class="rs">"</span><span class="rs">The area of the rectangle is {} square pixels.</span><span class="rs">"</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">area</span><span class="ro">(</span><span class="rn">width1</span><span class="ro">,</span> <span class="rn">height1</span><span class="ro">)</span>
+</span><span class="boring">    <span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>fn area(width: u32, height: u32) -&gt; u32 {
-<span class="boring">    width * height
-</span><span class="boring">}</span></code></pre>
-<p>The <code>area</code> function is supposed to calculate the area of one rectangle, but the
+</span><span class="rk">fn</span> <span class="rf">area</span><span class="ro">(</span><span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span> <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+<span class="boring">    <span class="rn">width</span> <span class="ro">*</span> <span class="rn">height</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function is supposed to calculate the area of one rectangle, but the
 function we wrote has two parameters, and it’s not clear anywhere in our
 program that the parameters are related. It would be more readable and more
 manageable to group width and height together. We’ve already discussed one way
@@ -649,18 +656,18 @@ of Chapter 3: by using tuples.</p>
 <p>Listing 5-9 shows another version of our program that uses tuples.</p>
 <figure class="listing" id="listing-5-9">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let rect1 = (30, 50);
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="ro">(</span><span class="ri">30</span><span class="ro">,</span> <span class="ri">50</span><span class="ro">)</span><span class="ro">;</span>
 
-    println!(
-        "The area of the rectangle is {} square pixels.",
-        area(rect1)
-    );
-}
+    <span class="rf">println!</span><span class="ro">(</span>
+        <span class="rs">"</span><span class="rs">The area of the rectangle is {} square pixels.</span><span class="rs">"</span><span class="ro">,</span>
+        <span class="rn">area</span><span class="ro">(</span><span class="rn">rect1</span><span class="ro">)</span>
+    <span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn area(dimensions: (u32, u32)) -&gt; u32 {
-    dimensions.0 * dimensions.1
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">area</span><span class="ro">(</span><span class="rn">dimensions</span><span class="ro">:</span> <span class="ro">(</span><span class="rt">u32</span><span class="ro">,</span> <span class="rt">u32</span><span class="ro">)</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+    <span class="rn">dimensions</span><span class="ro">.</span><span class="ri">0</span> <span class="ro">*</span> <span class="rn">dimensions</span><span class="ro">.</span><span class="ri">1</span>
+<span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-5-9">Listing 5-9</a>: Specifying the width and height of the rectangle with a tuple</figcaption>
 </figure>
 <p>In one way, this program is better. Tuples let us add a bit of structure, and
@@ -669,8 +676,8 @@ clear: Tuples don’t name their elements, so we have to index into the parts of
 the tuple, making our calculation less obvious.</p>
 <p>Mixing up the width and height wouldn’t matter for the area calculation, but if
 we want to draw the rectangle on the screen, it would matter! We would have to
-keep in mind that <code>width</code> is the tuple index <code>0</code> and <code>height</code> is the tuple
-index <code>1</code>. This would be even harder for someone else to figure out and keep in
+keep in mind that <code class="syntax" data-syntax="rust"><span class="rn">width</span></code> is the tuple index <code class="syntax" data-syntax="rust"><span class="ri">0</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">height</span></code> is the tuple
+index <code class="syntax" data-syntax="rust"><span class="ri">1</span></code>. This would be even harder for someone else to figure out and keep in
 mind if they were to use our code. Because we haven’t conveyed the meaning of
 our data in our code, it’s now easier to introduce errors.</p>
 <!-- Old headings. Do not remove or links may break. -->
@@ -681,316 +688,316 @@ we’re using into a struct with a name for the whole as well as names for the
 parts, as shown in Listing 5-10.</p>
 <figure class="listing" id="listing-5-10">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">struct Rectangle {
-    width: u32,
-    height: u32,
-}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-fn main() {
-    let rect1 = Rectangle {
-        width: 30,
-        height: 50,
-    };
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    println!(
-        "The area of the rectangle is {} square pixels.",
-        area(&amp;rect1)
-    );
-}
+    <span class="rf">println!</span><span class="ro">(</span>
+        <span class="rs">"</span><span class="rs">The area of the rectangle is {} square pixels.</span><span class="rs">"</span><span class="ro">,</span>
+        <span class="rn">area</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect1</span><span class="ro">)</span>
+    <span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn area(rectangle: &amp;Rectangle) -&gt; u32 {
-    rectangle.width * rectangle.height
-}</code></pre>
-<figcaption><a href="#listing-5-10">Listing 5-10</a>: Defining a <code>Rectangle</code> struct</figcaption>
+<span class="rk">fn</span> <span class="rf">area</span><span class="ro">(</span><span class="rn">rectangle</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Rectangle</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+    <span class="rn">rectangle</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">*</span> <span class="rn">rectangle</span><span class="ro">.</span><span class="rn">height</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-10">Listing 5-10</a>: Defining a <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> struct</figcaption>
 </figure>
-<p>Here, we’ve defined a struct and named it <code>Rectangle</code>. Inside the curly
-brackets, we defined the fields as <code>width</code> and <code>height</code>, both of which have
-type <code>u32</code>. Then, in <code>main</code>, we created a particular instance of <code>Rectangle</code>
-that has a width of <code>30</code> and a height of <code>50</code>.</p>
-<p>Our <code>area</code> function is now defined with one parameter, which we’ve named
-<code>rectangle</code>, whose type is an immutable borrow of a struct <code>Rectangle</code>
+<p>Here, we’ve defined a struct and named it <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>. Inside the curly
+brackets, we defined the fields as <code class="syntax" data-syntax="rust"><span class="rn">width</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">height</span></code>, both of which have
+type <code class="syntax" data-syntax="rust"><span class="rt">u32</span></code>. Then, in <code class="syntax" data-syntax="rust"><span class="rn">main</span></code>, we created a particular instance of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>
+that has a width of <code class="syntax" data-syntax="rust"><span class="ri">30</span></code> and a height of <code class="syntax" data-syntax="rust"><span class="ri">50</span></code>.</p>
+<p>Our <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function is now defined with one parameter, which we’ve named
+<code class="syntax" data-syntax="rust"><span class="rn">rectangle</span></code>, whose type is an immutable borrow of a struct <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>
 instance. As mentioned in Chapter 4, we want to borrow the struct rather than
-take ownership of it. This way, <code>main</code> retains its ownership and can continue
-using <code>rect1</code>, which is the reason we use the <code>&amp;</code> in the function signature and
+take ownership of it. This way, <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> retains its ownership and can continue
+using <code class="syntax" data-syntax="rust"><span class="rn">rect1</span></code>, which is the reason we use the <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span></code> in the function signature and
 where we call the function.</p>
-<p>The <code>area</code> function accesses the <code>width</code> and <code>height</code> fields of the <code>Rectangle</code>
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function accesses the <code class="syntax" data-syntax="rust"><span class="rn">width</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">height</span></code> fields of the <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>
 instance (note that accessing fields of a borrowed struct instance does not
 move the field values, which is why you often see borrows of structs). Our
-function signature for <code>area</code> now says exactly what we mean: Calculate the area
-of <code>Rectangle</code>, using its <code>width</code> and <code>height</code> fields. This conveys that the
+function signature for <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> now says exactly what we mean: Calculate the area
+of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>, using its <code class="syntax" data-syntax="rust"><span class="rn">width</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">height</span></code> fields. This conveys that the
 width and height are related to each other, and it gives descriptive names to
-the values rather than using the tuple index values of <code>0</code> and <code>1</code>. This is a
+the values rather than using the tuple index values of <code class="syntax" data-syntax="rust"><span class="ri">0</span></code> and <code class="syntax" data-syntax="rust"><span class="ri">1</span></code>. This is a
 win for clarity.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="adding-useful-functionality-with-derived-traits"></a></p>
 <h4 id="adding-functionality-with-derived-traits"><a class="header" href="#adding-functionality-with-derived-traits">Adding Functionality with Derived Traits</a></h4>
-<p>It’d be useful to be able to print an instance of <code>Rectangle</code> while we’re
+<p>It’d be useful to be able to print an instance of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> while we’re
 debugging our program and see the values for all its fields. Listing 5-11 tries
-using the <a href="https://doc.rust-lang.org/stable/std/macro.println.html"><code>println!</code> macro</a><!-- ignore --> as we have used in
+using the <a href="https://doc.rust-lang.org/stable/std/macro.println.html"><code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> macro</a><!-- ignore --> as we have used in
 previous chapters. This won’t work, however.</p>
 <figure class="listing" id="listing-5-11">
 <span class="file-name">Filename: src/main.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">struct Rectangle {
-    width: u32,
-    height: u32,
-}
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-fn main() {
-    let rect1 = Rectangle {
-        width: 30,
-        height: 50,
-    };
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    println!("rect1 is {rect1}");
-}</code></pre>
-<figcaption><a href="#listing-5-11">Listing 5-11</a>: Attempting to print a <code>Rectangle</code> instance</figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">rect1 is {rect1}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-11">Listing 5-11</a>: Attempting to print a <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> instance</figcaption>
 </figure>
 <p>When we compile this code, we get an error with this core message:</p>
-<pre><code class="language-text">error[E0277]: `Rectangle` doesn't implement `std::fmt::Display`
+<pre><code class="language-text syntax" data-syntax="output"><span class="re">error[E0277]</span>: <span class="rs">`Rectangle`</span> doesn't implement <span class="rs">`std::fmt::Display`</span>
 </code></pre>
-<p>The <code>println!</code> macro can do many kinds of formatting, and by default, the curly
-brackets tell <code>println!</code> to use formatting known as <code>Display</code>: output intended
+<p>The <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> macro can do many kinds of formatting, and by default, the curly
+brackets tell <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> to use formatting known as <code class="syntax" data-syntax="rust"><span class="rt">Display</span></code>: output intended
 for direct end user consumption. The primitive types we’ve seen so far
-implement <code>Display</code> by default because there’s only one way you’d want to show
-a <code>1</code> or any other primitive type to a user. But with structs, the way
-<code>println!</code> should format the output is less clear because there are more
+implement <code class="syntax" data-syntax="rust"><span class="rt">Display</span></code> by default because there’s only one way you’d want to show
+a <code class="syntax" data-syntax="rust"><span class="ri">1</span></code> or any other primitive type to a user. But with structs, the way
+<code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> should format the output is less clear because there are more
 display possibilities: Do you want commas or not? Do you want to print the
 curly brackets? Should all the fields be shown? Due to this ambiguity, Rust
 doesn’t try to guess what we want, and structs don’t have a provided
-implementation of <code>Display</code> to use with <code>println!</code> and the <code>{}</code> placeholder.</p>
+implementation of <code class="syntax" data-syntax="rust"><span class="rt">Display</span></code> to use with <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> and the <code class="syntax" data-syntax="rust"><span class="ro">{</span><span class="ro">}</span></code> placeholder.</p>
 <p>If we continue reading the errors, we’ll find this helpful note:</p>
-<pre><code class="language-text">help: the trait `std::fmt::Display` is not implemented for `Rectangle`
-  --&gt; src/main.rs:1:1
+<pre><code class="language-text syntax" data-syntax="output"><span class="rk">help</span>: the trait <span class="rs">`std::fmt::Display`</span> is not implemented for <span class="rs">`Rectangle`</span>
+  --&gt; src/main.rs:<span class="ri">1</span>:<span class="ri">1</span>
 </code></pre>
-<p>Let’s try it! The <code>println!</code> macro call will now look like <code>println!("rect1 is {rect1:?}");</code>. Putting the specifier <code>:?</code> inside the curly brackets tells
-<code>println!</code> we want to use an output format called <code>Debug</code>. The <code>Debug</code> trait
+<p>Let’s try it! The <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> macro call will now look like <code class="syntax" data-syntax="rust"><span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">rect1 is {rect1:?}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span></code>. Putting the specifier <code class="syntax" data-syntax="rust"><span class="ro">:</span><span class="ro">?</span></code> inside the curly brackets tells
+<code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> we want to use an output format called <code class="syntax" data-syntax="rust"><span class="rt">Debug</span></code>. The <code class="syntax" data-syntax="rust"><span class="rt">Debug</span></code> trait
 enables us to print our struct in a way that is useful for developers so that
 we can see its value while we’re debugging our code.</p>
 <p>Compile the code with this change. Drat! We still get an error:</p>
-<pre><code class="language-text">error[E0277]: `Rectangle` doesn't implement `Debug`
+<pre><code class="language-text syntax" data-syntax="output"><span class="re">error[E0277]</span>: <span class="rs">`Rectangle`</span> doesn't implement <span class="rs">`Debug`</span>
 </code></pre>
 <p>But again, the compiler gives us a helpful note:</p>
-<pre><code class="language-text">   |                        required by this formatting parameter
+<pre><code class="language-text syntax" data-syntax="output">   |                        required by this formatting parameter
    |
 </code></pre>
 <p>Rust <em>does</em> include functionality to print out debugging information, but we
 have to explicitly opt in to make that functionality available for our struct.
-To do that, we add the outer attribute <code>#[derive(Debug)]</code> just before the
+To do that, we add the outer attribute <code class="syntax" data-syntax="rust"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span></code> just before the
 struct definition, as shown in Listing 5-12.</p>
 <figure class="listing" id="listing-5-12">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
-struct Rectangle {
-    width: u32,
-    height: u32,
-}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+<span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-fn main() {
-    let rect1 = Rectangle {
-        width: 30,
-        height: 50,
-    };
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    println!("rect1 is {rect1:?}");
-}</code></pre>
-<figcaption><a href="#listing-5-12">Listing 5-12</a>: Adding the attribute to derive the <code>Debug</code> trait and printing the <code>Rectangle</code> instance using debug formatting</figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">rect1 is {rect1:?}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-12">Listing 5-12</a>: Adding the attribute to derive the <code class="syntax" data-syntax="rust"><span class="rt">Debug</span></code> trait and printing the <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> instance using debug formatting</figcaption>
 </figure>
 <p>Now when we run the program, we won’t get any errors, and we’ll see the
 following output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling rectangles v0.1.0 (file:///projects/rectangles)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
-     Running `target/debug/rectangles`
-rect1 is Rectangle { width: 30, height: 50 }
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> rectangles v0.<span class="ri">1.0</span> (file:///projects/rectangles)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.48s
+<span class="rk">     Running</span> <span class="rs">`target/debug/rectangles`</span>
+rect1 is Rectangle { width: <span class="ri">30</span>, height: <span class="ri">50</span> }
 </code></pre>
 <p>Nice! It’s not the prettiest output, but it shows the values of all the fields
 for this instance, which would definitely help during debugging. When we have
 larger structs, it’s useful to have output that’s a bit easier to read; in
-those cases, we can use <code>{:#?}</code> instead of <code>{:?}</code> in the <code>println!</code> string. In
-this example, using the <code>{:#?}</code> style will output the following:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling rectangles v0.1.0 (file:///projects/rectangles)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
-     Running `target/debug/rectangles`
+those cases, we can use <code class="syntax" data-syntax="rust"><span class="ro">{</span><span class="ro">:</span><span class="ro">#</span><span class="ro">?</span><span class="ro">}</span></code> instead of <code class="syntax" data-syntax="rust"><span class="ro">{</span><span class="ro">:</span><span class="ro">?</span><span class="ro">}</span></code> in the <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> string. In
+this example, using the <code class="syntax" data-syntax="rust"><span class="ro">{</span><span class="ro">:</span><span class="ro">#</span><span class="ro">?</span><span class="ro">}</span></code> style will output the following:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> rectangles v0.<span class="ri">1.0</span> (file:///projects/rectangles)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.48s
+<span class="rk">     Running</span> <span class="rs">`target/debug/rectangles`</span>
 rect1 is Rectangle {
-    width: 30,
-    height: 50,
+    width: <span class="ri">30</span>,
+    height: <span class="ri">50</span>,
 }
 </code></pre>
-<p>Another way to print out a value using the <code>Debug</code> format is to use the <a href="https://doc.rust-lang.org/stable/std/macro.dbg.html"><code>dbg!</code>
+<p>Another way to print out a value using the <code class="syntax" data-syntax="rust"><span class="rt">Debug</span></code> format is to use the <a href="https://doc.rust-lang.org/stable/std/macro.dbg.html"><code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code>
 macro</a><!-- ignore -->, which takes ownership of an expression (as opposed
-to <code>println!</code>, which takes a reference), prints the file and line number of
-where that <code>dbg!</code> macro call occurs in your code along with the resultant value
+to <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code>, which takes a reference), prints the file and line number of
+where that <code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code> macro call occurs in your code along with the resultant value
 of that expression, and returns ownership of the value.</p>
 <section class="note" aria-role="note">
-<p>Note: Calling the <code>dbg!</code> macro prints to the standard error console stream
-(<code>stderr</code>), as opposed to <code>println!</code>, which prints to the standard output
-console stream (<code>stdout</code>). We’ll talk more about <code>stderr</code> and <code>stdout</code> in the
+<p>Note: Calling the <code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code> macro prints to the standard error console stream
+(<code class="syntax" data-syntax="rust"><span class="rn">stderr</span></code>), as opposed to <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code>, which prints to the standard output
+console stream (<code class="syntax" data-syntax="rust"><span class="rn">stdout</span></code>). We’ll talk more about <code class="syntax" data-syntax="rust"><span class="rn">stderr</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">stdout</span></code> in the
 <a href="12%20A%20Command%20Line%20Adapter.html#redirecting-errors-to-standard-error-1">“Redirecting Errors to Standard Error” section in Chapter
 12</a><!-- ignore -->.</p>
 </section>
 <p>Here’s an example where we’re interested in the value that gets assigned to the
-<code>width</code> field, as well as the value of the whole struct in <code>rect1</code>:</p>
-<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
-struct Rectangle {
-    width: u32,
-    height: u32,
-}
+<code class="syntax" data-syntax="rust"><span class="rn">width</span></code> field, as well as the value of the whole struct in <code class="syntax" data-syntax="rust"><span class="rn">rect1</span></code>:</p>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+<span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-fn main() {
-    let scale = 2;
-    let rect1 = Rectangle {
-        width: dbg!(30 * scale),
-        height: 50,
-    };
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">scale</span> <span class="ro">=</span> <span class="ri">2</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="rt">dbg</span><span class="ro">!</span><span class="ro">(</span><span class="ri">30</span> <span class="ro">*</span> <span class="rn">scale</span><span class="ro">)</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    dbg!(&amp;rect1);
-}</code></pre>
-<p>We can put <code>dbg!</code> around the expression <code>30 * scale</code> and, because <code>dbg!</code>
-returns ownership of the expression’s value, the <code>width</code> field will get the
-same value as if we didn’t have the <code>dbg!</code> call there. We don’t want <code>dbg!</code> to
-take ownership of <code>rect1</code>, so we use a reference to <code>rect1</code> in the next call.
+    <span class="rf">dbg!</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect1</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>We can put <code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code> around the expression <code class="syntax" data-syntax="rust"><span class="ri">30</span> <span class="ro">*</span> <span class="rn">scale</span></code> and, because <code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code>
+returns ownership of the expression’s value, the <code class="syntax" data-syntax="rust"><span class="rn">width</span></code> field will get the
+same value as if we didn’t have the <code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code> call there. We don’t want <code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code> to
+take ownership of <code class="syntax" data-syntax="rust"><span class="rn">rect1</span></code>, so we use a reference to <code class="syntax" data-syntax="rust"><span class="rn">rect1</span></code> in the next call.
 Here’s what the output of this example looks like:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling rectangles v0.1.0 (file:///projects/rectangles)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.61s
-     Running `target/debug/rectangles`
-[src/main.rs:10:16] 30 * scale = 60
-[src/main.rs:14:5] &amp;rect1 = Rectangle {
-    width: 60,
-    height: 50,
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> rectangles v0.<span class="ri">1.0</span> (file:///projects/rectangles)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.61s
+<span class="rk">     Running</span> <span class="rs">`target/debug/rectangles`</span>
+[src/main.rs:<span class="ri">10</span>:<span class="ri">16</span>] <span class="ri">30</span> * scale = <span class="ri">60</span>
+[src/main.rs:<span class="ri">14</span>:<span class="ri">5</span>] &amp;rect1 = Rectangle {
+    width: <span class="ri">60</span>,
+    height: <span class="ri">50</span>,
 }
 </code></pre>
 <p>We can see the first bit of output came from <em>src/main.rs</em> line 10 where we’re
-debugging the expression <code>30 * scale</code>, and its resultant value is <code>60</code> (the
-<code>Debug</code> formatting implemented for integers is to print only their value). The
-<code>dbg!</code> call on line 14 of <em>src/main.rs</em> outputs the value of <code>&amp;rect1</code>, which is
-the <code>Rectangle</code> struct. This output uses the pretty <code>Debug</code> formatting of the
-<code>Rectangle</code> type. The <code>dbg!</code> macro can be really helpful when you’re trying to
+debugging the expression <code class="syntax" data-syntax="rust"><span class="ri">30</span> <span class="ro">*</span> <span class="rn">scale</span></code>, and its resultant value is <code class="syntax" data-syntax="rust"><span class="ri">60</span></code> (the
+<code class="syntax" data-syntax="rust"><span class="rt">Debug</span></code> formatting implemented for integers is to print only their value). The
+<code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code> call on line 14 of <em>src/main.rs</em> outputs the value of <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rn">rect1</span></code>, which is
+the <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> struct. This output uses the pretty <code class="syntax" data-syntax="rust"><span class="rt">Debug</span></code> formatting of the
+<code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> type. The <code class="syntax" data-syntax="rust"><span class="rf">dbg!</span></code> macro can be really helpful when you’re trying to
 figure out what your code is doing!</p>
-<p>In addition to the <code>Debug</code> trait, Rust has provided a number of traits for us
-to use with the <code>derive</code> attribute that can add useful behavior to our custom
+<p>In addition to the <code class="syntax" data-syntax="rust"><span class="rt">Debug</span></code> trait, Rust has provided a number of traits for us
+to use with the <code class="syntax" data-syntax="rust"><span class="rn">derive</span></code> attribute that can add useful behavior to our custom
 types. Those traits and their behaviors are listed in <a href="https://doc.rust-lang.org/stable/book/print.html#c---derivable-traits">Appendix C</a><!--
 ignore -->. We’ll cover how to implement these traits with custom behavior as
 well as how to create your own traits in Chapter 10. There are also many
-attributes other than <code>derive</code>; for more information, see <a href="https://doc.rust-lang.org/stable/reference/attributes.html">the “Attributes”
+attributes other than <code class="syntax" data-syntax="rust"><span class="rn">derive</span></code>; for more information, see <a href="https://doc.rust-lang.org/stable/reference/attributes.html">the “Attributes”
 section of the Rust Reference</a>.</p>
-<p>Our <code>area</code> function is very specific: It only computes the area of rectangles.
-It would be helpful to tie this behavior more closely to our <code>Rectangle</code> struct
+<p>Our <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function is very specific: It only computes the area of rectangles.
+It would be helpful to tie this behavior more closely to our <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> struct
 because it won’t work with any other type. Let’s look at how we can continue to
-refactor this code by turning the <code>area</code> function into an <code>area</code> method
-defined on our <code>Rectangle</code> type.</p>
+refactor this code by turning the <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function into an <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> method
+defined on our <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> type.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h2 id="methods-1"><a href="#methods-1" class="header">Methods</a></h2>
 <h3 id="methods"><a class="header" href="#methods">Methods</a></h3>
-<p>Methods are similar to functions: We declare them with the <code>fn</code> keyword and a
+<p>Methods are similar to functions: We declare them with the <code class="syntax" data-syntax="rust"><span class="rk">fn</span></code> keyword and a
 name, they can have parameters and a return value, and they contain some code
 that’s run when the method is called from somewhere else. Unlike functions,
 methods are defined within the context of a struct (or an enum or a trait
 object, which we cover in <a href="06%20Enums%20and%20Exhaustiveness.html#enums-and-pattern-matching">Chapter 6</a><!-- ignore --> and <a href="18%20State%20and%20Behaviour%20Patterns.html#using-trait-objects-to-abstract-over-shared-behavior-1">Chapter
 18</a><!-- ignore -->, respectively), and their first parameter is
-always <code>self</code>, which represents the instance of the struct the method is being
+always <code class="syntax" data-syntax="rust"><span class="rt">self</span></code>, which represents the instance of the struct the method is being
 called on.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="defining-methods"></a></p>
 <h4 id="method-syntax"><a class="header" href="#method-syntax">Method Syntax</a></h4>
-<p>Let’s change the <code>area</code> function that has a <code>Rectangle</code> instance as a parameter
-and instead make an <code>area</code> method defined on the <code>Rectangle</code> struct, as shown
+<p>Let’s change the <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function that has a <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> instance as a parameter
+and instead make an <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> method defined on the <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> struct, as shown
 in Listing 5-13.</p>
 <figure class="listing" id="listing-5-13">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
-struct Rectangle {
-    width: u32,
-    height: u32,
-}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+<span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-impl Rectangle {
-    fn area(&amp;self) -&gt; u32 {
-        self.width * self.height
-    }
-}
+<span class="rk">impl</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">area</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+        <span class="rt">self</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">*</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">height</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-fn main() {
-    let rect1 = Rectangle {
-        width: 30,
-        height: 50,
-    };
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    println!(
-        "The area of the rectangle is {} square pixels.",
-        rect1.area()
-    );
-}</code></pre>
-<figcaption><a href="#listing-5-13">Listing 5-13</a>: Defining an <code>area</code> method on the <code>Rectangle</code> struct</figcaption>
+    <span class="rf">println!</span><span class="ro">(</span>
+        <span class="rs">"</span><span class="rs">The area of the rectangle is {} square pixels.</span><span class="rs">"</span><span class="ro">,</span>
+        <span class="rn">rect1</span><span class="ro">.</span><span class="rn">area</span><span class="ro">(</span><span class="ro">)</span>
+    <span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-13">Listing 5-13</a>: Defining an <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> method on the <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> struct</figcaption>
 </figure>
-<p>To define the function within the context of <code>Rectangle</code>, we start an <code>impl</code>
-(implementation) block for <code>Rectangle</code>. Everything within this <code>impl</code> block
-will be associated with the <code>Rectangle</code> type. Then, we move the <code>area</code> function
-within the <code>impl</code> curly brackets and change the first (and in this case, only)
-parameter to be <code>self</code> in the signature and everywhere within the body. In
-<code>main</code>, where we called the <code>area</code> function and passed <code>rect1</code> as an argument,
-we can instead use <em>method syntax</em> to call the <code>area</code> method on our <code>Rectangle</code>
+<p>To define the function within the context of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>, we start an <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code>
+(implementation) block for <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>. Everything within this <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> block
+will be associated with the <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> type. Then, we move the <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function
+within the <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> curly brackets and change the first (and in this case, only)
+parameter to be <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> in the signature and everywhere within the body. In
+<code class="syntax" data-syntax="rust"><span class="rn">main</span></code>, where we called the <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> function and passed <code class="syntax" data-syntax="rust"><span class="rn">rect1</span></code> as an argument,
+we can instead use <em>method syntax</em> to call the <code class="syntax" data-syntax="rust"><span class="rn">area</span></code> method on our <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>
 instance. The method syntax goes after an instance: We add a dot followed by
 the method name, parentheses, and any arguments.</p>
-<p>In the signature for <code>area</code>, we use <code>&amp;self</code> instead of <code>rectangle: &amp;Rectangle</code>.
-The <code>&amp;self</code> is actually short for <code>self: &amp;Self</code>. Within an <code>impl</code> block, the
-type <code>Self</code> is an alias for the type that the <code>impl</code> block is for. Methods must
-have a parameter named <code>self</code> of type <code>Self</code> for their first parameter, so Rust
-lets you abbreviate this with only the name <code>self</code> in the first parameter spot.
-Note that we still need to use the <code>&amp;</code> in front of the <code>self</code> shorthand to
-indicate that this method borrows the <code>Self</code> instance, just as we did in
-<code>rectangle: &amp;Rectangle</code>. Methods can take ownership of <code>self</code>, borrow <code>self</code>
-immutably, as we’ve done here, or borrow <code>self</code> mutably, just as they can any
+<p>In the signature for <code class="syntax" data-syntax="rust"><span class="rn">area</span></code>, we use <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">self</span></code> instead of <code class="syntax" data-syntax="rust"><span class="rn">rectangle</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Rectangle</span></code>.
+The <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">self</span></code> is actually short for <code class="syntax" data-syntax="rust"><span class="rt">self</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Self</span></code>. Within an <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> block, the
+type <code class="syntax" data-syntax="rust"><span class="rt">Self</span></code> is an alias for the type that the <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> block is for. Methods must
+have a parameter named <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> of type <code class="syntax" data-syntax="rust"><span class="rt">Self</span></code> for their first parameter, so Rust
+lets you abbreviate this with only the name <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> in the first parameter spot.
+Note that we still need to use the <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span></code> in front of the <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> shorthand to
+indicate that this method borrows the <code class="syntax" data-syntax="rust"><span class="rt">Self</span></code> instance, just as we did in
+<code class="syntax" data-syntax="rust"><span class="rn">rectangle</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Rectangle</span></code>. Methods can take ownership of <code class="syntax" data-syntax="rust"><span class="rt">self</span></code>, borrow <code class="syntax" data-syntax="rust"><span class="rt">self</span></code>
+immutably, as we’ve done here, or borrow <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> mutably, just as they can any
 other parameter.</p>
-<p>We chose <code>&amp;self</code> here for the same reason we used <code>&amp;Rectangle</code> in the function
+<p>We chose <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">self</span></code> here for the same reason we used <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">Rectangle</span></code> in the function
 version: We don’t want to take ownership, and we just want to read the data in
 the struct, not write to it. If we wanted to change the instance that we’ve
-called the method on as part of what the method does, we’d use <code>&amp;mut self</code> as
+called the method on as part of what the method does, we’d use <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rk">mut</span> <span class="rt">self</span></code> as
 the first parameter. Having a method that takes ownership of the instance by
-using just <code>self</code> as the first parameter is rare; this technique is usually
-used when the method transforms <code>self</code> into something else and you want to
+using just <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> as the first parameter is rare; this technique is usually
+used when the method transforms <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> into something else and you want to
 prevent the caller from using the original instance after the transformation.</p>
 <p>The main reason for using methods instead of functions, in addition to
-providing method syntax and not having to repeat the type of <code>self</code> in every
+providing method syntax and not having to repeat the type of <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> in every
 method’s signature, is for organization. We’ve put all the things we can do
-with an instance of a type in one <code>impl</code> block rather than making future users
-of our code search for capabilities of <code>Rectangle</code> in various places in the
+with an instance of a type in one <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> block rather than making future users
+of our code search for capabilities of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> in various places in the
 library we provide.</p>
 <p>Note that we can choose to give a method the same name as one of the struct’s
-fields. For example, we can define a method on <code>Rectangle</code> that is also named
-<code>width</code>:</p>
+fields. For example, we can define a method on <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> that is also named
+<code class="syntax" data-syntax="rust"><span class="rn">width</span></code>:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
-</span><span class="boring">struct Rectangle {
-</span><span class="boring">    width: u32,
-</span><span class="boring">    height: u32,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>impl Rectangle {
-    fn width(&amp;self) -&gt; bool {
-        self.width &gt; 0
-    }
-}
+</span><span class="rk">impl</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">width</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">bool</span> <span class="ro">{</span>
+        <span class="rt">self</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">&gt;</span> <span class="ri">0</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-fn main() {
-    let rect1 = Rectangle {
-        width: 30,
-        height: 50,
-    };
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    if rect1.width() {
-        println!("The rectangle has a nonzero width; it is {}", rect1.width);
-    }
-}</code></pre>
+    <span class="rk">if</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">width</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The rectangle has a nonzero width; it is {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">width</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
 </figure>
-<p>Here, we’re choosing to make the <code>width</code> method return <code>true</code> if the value in
-the instance’s <code>width</code> field is greater than <code>0</code> and <code>false</code> if the value is
-<code>0</code>: We can use a field within a method of the same name for any purpose. In
-<code>main</code>, when we follow <code>rect1.width</code> with parentheses, Rust knows we mean the
-method <code>width</code>. When we don’t use parentheses, Rust knows we mean the field
-<code>width</code>.</p>
+<p>Here, we’re choosing to make the <code class="syntax" data-syntax="rust"><span class="rn">width</span></code> method return <code class="syntax" data-syntax="rust"><span class="rk">true</span></code> if the value in
+the instance’s <code class="syntax" data-syntax="rust"><span class="rn">width</span></code> field is greater than <code class="syntax" data-syntax="rust"><span class="ri">0</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">false</span></code> if the value is
+<code class="syntax" data-syntax="rust"><span class="ri">0</span></code>: We can use a field within a method of the same name for any purpose. In
+<code class="syntax" data-syntax="rust"><span class="rn">main</span></code>, when we follow <code class="syntax" data-syntax="rust"><span class="rn">rect1</span><span class="ro">.</span><span class="rn">width</span></code> with parentheses, Rust knows we mean the
+method <code class="syntax" data-syntax="rust"><span class="rn">width</span></code>. When we don’t use parentheses, Rust knows we mean the field
+<code class="syntax" data-syntax="rust"><span class="rn">width</span></code>.</p>
 <p>Often, but not always, when we give a method the same name as a field we want
 it to only return the value in the field and do nothing else. Methods like this
 are called <em>getters</em>, and Rust does not implement them automatically for struct
@@ -1000,225 +1007,225 @@ field as part of the type’s public API. We will discuss what public and privat
 are and how to designate a field or method as public or private in <a href="07%20Modules%20and%20Boundaries.html#exposing-paths-with-the-pub-keyword">Chapter
 7</a><!-- ignore -->.</p>
 <section class="note" aria-role="note">
-<h4 id="wheres-the---operator"><a class="header" href="#wheres-the---operator">Where’s the <code>-&gt;</code> Operator?</a></h4>
+<h4 id="wheres-the---operator"><a class="header" href="#wheres-the---operator">Where’s the <code class="syntax" data-syntax="rust"><span class="ro">-&gt;</span></code> Operator?</a></h4>
 <p>In C and C++, two different operators are used for calling methods: You use
-<code>.</code> if you’re calling a method on the object directly and <code>-&gt;</code> if you’re
+<code class="syntax" data-syntax="rust"><span class="ro">.</span></code> if you’re calling a method on the object directly and <code class="syntax" data-syntax="rust"><span class="ro">-&gt;</span></code> if you’re
 calling the method on a pointer to the object and need to dereference the
-pointer first. In other words, if <code>object</code> is a pointer,
-<code>object-&gt;something()</code> is similar to <code>(*object).something()</code>.</p>
-<p>Rust doesn’t have an equivalent to the <code>-&gt;</code> operator; instead, Rust has a
+pointer first. In other words, if <code class="syntax" data-syntax="rust"><span class="rn">object</span></code> is a pointer,
+<code class="syntax" data-syntax="rust"><span class="rn">object</span><span class="ro">-&gt;</span><span class="rt">something</span><span class="ro">(</span><span class="ro">)</span></code> is similar to <code class="syntax" data-syntax="rust"><span class="ro">(</span><span class="ro">*</span><span class="rn">object</span><span class="ro">)</span><span class="ro">.</span><span class="rn">something</span><span class="ro">(</span><span class="ro">)</span></code>.</p>
+<p>Rust doesn’t have an equivalent to the <code class="syntax" data-syntax="rust"><span class="ro">-&gt;</span></code> operator; instead, Rust has a
 feature called <em>automatic referencing and dereferencing</em>. Calling methods is
 one of the few places in Rust with this behavior.</p>
-<p>Here’s how it works: When you call a method with <code>object.something()</code>, Rust
-automatically adds in <code>&amp;</code>, <code>&amp;mut</code>, or <code>*</code> so that <code>object</code> matches the
+<p>Here’s how it works: When you call a method with <code class="syntax" data-syntax="rust"><span class="rn">object</span><span class="ro">.</span><span class="rn">something</span><span class="ro">(</span><span class="ro">)</span></code>, Rust
+automatically adds in <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span></code>, <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rk">mut</span></code>, or <code class="syntax" data-syntax="rust"><span class="ro">*</span></code> so that <code class="syntax" data-syntax="rust"><span class="rn">object</span></code> matches the
 signature of the method. In other words, the following are the same:</p>
 <!-- CAN'T EXTRACT SEE BUG https://github.com/rust-lang/mdBook/issues/1127 -->
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span><span class="boring">#[derive(Debug,Copy,Clone)]
-</span><span class="boring">struct Point {
-</span><span class="boring">    x: f64,
-</span><span class="boring">    y: f64,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring"><span class="rc">#[</span><span class="rc">derive(Debug,Copy,Clone)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">struct</span> <span class="rt">Point</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">x</span><span class="ro">:</span> <span class="rt">f64</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">y</span><span class="ro">:</span> <span class="rt">f64</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span><span class="boring">impl Point {
-</span><span class="boring">   fn distance(&amp;self, other: &amp;Point) -&gt; f64 {
-</span><span class="boring">       let x_squared = f64::powi(other.x - self.x, 2);
-</span><span class="boring">       let y_squared = f64::powi(other.y - self.y, 2);
+</span><span class="boring"><span class="rk">impl</span> <span class="rt">Point</span> <span class="ro">{</span>
+</span><span class="boring">   <span class="rk">fn</span> <span class="rf">distance</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">,</span> <span class="rn">other</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Point</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">f64</span> <span class="ro">{</span>
+</span><span class="boring">       <span class="rk">let</span> <span class="rn">x_squared</span> <span class="ro">=</span> <span class="rt">f64</span><span class="ro">::</span><span class="rn">powi</span><span class="ro">(</span><span class="rn">other</span><span class="ro">.</span><span class="rn">x</span> <span class="ro">-</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">x</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring">       <span class="rk">let</span> <span class="rn">y_squared</span> <span class="ro">=</span> <span class="rt">f64</span><span class="ro">::</span><span class="rn">powi</span><span class="ro">(</span><span class="rn">other</span><span class="ro">.</span><span class="rn">y</span> <span class="ro">-</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">y</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">       f64::sqrt(x_squared + y_squared)
-</span><span class="boring">   }
-</span><span class="boring">}
-</span><span class="boring">let p1 = Point { x: 0.0, y: 0.0 };
-</span><span class="boring">let p2 = Point { x: 5.0, y: 6.5 };
-</span>p1.distance(&amp;p2);
-(&amp;p1).distance(&amp;p2);
-<span class="boring">}</span></code></pre>
+</span><span class="boring">       <span class="rt">f64</span><span class="ro">::</span><span class="rn">sqrt</span><span class="ro">(</span><span class="rn">x_squared</span> <span class="ro">+</span> <span class="rn">y_squared</span><span class="ro">)</span>
+</span><span class="boring">   <span class="ro">}</span>
+</span><span class="boring"><span class="ro">}</span>
+</span><span class="boring"><span class="rk">let</span> <span class="rn">p1</span> <span class="ro">=</span> <span class="rt">Point</span> <span class="ro">{</span> <span class="rn">x</span><span class="ro">:</span> <span class="ri">0.0</span><span class="ro">,</span> <span class="rn">y</span><span class="ro">:</span> <span class="ri">0.0</span> <span class="ro">}</span><span class="ro">;</span>
+</span><span class="boring"><span class="rk">let</span> <span class="rn">p2</span> <span class="ro">=</span> <span class="rt">Point</span> <span class="ro">{</span> <span class="rn">x</span><span class="ro">:</span> <span class="ri">5.0</span><span class="ro">,</span> <span class="rn">y</span><span class="ro">:</span> <span class="ri">6.5</span> <span class="ro">}</span><span class="ro">;</span>
+</span><span class="rn">p1</span><span class="ro">.</span><span class="rn">distance</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">p2</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">(</span><span class="ro">&amp;</span><span class="rn">p1</span><span class="ro">)</span><span class="ro">.</span><span class="rn">distance</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">p2</span><span class="ro">)</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
 <p>The first one looks much cleaner. This automatic referencing behavior works
-because methods have a clear receiver—the type of <code>self</code>. Given the receiver
+because methods have a clear receiver—the type of <code class="syntax" data-syntax="rust"><span class="rt">self</span></code>. Given the receiver
 and name of a method, Rust can figure out definitively whether the method is
-reading (<code>&amp;self</code>), mutating (<code>&amp;mut self</code>), or consuming (<code>self</code>). The fact
+reading (<code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rt">self</span></code>), mutating (<code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rk">mut</span> <span class="rt">self</span></code>), or consuming (<code class="syntax" data-syntax="rust"><span class="rt">self</span></code>). The fact
 that Rust makes borrowing implicit for method receivers is a big part of
 making ownership ergonomic in practice.</p>
 </section>
 <h4 id="methods-with-more-parameters"><a class="header" href="#methods-with-more-parameters">Methods with More Parameters</a></h4>
-<p>Let’s practice using methods by implementing a second method on the <code>Rectangle</code>
-struct. This time we want an instance of <code>Rectangle</code> to take another instance
-of <code>Rectangle</code> and return <code>true</code> if the second <code>Rectangle</code> can fit completely
-within <code>self</code> (the first <code>Rectangle</code>); otherwise, it should return <code>false</code>.
-That is, once we’ve defined the <code>can_hold</code> method, we want to be able to write
+<p>Let’s practice using methods by implementing a second method on the <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>
+struct. This time we want an instance of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> to take another instance
+of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> and return <code class="syntax" data-syntax="rust"><span class="rk">true</span></code> if the second <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> can fit completely
+within <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> (the first <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>); otherwise, it should return <code class="syntax" data-syntax="rust"><span class="rk">false</span></code>.
+That is, once we’ve defined the <code class="syntax" data-syntax="rust"><span class="rn">can_hold</span></code> method, we want to be able to write
 the program shown in Listing 5-14.</p>
 <figure class="listing" id="listing-5-14">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust ignore">fn main() {
-    let rect1 = Rectangle {
-        width: 30,
-        height: 50,
-    };
-    let rect2 = Rectangle {
-        width: 10,
-        height: 40,
-    };
-    let rect3 = Rectangle {
-        width: 60,
-        height: 45,
-    };
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">rect2</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">10</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">40</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">rect3</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+        <span class="rn">width</span><span class="ro">:</span> <span class="ri">60</span><span class="ro">,</span>
+        <span class="rn">height</span><span class="ro">:</span> <span class="ri">45</span><span class="ro">,</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    println!("Can rect1 hold rect2? {}", rect1.can_hold(&amp;rect2));
-    println!("Can rect1 hold rect3? {}", rect1.can_hold(&amp;rect3));
-}</code></pre>
-<figcaption><a href="#listing-5-14">Listing 5-14</a>: Using the as-yet-unwritten <code>can_hold</code> method</figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Can rect1 hold rect2? {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect2</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Can rect1 hold rect3? {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect3</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-5-14">Listing 5-14</a>: Using the as-yet-unwritten <code class="syntax" data-syntax="rust"><span class="rn">can_hold</span></code> method</figcaption>
 </figure>
 <p>The expected output would look like the following because both dimensions of
-<code>rect2</code> are smaller than the dimensions of <code>rect1</code>, but <code>rect3</code> is wider than
-<code>rect1</code>:</p>
-<pre><code class="language-text">Can rect1 hold rect2? true
+<code class="syntax" data-syntax="rust"><span class="rn">rect2</span></code> are smaller than the dimensions of <code class="syntax" data-syntax="rust"><span class="rn">rect1</span></code>, but <code class="syntax" data-syntax="rust"><span class="rn">rect3</span></code> is wider than
+<code class="syntax" data-syntax="rust"><span class="rn">rect1</span></code>:</p>
+<pre><code class="language-text syntax" data-syntax="output">Can rect1 hold rect2? true
 Can rect1 hold rect3? false
 </code></pre>
-<p>We know we want to define a method, so it will be within the <code>impl Rectangle</code>
-block. The method name will be <code>can_hold</code>, and it will take an immutable borrow
-of another <code>Rectangle</code> as a parameter. We can tell what the type of the
+<p>We know we want to define a method, so it will be within the <code class="syntax" data-syntax="rust"><span class="rk">impl</span> <span class="rt">Rectangle</span></code>
+block. The method name will be <code class="syntax" data-syntax="rust"><span class="rn">can_hold</span></code>, and it will take an immutable borrow
+of another <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> as a parameter. We can tell what the type of the
 parameter will be by looking at the code that calls the method:
-<code>rect1.can_hold(&amp;rect2)</code> passes in <code>&amp;rect2</code>, which is an immutable borrow to
-<code>rect2</code>, an instance of <code>Rectangle</code>. This makes sense because we only need to
-read <code>rect2</code> (rather than write, which would mean we’d need a mutable borrow),
-and we want <code>main</code> to retain ownership of <code>rect2</code> so that we can use it again
-after calling the <code>can_hold</code> method. The return value of <code>can_hold</code> will be a
+<code class="syntax" data-syntax="rust"><span class="rn">rect1</span><span class="ro">.</span><span class="rn">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect2</span><span class="ro">)</span></code> passes in <code class="syntax" data-syntax="rust"><span class="ro">&amp;</span><span class="rn">rect2</span></code>, which is an immutable borrow to
+<code class="syntax" data-syntax="rust"><span class="rn">rect2</span></code>, an instance of <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>. This makes sense because we only need to
+read <code class="syntax" data-syntax="rust"><span class="rn">rect2</span></code> (rather than write, which would mean we’d need a mutable borrow),
+and we want <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> to retain ownership of <code class="syntax" data-syntax="rust"><span class="rn">rect2</span></code> so that we can use it again
+after calling the <code class="syntax" data-syntax="rust"><span class="rn">can_hold</span></code> method. The return value of <code class="syntax" data-syntax="rust"><span class="rn">can_hold</span></code> will be a
 Boolean, and the implementation will check whether the width and height of
-<code>self</code> are greater than the width and height of the other <code>Rectangle</code>,
-respectively. Let’s add the new <code>can_hold</code> method to the <code>impl</code> block from
+<code class="syntax" data-syntax="rust"><span class="rt">self</span></code> are greater than the width and height of the other <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>,
+respectively. Let’s add the new <code class="syntax" data-syntax="rust"><span class="rn">can_hold</span></code> method to the <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> block from
 Listing 5-13, shown in Listing 5-15.</p>
 <figure class="listing" id="listing-5-15">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
-</span><span class="boring">struct Rectangle {
-</span><span class="boring">    width: u32,
-</span><span class="boring">    height: u32,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>impl Rectangle {
-    fn area(&amp;self) -&gt; u32 {
-        self.width * self.height
-    }
+</span><span class="rk">impl</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">area</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+        <span class="rt">self</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">*</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">height</span>
+    <span class="ro">}</span>
 
-    fn can_hold(&amp;self, other: &amp;Rectangle) -&gt; bool {
-        self.width &gt; other.width &amp;&amp; self.height &gt; other.height
-    }
-}
+    <span class="rk">fn</span> <span class="rf">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">,</span> <span class="rn">other</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Rectangle</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">bool</span> <span class="ro">{</span>
+        <span class="rt">self</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">&gt;</span> <span class="rn">other</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">&amp;</span><span class="ro">&amp;</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">height</span> <span class="ro">&gt;</span> <span class="rn">other</span><span class="ro">.</span><span class="rn">height</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 <span class="boring">
-</span><span class="boring">fn main() {
-</span><span class="boring">    let rect1 = Rectangle {
-</span><span class="boring">        width: 30,
-</span><span class="boring">        height: 50,
-</span><span class="boring">    };
-</span><span class="boring">    let rect2 = Rectangle {
-</span><span class="boring">        width: 10,
-</span><span class="boring">        height: 40,
-</span><span class="boring">    };
-</span><span class="boring">    let rect3 = Rectangle {
-</span><span class="boring">        width: 60,
-</span><span class="boring">        height: 45,
-</span><span class="boring">    };
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">rect2</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">width</span><span class="ro">:</span> <span class="ri">10</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">height</span><span class="ro">:</span> <span class="ri">40</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">rect3</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">width</span><span class="ro">:</span> <span class="ri">60</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">height</span><span class="ro">:</span> <span class="ri">45</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("Can rect1 hold rect2? {}", rect1.can_hold(&amp;rect2));
-</span><span class="boring">    println!("Can rect1 hold rect3? {}", rect1.can_hold(&amp;rect3));
-</span><span class="boring">}</span></code></pre>
-<figcaption><a href="#listing-5-15">Listing 5-15</a>: Implementing the <code>can_hold</code> method on <code>Rectangle</code> that takes another <code>Rectangle</code> instance as a parameter</figcaption>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Can rect1 hold rect2? {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect2</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Can rect1 hold rect3? {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect3</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-5-15">Listing 5-15</a>: Implementing the <code class="syntax" data-syntax="rust"><span class="rn">can_hold</span></code> method on <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> that takes another <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> instance as a parameter</figcaption>
 </figure>
-<p>When we run this code with the <code>main</code> function in Listing 5-14, we’ll get our
+<p>When we run this code with the <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function in Listing 5-14, we’ll get our
 desired output. Methods can take multiple parameters that we add to the
-signature after the <code>self</code> parameter, and those parameters work just like
+signature after the <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> parameter, and those parameters work just like
 parameters in functions.</p>
 <h4 id="associated-functions"><a class="header" href="#associated-functions">Associated Functions</a></h4>
-<p>All functions defined within an <code>impl</code> block are called <em>associated functions</em>
-because they’re associated with the type named after the <code>impl</code>. We can define
-associated functions that don’t have <code>self</code> as their first parameter (and thus
+<p>All functions defined within an <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> block are called <em>associated functions</em>
+because they’re associated with the type named after the <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code>. We can define
+associated functions that don’t have <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> as their first parameter (and thus
 are not methods) because they don’t need an instance of the type to work with.
-We’ve already used one function like this: the <code>String::from</code> function that’s
-defined on the <code>String</code> type.</p>
+We’ve already used one function like this: the <code class="syntax" data-syntax="rust"><span class="rt">String</span><span class="ro">::</span><span class="rn">from</span></code> function that’s
+defined on the <code class="syntax" data-syntax="rust"><span class="rt">String</span></code> type.</p>
 <p>Associated functions that aren’t methods are often used for constructors that
-will return a new instance of the struct. These are often called <code>new</code>, but
-<code>new</code> isn’t a special name and isn’t built into the language. For example, we
-could choose to provide an associated function named <code>square</code> that would have
+will return a new instance of the struct. These are often called <code class="syntax" data-syntax="rust"><span class="rn">new</span></code>, but
+<code class="syntax" data-syntax="rust"><span class="rn">new</span></code> isn’t a special name and isn’t built into the language. For example, we
+could choose to provide an associated function named <code class="syntax" data-syntax="rust"><span class="rn">square</span></code> that would have
 one dimension parameter and use that as both width and height, thus making it
-easier to create a square <code>Rectangle</code> rather than having to specify the same
+easier to create a square <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code> rather than having to specify the same
 value twice:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
-</span><span class="boring">struct Rectangle {
-</span><span class="boring">    width: u32,
-</span><span class="boring">    height: u32,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>impl Rectangle {
-    fn square(size: u32) -&gt; Self {
-        Self {
-            width: size,
-            height: size,
-        }
-    }
-}
+</span><span class="rk">impl</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">square</span><span class="ro">(</span><span class="rn">size</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">Self</span> <span class="ro">{</span>
+        <span class="rt">Self</span> <span class="ro">{</span>
+            <span class="rn">width</span><span class="ro">:</span> <span class="rt">size</span><span class="ro">,</span>
+            <span class="rn">height</span><span class="ro">:</span> <span class="rt">size</span><span class="ro">,</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 <span class="boring">
-</span><span class="boring">fn main() {
-</span><span class="boring">    let sq = Rectangle::square(3);
-</span><span class="boring">}</span></code></pre>
-<p>The <code>Self</code> keywords in the return type and in the body of the function are
-aliases for the type that appears after the <code>impl</code> keyword, which in this case
-is <code>Rectangle</code>.</p>
-<p>To call this associated function, we use the <code>::</code> syntax with the struct name;
-<code>let sq = Rectangle::square(3);</code> is an example. This function is namespaced by
-the struct: The <code>::</code> syntax is used for both associated functions and
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">sq</span> <span class="ro">=</span> <span class="rt">Rectangle</span><span class="ro">::</span><span class="rn">square</span><span class="ro">(</span><span class="ri">3</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<p>The <code class="syntax" data-syntax="rust"><span class="rt">Self</span></code> keywords in the return type and in the body of the function are
+aliases for the type that appears after the <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> keyword, which in this case
+is <code class="syntax" data-syntax="rust"><span class="rt">Rectangle</span></code>.</p>
+<p>To call this associated function, we use the <code class="syntax" data-syntax="rust"><span class="ro">:</span><span class="ro">:</span></code> syntax with the struct name;
+<code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rn">sq</span> <span class="ro">=</span> <span class="rt">Rectangle</span><span class="ro">::</span><span class="rn">square</span><span class="ro">(</span><span class="ri">3</span><span class="ro">)</span><span class="ro">;</span></code> is an example. This function is namespaced by
+the struct: The <code class="syntax" data-syntax="rust"><span class="ro">:</span><span class="ro">:</span></code> syntax is used for both associated functions and
 namespaces created by modules. We’ll discuss modules in <a href="07%20Modules%20and%20Boundaries.html#control-scope-and-privacy-with-modules-1">Chapter
 7</a><!-- ignore -->.</p>
-<h4 id="multiple-impl-blocks"><a class="header" href="#multiple-impl-blocks">Multiple <code>impl</code> Blocks</a></h4>
-<p>Each struct is allowed to have multiple <code>impl</code> blocks. For example, Listing
+<h4 id="multiple-impl-blocks"><a class="header" href="#multiple-impl-blocks">Multiple <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> Blocks</a></h4>
+<p>Each struct is allowed to have multiple <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> blocks. For example, Listing
 5-15 is equivalent to the code shown in Listing 5-16, which has each method in
-its own <code>impl</code> block.</p>
+its own <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> block.</p>
 <figure class="listing" id="listing-5-16">
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
-</span><span class="boring">struct Rectangle {
-</span><span class="boring">    width: u32,
-</span><span class="boring">    height: u32,
-</span><span class="boring">}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">struct</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">width</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring">    <span class="rn">height</span><span class="ro">:</span> <span class="rt">u32</span><span class="ro">,</span>
+</span><span class="boring"><span class="ro">}</span>
 </span><span class="boring">
-</span>impl Rectangle {
-    fn area(&amp;self) -&gt; u32 {
-        self.width * self.height
-    }
-}
+</span><span class="rk">impl</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">area</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+        <span class="rt">self</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">*</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">height</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-impl Rectangle {
-    fn can_hold(&amp;self, other: &amp;Rectangle) -&gt; bool {
-        self.width &gt; other.width &amp;&amp; self.height &gt; other.height
-    }
-}
+<span class="rk">impl</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">,</span> <span class="rn">other</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">Rectangle</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">bool</span> <span class="ro">{</span>
+        <span class="rt">self</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">&gt;</span> <span class="rn">other</span><span class="ro">.</span><span class="rn">width</span> <span class="ro">&amp;</span><span class="ro">&amp;</span> <span class="rt">self</span><span class="ro">.</span><span class="rn">height</span> <span class="ro">&gt;</span> <span class="rn">other</span><span class="ro">.</span><span class="rn">height</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 <span class="boring">
-</span><span class="boring">fn main() {
-</span><span class="boring">    let rect1 = Rectangle {
-</span><span class="boring">        width: 30,
-</span><span class="boring">        height: 50,
-</span><span class="boring">    };
-</span><span class="boring">    let rect2 = Rectangle {
-</span><span class="boring">        width: 10,
-</span><span class="boring">        height: 40,
-</span><span class="boring">    };
-</span><span class="boring">    let rect3 = Rectangle {
-</span><span class="boring">        width: 60,
-</span><span class="boring">        height: 45,
-</span><span class="boring">    };
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">rect1</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">width</span><span class="ro">:</span> <span class="ri">30</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">height</span><span class="ro">:</span> <span class="ri">50</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">rect2</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">width</span><span class="ro">:</span> <span class="ri">10</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">height</span><span class="ro">:</span> <span class="ri">40</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">rect3</span> <span class="ro">=</span> <span class="rt">Rectangle</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rn">width</span><span class="ro">:</span> <span class="ri">60</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rn">height</span><span class="ro">:</span> <span class="ri">45</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("Can rect1 hold rect2? {}", rect1.can_hold(&amp;rect2));
-</span><span class="boring">    println!("Can rect1 hold rect3? {}", rect1.can_hold(&amp;rect3));
-</span><span class="boring">}</span></code></pre>
-<figcaption><a href="#listing-5-16">Listing 5-16</a>: Rewriting Listing 5-15 using multiple <code>impl</code> blocks</figcaption>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Can rect1 hold rect2? {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect2</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Can rect1 hold rect3? {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">rect1</span><span class="ro">.</span><span class="rn">can_hold</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">rect3</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-5-16">Listing 5-16</a>: Rewriting Listing 5-15 using multiple <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> blocks</figcaption>
 </figure>
-<p>There’s no reason to separate these methods into multiple <code>impl</code> blocks here,
-but this is valid syntax. We’ll see a case in which multiple <code>impl</code> blocks are
+<p>There’s no reason to separate these methods into multiple <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> blocks here,
+but this is valid syntax. We’ll see a case in which multiple <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> blocks are
 useful in Chapter 10, where we discuss generic types and traits.</p>
 <h3 id="summary-4"><a class="header" href="#summary-4">Summary</a></h3>
 <p>Structs let you create custom types that are meaningful for your domain. By
 using structs, you can keep associated pieces of data connected to each other
-and name each piece to make your code clear. In <code>impl</code> blocks, you can define
+and name each piece to make your code clear. In <code class="syntax" data-syntax="rust"><span class="rk">impl</span></code> blocks, you can define
 functions that are associated with your type, and methods are a kind of
 associated function that let you specify the behavior that instances of your
 structs have.</p>

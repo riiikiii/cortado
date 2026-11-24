@@ -164,23 +164,30 @@ section > p, section > ul, section > ol {max-width:76ch}
 .chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
 .hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
 @media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+
+/* Offline token colours. Inline code follows the page theme; listings have a dark surface. */
+code.syntax {--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
+@media(prefers-color-scheme:dark){code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}}
+pre code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}
+.syntax .rk{color:var(--kw)}.syntax .rs{color:var(--str)}.syntax .ri{color:var(--num)}.syntax .rf{color:var(--fn)}.syntax .rt{color:var(--ty)}.syntax .rc{color:var(--cm);font-style:italic}.syntax .ro{color:var(--op)}.syntax .rn{color:var(--nm)}.syntax .re{color:var(--err)}
+html[data-theme="dark"] :not(pre)>code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa} html:is([data-theme="light"],[data-theme="sepia"]) :not(pre)>code.syntax{--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
 </style></head><body id="top">
 <header><div class="head"><div class="mast"><span>Rust in Practice · 03 / 21</span></div>
 <div class="hero"><div><h1>Values and Control Flow</h1><p>Choose numeric representations and make invalid states explicit.</p></div>
 <div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>30 and 12</span></div><div class="trace"><b>Observe</b><span>widen before adding</span></div><div class="trace"><b>Result</b><span>total 42</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="02%20An%20Input%20to%20a%20Decision.html">← 02 An Input to a Decision</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="04%20Ownership%20and%20Borrowing.html">04 Ownership and Borrowing →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#common-programming-concepts">Common Programming Concepts</a><a href="#variables-and-mutability-1">Variables and Mutability</a><a href="#data-types-1">Data Types</a><a href="#functions-1">Functions</a><a href="#comments-1">Comments</a><a href="#control-flow-1">Control Flow</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Choose numeric representations and make invalid states explicit</h2><p>An order quantity fits u32 in this model. A batch total has a different unit and a different range. Two perfectly valid quantities can exceed u32 when added together. In the example pipeline the conversion happens inside map, so every addition operates on u64. Casting a u32 sum after adding would occur too late. Widening still has a limit. For an unbounded stream use checked accumulation or define a finite window with an upper bound.</p><figure class="code"><figcaption>examples/replay.rs · excerpt</figcaption><pre><code><span class="k">trait</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="p">;</span>
-<span class="p">}</span>
-<span class="k">impl</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">Order</span><span class="p">::</span><span class="n">quantity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="p">}</span>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="02%20An%20Input%20to%20a%20Decision.html">← 02 An Input to a Decision</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="04%20Ownership%20and%20Borrowing.html">04 Ownership and Borrowing →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#common-programming-concepts">Common Programming Concepts</a><a href="#variables-and-mutability-1">Variables and Mutability</a><a href="#data-types-1">Data Types</a><a href="#functions-1">Functions</a><a href="#comments-1">Comments</a><a href="#control-flow-1">Control Flow</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Choose numeric representations and make invalid states explicit</h2><p>An order quantity fits u32 in this model. A batch total has a different unit and a different range. Two perfectly valid quantities can exceed u32 when added together. In the example pipeline the conversion happens inside map, so every addition operates on u64. Casting a u32 sum after adding would occur too late. Widening still has a limit. For an unbounded stream use checked accumulation or define a finite window with an upper bound.</p><figure class="code"><figcaption>examples/replay.rs · excerpt</figcaption><pre><code class="syntax" data-syntax="rust"><span class="rk">trait</span> <span class="rt">HasQuantity</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">quantity</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span><span class="ro">;</span>
+<span class="ro">}</span>
+<span class="rk">impl</span> <span class="rt">HasQuantity</span> <span class="rk">for</span> <span class="rt">Order</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">quantity</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rt">self</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u32</span> <span class="ro">{</span>
+        <span class="rt">Order</span><span class="ro">::</span><span class="rn">quantity</span><span class="ro">(</span><span class="rt">self</span><span class="ro">)</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-<span class="k">fn</span><span class="w"> </span><span class="nf">total</span><span class="o">&lt;</span><span class="n">T</span><span class="p">:</span><span class="w"> </span><span class="nc">HasQuantity</span><span class="o">&gt;</span><span class="p">(</span><span class="n">items</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="n">T</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u64</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">items</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">x</span><span class="o">|</span><span class="w"> </span><span class="kt">u64</span><span class="p">::</span><span class="n">from</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">quantity</span><span class="p">())).</span><span class="n">sum</span><span class="p">()</span>
-<span class="p">}</span>
+<span class="rk">fn</span> <span class="rf">total</span><span class="ro">&lt;</span><span class="rt">T</span><span class="ro">:</span> <span class="rt">HasQuantity</span><span class="ro">&gt;</span><span class="ro">(</span><span class="rn">items</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="ro">[</span><span class="rt">T</span><span class="ro">]</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">u64</span> <span class="ro">{</span>
+    <span class="rn">items</span><span class="ro">.</span><span class="rn">iter</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">map</span><span class="ro">(</span><span class="ro">|</span><span class="rn">x</span><span class="ro">|</span> <span class="rt">u64</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rn">x</span><span class="ro">.</span><span class="rn">quantity</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span><span class="ro">)</span><span class="ro">.</span><span class="rn">sum</span><span class="ro">(</span><span class="ro">)</span>
+<span class="ro">}</span>
 </code></pre></figure><p>Track one call on paper using quantities 30 and 12. The slice is borrowed, the closure receives one reference at a time, and u64::from converts each value without losing information. The final expression returns 42. For prices, the design question changes: decimal scale, rounding and currency become part of the contract. Using f64 just because it accepts a decimal literal leaves those decisions implicit. A price in integer ticks needs an explicit tick size just as a quantity needs a range.</p><h3>Observe overflow at the boundary</h3><p>Imagine importing a file with one u32::MAX record and another of quantity one. Each input is representable on its own. Their mathematical sum is 4,294,967,296. Widening each addend makes this a short regression example that can run without a database. In contrast, trying to demonstrate overflow by running billions of ordinary messages makes the test costly and obscures the reason for the failure. Choose test data near the representation boundary even when production examples normally use small round numbers. If the product later introduces signed adjustments, revisit the model: a reversal is an operation with its own identity and may deserve its own type.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/std/primitive.u64.html">doc.rust-lang.org/std/primitive.u64.html</a></p></section><div class="book"><h2 id="common-programming-concepts"><a class="header" href="#common-programming-concepts">Common Programming Concepts</a></h2>
 <p>This chapter covers concepts that appear in almost every programming language
 and how they work in Rust. Many programming languages have much in common at
@@ -212,42 +219,42 @@ Let’s explore how and why Rust encourages you to favor immutability and why
 sometimes you might want to opt out.</p>
 <p>When a variable is immutable, once a value is bound to a name, you can’t change
 that value. To illustrate this, generate a new project called <em>variables</em> in
-your <em>projects</em> directory by using <code>cargo new variables</code>.</p>
+your <em>projects</em> directory by using <code class="syntax" data-syntax="bash">cargo new variables</code>.</p>
 <p>Then, in your new <em>variables</em> directory, open <em>src/main.rs</em> and replace its
 code with the following code, which won’t compile just yet:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
-    let x = 5;
-    println!("The value of x is: {x}");
-    x = 6;
-    println!("The value of x is: {x}");
-}</code></pre>
-<p>Save and run the program using <code>cargo run</code>. You should receive an error message
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ri">5</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rn">x</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>Save and run the program using <code class="syntax" data-syntax="bash">cargo run</code>. You should receive an error message
 regarding an immutability error, as shown in this output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling variables v0.1.0 (file:///projects/variables)
-error[E0384]: cannot assign twice to immutable variable `x`
- --&gt; src/main.rs:4:5
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> variables v0.<span class="ri">1.0</span> (file:///projects/variables)
+<span class="re">error[E0384]</span>: cannot assign twice to immutable variable <span class="rs">`x`</span>
+ --&gt; src/main.rs:<span class="ri">4</span>:<span class="ri">5</span>
   |
-2 |     let x = 5;
-  |         - first assignment to `x`
-3 |     println!("The value of x is: {x}");
-4 |     x = 6;
+<span class="ri">2</span> |     let x = <span class="ri">5</span>;
+  |         - first assignment to <span class="rs">`x`</span>
+<span class="ri">3</span> |     println!("The value of x is: {x}");
+<span class="ri">4</span> |     x = <span class="ri">6</span>;
   |     ^^^^^ cannot assign twice to immutable variable
   |
-help: consider making this binding mutable
+<span class="rk">help</span>: consider making this binding mutable
   |
-2 |     let mut x = 5;
+<span class="ri">2</span> |     let mut x = <span class="ri">5</span>;
   |         +++
 
-For more information about this error, try `rustc --explain E0384`.
-error: could not compile `variables` (bin "variables") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0384`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`variables`</span> (bin "variables") due to <span class="ri">1</span> previous error
 </code></pre>
 <p>This example shows how the compiler helps you find errors in your programs.
 Compiler errors can be frustrating, but really they only mean your program
 isn’t safely doing what you want it to do yet; they do <em>not</em> mean that you’re
 not a good programmer! Experienced Rustaceans still get compiler errors.</p>
-<p>You received the error message <code>cannot assign twice to immutable variable `x`</code> because you tried to assign a second value to the immutable <code>x</code> variable.</p>
+<p>You received the error message <code class="syntax" data-syntax="rust"><span class="rn">cannot</span> <span class="rn">assign</span> <span class="rn">twice</span> <span class="rn">to</span> <span class="rn">immutable</span> <span class="rn">variable</span> `<span class="rn">x</span>`</code> because you tried to assign a second value to the immutable <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> variable.</p>
 <p>It’s important that we get compile-time errors when we attempt to change a
 value that’s designated as immutable, because this very situation can lead to
 bugs. If one part of our code operates on the assumption that a value will
@@ -260,27 +267,27 @@ won’t change, so you don’t have to keep track of it yourself. Your code is t
 easier to reason through.</p>
 <p>But mutability can be very useful and can make code more convenient to write.
 Although variables are immutable by default, you can make them mutable by
-adding <code>mut</code> in front of the variable name as you did in <a href="02%20An%20Input%20to%20a%20Decision.html#storing-values-with-variables">Chapter
-2</a><!-- ignore -->. Adding <code>mut</code> also conveys
+adding <code class="syntax" data-syntax="rust"><span class="rk">mut</span></code> in front of the variable name as you did in <a href="02%20An%20Input%20to%20a%20Decision.html#storing-values-with-variables">Chapter
+2</a><!-- ignore -->. Adding <code class="syntax" data-syntax="rust"><span class="rk">mut</span></code> also conveys
 intent to future readers of the code by indicating that other parts of the code
 will be changing this variable’s value.</p>
 <p>For example, let’s change <em>src/main.rs</em> to the following:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let mut x = 5;
-    println!("The value of x is: {x}");
-    x = 6;
-    println!("The value of x is: {x}");
-}</code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ri">5</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rn">x</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>When we run the program now, we get this:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling variables v0.1.0 (file:///projects/variables)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
-     Running `target/debug/variables`
-The value of x is: 5
-The value of x is: 6
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> variables v0.<span class="ri">1.0</span> (file:///projects/variables)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.30s
+<span class="rk">     Running</span> <span class="rs">`target/debug/variables`</span>
+The value of x is: <span class="ri">5</span>
+The value of x is: <span class="ri">6</span>
 </code></pre>
-<p>We’re allowed to change the value bound to <code>x</code> from <code>5</code> to <code>6</code> when <code>mut</code> is
+<p>We’re allowed to change the value bound to <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> from <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> to <code class="syntax" data-syntax="rust"><span class="ri">6</span></code> when <code class="syntax" data-syntax="rust"><span class="rk">mut</span></code> is
 used. Ultimately, deciding whether to use mutability or not is up to you and
 depends on what you think is clearest in that particular situation.</p>
 <!-- Old headings. Do not remove or links may break. -->
@@ -289,9 +296,9 @@ depends on what you think is clearest in that particular situation.</p>
 <p>Like immutable variables, <em>constants</em> are values that are bound to a name and
 are not allowed to change, but there are a few differences between constants
 and variables.</p>
-<p>First, you aren’t allowed to use <code>mut</code> with constants. Constants aren’t just
+<p>First, you aren’t allowed to use <code class="syntax" data-syntax="rust"><span class="rk">mut</span></code> with constants. Constants aren’t just
 immutable by default—they’re always immutable. You declare constants using the
-<code>const</code> keyword instead of the <code>let</code> keyword, and the type of the value <em>must</em>
+<code class="syntax" data-syntax="rust"><span class="rk">const</span></code> keyword instead of the <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> keyword, and the type of the value <em>must</em>
 be annotated. We’ll cover types and type annotations in the next section,
 <a href="#data-types">“Data Types”</a><!-- ignore -->, so don’t worry about the details
 right now. Just know that you must always annotate the type.</p>
@@ -300,11 +307,11 @@ them useful for values that many parts of code need to know about.</p>
 <p>The last difference is that constants may be set only to a constant expression,
 not the result of a value that could only be computed at runtime.</p>
 <p>Here’s an example of a constant declaration:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>const THREE_HOURS_IN_SECONDS: u32 = 60 * 60 * 3;
-<span class="boring">}</span></code></pre>
-<p>The constant’s name is <code>THREE_HOURS_IN_SECONDS</code>, and its value is set to the
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">const</span> <span class="rt">THREE_HOURS_IN_SECONDS</span><span class="ro">:</span> <span class="rt">u32</span> <span class="ro">=</span> <span class="ri">60</span> <span class="ro">*</span> <span class="ri">60</span> <span class="ro">*</span> <span class="ri">3</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>The constant’s name is <code class="syntax" data-syntax="rust"><span class="rt">THREE_HOURS_IN_SECONDS</span></code>, and its value is set to the
 result of multiplying 60 (the number of seconds in a minute) by 60 (the number
 of minutes in an hour) by 3 (the number of hours we want to count in this
 program). Rust’s naming convention for constants is to use all uppercase with
@@ -332,70 +339,70 @@ variable is what the compiler will see when you use the name of the variable.
 In effect, the second variable overshadows the first, taking any uses of the
 variable name to itself until either it itself is shadowed or the scope ends.
 We can shadow a variable by using the same variable’s name and repeating the
-use of the <code>let</code> keyword as follows:</p>
+use of the <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> keyword as follows:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let x = 5;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ri">5</span><span class="ro">;</span>
 
-    let x = x + 1;
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span><span class="ro">;</span>
 
-    {
-        let x = x * 2;
-        println!("The value of x in the inner scope is: {x}");
-    }
+    <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="rn">x</span> <span class="ro">*</span> <span class="ri">2</span><span class="ro">;</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x in the inner scope is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    println!("The value of x is: {x}");
-}</code></pre>
-<p>This program first binds <code>x</code> to a value of <code>5</code>. Then, it creates a new variable
-<code>x</code> by repeating <code>let x =</code>, taking the original value and adding <code>1</code> so that
-the value of <code>x</code> is <code>6</code>. Then, within an inner scope created with the curly
-brackets, the third <code>let</code> statement also shadows <code>x</code> and creates a new
-variable, multiplying the previous value by <code>2</code> to give <code>x</code> a value of <code>12</code>.
-When that scope is over, the inner shadowing ends and <code>x</code> returns to being <code>6</code>.
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>This program first binds <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> to a value of <code class="syntax" data-syntax="rust"><span class="ri">5</span></code>. Then, it creates a new variable
+<code class="syntax" data-syntax="rust"><span class="rn">x</span></code> by repeating <code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span></code>, taking the original value and adding <code class="syntax" data-syntax="rust"><span class="ri">1</span></code> so that
+the value of <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> is <code class="syntax" data-syntax="rust"><span class="ri">6</span></code>. Then, within an inner scope created with the curly
+brackets, the third <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statement also shadows <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> and creates a new
+variable, multiplying the previous value by <code class="syntax" data-syntax="rust"><span class="ri">2</span></code> to give <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> a value of <code class="syntax" data-syntax="rust"><span class="ri">12</span></code>.
+When that scope is over, the inner shadowing ends and <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> returns to being <code class="syntax" data-syntax="rust"><span class="ri">6</span></code>.
 When we run this program, it will output the following:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling variables v0.1.0 (file:///projects/variables)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
-     Running `target/debug/variables`
-The value of x in the inner scope is: 12
-The value of x is: 6
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> variables v0.<span class="ri">1.0</span> (file:///projects/variables)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.31s
+<span class="rk">     Running</span> <span class="rs">`target/debug/variables`</span>
+The value of x in the inner scope is: <span class="ri">12</span>
+The value of x is: <span class="ri">6</span>
 </code></pre>
-<p>Shadowing is different from marking a variable as <code>mut</code> because we’ll get a
+<p>Shadowing is different from marking a variable as <code class="syntax" data-syntax="rust"><span class="rk">mut</span></code> because we’ll get a
 compile-time error if we accidentally try to reassign to this variable without
-using the <code>let</code> keyword. By using <code>let</code>, we can perform a few transformations
+using the <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> keyword. By using <code class="syntax" data-syntax="rust"><span class="rk">let</span></code>, we can perform a few transformations
 on a value but have the variable be immutable after those transformations have
 completed.</p>
-<p>The other difference between <code>mut</code> and shadowing is that because we’re
-effectively creating a new variable when we use the <code>let</code> keyword again, we can
+<p>The other difference between <code class="syntax" data-syntax="rust"><span class="rk">mut</span></code> and shadowing is that because we’re
+effectively creating a new variable when we use the <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> keyword again, we can
 change the type of the value but reuse the same name. For example, say our
 program asks a user to show how many spaces they want between some text by
 inputting space characters, and then we want to store that input as a number:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
-</span>    let spaces = "   ";
-    let spaces = spaces.len();
-<span class="boring">}</span></code></pre>
-<p>The first <code>spaces</code> variable is a string type, and the second <code>spaces</code> variable
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span>    <span class="rk">let</span> <span class="rn">spaces</span> <span class="ro">=</span> <span class="rs">"</span>   <span class="rs">"</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">spaces</span> <span class="ro">=</span> <span class="rn">spaces</span><span class="ro">.</span><span class="rn">len</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>The first <code class="syntax" data-syntax="rust"><span class="rn">spaces</span></code> variable is a string type, and the second <code class="syntax" data-syntax="rust"><span class="rn">spaces</span></code> variable
 is a number type. Shadowing thus spares us from having to come up with
-different names, such as <code>spaces_str</code> and <code>spaces_num</code>; instead, we can reuse
-the simpler <code>spaces</code> name. However, if we try to use <code>mut</code> for this, as shown
+different names, such as <code class="syntax" data-syntax="rust"><span class="rn">spaces_str</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">spaces_num</span></code>; instead, we can reuse
+the simpler <code class="syntax" data-syntax="rust"><span class="rn">spaces</span></code> name. However, if we try to use <code class="syntax" data-syntax="rust"><span class="rk">mut</span></code> for this, as shown
 here, we’ll get a compile-time error:</p>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
-</span>    let mut spaces = "   ";
-    spaces = spaces.len();
-<span class="boring">}</span></code></pre>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span>    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">spaces</span> <span class="ro">=</span> <span class="rs">"</span>   <span class="rs">"</span><span class="ro">;</span>
+    <span class="rn">spaces</span> <span class="ro">=</span> <span class="rn">spaces</span><span class="ro">.</span><span class="rn">len</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
 <p>The error says we’re not allowed to mutate a variable’s type:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling variables v0.1.0 (file:///projects/variables)
-error[E0308]: mismatched types
- --&gt; src/main.rs:3:14
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> variables v0.<span class="ri">1.0</span> (file:///projects/variables)
+<span class="re">error[E0308]</span>: mismatched types
+ --&gt; src/main.rs:<span class="ri">3</span>:<span class="ri">14</span>
   |
-2 |     let mut spaces = "   ";
+<span class="ri">2</span> |     let mut spaces = "   ";
   |                      ----- expected due to this value
-3 |     spaces = spaces.len();
-  |              ^^^^^^^^^^^^ expected `&amp;str`, found `usize`
+<span class="ri">3</span> |     spaces = spaces.len();
+  |              ^^^^^^^^^^^^ expected <span class="rs">`&amp;str`</span>, found <span class="rs">`usize`</span>
 
-For more information about this error, try `rustc --explain E0308`.
-error: could not compile `variables` (bin "variables") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0308`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`variables`</span> (bin "variables") due to <span class="ri">1</span> previous error
 </code></pre>
 <p>Now that we’ve explored how variables work, let’s look at more data types they
 can have.</p>
@@ -408,33 +415,33 @@ at two data type subsets: scalar and compound.</p>
 <p>Keep in mind that Rust is a <em>statically typed</em> language, which means that it
 must know the types of all variables at compile time. The compiler can usually
 infer what type we want to use based on the value and how we use it. In cases
-when many types are possible, such as when we converted a <code>String</code> to a numeric
-type using <code>parse</code> in the <a href="02%20An%20Input%20to%20a%20Decision.html#comparing-the-guess-to-the-secret-number">“Comparing the Guess to the Secret
+when many types are possible, such as when we converted a <code class="syntax" data-syntax="rust"><span class="rt">String</span></code> to a numeric
+type using <code class="syntax" data-syntax="rust"><span class="rn">parse</span></code> in the <a href="02%20An%20Input%20to%20a%20Decision.html#comparing-the-guess-to-the-secret-number">“Comparing the Guess to the Secret
 Number”</a><!-- ignore --> section in
 Chapter 2, we must add a type annotation, like this:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let guess: u32 = "42".parse().expect("Not a number!");
-<span class="boring">}</span></code></pre>
-<p>If we don’t add the <code>: u32</code> type annotation shown in the preceding code, Rust
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">let</span> <span class="rn">guess</span><span class="ro">:</span> <span class="rt">u32</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">42</span><span class="rs">"</span><span class="ro">.</span><span class="rn">parse</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">expect</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Not a number!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>If we don’t add the <code class="syntax" data-syntax="rust"><span class="ro">:</span> <span class="rt">u32</span></code> type annotation shown in the preceding code, Rust
 will display the following error, which means the compiler needs more
 information from us to know which type we want to use:</p>
-<pre><code class="language-console">$ cargo build
-   Compiling no_type_annotations v0.1.0 (file:///projects/no_type_annotations)
-error[E0284]: type annotations needed
- --&gt; src/main.rs:2:9
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">   Compiling</span> no_type_annotations v0.<span class="ri">1.0</span> (file:///projects/no_type_annotations)
+<span class="re">error[E0284]</span>: type annotations needed
+ --&gt; src/main.rs:<span class="ri">2</span>:<span class="ri">9</span>
   |
-2 |     let guess = "42".parse().expect("Not a number!");
+<span class="ri">2</span> |     let guess = "<span class="ri">42</span>".parse().expect("Not a number!");
   |         ^^^^^        ----- type must be known at this point
   |
-  = note: cannot satisfy `&lt;_ as FromStr&gt;::Err == _`
-help: consider giving `guess` an explicit type
+  = <span class="rk">note</span>: cannot satisfy <span class="rs">`&lt;_ as FromStr&gt;::Err == _`</span>
+<span class="rk">help</span>: consider giving <span class="rs">`guess`</span> an explicit type
   |
-2 |     let guess: /* Type */ = "42".parse().expect("Not a number!");
+<span class="ri">2</span> |     let guess: /* Type */ = "<span class="ri">42</span>".parse().expect("Not a number!");
   |              ++++++++++++
 
-For more information about this error, try `rustc --explain E0284`.
-error: could not compile `no_type_annotations` (bin "no_type_annotations") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0284`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`no_type_annotations`</span> (bin "no_type_annotations") due to <span class="ri">1</span> previous error
 </code></pre>
 <p>You’ll see different type annotations for other data types.</p>
 <h4 id="scalar-types"><a class="header" href="#scalar-types">Scalar Types</a></h4>
@@ -443,9 +450,9 @@ integers, floating-point numbers, Booleans, and characters. You may recognize
 these from other programming languages. Let’s jump into how they work in Rust.</p>
 <h5 id="integer-types"><a class="header" href="#integer-types">Integer Types</a></h5>
 <p>An <em>integer</em> is a number without a fractional component. We used one integer
-type in Chapter 2, the <code>u32</code> type. This type declaration indicates that the
+type in Chapter 2, the <code class="syntax" data-syntax="rust"><span class="rt">u32</span></code> type. This type declaration indicates that the
 value it’s associated with should be an unsigned integer (signed integer types
-start with <code>i</code> instead of <code>u</code>) that takes up 32 bits of space. Table 3-1 shows
+start with <code class="syntax" data-syntax="rust"><span class="rn">i</span></code> instead of <code class="syntax" data-syntax="rust"><span class="rn">u</span></code>) that takes up 32 bits of space. Table 3-1 shows
 the built-in integer types in Rust. We can use any of these variants to declare
 the type of an integer value.</p>
 <p><span class="caption">Table 3-1: Integer Types in Rust</span></p>
@@ -455,12 +462,12 @@ the type of an integer value.</p>
 <tr><th>Length</th><th>Signed</th><th>Unsigned</th></tr>
 </thead>
 <tbody>
-<tr><td>8-bit</td><td><code>i8</code></td><td><code>u8</code></td></tr>
-<tr><td>16-bit</td><td><code>i16</code></td><td><code>u16</code></td></tr>
-<tr><td>32-bit</td><td><code>i32</code></td><td><code>u32</code></td></tr>
-<tr><td>64-bit</td><td><code>i64</code></td><td><code>u64</code></td></tr>
-<tr><td>128-bit</td><td><code>i128</code></td><td><code>u128</code></td></tr>
-<tr><td>Architecture-dependent</td><td><code>isize</code></td><td><code>usize</code></td></tr>
+<tr><td>8-bit</td><td><code class="syntax" data-syntax="rust"><span class="rt">i8</span></code></td><td><code class="syntax" data-syntax="rust"><span class="rt">u8</span></code></td></tr>
+<tr><td>16-bit</td><td><code class="syntax" data-syntax="rust"><span class="rt">i16</span></code></td><td><code class="syntax" data-syntax="rust"><span class="rt">u16</span></code></td></tr>
+<tr><td>32-bit</td><td><code class="syntax" data-syntax="rust"><span class="rt">i32</span></code></td><td><code class="syntax" data-syntax="rust"><span class="rt">u32</span></code></td></tr>
+<tr><td>64-bit</td><td><code class="syntax" data-syntax="rust"><span class="rt">i64</span></code></td><td><code class="syntax" data-syntax="rust"><span class="rt">u64</span></code></td></tr>
+<tr><td>128-bit</td><td><code class="syntax" data-syntax="rust"><span class="rt">i128</span></code></td><td><code class="syntax" data-syntax="rust"><span class="rt">u128</span></code></td></tr>
+<tr><td>Architecture-dependent</td><td><code class="syntax" data-syntax="rust"><span class="rt">isize</span></code></td><td><code class="syntax" data-syntax="rust"><span class="rt">usize</span></code></td></tr>
 </tbody>
 </table>
 </div></div>
@@ -475,17 +482,17 @@ Signed numbers are stored using <a href="https://en.wikipedia.org/wiki/Two%27s_c
 --> representation.</p>
 <p>Each signed variant can store numbers from −(2<sup>n − 1</sup>) to 2<sup>n −
 1</sup> − 1 inclusive, where <em>n</em> is the number of bits that variant uses. So, an
-<code>i8</code> can store numbers from −(2<sup>7</sup>) to 2<sup>7</sup> − 1, which equals
+<code class="syntax" data-syntax="rust"><span class="rt">i8</span></code> can store numbers from −(2<sup>7</sup>) to 2<sup>7</sup> − 1, which equals
 −128 to 127. Unsigned variants can store numbers from 0 to 2<sup>n</sup> − 1,
-so a <code>u8</code> can store numbers from 0 to 2<sup>8</sup> − 1, which equals 0 to 255.</p>
-<p>Additionally, the <code>isize</code> and <code>usize</code> types depend on the architecture of the
+so a <code class="syntax" data-syntax="rust"><span class="rt">u8</span></code> can store numbers from 0 to 2<sup>8</sup> − 1, which equals 0 to 255.</p>
+<p>Additionally, the <code class="syntax" data-syntax="rust"><span class="rt">isize</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">usize</span></code> types depend on the architecture of the
 computer your program is running on: 64 bits if you’re on a 64-bit architecture
 and 32 bits if you’re on a 32-bit architecture.</p>
 <p>You can write integer literals in any of the forms shown in Table 3-2. Note
 that number literals that can be multiple numeric types allow a type suffix,
-such as <code>57u8</code>, to designate the type. Number literals can also use <code>_</code> as a
-visual separator to make the number easier to read, such as <code>1_000</code>, which will
-have the same value as if you had specified <code>1000</code>.</p>
+such as <code class="syntax" data-syntax="rust"><span class="ri">57</span><span class="rk">u8</span></code>, to designate the type. Number literals can also use <code class="syntax" data-syntax="rust"><span class="rn">_</span></code> as a
+visual separator to make the number easier to read, such as <code class="syntax" data-syntax="rust"><span class="ri">1_000</span></code>, which will
+have the same value as if you had specified <code class="syntax" data-syntax="rust"><span class="ri">1000</span></code>.</p>
 <p><span class="caption">Table 3-2: Integer Literals in Rust</span></p>
 <div class="table-wrapper">
 <div class="scroll"><table>
@@ -493,121 +500,121 @@ have the same value as if you had specified <code>1000</code>.</p>
 <tr><th>Number literals</th><th>Example</th></tr>
 </thead>
 <tbody>
-<tr><td>Decimal</td><td><code>98_222</code></td></tr>
-<tr><td>Hex</td><td><code>0xff</code></td></tr>
-<tr><td>Octal</td><td><code>0o77</code></td></tr>
-<tr><td>Binary</td><td><code>0b1111_0000</code></td></tr>
-<tr><td>Byte (<code>u8</code> only)</td><td><code>b'A'</code></td></tr>
+<tr><td>Decimal</td><td><code class="syntax" data-syntax="rust"><span class="ri">98_222</span></code></td></tr>
+<tr><td>Hex</td><td><code class="syntax" data-syntax="rust"><span class="ri">0xff</span></code></td></tr>
+<tr><td>Octal</td><td><code class="syntax" data-syntax="rust"><span class="ri">0o77</span></code></td></tr>
+<tr><td>Binary</td><td><code class="syntax" data-syntax="rust"><span class="ri">0b1111_0000</span></code></td></tr>
+<tr><td>Byte (<code class="syntax" data-syntax="rust"><span class="rt">u8</span></code> only)</td><td><code class="syntax" data-syntax="rust"><span class="rs">b'A'</span></code></td></tr>
 </tbody>
 </table>
 </div></div>
 <p>So how do you know which type of integer to use? If you’re unsure, Rust’s
-defaults are generally good places to start: Integer types default to <code>i32</code>.
-The primary situation in which you’d use <code>isize</code> or <code>usize</code> is when indexing
+defaults are generally good places to start: Integer types default to <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>.
+The primary situation in which you’d use <code class="syntax" data-syntax="rust"><span class="rt">isize</span></code> or <code class="syntax" data-syntax="rust"><span class="rt">usize</span></code> is when indexing
 some sort of collection.</p>
 <section class="note" aria-role="note">
 <h5 id="integer-overflow"><a class="header" href="#integer-overflow">Integer Overflow</a></h5>
-<p>Let’s say you have a variable of type <code>u8</code> that can hold values between 0 and
+<p>Let’s say you have a variable of type <code class="syntax" data-syntax="rust"><span class="rt">u8</span></code> that can hold values between 0 and
 255. If you try to change the variable to a value outside that range, such as
 256, <em>integer overflow</em> will occur, which can result in one of two behaviors.
 When you’re compiling in debug mode, Rust includes checks for integer overflow
 that cause your program to <em>panic</em> at runtime if this behavior occurs. Rust
 uses the term <em>panicking</em> when a program exits with an error; we’ll discuss
 panics in more depth in the <a href="09%20Errors%20Across%20Boundaries.html#unrecoverable-errors-with-panic-1">“Unrecoverable Errors with
-<code>panic!</code>”</a><!-- ignore --> section in Chapter
+<code class="syntax" data-syntax="rust"><span class="rf">panic!</span></code>”</a><!-- ignore --> section in Chapter
 9.</p>
-<p>When you’re compiling in release mode with the <code>--release</code> flag, Rust does
+<p>When you’re compiling in release mode with the <code class="syntax" data-syntax="rust"><span class="ro">-</span><span class="ro">-</span><span class="rn">release</span></code> flag, Rust does
 <em>not</em> include checks for integer overflow that cause panics. Instead, if
 overflow occurs, Rust performs <em>two’s complement wrapping</em>. In short, values
 greater than the maximum value the type can hold “wrap around” to the minimum
-of the values the type can hold. In the case of a <code>u8</code>, the value 256 becomes
+of the values the type can hold. In the case of a <code class="syntax" data-syntax="rust"><span class="rt">u8</span></code>, the value 256 becomes
 0, the value 257 becomes 1, and so on. The program won’t panic, but the
 variable will have a value that probably isn’t what you were expecting it to
 have. Relying on integer overflow’s wrapping behavior is considered an error.</p>
 <p>To explicitly handle the possibility of overflow, you can use these families
 of methods provided by the standard library for primitive numeric types:</p>
 <ul>
-<li>Wrap in all compilation modes with the <code>wrapping_*</code> methods, such as
-<code>wrapping_add</code>.</li>
-<li>Return the <code>None</code> value if there is overflow with the <code>checked_*</code> methods.</li>
+<li>Wrap in all compilation modes with the <code class="syntax" data-syntax="rust"><span class="rn">wrapping_</span><span class="ro">*</span></code> methods, such as
+<code class="syntax" data-syntax="rust"><span class="rn">wrapping_add</span></code>.</li>
+<li>Return the <code class="syntax" data-syntax="rust"><span class="rt">None</span></code> value if there is overflow with the <code class="syntax" data-syntax="rust"><span class="rn">checked_</span><span class="ro">*</span></code> methods.</li>
 <li>Return the value and a Boolean indicating whether there was overflow with
-the <code>overflowing_*</code> methods.</li>
-<li>Saturate at the value’s minimum or maximum values with the <code>saturating_*</code>
+the <code class="syntax" data-syntax="rust"><span class="rn">overflowing_</span><span class="ro">*</span></code> methods.</li>
+<li>Saturate at the value’s minimum or maximum values with the <code class="syntax" data-syntax="rust"><span class="rn">saturating_</span><span class="ro">*</span></code>
 methods.</li>
 </ul>
 </section>
 <h5 id="floating-point-types"><a class="header" href="#floating-point-types">Floating-Point Types</a></h5>
 <p>Rust also has two primitive types for <em>floating-point numbers</em>, which are
-numbers with decimal points. Rust’s floating-point types are <code>f32</code> and <code>f64</code>,
-which are 32 bits and 64 bits in size, respectively. The default type is <code>f64</code>
-because on modern CPUs, it’s roughly the same speed as <code>f32</code> but is capable of
+numbers with decimal points. Rust’s floating-point types are <code class="syntax" data-syntax="rust"><span class="rt">f32</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">f64</span></code>,
+which are 32 bits and 64 bits in size, respectively. The default type is <code class="syntax" data-syntax="rust"><span class="rt">f64</span></code>
+because on modern CPUs, it’s roughly the same speed as <code class="syntax" data-syntax="rust"><span class="rt">f32</span></code> but is capable of
 more precision. All floating-point types are signed.</p>
 <p>Here’s an example that shows floating-point numbers in action:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let x = 2.0; // f64
-
-    let y: f32 = 3.0; // f32
-}</code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ri">2.0</span><span class="ro">;</span> <span class="rc">// f64
+</span>
+    <span class="rk">let</span> <span class="rn">y</span><span class="ro">:</span> <span class="rt">f32</span> <span class="ro">=</span> <span class="ri">3.0</span><span class="ro">;</span> <span class="rc">// f32
+</span><span class="ro">}</span></code></pre>
 <p>Floating-point numbers are represented according to the IEEE-754 standard.</p>
 <h5 id="numeric-operations"><a class="header" href="#numeric-operations">Numeric Operations</a></h5>
 <p>Rust supports the basic mathematical operations you’d expect for all the number
 types: addition, subtraction, multiplication, division, and remainder. Integer
 division truncates toward zero to the nearest integer. The following code shows
-how you’d use each numeric operation in a <code>let</code> statement:</p>
+how you’d use each numeric operation in a <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statement:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    // addition
-    let sum = 5 + 10;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rc">// addition
+</span>    <span class="rk">let</span> <span class="rn">sum</span> <span class="ro">=</span> <span class="ri">5</span> <span class="ro">+</span> <span class="ri">10</span><span class="ro">;</span>
 
-    // subtraction
-    let difference = 95.5 - 4.3;
+    <span class="rc">// subtraction
+</span>    <span class="rk">let</span> <span class="rn">difference</span> <span class="ro">=</span> <span class="ri">95.5</span> <span class="ro">-</span> <span class="ri">4.3</span><span class="ro">;</span>
 
-    // multiplication
-    let product = 4 * 30;
+    <span class="rc">// multiplication
+</span>    <span class="rk">let</span> <span class="rn">product</span> <span class="ro">=</span> <span class="ri">4</span> <span class="ro">*</span> <span class="ri">30</span><span class="ro">;</span>
 
-    // division
-    let quotient = 56.7 / 32.2;
-    let truncated = -5 / 3; // Results in -1
-
-    // remainder
-    let remainder = 43 % 5;
-}</code></pre>
+    <span class="rc">// division
+</span>    <span class="rk">let</span> <span class="rn">quotient</span> <span class="ro">=</span> <span class="ri">56.7</span> <span class="ro">/</span> <span class="ri">32.2</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">truncated</span> <span class="ro">=</span> <span class="ro">-</span><span class="ri">5</span> <span class="ro">/</span> <span class="ri">3</span><span class="ro">;</span> <span class="rc">// Results in -1
+</span>
+    <span class="rc">// remainder
+</span>    <span class="rk">let</span> <span class="rn">remainder</span> <span class="ro">=</span> <span class="ri">43</span> <span class="ro">%</span> <span class="ri">5</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>Each expression in these statements uses a mathematical operator and evaluates
 to a single value, which is then bound to a variable. <a href="https://doc.rust-lang.org/stable/book/print.html#b---operators-and-symbols">Appendix
 B</a><!-- ignore --> contains a list of all operators that Rust
 provides.</p>
 <h5 id="the-boolean-type"><a class="header" href="#the-boolean-type">The Boolean Type</a></h5>
 <p>As in most other programming languages, a Boolean type in Rust has two possible
-values: <code>true</code> and <code>false</code>. Booleans are one byte in size. The Boolean type in
-Rust is specified using <code>bool</code>. For example:</p>
+values: <code class="syntax" data-syntax="rust"><span class="rk">true</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">false</span></code>. Booleans are one byte in size. The Boolean type in
+Rust is specified using <code class="syntax" data-syntax="rust"><span class="rt">bool</span></code>. For example:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let t = true;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">t</span> <span class="ro">=</span> <span class="rk">true</span><span class="ro">;</span>
 
-    let f: bool = false; // with explicit type annotation
-}</code></pre>
-<p>The main way to use Boolean values is through conditionals, such as an <code>if</code>
-expression. We’ll cover how <code>if</code> expressions work in Rust in the <a href="#control-flow">“Control
+    <span class="rk">let</span> <span class="rn">f</span><span class="ro">:</span> <span class="rt">bool</span> <span class="ro">=</span> <span class="rk">false</span><span class="ro">;</span> <span class="rc">// with explicit type annotation
+</span><span class="ro">}</span></code></pre>
+<p>The main way to use Boolean values is through conditionals, such as an <code class="syntax" data-syntax="rust"><span class="rk">if</span></code>
+expression. We’ll cover how <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expressions work in Rust in the <a href="#control-flow">“Control
 Flow”</a><!-- ignore --> section.</p>
 <h5 id="the-character-type"><a class="header" href="#the-character-type">The Character Type</a></h5>
-<p>Rust’s <code>char</code> type is the language’s most primitive alphabetic type. Here are
-some examples of declaring <code>char</code> values:</p>
+<p>Rust’s <code class="syntax" data-syntax="rust"><span class="rt">char</span></code> type is the language’s most primitive alphabetic type. Here are
+some examples of declaring <code class="syntax" data-syntax="rust"><span class="rt">char</span></code> values:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let c = 'z';
-    let z: char = 'ℤ'; // with explicit type annotation
-    let heart_eyed_cat = '😻';
-}</code></pre>
-<p>Note that we specify <code>char</code> literals with single quotation marks, as opposed to
-string literals, which use double quotation marks. Rust’s <code>char</code> type is 4
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">c</span> <span class="ro">=</span> <span class="rs">'z'</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">z</span><span class="ro">:</span> <span class="rt">char</span> <span class="ro">=</span> <span class="rs">'ℤ'</span><span class="ro">;</span> <span class="rc">// with explicit type annotation
+</span>    <span class="rk">let</span> <span class="rn">heart_eyed_cat</span> <span class="ro">=</span> <span class="rs">'😻'</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>Note that we specify <code class="syntax" data-syntax="rust"><span class="rt">char</span></code> literals with single quotation marks, as opposed to
+string literals, which use double quotation marks. Rust’s <code class="syntax" data-syntax="rust"><span class="rt">char</span></code> type is 4
 bytes in size and represents a Unicode scalar value, which means it can
 represent a lot more than just ASCII. Accented letters; Chinese, Japanese, and
-Korean characters; emojis; and zero-width spaces are all valid <code>char</code> values in
-Rust. Unicode scalar values range from <code>U+0000</code> to <code>U+D7FF</code> and <code>U+E000</code> to
-<code>U+10FFFF</code> inclusive. However, a “character” isn’t really a concept in Unicode,
+Korean characters; emojis; and zero-width spaces are all valid <code class="syntax" data-syntax="rust"><span class="rt">char</span></code> values in
+Rust. Unicode scalar values range from <code class="syntax" data-syntax="rust"><span class="rt">U</span><span class="ro">+</span><span class="ri">0000</span></code> to <code class="syntax" data-syntax="rust"><span class="rt">U</span><span class="ro">+</span><span class="rt">D7FF</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">U</span><span class="ro">+</span><span class="rt">E000</span></code> to
+<code class="syntax" data-syntax="rust"><span class="rt">U</span><span class="ro">+</span><span class="ri">10</span><span class="rt">FFFF</span></code> inclusive. However, a “character” isn’t really a concept in Unicode,
 so your human intuition for what a “character” is may not match up with what a
-<code>char</code> is in Rust. We’ll discuss this topic in detail in <a href="08%20Collections%20and%20Replay.html#storing-utf-8-encoded-text-with-strings">“Storing UTF-8
+<code class="syntax" data-syntax="rust"><span class="rt">char</span></code> is in Rust. We’ll discuss this topic in detail in <a href="08%20Collections%20and%20Replay.html#storing-utf-8-encoded-text-with-strings">“Storing UTF-8
 Encoded Text with Strings”</a><!-- ignore --> in Chapter 8.</p>
 <h4 id="compound-types"><a class="header" href="#compound-types">Compound Types</a></h4>
 <p><em>Compound types</em> can group multiple values into one type. Rust has two
@@ -621,42 +628,42 @@ parentheses. Each position in the tuple has a type, and the types of the
 different values in the tuple don’t have to be the same. We’ve added optional
 type annotations in this example:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let tup: (i32, f64, u8) = (500, 6.4, 1);
-}</code></pre>
-<p>The variable <code>tup</code> binds to the entire tuple because a tuple is considered a
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">tup</span><span class="ro">:</span> <span class="ro">(</span><span class="rt">i32</span><span class="ro">,</span> <span class="rt">f64</span><span class="ro">,</span> <span class="rt">u8</span><span class="ro">)</span> <span class="ro">=</span> <span class="ro">(</span><span class="ri">500</span><span class="ro">,</span> <span class="ri">6.4</span><span class="ro">,</span> <span class="ri">1</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>The variable <code class="syntax" data-syntax="rust"><span class="rn">tup</span></code> binds to the entire tuple because a tuple is considered a
 single compound element. To get the individual values out of a tuple, we can
 use pattern matching to destructure a tuple value, like this:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let tup = (500, 6.4, 1);
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">tup</span> <span class="ro">=</span> <span class="ro">(</span><span class="ri">500</span><span class="ro">,</span> <span class="ri">6.4</span><span class="ro">,</span> <span class="ri">1</span><span class="ro">)</span><span class="ro">;</span>
 
-    let (x, y, z) = tup;
+    <span class="rk">let</span> <span class="ro">(</span><span class="rn">x</span><span class="ro">,</span> <span class="rn">y</span><span class="ro">,</span> <span class="rn">z</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">tup</span><span class="ro">;</span>
 
-    println!("The value of y is: {y}");
-}</code></pre>
-<p>This program first creates a tuple and binds it to the variable <code>tup</code>. It then
-uses a pattern with <code>let</code> to take <code>tup</code> and turn it into three separate
-variables, <code>x</code>, <code>y</code>, and <code>z</code>. This is called <em>destructuring</em> because it breaks
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of y is: {y}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>This program first creates a tuple and binds it to the variable <code class="syntax" data-syntax="rust"><span class="rn">tup</span></code>. It then
+uses a pattern with <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> to take <code class="syntax" data-syntax="rust"><span class="rn">tup</span></code> and turn it into three separate
+variables, <code class="syntax" data-syntax="rust"><span class="rn">x</span></code>, <code class="syntax" data-syntax="rust"><span class="rn">y</span></code>, and <code class="syntax" data-syntax="rust"><span class="rn">z</span></code>. This is called <em>destructuring</em> because it breaks
 the single tuple into three parts. Finally, the program prints the value of
-<code>y</code>, which is <code>6.4</code>.</p>
-<p>We can also access a tuple element directly by using a period (<code>.</code>) followed by
+<code class="syntax" data-syntax="rust"><span class="rn">y</span></code>, which is <code class="syntax" data-syntax="rust"><span class="ri">6.4</span></code>.</p>
+<p>We can also access a tuple element directly by using a period (<code class="syntax" data-syntax="rust"><span class="ro">.</span></code>) followed by
 the index of the value we want to access. For example:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let x: (i32, f64, u8) = (500, 6.4, 1);
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span><span class="ro">:</span> <span class="ro">(</span><span class="rt">i32</span><span class="ro">,</span> <span class="rt">f64</span><span class="ro">,</span> <span class="rt">u8</span><span class="ro">)</span> <span class="ro">=</span> <span class="ro">(</span><span class="ri">500</span><span class="ro">,</span> <span class="ri">6.4</span><span class="ro">,</span> <span class="ri">1</span><span class="ro">)</span><span class="ro">;</span>
 
-    let five_hundred = x.0;
+    <span class="rk">let</span> <span class="rn">five_hundred</span> <span class="ro">=</span> <span class="rn">x</span><span class="ro">.</span><span class="ri">0</span><span class="ro">;</span>
 
-    let six_point_four = x.1;
+    <span class="rk">let</span> <span class="rn">six_point_four</span> <span class="ro">=</span> <span class="rn">x</span><span class="ro">.</span><span class="ri">1</span><span class="ro">;</span>
 
-    let one = x.2;
-}</code></pre>
-<p>This program creates the tuple <code>x</code> and then accesses each element of the tuple
+    <span class="rk">let</span> <span class="rn">one</span> <span class="ro">=</span> <span class="rn">x</span><span class="ro">.</span><span class="ri">2</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>This program creates the tuple <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> and then accesses each element of the tuple
 using their respective indices. As with most programming languages, the first
 index in a tuple is 0.</p>
 <p>The tuple without any values has a special name, <em>unit</em>. This value and its
-corresponding type are both written <code>()</code> and represent an empty value or an
+corresponding type are both written <code class="syntax" data-syntax="rust"><span class="ro">(</span><span class="ro">)</span></code> and represent an empty value or an
 empty return type. Expressions implicitly return the unit value if they don’t
 return any other value.</p>
 <h5 id="the-array-type"><a class="header" href="#the-array-type">The Array Type</a></h5>
@@ -666,9 +673,9 @@ some other languages, arrays in Rust have a fixed length.</p>
 <p>We write the values in an array as a comma-separated list inside square
 brackets:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let a = [1, 2, 3, 4, 5];
-}</code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">a</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="ri">4</span><span class="ro">,</span> <span class="ri">5</span><span class="ro">]</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>Arrays are useful when you want your data allocated on the stack, the same as
 the other types we have seen so far, rather than the heap (we will discuss the
 stack and the heap more in <a href="04%20Ownership%20and%20Borrowing.html#the-stack-and-the-heap">Chapter 4</a><!-- ignore -->) or when
@@ -682,28 +689,28 @@ array or a vector, chances are you should use a vector. <a href="08%20Collection
 need to change. For example, if you were using the names of the month in a
 program, you would probably use an array rather than a vector because you know
 it will always contain 12 elements:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let months = ["January", "February", "March", "April", "May", "June", "July",
-              "August", "September", "October", "November", "December"];
-<span class="boring">}</span></code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">let</span> <span class="rn">months</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">January</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">February</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">March</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">April</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">May</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">June</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">July</span><span class="rs">"</span><span class="ro">,</span>
+              <span class="rs">"</span><span class="rs">August</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">September</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">October</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">November</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">December</span><span class="rs">"</span><span class="ro">]</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
 <p>You write an array’s type using square brackets with the type of each element,
 a semicolon, and then the number of elements in the array, like so:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let a: [i32; 5] = [1, 2, 3, 4, 5];
-<span class="boring">}</span></code></pre>
-<p>Here, <code>i32</code> is the type of each element. After the semicolon, the number <code>5</code>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">let</span> <span class="rn">a</span><span class="ro">:</span> <span class="ro">[</span><span class="rt">i32</span><span class="ro">;</span> <span class="ri">5</span><span class="ro">]</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="ri">4</span><span class="ro">,</span> <span class="ri">5</span><span class="ro">]</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>Here, <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code> is the type of each element. After the semicolon, the number <code class="syntax" data-syntax="rust"><span class="ri">5</span></code>
 indicates the array contains five elements.</p>
 <p>You can also initialize an array to contain the same value for each element by
 specifying the initial value, followed by a semicolon, and then the length of
 the array in square brackets, as shown here:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let a = [3; 5];
-<span class="boring">}</span></code></pre>
-<p>The array named <code>a</code> will contain <code>5</code> elements that will all be set to the value
-<code>3</code> initially. This is the same as writing <code>let a = [3, 3, 3, 3, 3];</code> but in a
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">let</span> <span class="rn">a</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">3</span><span class="ro">;</span> <span class="ri">5</span><span class="ro">]</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>The array named <code class="syntax" data-syntax="rust"><span class="rn">a</span></code> will contain <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> elements that will all be set to the value
+<code class="syntax" data-syntax="rust"><span class="ri">3</span></code> initially. This is the same as writing <code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rn">a</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">3</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">]</span><span class="ro">;</span></code> but in a
 more concise way.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="accessing-array-elements"></a></p>
@@ -712,58 +719,58 @@ more concise way.</p>
 allocated on the stack. You can access elements of an array using indexing,
 like this:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let a = [1, 2, 3, 4, 5];
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">a</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="ri">4</span><span class="ro">,</span> <span class="ri">5</span><span class="ro">]</span><span class="ro">;</span>
 
-    let first = a[0];
-    let second = a[1];
-}</code></pre>
-<p>In this example, the variable named <code>first</code> will get the value <code>1</code> because that
-is the value at index <code>[0]</code> in the array. The variable named <code>second</code> will get
-the value <code>2</code> from index <code>[1]</code> in the array.</p>
+    <span class="rk">let</span> <span class="rn">first</span> <span class="ro">=</span> <span class="rn">a</span><span class="ro">[</span><span class="ri">0</span><span class="ro">]</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">second</span> <span class="ro">=</span> <span class="rn">a</span><span class="ro">[</span><span class="ri">1</span><span class="ro">]</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>In this example, the variable named <code class="syntax" data-syntax="rust"><span class="rn">first</span></code> will get the value <code class="syntax" data-syntax="rust"><span class="ri">1</span></code> because that
+is the value at index <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="ri">0</span><span class="ro">]</span></code> in the array. The variable named <code class="syntax" data-syntax="rust"><span class="rn">second</span></code> will get
+the value <code class="syntax" data-syntax="rust"><span class="ri">2</span></code> from index <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="ri">1</span><span class="ro">]</span></code> in the array.</p>
 <h5 id="invalid-array-element-access"><a class="header" href="#invalid-array-element-access">Invalid Array Element Access</a></h5>
 <p>Let’s see what happens if you try to access an element of an array that is past
 the end of the array. Say you run this code, similar to the guessing game in
 Chapter 2, to get an array index from the user:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<span class="sample-flag">Runtime panic example</span><pre><code class="language-rust ignore panics">use std::io;
+<span class="sample-flag">Runtime panic example</span><pre><code class="language-rust ignore panics syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">;</span>
 
-fn main() {
-    let a = [1, 2, 3, 4, 5];
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">a</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="ri">4</span><span class="ro">,</span> <span class="ri">5</span><span class="ro">]</span><span class="ro">;</span>
 
-    println!("Please enter an array index.");
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Please enter an array index.</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 
-    let mut index = String::new();
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">index</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    io::stdin()
-        .read_line(&amp;mut index)
-        .expect("Failed to read line");
+    <span class="rn">io</span><span class="ro">::</span><span class="rn">stdin</span><span class="ro">(</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rn">read_line</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rk">mut</span> <span class="rn">index</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rn">expect</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Failed to read line</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 
-    let index: usize = index
-        .trim()
-        .parse()
-        .expect("Index entered was not a number");
+    <span class="rk">let</span> <span class="rn">index</span><span class="ro">:</span> <span class="rt">usize</span> <span class="ro">=</span> <span class="rn">index</span>
+        <span class="ro">.</span><span class="rn">trim</span><span class="ro">(</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rn">parse</span><span class="ro">(</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rn">expect</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Index entered was not a number</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 
-    let element = a[index];
+    <span class="rk">let</span> <span class="rn">element</span> <span class="ro">=</span> <span class="rn">a</span><span class="ro">[</span><span class="rn">index</span><span class="ro">]</span><span class="ro">;</span>
 
-    println!("The value of the element at index {index} is: {element}");
-}</code></pre>
-<p>This code compiles successfully. If you run this code using <code>cargo run</code> and
-enter <code>0</code>, <code>1</code>, <code>2</code>, <code>3</code>, or <code>4</code>, the program will print out the corresponding
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of the element at index {index} is: {element}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>This code compiles successfully. If you run this code using <code class="syntax" data-syntax="bash">cargo run</code> and
+enter <code class="syntax" data-syntax="rust"><span class="ri">0</span></code>, <code class="syntax" data-syntax="rust"><span class="ri">1</span></code>, <code class="syntax" data-syntax="rust"><span class="ri">2</span></code>, <code class="syntax" data-syntax="rust"><span class="ri">3</span></code>, or <code class="syntax" data-syntax="rust"><span class="ri">4</span></code>, the program will print out the corresponding
 value at that index in the array. If you instead enter a number past the end of
-the array, such as <code>10</code>, you’ll see output like this:</p>
+the array, such as <code class="syntax" data-syntax="rust"><span class="ri">10</span></code>, you’ll see output like this:</p>
 <!-- manual-regeneration
 cd listings/ch03-common-programming-concepts/no-listing-15-invalid-array-access
 cargo run
 10
 -->
-<pre><code class="language-console">thread 'main' panicked at src/main.rs:19:19:
-index out of bounds: the len is 5 but the index is 10
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+<pre><code class="language-console syntax" data-syntax="console">thread 'main' panicked at src/main.rs:<span class="ri">19</span>:<span class="ri">19</span>:
+index out of bounds: the len is <span class="ri">5</span> but the index is <span class="ri">10</span>
+<span class="rk">note</span>: run with <span class="rs">`RUST_BACKTRACE=1`</span> environment variable to display a backtrace
 </code></pre>
 <p>The program resulted in a runtime error at the point of using an invalid
 value in the indexing operation. The program exited with an error message and
-didn’t execute the final <code>println!</code> statement. When you attempt to access an
+didn’t execute the final <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> statement. When you attempt to access an
 element using indexing, Rust will check that the index you’ve specified is less
 than the array length. If the index is greater than or equal to the length,
 Rust will panic. This check has to happen at runtime, especially in this case,
@@ -779,43 +786,43 @@ write readable, safe code that neither panics nor allows invalid memory access.<
 <h2 id="functions-1"><a href="#functions-1" class="header">Functions</a></h2>
 <h3 id="functions"><a class="header" href="#functions">Functions</a></h3>
 <p>Functions are prevalent in Rust code. You’ve already seen one of the most
-important functions in the language: the <code>main</code> function, which is the entry
-point of many programs. You’ve also seen the <code>fn</code> keyword, which allows you to
+important functions in the language: the <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function, which is the entry
+point of many programs. You’ve also seen the <code class="syntax" data-syntax="rust"><span class="rk">fn</span></code> keyword, which allows you to
 declare new functions.</p>
 <p>Rust code uses <em>snake case</em> as the conventional style for function and variable
 names, in which all letters are lowercase and underscores separate words.
 Here’s a program that contains an example function definition:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    println!("Hello, world!");
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Hello, world!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 
-    another_function();
-}
+    <span class="rn">another_function</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn another_function() {
-    println!("Another function.");
-}</code></pre>
-<p>We define a function in Rust by entering <code>fn</code> followed by a function name and a
+<span class="rk">fn</span> <span class="rf">another_function</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Another function.</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>We define a function in Rust by entering <code class="syntax" data-syntax="rust"><span class="rk">fn</span></code> followed by a function name and a
 set of parentheses. The curly brackets tell the compiler where the function
 body begins and ends.</p>
 <p>We can call any function we’ve defined by entering its name followed by a set
-of parentheses. Because <code>another_function</code> is defined in the program, it can be
-called from inside the <code>main</code> function. Note that we defined <code>another_function</code>
-<em>after</em> the <code>main</code> function in the source code; we could have defined it before
+of parentheses. Because <code class="syntax" data-syntax="rust"><span class="rn">another_function</span></code> is defined in the program, it can be
+called from inside the <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function. Note that we defined <code class="syntax" data-syntax="rust"><span class="rn">another_function</span></code>
+<em>after</em> the <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function in the source code; we could have defined it before
 as well. Rust doesn’t care where you define your functions, only that they’re
 defined somewhere in a scope that can be seen by the caller.</p>
 <p>Let’s start a new binary project named <em>functions</em> to explore functions
-further. Place the <code>another_function</code> example in <em>src/main.rs</em> and run it. You
+further. Place the <code class="syntax" data-syntax="rust"><span class="rn">another_function</span></code> example in <em>src/main.rs</em> and run it. You
 should see the following output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling functions v0.1.0 (file:///projects/functions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s
-     Running `target/debug/functions`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> functions v0.<span class="ri">1.0</span> (file:///projects/functions)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.28s
+<span class="rk">     Running</span> <span class="rs">`target/debug/functions`</span>
 Hello, world!
 Another function.
 </code></pre>
-<p>The lines execute in the order in which they appear in the <code>main</code> function.
-First the “Hello, world!” message prints, and then <code>another_function</code> is called
+<p>The lines execute in the order in which they appear in the <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function.
+First the “Hello, world!” message prints, and then <code class="syntax" data-syntax="rust"><span class="rn">another_function</span></code> is called
 and its message is printed.</p>
 <h4 id="parameters"><a class="header" href="#parameters">Parameters</a></h4>
 <p>We can define functions to have <em>parameters</em>, which are special variables that
@@ -825,25 +832,25 @@ values are called <em>arguments</em>, but in casual conversation, people tend to
 the words <em>parameter</em> and <em>argument</em> interchangeably for either the variables
 in a function’s definition or the concrete values passed in when you call a
 function.</p>
-<p>In this version of <code>another_function</code> we add a parameter:</p>
+<p>In this version of <code class="syntax" data-syntax="rust"><span class="rn">another_function</span></code> we add a parameter:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    another_function(5);
-}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rn">another_function</span><span class="ro">(</span><span class="ri">5</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn another_function(x: i32) {
-    println!("The value of x is: {x}");
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">another_function</span><span class="ro">(</span><span class="rn">x</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>Try running this program; you should get the following output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling functions v0.1.0 (file:///projects/functions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.21s
-     Running `target/debug/functions`
-The value of x is: 5
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> functions v0.<span class="ri">1.0</span> (file:///projects/functions)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">1</span>.21s
+<span class="rk">     Running</span> <span class="rs">`target/debug/functions`</span>
+The value of x is: <span class="ri">5</span>
 </code></pre>
-<p>The declaration of <code>another_function</code> has one parameter named <code>x</code>. The type of
-<code>x</code> is specified as <code>i32</code>. When we pass <code>5</code> in to <code>another_function</code>, the
-<code>println!</code> macro puts <code>5</code> where the pair of curly brackets containing <code>x</code> was
+<p>The declaration of <code class="syntax" data-syntax="rust"><span class="rn">another_function</span></code> has one parameter named <code class="syntax" data-syntax="rust"><span class="rn">x</span></code>. The type of
+<code class="syntax" data-syntax="rust"><span class="rn">x</span></code> is specified as <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>. When we pass <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> in to <code class="syntax" data-syntax="rust"><span class="rn">another_function</span></code>, the
+<code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> macro puts <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> where the pair of curly brackets containing <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> was
 in the format string.</p>
 <p>In function signatures, you <em>must</em> declare the type of each parameter. This is
 a deliberate decision in Rust’s design: Requiring type annotations in function
@@ -853,27 +860,27 @@ more-helpful error messages if it knows what types the function expects.</p>
 <p>When defining multiple parameters, separate the parameter declarations with
 commas, like this:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    print_labeled_measurement(5, 'h');
-}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rn">print_labeled_measurement</span><span class="ro">(</span><span class="ri">5</span><span class="ro">,</span> <span class="rs">'h'</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn print_labeled_measurement(value: i32, unit_label: char) {
-    println!("The measurement is: {value}{unit_label}");
-}</code></pre>
-<p>This example creates a function named <code>print_labeled_measurement</code> with two
-parameters. The first parameter is named <code>value</code> and is an <code>i32</code>. The second is
-named <code>unit_label</code> and is type <code>char</code>. The function then prints text containing
-both the <code>value</code> and the <code>unit_label</code>.</p>
+<span class="rk">fn</span> <span class="rf">print_labeled_measurement</span><span class="ro">(</span><span class="rn">value</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">,</span> <span class="rn">unit_label</span><span class="ro">:</span> <span class="rt">char</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The measurement is: {value}{unit_label}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>This example creates a function named <code class="syntax" data-syntax="rust"><span class="rn">print_labeled_measurement</span></code> with two
+parameters. The first parameter is named <code class="syntax" data-syntax="rust"><span class="rn">value</span></code> and is an <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>. The second is
+named <code class="syntax" data-syntax="rust"><span class="rn">unit_label</span></code> and is type <code class="syntax" data-syntax="rust"><span class="rt">char</span></code>. The function then prints text containing
+both the <code class="syntax" data-syntax="rust"><span class="rn">value</span></code> and the <code class="syntax" data-syntax="rust"><span class="rn">unit_label</span></code>.</p>
 <p>Let’s try running this code. Replace the program currently in your <em>functions</em>
-project’s <em>src/main.rs</em> file with the preceding example and run it using <code>cargo run</code>:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling functions v0.1.0 (file:///projects/functions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
-     Running `target/debug/functions`
+project’s <em>src/main.rs</em> file with the preceding example and run it using <code class="syntax" data-syntax="bash">cargo run</code>:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> functions v0.<span class="ri">1.0</span> (file:///projects/functions)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.31s
+<span class="rk">     Running</span> <span class="rs">`target/debug/functions`</span>
 The measurement is: 5h
 </code></pre>
-<p>Because we called the function with <code>5</code> as the value for <code>value</code> and <code>'h'</code> as
-the value for <code>unit_label</code>, the program output contains those values.</p>
+<p>Because we called the function with <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> as the value for <code class="syntax" data-syntax="rust"><span class="rn">value</span></code> and <code class="syntax" data-syntax="rust"><span class="rs">'h'</span></code> as
+the value for <code class="syntax" data-syntax="rust"><span class="rn">unit_label</span></code>, the program output contains those values.</p>
 <h4 id="statements-and-expressions"><a class="header" href="#statements-and-expressions">Statements and Expressions</a></h4>
 <p>Function bodies are made up of a series of statements optionally ending in an
 expression. So far, the functions we’ve covered haven’t included an ending
@@ -889,166 +896,166 @@ a value.</li>
 </ul>
 <p>Let’s look at some examples.</p>
 <p>We’ve actually already used statements and expressions. Creating a variable and
-assigning a value to it with the <code>let</code> keyword is a statement. In Listing 3-1,
-<code>let y = 6;</code> is a statement.</p>
+assigning a value to it with the <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> keyword is a statement. In Listing 3-1,
+<code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rn">y</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">;</span></code> is a statement.</p>
 <figure class="listing" id="listing-3-1">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let y = 6;
-}</code></pre>
-<figcaption><a href="#listing-3-1">Listing 3-1</a>: A <code>main</code> function declaration containing one statement</figcaption>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">y</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-3-1">Listing 3-1</a>: A <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function declaration containing one statement</figcaption>
 </figure>
 <p>Function definitions are also statements; the entire preceding example is a
 statement in itself. (As we’ll see shortly, calling a function is not a
 statement, though.)</p>
-<p>Statements do not return values. Therefore, you can’t assign a <code>let</code> statement
+<p>Statements do not return values. Therefore, you can’t assign a <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statement
 to another variable, as the following code tries to do; you’ll get an error:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
-    let x = (let y = 6);
-}</code></pre>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ro">(</span><span class="rk">let</span> <span class="rn">y</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>When you run this program, the error you’ll get looks like this:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling functions v0.1.0 (file:///projects/functions)
-error: expected expression, found `let` statement
- --&gt; src/main.rs:2:14
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> functions v0.<span class="ri">1.0</span> (file:///projects/functions)
+<span class="re">error</span>: expected expression, found <span class="rs">`let`</span> statement
+ --&gt; src/main.rs:<span class="ri">2</span>:<span class="ri">14</span>
   |
-2 |     let x = (let y = 6);
+<span class="ri">2</span> |     let x = (let y = <span class="ri">6</span>);
   |              ^^^
   |
-  = note: only supported directly in conditions of `if` and `while` expressions
+  = <span class="rk">note</span>: only supported directly in conditions of <span class="rs">`if`</span> and <span class="rs">`while`</span> expressions
 
-warning: unnecessary parentheses around assigned value
- --&gt; src/main.rs:2:13
+<span class="re">warning</span>: unnecessary parentheses around assigned value
+ --&gt; src/main.rs:<span class="ri">2</span>:<span class="ri">13</span>
   |
-2 |     let x = (let y = 6);
+<span class="ri">2</span> |     let x = (let y = <span class="ri">6</span>);
   |             ^         ^
   |
-  = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
-help: remove these parentheses
+  = <span class="rk">note</span>: <span class="rs">`#[warn(unused_parens)]`</span> (part of <span class="rs">`#[warn(unused)]`</span>) on by default
+<span class="rk">help</span>: remove these parentheses
   |
-2 -     let x = (let y = 6);
-2 +     let x = let y = 6;
+<span class="ri">2</span> -     let x = (let y = <span class="ri">6</span>);
+<span class="ri">2</span> +     let x = let y = <span class="ri">6</span>;
   |
 
-warning: `functions` (bin "functions") generated 1 warning
-error: could not compile `functions` (bin "functions") due to 1 previous error; 1 warning emitted
+<span class="re">warning</span>: <span class="rs">`functions`</span> (bin "functions") generated <span class="ri">1</span> warning
+<span class="re">error</span>: could not compile <span class="rs">`functions`</span> (bin "functions") due to <span class="ri">1</span> previous error; <span class="ri">1</span> warning emitted
 </code></pre>
-<p>The <code>let y = 6</code> statement does not return a value, so there isn’t anything for
-<code>x</code> to bind to. This is different from what happens in other languages, such as
+<p>The <code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rn">y</span> <span class="ro">=</span> <span class="ri">6</span></code> statement does not return a value, so there isn’t anything for
+<code class="syntax" data-syntax="rust"><span class="rn">x</span></code> to bind to. This is different from what happens in other languages, such as
 C and Ruby, where the assignment returns the value of the assignment. In those
-languages, you can write <code>x = y = 6</code> and have both <code>x</code> and <code>y</code> have the value
-<code>6</code>; that is not the case in Rust.</p>
+languages, you can write <code class="syntax" data-syntax="rust"><span class="rn">x</span> <span class="ro">=</span> <span class="rn">y</span> <span class="ro">=</span> <span class="ri">6</span></code> and have both <code class="syntax" data-syntax="rust"><span class="rn">x</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">y</span></code> have the value
+<code class="syntax" data-syntax="rust"><span class="ri">6</span></code>; that is not the case in Rust.</p>
 <p>Expressions evaluate to a value and make up most of the rest of the code that
-you’ll write in Rust. Consider a math operation, such as <code>5 + 6</code>, which is an
-expression that evaluates to the value <code>11</code>. Expressions can be part of
-statements: In Listing 3-1, the <code>6</code> in the statement <code>let y = 6;</code> is an
-expression that evaluates to the value <code>6</code>. Calling a function is an
+you’ll write in Rust. Consider a math operation, such as <code class="syntax" data-syntax="rust"><span class="ri">5</span> <span class="ro">+</span> <span class="ri">6</span></code>, which is an
+expression that evaluates to the value <code class="syntax" data-syntax="rust"><span class="ri">11</span></code>. Expressions can be part of
+statements: In Listing 3-1, the <code class="syntax" data-syntax="rust"><span class="ri">6</span></code> in the statement <code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rn">y</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">;</span></code> is an
+expression that evaluates to the value <code class="syntax" data-syntax="rust"><span class="ri">6</span></code>. Calling a function is an
 expression. Calling a macro is an expression. A new scope block created with
 curly brackets is an expression, for example:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let y = {
-        let x = 3;
-        x + 1
-    };
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">y</span> <span class="ro">=</span> <span class="ro">{</span>
+        <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ri">3</span><span class="ro">;</span>
+        <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    println!("The value of y is: {y}");
-}</code></pre>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of y is: {y}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>This expression:</p>
-<pre><code class="language-rust ignore">{
-    let x = 3;
-    x + 1
-}</code></pre>
-<p>is a block that, in this case, evaluates to <code>4</code>. That value gets bound to <code>y</code>
-as part of the <code>let</code> statement. Note the <code>x + 1</code> line without a semicolon at
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ri">3</span><span class="ro">;</span>
+    <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span>
+<span class="ro">}</span></code></pre>
+<p>is a block that, in this case, evaluates to <code class="syntax" data-syntax="rust"><span class="ri">4</span></code>. That value gets bound to <code class="syntax" data-syntax="rust"><span class="rn">y</span></code>
+as part of the <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statement. Note the <code class="syntax" data-syntax="rust"><span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span></code> line without a semicolon at
 the end, which is unlike most of the lines you’ve seen so far. Expressions do
 not include ending semicolons. If you add a semicolon to the end of an
 expression, you turn it into a statement, and it will then not return a value.
 Keep this in mind as you explore function return values and expressions next.</p>
 <h4 id="functions-with-return-values"><a class="header" href="#functions-with-return-values">Functions with Return Values</a></h4>
 <p>Functions can return values to the code that calls them. We don’t name return
-values, but we must declare their type after an arrow (<code>-&gt;</code>). In Rust, the
+values, but we must declare their type after an arrow (<code class="syntax" data-syntax="rust"><span class="ro">-&gt;</span></code>). In Rust, the
 return value of the function is synonymous with the value of the final
 expression in the block of the body of a function. You can return early from a
-function by using the <code>return</code> keyword and specifying a value, but most
+function by using the <code class="syntax" data-syntax="rust"><span class="rk">return</span></code> keyword and specifying a value, but most
 functions return the last expression implicitly. Here’s an example of a
 function that returns a value:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn five() -&gt; i32 {
-    5
-}
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">five</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">i32</span> <span class="ro">{</span>
+    <span class="ri">5</span>
+<span class="ro">}</span>
 
-fn main() {
-    let x = five();
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="rn">five</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    println!("The value of x is: {x}");
-}</code></pre>
-<p>There are no function calls, macros, or even <code>let</code> statements in the <code>five</code>
-function—just the number <code>5</code> by itself. That’s a perfectly valid function in
-Rust. Note that the function’s return type is specified too, as <code>-&gt; i32</code>. Try
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>There are no function calls, macros, or even <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> statements in the <code class="syntax" data-syntax="rust"><span class="rn">five</span></code>
+function—just the number <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> by itself. That’s a perfectly valid function in
+Rust. Note that the function’s return type is specified too, as <code class="syntax" data-syntax="rust"><span class="ro">-&gt;</span> <span class="rt">i32</span></code>. Try
 running this code; the output should look like this:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling functions v0.1.0 (file:///projects/functions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
-     Running `target/debug/functions`
-The value of x is: 5
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> functions v0.<span class="ri">1.0</span> (file:///projects/functions)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.30s
+<span class="rk">     Running</span> <span class="rs">`target/debug/functions`</span>
+The value of x is: <span class="ri">5</span>
 </code></pre>
-<p>The <code>5</code> in <code>five</code> is the function’s return value, which is why the return type
-is <code>i32</code>. Let’s examine this in more detail. There are two important bits:
-First, the line <code>let x = five();</code> shows that we’re using the return value of a
-function to initialize a variable. Because the function <code>five</code> returns a <code>5</code>,
+<p>The <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> in <code class="syntax" data-syntax="rust"><span class="rn">five</span></code> is the function’s return value, which is why the return type
+is <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>. Let’s examine this in more detail. There are two important bits:
+First, the line <code class="syntax" data-syntax="rust"><span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="rn">five</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span></code> shows that we’re using the return value of a
+function to initialize a variable. Because the function <code class="syntax" data-syntax="rust"><span class="rn">five</span></code> returns a <code class="syntax" data-syntax="rust"><span class="ri">5</span></code>,
 that line is the same as the following:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let x = 5;
-<span class="boring">}</span></code></pre>
-<p>Second, the <code>five</code> function has no parameters and defines the type of the
-return value, but the body of the function is a lonely <code>5</code> with no semicolon
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="ri">5</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>Second, the <code class="syntax" data-syntax="rust"><span class="rn">five</span></code> function has no parameters and defines the type of the
+return value, but the body of the function is a lonely <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> with no semicolon
 because it’s an expression whose value we want to return.</p>
 <p>Let’s look at another example:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let x = plus_one(5);
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="rn">plus_one</span><span class="ro">(</span><span class="ri">5</span><span class="ro">)</span><span class="ro">;</span>
 
-    println!("The value of x is: {x}");
-}
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn plus_one(x: i32) -&gt; i32 {
-    x + 1
-}</code></pre>
-<p>Running this code will print <code>The value of x is: 6</code>. But what happens if we
-place a semicolon at the end of the line containing <code>x + 1</code>, changing it from
+<span class="rk">fn</span> <span class="rf">plus_one</span><span class="ro">(</span><span class="rn">x</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">i32</span> <span class="ro">{</span>
+    <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span>
+<span class="ro">}</span></code></pre>
+<p>Running this code will print <code class="syntax" data-syntax="rust"><span class="rt">The</span> <span class="rn">value</span> <span class="rn">of</span> <span class="rn">x</span> <span class="rn">is</span><span class="ro">:</span> <span class="ri">6</span></code>. But what happens if we
+place a semicolon at the end of the line containing <code class="syntax" data-syntax="rust"><span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span></code>, changing it from
 an expression to a statement?</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
-    let x = plus_one(5);
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">x</span> <span class="ro">=</span> <span class="rn">plus_one</span><span class="ro">(</span><span class="ri">5</span><span class="ro">)</span><span class="ro">;</span>
 
-    println!("The value of x is: {x}");
-}
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of x is: {x}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span>
 
-fn plus_one(x: i32) -&gt; i32 {
-    x + 1;
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">plus_one</span><span class="ro">(</span><span class="rn">x</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">i32</span> <span class="ro">{</span>
+    <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>Compiling this code will produce an error, as follows:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling functions v0.1.0 (file:///projects/functions)
-error[E0308]: mismatched types
- --&gt; src/main.rs:7:24
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> functions v0.<span class="ri">1.0</span> (file:///projects/functions)
+<span class="re">error[E0308]</span>: mismatched types
+ --&gt; src/main.rs:<span class="ri">7</span>:<span class="ri">24</span>
   |
-7 | fn plus_one(x: i32) -&gt; i32 {
-  |    --------            ^^^ expected `i32`, found `()`
+<span class="ri">7</span> | fn plus_one(x: i32) -&gt; i32 {
+  |    --------            ^^^ expected <span class="rs">`i32`</span>, found <span class="rs">`()`</span>
   |    |
-  |    implicitly returns `()` as its body has no tail or `return` expression
-8 |     x + 1;
-  |          - help: remove this semicolon to return this value
+  |    implicitly returns <span class="rs">`()`</span> as its body has no tail or <span class="rs">`return`</span> expression
+<span class="ri">8</span> |     x + <span class="ri">1</span>;
+  |          - <span class="rk">help</span>: remove this semicolon to return this value
 
-For more information about this error, try `rustc --explain E0308`.
-error: could not compile `functions` (bin "functions") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0308`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`functions`</span> (bin "functions") due to <span class="ri">1</span> previous error
 </code></pre>
-<p>The main error message, <code>mismatched types</code>, reveals the core issue with this
-code. The definition of the function <code>plus_one</code> says that it will return an
-<code>i32</code>, but statements don’t evaluate to a value, which is expressed by <code>()</code>,
+<p>The main error message, <code class="syntax" data-syntax="rust"><span class="rn">mismatched</span> <span class="rn">types</span></code>, reveals the core issue with this
+code. The definition of the function <code class="syntax" data-syntax="rust"><span class="rn">plus_one</span></code> says that it will return an
+<code class="syntax" data-syntax="rust"><span class="rt">i32</span></code>, but statements don’t evaluate to a value, which is expressed by <code class="syntax" data-syntax="rust"><span class="ro">(</span><span class="ro">)</span></code>,
 the unit type. Therefore, nothing is returned, which contradicts the function
 definition and results in an error. In this output, Rust provides a message to
 possibly help rectify this issue: It suggests removing the semicolon, which
@@ -1061,227 +1068,227 @@ extra explanation is warranted. In these cases, programmers leave <em>comments</
 their source code that the compiler will ignore but that people reading the
 source code may find useful.</p>
 <p>Here’s a simple comment:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// hello, world
-<span class="boring">}</span></code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rc">// hello, world
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
 <p>In Rust, the idiomatic comment style starts a comment with two slashes, and the
 comment continues until the end of the line. For comments that extend beyond a
-single line, you’ll need to include <code>//</code> on each line, like this:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// So we're doing something complicated here, long enough that we need
-// multiple lines of comments to do it! Whew! Hopefully, this comment will
-// explain what's going on.
-<span class="boring">}</span></code></pre>
+single line, you’ll need to include <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span></code> on each line, like this:</p>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rc">// So we're doing something complicated here, long enough that we need
+</span><span class="rc">// multiple lines of comments to do it! Whew! Hopefully, this comment will
+</span><span class="rc">// explain what's going on.
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
 <p>Comments can also be placed at the end of lines containing code:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let lucky_number = 7; // I'm feeling lucky today
-}</code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">lucky_number</span> <span class="ro">=</span> <span class="ri">7</span><span class="ro">;</span> <span class="rc">// I'm feeling lucky today
+</span><span class="ro">}</span></code></pre>
 <p>But you’ll more often see them used in this format, with the comment on a
 separate line above the code it’s annotating:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    // I'm feeling lucky today
-    let lucky_number = 7;
-}</code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rc">// I'm feeling lucky today
+</span>    <span class="rk">let</span> <span class="rn">lucky_number</span> <span class="ro">=</span> <span class="ri">7</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>Rust also has another kind of comment, documentation comments, which we’ll
 discuss in the <a href="14%20Cargo%20for%20a%20Team.html#publishing-a-crate-to-cratesio-1">“Publishing a Crate to Crates.io”</a><!-- ignore -->
 section of Chapter 14.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h2 id="control-flow-1"><a href="#control-flow-1" class="header">Control Flow</a></h2>
 <h3 id="control-flow"><a class="header" href="#control-flow">Control Flow</a></h3>
-<p>The ability to run some code depending on whether a condition is <code>true</code> and the
-ability to run some code repeatedly while a condition is <code>true</code> are basic
+<p>The ability to run some code depending on whether a condition is <code class="syntax" data-syntax="rust"><span class="rk">true</span></code> and the
+ability to run some code repeatedly while a condition is <code class="syntax" data-syntax="rust"><span class="rk">true</span></code> are basic
 building blocks in most programming languages. The most common constructs that
-let you control the flow of execution of Rust code are <code>if</code> expressions and
+let you control the flow of execution of Rust code are <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expressions and
 loops.</p>
-<h4 id="if-expressions"><a class="header" href="#if-expressions"><code>if</code> Expressions</a></h4>
-<p>An <code>if</code> expression allows you to branch your code depending on conditions. You
+<h4 id="if-expressions"><a class="header" href="#if-expressions"><code class="syntax" data-syntax="rust"><span class="rk">if</span></code> Expressions</a></h4>
+<p>An <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expression allows you to branch your code depending on conditions. You
 provide a condition and then state, “If this condition is met, run this block
 of code. If the condition is not met, do not run this block of code.”</p>
 <p>Create a new project called <em>branches</em> in your <em>projects</em> directory to explore
-the <code>if</code> expression. In the <em>src/main.rs</em> file, input the following:</p>
+the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expression. In the <em>src/main.rs</em> file, input the following:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let number = 3;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">number</span> <span class="ro">=</span> <span class="ri">3</span><span class="ro">;</span>
 
-    if number &lt; 5 {
-        println!("condition was true");
-    } else {
-        println!("condition was false");
-    }
-}</code></pre>
-<p>All <code>if</code> expressions start with the keyword <code>if</code>, followed by a condition. In
-this case, the condition checks whether or not the variable <code>number</code> has a
+    <span class="rk">if</span> <span class="rn">number</span> <span class="ro">&lt;</span> <span class="ri">5</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">condition was true</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span> <span class="rk">else</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">condition was false</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<p>All <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expressions start with the keyword <code class="syntax" data-syntax="rust"><span class="rk">if</span></code>, followed by a condition. In
+this case, the condition checks whether or not the variable <code class="syntax" data-syntax="rust"><span class="rn">number</span></code> has a
 value less than 5. We place the block of code to execute if the condition is
-<code>true</code> immediately after the condition inside curly brackets. Blocks of code
-associated with the conditions in <code>if</code> expressions are sometimes called <em>arms</em>,
-just like the arms in <code>match</code> expressions that we discussed in the <a href="02%20An%20Input%20to%20a%20Decision.html#comparing-the-guess-to-the-secret-number">“Comparing
+<code class="syntax" data-syntax="rust"><span class="rk">true</span></code> immediately after the condition inside curly brackets. Blocks of code
+associated with the conditions in <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expressions are sometimes called <em>arms</em>,
+just like the arms in <code class="syntax" data-syntax="rust"><span class="rk">match</span></code> expressions that we discussed in the <a href="02%20An%20Input%20to%20a%20Decision.html#comparing-the-guess-to-the-secret-number">“Comparing
 the Guess to the Secret Number”</a><!--
 ignore --> section of Chapter 2.</p>
-<p>Optionally, we can also include an <code>else</code> expression, which we chose to do
+<p>Optionally, we can also include an <code class="syntax" data-syntax="rust"><span class="rk">else</span></code> expression, which we chose to do
 here, to give the program an alternative block of code to execute should the
-condition evaluate to <code>false</code>. If you don’t provide an <code>else</code> expression and
-the condition is <code>false</code>, the program will just skip the <code>if</code> block and move on
+condition evaluate to <code class="syntax" data-syntax="rust"><span class="rk">false</span></code>. If you don’t provide an <code class="syntax" data-syntax="rust"><span class="rk">else</span></code> expression and
+the condition is <code class="syntax" data-syntax="rust"><span class="rk">false</span></code>, the program will just skip the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> block and move on
 to the next bit of code.</p>
 <p>Try running this code; you should see the following output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling branches v0.1.0 (file:///projects/branches)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
-     Running `target/debug/branches`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> branches v0.<span class="ri">1.0</span> (file:///projects/branches)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.31s
+<span class="rk">     Running</span> <span class="rs">`target/debug/branches`</span>
 condition was true
 </code></pre>
-<p>Let’s try changing the value of <code>number</code> to a value that makes the condition
-<code>false</code> to see what happens:</p>
-<pre><code class="language-rust ignore"><span class="boring">fn main() {
-</span>    let number = 7;
+<p>Let’s try changing the value of <code class="syntax" data-syntax="rust"><span class="rn">number</span></code> to a value that makes the condition
+<code class="syntax" data-syntax="rust"><span class="rk">false</span></code> to see what happens:</p>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span>    <span class="rk">let</span> <span class="rn">number</span> <span class="ro">=</span> <span class="ri">7</span><span class="ro">;</span>
 <span class="boring">
-</span><span class="boring">    if number &lt; 5 {
-</span><span class="boring">        println!("condition was true");
-</span><span class="boring">    } else {
-</span><span class="boring">        println!("condition was false");
-</span><span class="boring">    }
-</span><span class="boring">}</span></code></pre>
+</span><span class="boring">    <span class="rk">if</span> <span class="rn">number</span> <span class="ro">&lt;</span> <span class="ri">5</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">condition was true</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring">    <span class="ro">}</span> <span class="rk">else</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">condition was false</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring">    <span class="ro">}</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
 <p>Run the program again, and look at the output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling branches v0.1.0 (file:///projects/branches)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
-     Running `target/debug/branches`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> branches v0.<span class="ri">1.0</span> (file:///projects/branches)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.31s
+<span class="rk">     Running</span> <span class="rs">`target/debug/branches`</span>
 condition was false
 </code></pre>
-<p>It’s also worth noting that the condition in this code <em>must</em> be a <code>bool</code>. If
-the condition isn’t a <code>bool</code>, we’ll get an error. For example, try running the
+<p>It’s also worth noting that the condition in this code <em>must</em> be a <code class="syntax" data-syntax="rust"><span class="rt">bool</span></code>. If
+the condition isn’t a <code class="syntax" data-syntax="rust"><span class="rt">bool</span></code>, we’ll get an error. For example, try running the
 following code:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
-    let number = 3;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">number</span> <span class="ro">=</span> <span class="ri">3</span><span class="ro">;</span>
 
-    if number {
-        println!("number was three");
-    }
-}</code></pre>
-<p>The <code>if</code> condition evaluates to a value of <code>3</code> this time, and Rust throws an
+    <span class="rk">if</span> <span class="rn">number</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">number was three</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<p>The <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> condition evaluates to a value of <code class="syntax" data-syntax="rust"><span class="ri">3</span></code> this time, and Rust throws an
 error:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling branches v0.1.0 (file:///projects/branches)
-error[E0308]: mismatched types
- --&gt; src/main.rs:4:8
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> branches v0.<span class="ri">1.0</span> (file:///projects/branches)
+<span class="re">error[E0308]</span>: mismatched types
+ --&gt; src/main.rs:<span class="ri">4</span>:<span class="ri">8</span>
   |
-4 |     if number {
-  |        ^^^^^^ expected `bool`, found integer
+<span class="ri">4</span> |     if number {
+  |        ^^^^^^ expected <span class="rs">`bool`</span>, found integer
 
-For more information about this error, try `rustc --explain E0308`.
-error: could not compile `branches` (bin "branches") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0308`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`branches`</span> (bin "branches") due to <span class="ri">1</span> previous error
 </code></pre>
-<p>The error indicates that Rust expected a <code>bool</code> but got an integer. Unlike
+<p>The error indicates that Rust expected a <code class="syntax" data-syntax="rust"><span class="rt">bool</span></code> but got an integer. Unlike
 languages such as Ruby and JavaScript, Rust will not automatically try to
 convert non-Boolean types to a Boolean. You must be explicit and always provide
-<code>if</code> with a Boolean as its condition. If we want the <code>if</code> code block to run
-only when a number is not equal to <code>0</code>, for example, we can change the <code>if</code>
+<code class="syntax" data-syntax="rust"><span class="rk">if</span></code> with a Boolean as its condition. If we want the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> code block to run
+only when a number is not equal to <code class="syntax" data-syntax="rust"><span class="ri">0</span></code>, for example, we can change the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code>
 expression to the following:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let number = 3;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">number</span> <span class="ro">=</span> <span class="ri">3</span><span class="ro">;</span>
 
-    if number != 0 {
-        println!("number was something other than zero");
-    }
-}</code></pre>
-<p>Running this code will print <code>number was something other than zero</code>.</p>
-<h5 id="handling-multiple-conditions-with-else-if"><a class="header" href="#handling-multiple-conditions-with-else-if">Handling Multiple Conditions with <code>else if</code></a></h5>
-<p>You can use multiple conditions by combining <code>if</code> and <code>else</code> in an <code>else if</code>
+    <span class="rk">if</span> <span class="rn">number</span> <span class="ro">!</span><span class="ro">=</span> <span class="ri">0</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">number was something other than zero</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<p>Running this code will print <code class="syntax" data-syntax="rust"><span class="rn">number</span> <span class="rn">was</span> <span class="rn">something</span> <span class="rn">other</span> <span class="rn">than</span> <span class="rn">zero</span></code>.</p>
+<h5 id="handling-multiple-conditions-with-else-if"><a class="header" href="#handling-multiple-conditions-with-else-if">Handling Multiple Conditions with <code class="syntax" data-syntax="rust"><span class="rk">else</span> <span class="rk">if</span></code></a></h5>
+<p>You can use multiple conditions by combining <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">else</span></code> in an <code class="syntax" data-syntax="rust"><span class="rk">else</span> <span class="rk">if</span></code>
 expression. For example:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let number = 6;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">number</span> <span class="ro">=</span> <span class="ri">6</span><span class="ro">;</span>
 
-    if number % 4 == 0 {
-        println!("number is divisible by 4");
-    } else if number % 3 == 0 {
-        println!("number is divisible by 3");
-    } else if number % 2 == 0 {
-        println!("number is divisible by 2");
-    } else {
-        println!("number is not divisible by 4, 3, or 2");
-    }
-}</code></pre>
+    <span class="rk">if</span> <span class="rn">number</span> <span class="ro">%</span> <span class="ri">4</span> <span class="ro">=</span><span class="ro">=</span> <span class="ri">0</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">number is divisible by 4</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span> <span class="rk">else</span> <span class="rk">if</span> <span class="rn">number</span> <span class="ro">%</span> <span class="ri">3</span> <span class="ro">=</span><span class="ro">=</span> <span class="ri">0</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">number is divisible by 3</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span> <span class="rk">else</span> <span class="rk">if</span> <span class="rn">number</span> <span class="ro">%</span> <span class="ri">2</span> <span class="ro">=</span><span class="ro">=</span> <span class="ri">0</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">number is divisible by 2</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span> <span class="rk">else</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">number is not divisible by 4, 3, or 2</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
 <p>This program has four possible paths it can take. After running it, you should
 see the following output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling branches v0.1.0 (file:///projects/branches)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
-     Running `target/debug/branches`
-number is divisible by 3
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> branches v0.<span class="ri">1.0</span> (file:///projects/branches)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.31s
+<span class="rk">     Running</span> <span class="rs">`target/debug/branches`</span>
+number is divisible by <span class="ri">3</span>
 </code></pre>
-<p>When this program executes, it checks each <code>if</code> expression in turn and executes
-the first body for which the condition evaluates to <code>true</code>. Note that even
-though 6 is divisible by 2, we don’t see the output <code>number is divisible by 2</code>,
-nor do we see the <code>number is not divisible by 4, 3, or 2</code> text from the <code>else</code>
-block. That’s because Rust only executes the block for the first <code>true</code>
+<p>When this program executes, it checks each <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expression in turn and executes
+the first body for which the condition evaluates to <code class="syntax" data-syntax="rust"><span class="rk">true</span></code>. Note that even
+though 6 is divisible by 2, we don’t see the output <code class="syntax" data-syntax="rust"><span class="rn">number</span> <span class="rn">is</span> <span class="rn">divisible</span> <span class="rn">by</span> <span class="ri">2</span></code>,
+nor do we see the <code class="syntax" data-syntax="rust"><span class="rn">number</span> <span class="rn">is</span> <span class="rn">not</span> <span class="rn">divisible</span> <span class="rn">by</span> <span class="ri">4</span><span class="ro">,</span> <span class="ri">3</span><span class="ro">,</span> <span class="rn">or</span> <span class="ri">2</span></code> text from the <code class="syntax" data-syntax="rust"><span class="rk">else</span></code>
+block. That’s because Rust only executes the block for the first <code class="syntax" data-syntax="rust"><span class="rk">true</span></code>
 condition, and once it finds one, it doesn’t even check the rest.</p>
-<p>Using too many <code>else if</code> expressions can clutter your code, so if you have more
+<p>Using too many <code class="syntax" data-syntax="rust"><span class="rk">else</span> <span class="rk">if</span></code> expressions can clutter your code, so if you have more
 than one, you might want to refactor your code. Chapter 6 describes a powerful
-Rust branching construct called <code>match</code> for these cases.</p>
-<h5 id="using-if-in-a-let-statement"><a class="header" href="#using-if-in-a-let-statement">Using <code>if</code> in a <code>let</code> Statement</a></h5>
-<p>Because <code>if</code> is an expression, we can use it on the right side of a <code>let</code>
+Rust branching construct called <code class="syntax" data-syntax="rust"><span class="rk">match</span></code> for these cases.</p>
+<h5 id="using-if-in-a-let-statement"><a class="header" href="#using-if-in-a-let-statement">Using <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> in a <code class="syntax" data-syntax="rust"><span class="rk">let</span></code> Statement</a></h5>
+<p>Because <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> is an expression, we can use it on the right side of a <code class="syntax" data-syntax="rust"><span class="rk">let</span></code>
 statement to assign the outcome to a variable, as in Listing 3-2.</p>
 <figure class="listing" id="listing-3-2">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let condition = true;
-    let number = if condition { 5 } else { 6 };
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">condition</span> <span class="ro">=</span> <span class="rk">true</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">number</span> <span class="ro">=</span> <span class="rk">if</span> <span class="rn">condition</span> <span class="ro">{</span> <span class="ri">5</span> <span class="ro">}</span> <span class="rk">else</span> <span class="ro">{</span> <span class="ri">6</span> <span class="ro">}</span><span class="ro">;</span>
 
-    println!("The value of number is: {number}");
-}</code></pre>
-<figcaption><a href="#listing-3-2">Listing 3-2</a>: Assigning the result of an <code>if</code> expression to a variable</figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of number is: {number}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-3-2">Listing 3-2</a>: Assigning the result of an <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expression to a variable</figcaption>
 </figure>
-<p>The <code>number</code> variable will be bound to a value based on the outcome of the <code>if</code>
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">number</span></code> variable will be bound to a value based on the outcome of the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code>
 expression. Run this code to see what happens:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling branches v0.1.0 (file:///projects/branches)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
-     Running `target/debug/branches`
-The value of number is: 5
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> branches v0.<span class="ri">1.0</span> (file:///projects/branches)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.30s
+<span class="rk">     Running</span> <span class="rs">`target/debug/branches`</span>
+The value of number is: <span class="ri">5</span>
 </code></pre>
 <p>Remember that blocks of code evaluate to the last expression in them, and
 numbers by themselves are also expressions. In this case, the value of the
-whole <code>if</code> expression depends on which block of code executes. This means the
-values that have the potential to be results from each arm of the <code>if</code> must be
-the same type; in Listing 3-2, the results of both the <code>if</code> arm and the <code>else</code>
-arm were <code>i32</code> integers. If the types are mismatched, as in the following
+whole <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expression depends on which block of code executes. This means the
+values that have the potential to be results from each arm of the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> must be
+the same type; in Listing 3-2, the results of both the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> arm and the <code class="syntax" data-syntax="rust"><span class="rk">else</span></code>
+arm were <code class="syntax" data-syntax="rust"><span class="rt">i32</span></code> integers. If the types are mismatched, as in the following
 example, we’ll get an error:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
-    let condition = true;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">condition</span> <span class="ro">=</span> <span class="rk">true</span><span class="ro">;</span>
 
-    let number = if condition { 5 } else { "six" };
+    <span class="rk">let</span> <span class="rn">number</span> <span class="ro">=</span> <span class="rk">if</span> <span class="rn">condition</span> <span class="ro">{</span> <span class="ri">5</span> <span class="ro">}</span> <span class="rk">else</span> <span class="ro">{</span> <span class="rs">"</span><span class="rs">six</span><span class="rs">"</span> <span class="ro">}</span><span class="ro">;</span>
 
-    println!("The value of number is: {number}");
-}</code></pre>
-<p>When we try to compile this code, we’ll get an error. The <code>if</code> and <code>else</code> arms
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The value of number is: {number}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>When we try to compile this code, we’ll get an error. The <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">else</span></code> arms
 have value types that are incompatible, and Rust indicates exactly where to
 find the problem in the program:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling branches v0.1.0 (file:///projects/branches)
-error[E0308]: `if` and `else` have incompatible types
- --&gt; src/main.rs:4:44
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> branches v0.<span class="ri">1.0</span> (file:///projects/branches)
+<span class="re">error[E0308]</span>: <span class="rs">`if`</span> and <span class="rs">`else`</span> have incompatible types
+ --&gt; src/main.rs:<span class="ri">4</span>:<span class="ri">44</span>
   |
-4 |     let number = if condition { 5 } else { "six" };
-  |                                 -          ^^^^^ expected integer, found `&amp;str`
+<span class="ri">4</span> |     let number = if condition { <span class="ri">5</span> } else { "six" };
+  |                                 -          ^^^^^ expected integer, found <span class="rs">`&amp;str`</span>
   |                                 |
   |                                 expected because of this
 
-For more information about this error, try `rustc --explain E0308`.
-error: could not compile `branches` (bin "branches") due to 1 previous error
+For more information about this error, try <span class="rs">`rustc --explain E0308`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`branches`</span> (bin "branches") due to <span class="ri">1</span> previous error
 </code></pre>
-<p>The expression in the <code>if</code> block evaluates to an integer, and the expression in
-the <code>else</code> block evaluates to a string. This won’t work, because variables must
+<p>The expression in the <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> block evaluates to an integer, and the expression in
+the <code class="syntax" data-syntax="rust"><span class="rk">else</span></code> block evaluates to a string. This won’t work, because variables must
 have a single type, and Rust needs to know definitively at compile time what
-type the <code>number</code> variable is. Knowing the type of <code>number</code> lets the compiler
-verify the type is valid everywhere we use <code>number</code>. Rust wouldn’t be able to
-do that if the type of <code>number</code> was only determined at runtime; the compiler
+type the <code class="syntax" data-syntax="rust"><span class="rn">number</span></code> variable is. Knowing the type of <code class="syntax" data-syntax="rust"><span class="rn">number</span></code> lets the compiler
+verify the type is valid everywhere we use <code class="syntax" data-syntax="rust"><span class="rn">number</span></code>. Rust wouldn’t be able to
+do that if the type of <code class="syntax" data-syntax="rust"><span class="rn">number</span></code> was only determined at runtime; the compiler
 would be more complex and would make fewer guarantees about the code if it had
 to keep track of multiple hypothetical types for any variable.</p>
 <h4 id="repetition-with-loops"><a class="header" href="#repetition-with-loops">Repetition with Loops</a></h4>
@@ -1289,19 +1296,19 @@ to keep track of multiple hypothetical types for any variable.</p>
 Rust provides several <em>loops</em>, which will run through the code inside the loop
 body to the end and then start immediately back at the beginning. To experiment
 with loops, let’s make a new project called <em>loops</em>.</p>
-<p>Rust has three kinds of loops: <code>loop</code>, <code>while</code>, and <code>for</code>. Let’s try each one.</p>
-<h5 id="repeating-code-with-loop"><a class="header" href="#repeating-code-with-loop">Repeating Code with <code>loop</code></a></h5>
-<p>The <code>loop</code> keyword tells Rust to execute a block of code over and over again
+<p>Rust has three kinds of loops: <code class="syntax" data-syntax="rust"><span class="rk">loop</span></code>, <code class="syntax" data-syntax="rust"><span class="rk">while</span></code>, and <code class="syntax" data-syntax="rust"><span class="rk">for</span></code>. Let’s try each one.</p>
+<h5 id="repeating-code-with-loop"><a class="header" href="#repeating-code-with-loop">Repeating Code with <code class="syntax" data-syntax="rust"><span class="rk">loop</span></code></a></h5>
+<p>The <code class="syntax" data-syntax="rust"><span class="rk">loop</span></code> keyword tells Rust to execute a block of code over and over again
 either forever or until you explicitly tell it to stop.</p>
 <p>As an example, change the <em>src/main.rs</em> file in your <em>loops</em> directory to look
 like this:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre><code class="language-rust ignore">fn main() {
-    loop {
-        println!("again!");
-    }
-}</code></pre>
-<p>When we run this program, we’ll see <code>again!</code> printed over and over continuously
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">loop</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">again!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<p>When we run this program, we’ll see <code class="syntax" data-syntax="rust"><span class="rn">again</span><span class="ro">!</span></code> printed over and over continuously
 until we stop the program manually. Most terminals support the keyboard shortcut
 <kbd>ctrl</kbd>-<kbd>C</kbd> to interrupt a program that is stuck in a continual
 loop. Give it a try:</p>
@@ -1310,215 +1317,215 @@ cd listings/ch03-common-programming-concepts/no-listing-32-loop
 cargo run
 CTRL-C
 -->
-<pre><code class="language-console">$ cargo run
-   Compiling loops v0.1.0 (file:///projects/loops)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
-     Running `target/debug/loops`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> loops v0.<span class="ri">1.0</span> (file:///projects/loops)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.08s
+<span class="rk">     Running</span> <span class="rs">`target/debug/loops`</span>
 again!
 again!
 again!
 again!
 ^Cagain!
 </code></pre>
-<p>The symbol <code>^C</code> represents where you pressed <kbd>ctrl</kbd>-<kbd>C</kbd>.</p>
-<p>You may or may not see the word <code>again!</code> printed after the <code>^C</code>, depending on
+<p>The symbol <code class="syntax" data-syntax="rust"><span class="ro">^</span><span class="rt">C</span></code> represents where you pressed <kbd>ctrl</kbd>-<kbd>C</kbd>.</p>
+<p>You may or may not see the word <code class="syntax" data-syntax="rust"><span class="rn">again</span><span class="ro">!</span></code> printed after the <code class="syntax" data-syntax="rust"><span class="ro">^</span><span class="rt">C</span></code>, depending on
 where the code was in the loop when it received the interrupt signal.</p>
 <p>Fortunately, Rust also provides a way to break out of a loop using code. You
-can place the <code>break</code> keyword within the loop to tell the program when to stop
+can place the <code class="syntax" data-syntax="rust"><span class="rk">break</span></code> keyword within the loop to tell the program when to stop
 executing the loop. Recall that we did this in the guessing game in the
 <a href="02%20An%20Input%20to%20a%20Decision.html#quitting-after-a-correct-guess">“Quitting After a Correct Guess”</a><!-- ignore
 --> section of Chapter 2 to exit the program when the user won the game by
 guessing the correct number.</p>
-<p>We also used <code>continue</code> in the guessing game, which in a loop tells the program
+<p>We also used <code class="syntax" data-syntax="rust"><span class="rk">continue</span></code> in the guessing game, which in a loop tells the program
 to skip over any remaining code in this iteration of the loop and go to the
 next iteration.</p>
 <h5 id="returning-values-from-loops"><a class="header" href="#returning-values-from-loops">Returning Values from Loops</a></h5>
-<p>One of the uses of a <code>loop</code> is to retry an operation you know might fail, such
+<p>One of the uses of a <code class="syntax" data-syntax="rust"><span class="rk">loop</span></code> is to retry an operation you know might fail, such
 as checking whether a thread has completed its job. You might also need to pass
 the result of that operation out of the loop to the rest of your code. To do
-this, you can add the value you want returned after the <code>break</code> expression you
+this, you can add the value you want returned after the <code class="syntax" data-syntax="rust"><span class="rk">break</span></code> expression you
 use to stop the loop; that value will be returned out of the loop so that you
 can use it, as shown here:</p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let mut counter = 0;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">counter</span> <span class="ro">=</span> <span class="ri">0</span><span class="ro">;</span>
 
-    let result = loop {
-        counter += 1;
+    <span class="rk">let</span> <span class="rn">result</span> <span class="ro">=</span> <span class="rk">loop</span> <span class="ro">{</span>
+        <span class="rn">counter</span> <span class="ro">+</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
 
-        if counter == 10 {
-            break counter * 2;
-        }
-    };
+        <span class="rk">if</span> <span class="rn">counter</span> <span class="ro">=</span><span class="ro">=</span> <span class="ri">10</span> <span class="ro">{</span>
+            <span class="rk">break</span> <span class="rn">counter</span> <span class="ro">*</span> <span class="ri">2</span><span class="ro">;</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span><span class="ro">;</span>
 
-    println!("The result is {result}");
-}</code></pre>
-<p>Before the loop, we declare a variable named <code>counter</code> and initialize it to
-<code>0</code>. Then, we declare a variable named <code>result</code> to hold the value returned from
-the loop. On every iteration of the loop, we add <code>1</code> to the <code>counter</code> variable,
-and then check whether the <code>counter</code> is equal to <code>10</code>. When it is, we use the
-<code>break</code> keyword with the value <code>counter * 2</code>. After the loop, we use a
-semicolon to end the statement that assigns the value to <code>result</code>. Finally, we
-print the value in <code>result</code>, which in this case is <code>20</code>.</p>
-<p>You can also <code>return</code> from inside a loop. While <code>break</code> only exits the current
-loop, <code>return</code> always exits the current function.</p>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The result is {result}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>Before the loop, we declare a variable named <code class="syntax" data-syntax="rust"><span class="rn">counter</span></code> and initialize it to
+<code class="syntax" data-syntax="rust"><span class="ri">0</span></code>. Then, we declare a variable named <code class="syntax" data-syntax="rust"><span class="rn">result</span></code> to hold the value returned from
+the loop. On every iteration of the loop, we add <code class="syntax" data-syntax="rust"><span class="ri">1</span></code> to the <code class="syntax" data-syntax="rust"><span class="rn">counter</span></code> variable,
+and then check whether the <code class="syntax" data-syntax="rust"><span class="rn">counter</span></code> is equal to <code class="syntax" data-syntax="rust"><span class="ri">10</span></code>. When it is, we use the
+<code class="syntax" data-syntax="rust"><span class="rk">break</span></code> keyword with the value <code class="syntax" data-syntax="rust"><span class="rn">counter</span> <span class="ro">*</span> <span class="ri">2</span></code>. After the loop, we use a
+semicolon to end the statement that assigns the value to <code class="syntax" data-syntax="rust"><span class="rn">result</span></code>. Finally, we
+print the value in <code class="syntax" data-syntax="rust"><span class="rn">result</span></code>, which in this case is <code class="syntax" data-syntax="rust"><span class="ri">20</span></code>.</p>
+<p>You can also <code class="syntax" data-syntax="rust"><span class="rk">return</span></code> from inside a loop. While <code class="syntax" data-syntax="rust"><span class="rk">break</span></code> only exits the current
+loop, <code class="syntax" data-syntax="rust"><span class="rk">return</span></code> always exits the current function.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="loop-labels-to-disambiguate-between-multiple-loops"></a></p>
 <h5 id="disambiguating-with-loop-labels"><a class="header" href="#disambiguating-with-loop-labels">Disambiguating with Loop Labels</a></h5>
-<p>If you have loops within loops, <code>break</code> and <code>continue</code> apply to the innermost
+<p>If you have loops within loops, <code class="syntax" data-syntax="rust"><span class="rk">break</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">continue</span></code> apply to the innermost
 loop at that point. You can optionally specify a <em>loop label</em> on a loop that
-you can then use with <code>break</code> or <code>continue</code> to specify that those keywords
+you can then use with <code class="syntax" data-syntax="rust"><span class="rk">break</span></code> or <code class="syntax" data-syntax="rust"><span class="rk">continue</span></code> to specify that those keywords
 apply to the labeled loop instead of the innermost loop. Loop labels must begin
 with a single quote. Here’s an example with two nested loops:</p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let mut count = 0;
-    'counting_up: loop {
-        println!("count = {count}");
-        let mut remaining = 10;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">count</span> <span class="ro">=</span> <span class="ri">0</span><span class="ro">;</span>
+    <span class="ro">'</span><span class="rt">counting_up</span><span class="ro">:</span> <span class="rt">loop</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">count = {count}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">remaining</span> <span class="ro">=</span> <span class="ri">10</span><span class="ro">;</span>
 
-        loop {
-            println!("remaining = {remaining}");
-            if remaining == 9 {
-                break;
-            }
-            if count == 2 {
-                break 'counting_up;
-            }
-            remaining -= 1;
-        }
+        <span class="rk">loop</span> <span class="ro">{</span>
+            <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">remaining = {remaining}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="rk">if</span> <span class="rn">remaining</span> <span class="ro">=</span><span class="ro">=</span> <span class="ri">9</span> <span class="ro">{</span>
+                <span class="rk">break</span><span class="ro">;</span>
+            <span class="ro">}</span>
+            <span class="rk">if</span> <span class="rn">count</span> <span class="ro">=</span><span class="ro">=</span> <span class="ri">2</span> <span class="ro">{</span>
+                <span class="rk">break</span> <span class="rn">'counting_up</span><span class="ro">;</span>
+            <span class="ro">}</span>
+            <span class="rn">remaining</span> <span class="ro">-</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
+        <span class="ro">}</span>
 
-        count += 1;
-    }
-    println!("End count = {count}");
-}</code></pre>
-<p>The outer loop has the label <code>'counting_up</code>, and it will count up from 0 to 2.
-The inner loop without a label counts down from 10 to 9. The first <code>break</code> that
-doesn’t specify a label will exit the inner loop only. The <code>break 'counting_up;</code> statement will exit the outer loop. This code prints:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling loops v0.1.0 (file:///projects/loops)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.58s
-     Running `target/debug/loops`
-count = 0
-remaining = 10
-remaining = 9
-count = 1
-remaining = 10
-remaining = 9
-count = 2
-remaining = 10
-End count = 2
+        <span class="rn">count</span> <span class="ro">+</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
+    <span class="ro">}</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">End count = {count}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<p>The outer loop has the label <code class="syntax" data-syntax="rust"><span class="ro">'</span><span class="rt">counting_up</span></code>, and it will count up from 0 to 2.
+The inner loop without a label counts down from 10 to 9. The first <code class="syntax" data-syntax="rust"><span class="rk">break</span></code> that
+doesn’t specify a label will exit the inner loop only. The <code class="syntax" data-syntax="rust"><span class="rk">break</span> <span class="rn">'counting_up</span><span class="ro">;</span></code> statement will exit the outer loop. This code prints:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> loops v0.<span class="ri">1.0</span> (file:///projects/loops)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.58s
+<span class="rk">     Running</span> <span class="rs">`target/debug/loops`</span>
+count = <span class="ri">0</span>
+remaining = <span class="ri">10</span>
+remaining = <span class="ri">9</span>
+count = <span class="ri">1</span>
+remaining = <span class="ri">10</span>
+remaining = <span class="ri">9</span>
+count = <span class="ri">2</span>
+remaining = <span class="ri">10</span>
+End count = <span class="ri">2</span>
 </code></pre>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="conditional-loops-with-while"></a></p>
 <h5 id="streamlining-conditional-loops-with-while"><a class="header" href="#streamlining-conditional-loops-with-while">Streamlining Conditional Loops with while</a></h5>
 <p>A program will often need to evaluate a condition within a loop. While the
-condition is <code>true</code>, the loop runs. When the condition ceases to be <code>true</code>, the
-program calls <code>break</code>, stopping the loop. It’s possible to implement behavior
-like this using a combination of <code>loop</code>, <code>if</code>, <code>else</code>, and <code>break</code>; you could
+condition is <code class="syntax" data-syntax="rust"><span class="rk">true</span></code>, the loop runs. When the condition ceases to be <code class="syntax" data-syntax="rust"><span class="rk">true</span></code>, the
+program calls <code class="syntax" data-syntax="rust"><span class="rk">break</span></code>, stopping the loop. It’s possible to implement behavior
+like this using a combination of <code class="syntax" data-syntax="rust"><span class="rk">loop</span></code>, <code class="syntax" data-syntax="rust"><span class="rk">if</span></code>, <code class="syntax" data-syntax="rust"><span class="rk">else</span></code>, and <code class="syntax" data-syntax="rust"><span class="rk">break</span></code>; you could
 try that now in a program, if you’d like. However, this pattern is so common
-that Rust has a built-in language construct for it, called a <code>while</code> loop. In
-Listing 3-3, we use <code>while</code> to loop the program three times, counting down each
+that Rust has a built-in language construct for it, called a <code class="syntax" data-syntax="rust"><span class="rk">while</span></code> loop. In
+Listing 3-3, we use <code class="syntax" data-syntax="rust"><span class="rk">while</span></code> to loop the program three times, counting down each
 time, and then, after the loop, to print a message and exit.</p>
 <figure class="listing" id="listing-3-3">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let mut number = 3;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">number</span> <span class="ro">=</span> <span class="ri">3</span><span class="ro">;</span>
 
-    while number != 0 {
-        println!("{number}!");
+    <span class="rk">while</span> <span class="rn">number</span> <span class="ro">!</span><span class="ro">=</span> <span class="ri">0</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">{number}!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 
-        number -= 1;
-    }
+        <span class="rn">number</span> <span class="ro">-</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    println!("LIFTOFF!!!");
-}</code></pre>
-<figcaption><a href="#listing-3-3">Listing 3-3</a>: Using a <code>while</code> loop to run code while a condition evaluates to <code>true</code></figcaption>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">LIFTOFF!!!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-3-3">Listing 3-3</a>: Using a <code class="syntax" data-syntax="rust"><span class="rk">while</span></code> loop to run code while a condition evaluates to <code class="syntax" data-syntax="rust"><span class="rk">true</span></code></figcaption>
 </figure>
 <p>This construct eliminates a lot of nesting that would be necessary if you used
-<code>loop</code>, <code>if</code>, <code>else</code>, and <code>break</code>, and it’s clearer. While a condition
-evaluates to <code>true</code>, the code runs; otherwise, it exits the loop.</p>
-<h5 id="looping-through-a-collection-with-for"><a class="header" href="#looping-through-a-collection-with-for">Looping Through a Collection with <code>for</code></a></h5>
-<p>You can choose to use the <code>while</code> construct to loop over the elements of a
+<code class="syntax" data-syntax="rust"><span class="rk">loop</span></code>, <code class="syntax" data-syntax="rust"><span class="rk">if</span></code>, <code class="syntax" data-syntax="rust"><span class="rk">else</span></code>, and <code class="syntax" data-syntax="rust"><span class="rk">break</span></code>, and it’s clearer. While a condition
+evaluates to <code class="syntax" data-syntax="rust"><span class="rk">true</span></code>, the code runs; otherwise, it exits the loop.</p>
+<h5 id="looping-through-a-collection-with-for"><a class="header" href="#looping-through-a-collection-with-for">Looping Through a Collection with <code class="syntax" data-syntax="rust"><span class="rk">for</span></code></a></h5>
+<p>You can choose to use the <code class="syntax" data-syntax="rust"><span class="rk">while</span></code> construct to loop over the elements of a
 collection, such as an array. For example, the loop in Listing 3-4 prints each
-element in the array <code>a</code>.</p>
+element in the array <code class="syntax" data-syntax="rust"><span class="rn">a</span></code>.</p>
 <figure class="listing" id="listing-3-4">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let a = [10, 20, 30, 40, 50];
-    let mut index = 0;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">a</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">10</span><span class="ro">,</span> <span class="ri">20</span><span class="ro">,</span> <span class="ri">30</span><span class="ro">,</span> <span class="ri">40</span><span class="ro">,</span> <span class="ri">50</span><span class="ro">]</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">index</span> <span class="ro">=</span> <span class="ri">0</span><span class="ro">;</span>
 
-    while index &lt; 5 {
-        println!("the value is: {}", a[index]);
+    <span class="rk">while</span> <span class="rn">index</span> <span class="ro">&lt;</span> <span class="ri">5</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">the value is: {}</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">a</span><span class="ro">[</span><span class="rn">index</span><span class="ro">]</span><span class="ro">)</span><span class="ro">;</span>
 
-        index += 1;
-    }
-}</code></pre>
-<figcaption><a href="#listing-3-4">Listing 3-4</a>: Looping through each element of a collection using a <code>while</code> loop</figcaption>
+        <span class="rn">index</span> <span class="ro">+</span><span class="ro">=</span> <span class="ri">1</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-3-4">Listing 3-4</a>: Looping through each element of a collection using a <code class="syntax" data-syntax="rust"><span class="rk">while</span></code> loop</figcaption>
 </figure>
 <p>Here, the code counts up through the elements in the array. It starts at index
-<code>0</code> and then loops until it reaches the final index in the array (that is,
-when <code>index &lt; 5</code> is no longer <code>true</code>). Running this code will print every
+<code class="syntax" data-syntax="rust"><span class="ri">0</span></code> and then loops until it reaches the final index in the array (that is,
+when <code class="syntax" data-syntax="rust"><span class="rn">index</span> <span class="ro">&lt;</span> <span class="ri">5</span></code> is no longer <code class="syntax" data-syntax="rust"><span class="rk">true</span></code>). Running this code will print every
 element in the array:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling loops v0.1.0 (file:///projects/loops)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
-     Running `target/debug/loops`
-the value is: 10
-the value is: 20
-the value is: 30
-the value is: 40
-the value is: 50
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> loops v0.<span class="ri">1.0</span> (file:///projects/loops)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.32s
+<span class="rk">     Running</span> <span class="rs">`target/debug/loops`</span>
+the value is: <span class="ri">10</span>
+the value is: <span class="ri">20</span>
+the value is: <span class="ri">30</span>
+the value is: <span class="ri">40</span>
+the value is: <span class="ri">50</span>
 </code></pre>
-<p>All five array values appear in the terminal, as expected. Even though <code>index</code>
-will reach a value of <code>5</code> at some point, the loop stops executing before trying
+<p>All five array values appear in the terminal, as expected. Even though <code class="syntax" data-syntax="rust"><span class="rn">index</span></code>
+will reach a value of <code class="syntax" data-syntax="rust"><span class="ri">5</span></code> at some point, the loop stops executing before trying
 to fetch a sixth value from the array.</p>
 <p>However, this approach is error-prone; we could cause the program to panic if
 the index value or test condition is incorrect. For example, if you changed the
-definition of the <code>a</code> array to have four elements but forgot to update the
-condition to <code>while index &lt; 4</code>, the code would panic. It’s also slow, because
+definition of the <code class="syntax" data-syntax="rust"><span class="rn">a</span></code> array to have four elements but forgot to update the
+condition to <code class="syntax" data-syntax="rust"><span class="rk">while</span> <span class="rn">index</span> <span class="ro">&lt;</span> <span class="ri">4</span></code>, the code would panic. It’s also slow, because
 the compiler adds runtime code to perform the conditional check of whether the
 index is within the bounds of the array on every iteration through the loop.</p>
-<p>As a more concise alternative, you can use a <code>for</code> loop and execute some code
-for each item in a collection. A <code>for</code> loop looks like the code in Listing 3-5.</p>
+<p>As a more concise alternative, you can use a <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop and execute some code
+for each item in a collection. A <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop looks like the code in Listing 3-5.</p>
 <figure class="listing" id="listing-3-5">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    let a = [10, 20, 30, 40, 50];
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">a</span> <span class="ro">=</span> <span class="ro">[</span><span class="ri">10</span><span class="ro">,</span> <span class="ri">20</span><span class="ro">,</span> <span class="ri">30</span><span class="ro">,</span> <span class="ri">40</span><span class="ro">,</span> <span class="ri">50</span><span class="ro">]</span><span class="ro">;</span>
 
-    for element in a {
-        println!("the value is: {element}");
-    }
-}</code></pre>
-<figcaption><a href="#listing-3-5">Listing 3-5</a>: Looping through each element of a collection using a <code>for</code> loop</figcaption>
+    <span class="rk">for</span> <span class="rn">element</span> <span class="rk">in</span> <span class="rn">a</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">the value is: {element}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-3-5">Listing 3-5</a>: Looping through each element of a collection using a <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop</figcaption>
 </figure>
 <p>When we run this code, we’ll see the same output as in Listing 3-4. More
 importantly, we’ve now increased the safety of the code and eliminated the
 chance of bugs that might result from going beyond the end of the array or not
-going far enough and missing some items. Machine code generated from <code>for</code>
+going far enough and missing some items. Machine code generated from <code class="syntax" data-syntax="rust"><span class="rk">for</span></code>
 loops can be more efficient as well because the index doesn’t need to be
 compared to the length of the array at every iteration.</p>
-<p>Using the <code>for</code> loop, you wouldn’t need to remember to change any other code if
+<p>Using the <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop, you wouldn’t need to remember to change any other code if
 you changed the number of values in the array, as you would with the method
 used in Listing 3-4.</p>
-<p>The safety and conciseness of <code>for</code> loops make them the most commonly used loop
+<p>The safety and conciseness of <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loops make them the most commonly used loop
 construct in Rust. Even in situations in which you want to run some code a
-certain number of times, as in the countdown example that used a <code>while</code> loop
-in Listing 3-3, most Rustaceans would use a <code>for</code> loop. The way to do that
-would be to use a <code>Range</code>, provided by the standard library, which generates
+certain number of times, as in the countdown example that used a <code class="syntax" data-syntax="rust"><span class="rk">while</span></code> loop
+in Listing 3-3, most Rustaceans would use a <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop. The way to do that
+would be to use a <code class="syntax" data-syntax="rust"><span class="rt">Range</span></code>, provided by the standard library, which generates
 all numbers in sequence starting from one number and ending before another
 number.</p>
-<p>Here’s what the countdown would look like using a <code>for</code> loop and another method
-we’ve not yet talked about, <code>rev</code>, to reverse the range:</p>
+<p>Here’s what the countdown would look like using a <code class="syntax" data-syntax="rust"><span class="rk">for</span></code> loop and another method
+we’ve not yet talked about, <code class="syntax" data-syntax="rust"><span class="rn">rev</span></code>, to reverse the range:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    for number in (1..4).rev() {
-        println!("{number}!");
-    }
-    println!("LIFTOFF!!!");
-}</code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">for</span> <span class="rn">number</span> <span class="rk">in</span> <span class="ro">(</span><span class="ri">1</span><span class="ro">..</span><span class="ri">4</span><span class="ro">)</span><span class="ro">.</span><span class="rn">rev</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+        <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">{number}!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">LIFTOFF!!!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>This code is a bit nicer, isn’t it?</p>
 <h3 id="summary-2"><a class="header" href="#summary-2">Summary</a></h3>
 <p>You made it! This was a sizable chapter: You learned about variables, scalar
-and compound data types, functions, comments, <code>if</code> expressions, and loops! To
+and compound data types, functions, comments, <code class="syntax" data-syntax="rust"><span class="rk">if</span></code> expressions, and loops! To
 practice with the concepts discussed in this chapter, try building programs to
 do the following:</p>
 <ul>

@@ -164,32 +164,39 @@ section > p, section > ul, section > ol {max-width:76ch}
 .chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
 .hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
 @media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+
+/* Offline token colours. Inline code follows the page theme; listings have a dark surface. */
+code.syntax {--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
+@media(prefers-color-scheme:dark){code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}}
+pre code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}
+.syntax .rk{color:var(--kw)}.syntax .rs{color:var(--str)}.syntax .ri{color:var(--num)}.syntax .rf{color:var(--fn)}.syntax .rt{color:var(--ty)}.syntax .rc{color:var(--cm);font-style:italic}.syntax .ro{color:var(--op)}.syntax .rn{color:var(--nm)}.syntax .re{color:var(--err)}
+html[data-theme="dark"] :not(pre)>code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa} html:is([data-theme="light"],[data-theme="sepia"]) :not(pre)>code.syntax{--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
 </style></head><body id="top">
 <header><div class="head"><div class="mast"><span>Rust in Practice · 14 / 21</span></div>
 <div class="hero"><div><h1>Cargo for a Team</h1><p>Choose dependencies and keep a reproducible graph.</p></div>
 <div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>manifest ranges</span></div><div class="trace"><b>Observe</b><span>Cargo.lock</span></div><div class="trace"><b>Result</b><span>--locked build</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="13%20Closures%20and%20Iterator%20Pipelines.html">← 13 Closures and Iterator Pipelines</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html">15 Smart Pointers and Shared Ownership →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#more-about-cargo-and-cratesio">More About Cargo and Crates.io</a><a href="#customizing-builds-with-release-profiles-1">Customizing Builds with Release Profiles</a><a href="#publishing-a-crate-to-cratesio-1">Publishing a Crate to Crates.io</a><a href="#cargo-workspaces-1">Cargo Workspaces</a><a href="#installing-binaries-with-cargo-install-1">Installing Binaries with cargo install</a><a href="#extending-cargo-with-custom-commands-1">Extending Cargo with Custom Commands</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Choose dependencies and keep a reproducible graph</h2><p>The service uses feature flags where the default crate surface would be broader or insufficient. Serde and clap need derive macros. Tokio needs networking, signals, a scheduler and synchronisation. Rusqlite&#x27;s bundled feature builds SQLite with the application, reducing dependence on a distribution-provided SQLite version while adding native compilation work. The application owns this trade-off; a reusable library should consider which choices its consumers might need to make.</p><figure class="code"><figcaption>Cargo.toml</figcaption><pre><code><span class="k">[package]</span>
-<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"order-intake"</span>
-<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.1.0"</span>
-<span class="n">edition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"2024"</span>
-<span class="n">publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="13%20Closures%20and%20Iterator%20Pipelines.html">← 13 Closures and Iterator Pipelines</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html">15 Smart Pointers and Shared Ownership →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#more-about-cargo-and-cratesio">More About Cargo and Crates.io</a><a href="#customizing-builds-with-release-profiles-1">Customizing Builds with Release Profiles</a><a href="#publishing-a-crate-to-cratesio-1">Publishing a Crate to Crates.io</a><a href="#cargo-workspaces-1">Cargo Workspaces</a><a href="#installing-binaries-with-cargo-install-1">Installing Binaries with cargo install</a><a href="#extending-cargo-with-custom-commands-1">Extending Cargo with Custom Commands</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Choose dependencies and keep a reproducible graph</h2><p>The service uses feature flags where the default crate surface would be broader or insufficient. Serde and clap need derive macros. Tokio needs networking, signals, a scheduler and synchronisation. Rusqlite&#x27;s bundled feature builds SQLite with the application, reducing dependence on a distribution-provided SQLite version while adding native compilation work. The application owns this trade-off; a reusable library should consider which choices its consumers might need to make.</p><figure class="code"><figcaption>Cargo.toml</figcaption><pre><code class="syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">package</span><span class="rk">]</span>
+<span class="rn">name</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">order-intake</span><span class="rs">"</span>
+<span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.1.0</span><span class="rs">"</span>
+<span class="rn">edition</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">2024</span><span class="rs">"</span>
+<span class="rn">publish</span> <span class="ro">=</span> <span class="rk">false</span>
 
-<span class="k">[dependencies]</span>
-<span class="n">anyhow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1"</span>
-<span class="n">axum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.8"</span>
-<span class="n">clap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"4"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"derive"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">rusqlite</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"0.37"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"bundled"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"derive"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">thiserror</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"2"</span>
-<span class="n">tokio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"macros"</span><span class="p">,</span><span class="s2">"rt-multi-thread"</span><span class="p">,</span><span class="s2">"signal"</span><span class="p">,</span><span class="s2">"net"</span><span class="p">,</span><span class="s2">"sync"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">tracing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.1"</span>
-<span class="n">tracing-subscriber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.3"</span>
+<span class="rk">[</span><span class="rk">dependencies</span><span class="rk">]</span>
+<span class="rn">anyhow</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span>
+<span class="rn">axum</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.8</span><span class="rs">"</span>
+<span class="rn">clap</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">4</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">derive</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">rusqlite</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.37</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">bundled</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">serde</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">derive</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">thiserror</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">2</span><span class="rs">"</span>
+<span class="rn">tokio</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">macros</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">rt-multi-thread</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">signal</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">net</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">sync</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">tracing</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.1</span><span class="rs">"</span>
+<span class="rn">tracing-subscriber</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.3</span><span class="rs">"</span>
 
-<span class="k">[dev-dependencies]</span>
-<span class="n">tempfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"3"</span>
-<span class="n">tower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"0.5"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"util"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">proptest</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1"</span>
+<span class="rk">[</span><span class="rk">dev-dependencies</span><span class="rk">]</span>
+<span class="rn">tempfile</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">3</span><span class="rs">"</span>
+<span class="rn">tower</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.5</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">util</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">proptest</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span>
 </code></pre></figure><p>Run cargo tree -e features and follow one enabled feature to its parent. Then compare cargo build --locked with cargo build --locked --release: both respect the selected dependency versions, but the compiler profiles differ. A lockfile does not pin the platform, build tools or compiler. For repeatable deployment record the toolchain and build target alongside the lockfile. A workspace becomes useful when the domain or client has an independent consumer; modules already give this single binary a navigable internal structure.</p><h3>Read a dependency change as a behaviour change</h3><p>A manifest entry describes the versions your package agrees to accept. The lockfile records the resolution chosen for a particular build. Reviewing a dependency update therefore involves more than checking that the new graph compiles. Re-run a behaviour sensitive to the changed crate. For a routing update, exercise malformed JSON and body limits. For SQLite bindings, repeat the concurrent duplicate test on a real file. For an error-reporting crate, check what appears on the public response and in operator output. This links the dependency review to concrete service contracts and gives a failing check a clear owner.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/cargo/reference/features.html">doc.rust-lang.org/cargo/reference/features.html</a> · <a href="https://doc.rust-lang.org/cargo/commands/cargo-tree.html">doc.rust-lang.org/cargo/commands/cargo-tree.html</a></p></section><div class="book"><h2 id="more-about-cargo-and-cratesio"><a class="header" href="#more-about-cargo-and-cratesio">More About Cargo and Crates.io</a></h2>
 <p>So far, we’ve used only the most basic features of Cargo to build, run, and
 test our code, but it can do a lot more. In this chapter, we’ll discuss some of
@@ -210,8 +217,8 @@ a full explanation of all its features, see <a href="https://doc.rust-lang.org/c
 different configurations that allow a programmer to have more control over
 various options for compiling code. Each profile is configured independently of
 the others.</p>
-<p>Cargo has two main profiles: the <code>dev</code> profile Cargo uses when you run <code>cargo build</code>, and the <code>release</code> profile Cargo uses when you run <code>cargo build --release</code>. The <code>dev</code> profile is defined with good defaults for development,
-and the <code>release</code> profile has good defaults for release builds.</p>
+<p>Cargo has two main profiles: the <code class="syntax" data-syntax="rust"><span class="rn">dev</span></code> profile Cargo uses when you run <code class="syntax" data-syntax="bash">cargo build</code>, and the <code class="syntax" data-syntax="rust"><span class="rn">release</span></code> profile Cargo uses when you run <code class="syntax" data-syntax="bash">cargo build --release</code>. The <code class="syntax" data-syntax="rust"><span class="rn">dev</span></code> profile is defined with good defaults for development,
+and the <code class="syntax" data-syntax="rust"><span class="rn">release</span></code> profile has good defaults for release builds.</p>
 <p>These profile names might be familiar from the output of your builds:</p>
 <!-- manual-regeneration
 anywhere, run:
@@ -219,44 +226,44 @@ cargo build
 cargo build --release
 and ensure output below is accurate
 -->
-<pre><code class="language-console">$ cargo build
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.00s
-$ cargo build --release
-    Finished `release` profile [optimized] target(s) in 0.32s
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.00s
+<span class="rk">$ </span>cargo build --release
+<span class="rk">    Finished</span> <span class="rs">`release`</span> profile [optimized] target(s) in <span class="ri">0</span>.32s
 </code></pre>
-<p>The <code>dev</code> and <code>release</code> are these different profiles used by the compiler.</p>
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">dev</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">release</span></code> are these different profiles used by the compiler.</p>
 <p>Cargo has default settings for each of the profiles that apply when you haven’t
-explicitly added any <code>[profile.*]</code> sections in the project’s <em>Cargo.toml</em> file.
-By adding <code>[profile.*]</code> sections for any profile you want to customize, you
+explicitly added any <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">profile</span><span class="ro">.</span><span class="ro">*</span><span class="ro">]</span></code> sections in the project’s <em>Cargo.toml</em> file.
+By adding <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">profile</span><span class="ro">.</span><span class="ro">*</span><span class="ro">]</span></code> sections for any profile you want to customize, you
 override any subset of the default settings. For example, here are the default
-values for the <code>opt-level</code> setting for the <code>dev</code> and <code>release</code> profiles:</p>
+values for the <code class="syntax" data-syntax="rust"><span class="rn">opt</span><span class="ro">-</span><span class="rn">level</span></code> setting for the <code class="syntax" data-syntax="rust"><span class="rn">dev</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">release</span></code> profiles:</p>
 <p><span class="filename">Filename: Cargo.toml</span></p>
-<pre><code class="language-toml">[profile.dev]
-opt-level = 0
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">profile</span><span class="rk">.</span><span class="rk">dev</span><span class="rk">]</span>
+<span class="rn">opt-level</span> <span class="ro">=</span> <span class="ri">0</span>
 
-[profile.release]
-opt-level = 3
+<span class="rk">[</span><span class="rk">profile</span><span class="rk">.</span><span class="rk">release</span><span class="rk">]</span>
+<span class="rn">opt-level</span> <span class="ro">=</span> <span class="ri">3</span>
 </code></pre>
-<p>The <code>opt-level</code> setting controls the number of optimizations Rust will apply to
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">opt</span><span class="ro">-</span><span class="rn">level</span></code> setting controls the number of optimizations Rust will apply to
 your code, with a range of 0 to 3. Applying more optimizations extends
 compiling time, so if you’re in development and compiling your code often,
 you’ll want fewer optimizations to compile faster even if the resultant code
-runs slower. The default <code>opt-level</code> for <code>dev</code> is therefore <code>0</code>. When you’re
+runs slower. The default <code class="syntax" data-syntax="rust"><span class="rn">opt</span><span class="ro">-</span><span class="rn">level</span></code> for <code class="syntax" data-syntax="rust"><span class="rn">dev</span></code> is therefore <code class="syntax" data-syntax="rust"><span class="ri">0</span></code>. When you’re
 ready to release your code, it’s best to spend more time compiling. You’ll only
 compile in release mode once, but you’ll run the compiled program many times,
 so release mode trades longer compile time for code that runs faster. That is
-why the default <code>opt-level</code> for the <code>release</code> profile is <code>3</code>.</p>
+why the default <code class="syntax" data-syntax="rust"><span class="rn">opt</span><span class="ro">-</span><span class="rn">level</span></code> for the <code class="syntax" data-syntax="rust"><span class="rn">release</span></code> profile is <code class="syntax" data-syntax="rust"><span class="ri">3</span></code>.</p>
 <p>You can override a default setting by adding a different value for it in
 <em>Cargo.toml</em>. For example, if we want to use optimization level 1 in the
 development profile, we can add these two lines to our project’s <em>Cargo.toml</em>
 file:</p>
 <p><span class="filename">Filename: Cargo.toml</span></p>
-<pre><code class="language-toml">[profile.dev]
-opt-level = 1
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">profile</span><span class="rk">.</span><span class="rk">dev</span><span class="rk">]</span>
+<span class="rn">opt-level</span> <span class="ro">=</span> <span class="ri">1</span>
 </code></pre>
-<p>This code overrides the default setting of <code>0</code>. Now when we run <code>cargo build</code>,
-Cargo will use the defaults for the <code>dev</code> profile plus our customization to
-<code>opt-level</code>. Because we set <code>opt-level</code> to <code>1</code>, Cargo will apply more
+<p>This code overrides the default setting of <code class="syntax" data-syntax="rust"><span class="ri">0</span></code>. Now when we run <code class="syntax" data-syntax="bash">cargo build</code>,
+Cargo will use the defaults for the <code class="syntax" data-syntax="rust"><span class="rn">dev</span></code> profile plus our customization to
+<code class="syntax" data-syntax="rust"><span class="rn">opt</span><span class="ro">-</span><span class="rn">level</span></code>. Because we set <code class="syntax" data-syntax="rust"><span class="rn">opt</span><span class="ro">-</span><span class="rn">level</span></code> to <code class="syntax" data-syntax="rust"><span class="ri">1</span></code>, Cargo will apply more
 optimizations than the default, but not as many as in a release build.</p>
 <p>For the full list of configuration options and defaults for each profile, see
 <a href="https://doc.rust-lang.org/cargo/reference/profiles.html">Cargo’s documentation</a>.</p>
@@ -274,60 +281,60 @@ how to publish a package.</p>
 <h4 id="making-useful-documentation-comments"><a class="header" href="#making-useful-documentation-comments">Making Useful Documentation Comments</a></h4>
 <p>Accurately documenting your packages will help other users know how and when to
 use them, so it’s worth investing the time to write documentation. In Chapter
-3, we discussed how to comment Rust code using two slashes, <code>//</code>. Rust also has
+3, we discussed how to comment Rust code using two slashes, <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span></code>. Rust also has
 a particular kind of comment for documentation, known conveniently as a
 <em>documentation comment</em>, that will generate HTML documentation. The HTML
 displays the contents of documentation comments for public API items intended
 for programmers interested in knowing how to <em>use</em> your crate as opposed to how
 your crate is <em>implemented</em>.</p>
-<p>Documentation comments use three slashes, <code>///</code>, instead of two and support
+<p>Documentation comments use three slashes, <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span><span class="ro">/</span></code>, instead of two and support
 Markdown notation for formatting the text. Place documentation comments just
 before the item they’re documenting. Listing 14-1 shows documentation comments
-for an <code>add_one</code> function in a crate named <code>my_crate</code>.</p>
+for an <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function in a crate named <code class="syntax" data-syntax="rust"><span class="rn">my_crate</span></code>.</p>
 <figure class="listing" id="listing-14-1">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust ignore">/// Adds one to the number given.
-///
-/// # Examples
-///
-/// ```
-/// let arg = 5;
-/// let answer = my_crate::add_one(arg);
-///
-/// assert_eq!(6, answer);
-/// ```
-pub fn add_one(x: i32) -&gt; i32 {
-    x + 1
-}</code></pre>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rs">/// Adds one to the number given.
+</span><span class="rs">///
+</span><span class="rs">/// # Examples
+</span><span class="rs">///
+</span><span class="rs">/// ```
+</span><span class="rs">/// let arg = 5;
+</span><span class="rs">/// let answer = my_crate::add_one(arg);
+</span><span class="rs">///
+</span><span class="rs">/// assert_eq!(6, answer);
+</span><span class="rs">/// ```
+</span><span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_one</span><span class="ro">(</span><span class="rn">x</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">i32</span> <span class="ro">{</span>
+    <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span>
+<span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-14-1">Listing 14-1</a>: A documentation comment for a function</figcaption>
 </figure>
-<p>Here, we give a description of what the <code>add_one</code> function does, start a
-section with the heading <code>Examples</code>, and then provide code that demonstrates
-how to use the <code>add_one</code> function. We can generate the HTML documentation from
-this documentation comment by running <code>cargo doc</code>. This command runs the
-<code>rustdoc</code> tool distributed with Rust and puts the generated HTML documentation
+<p>Here, we give a description of what the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function does, start a
+section with the heading <code class="syntax" data-syntax="rust"><span class="rt">Examples</span></code>, and then provide code that demonstrates
+how to use the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function. We can generate the HTML documentation from
+this documentation comment by running <code class="syntax" data-syntax="bash">cargo doc</code>. This command runs the
+<code class="syntax" data-syntax="rust"><span class="rn">rustdoc</span></code> tool distributed with Rust and puts the generated HTML documentation
 in the <em>target/doc</em> directory.</p>
-<p>For convenience, running <code>cargo doc --open</code> will build the HTML for your
+<p>For convenience, running <code class="syntax" data-syntax="bash">cargo doc --open</code> will build the HTML for your
 current crate’s documentation (as well as the documentation for all of your
 crate’s dependencies) and open the result in a web browser. Navigate to the
-<code>add_one</code> function and you’ll see how the text in the documentation comments is
+<code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function and you’ll see how the text in the documentation comments is
 rendered, as shown in Figure 14-1.</p>
 <img alt="Rendered HTML documentation for the `add_one` function of `my_crate`" src="assets/trpl14-01.png" class="center">
-<p><span class="caption">Figure 14-1: The HTML documentation for the <code>add_one</code>
+<p><span class="caption">Figure 14-1: The HTML documentation for the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code>
 function</span></p>
 <h5 id="commonly-used-sections"><a class="header" href="#commonly-used-sections">Commonly Used Sections</a></h5>
-<p>We used the <code># Examples</code> Markdown heading in Listing 14-1 to create a section
+<p>We used the <code class="syntax" data-syntax="rust"><span class="ro">#</span> <span class="rt">Examples</span></code> Markdown heading in Listing 14-1 to create a section
 in the HTML with the title “Examples.” Here are some other sections that crate
 authors commonly use in their documentation:</p>
 <ul>
 <li><strong>Panics</strong>: These are the scenarios in which the function being documented
 could panic. Callers of the function who don’t want their programs to panic
 should make sure they don’t call the function in these situations.</li>
-<li><strong>Errors</strong>: If the function returns a <code>Result</code>, describing the kinds of
+<li><strong>Errors</strong>: If the function returns a <code class="syntax" data-syntax="rust"><span class="rt">Result</span></code>, describing the kinds of
 errors that might occur and what conditions might cause those errors to be
 returned can be helpful to callers so that they can write code to handle the
 different kinds of errors in different ways.</li>
-<li><strong>Safety</strong>: If the function is <code>unsafe</code> to call (we discuss unsafety in
+<li><strong>Safety</strong>: If the function is <code class="syntax" data-syntax="rust"><span class="rk">unsafe</span></code> to call (we discuss unsafety in
 Chapter 20), there should be a section explaining why the function is unsafe
 and covering the invariants that the function expects callers to uphold.</li>
 </ul>
@@ -336,74 +343,74 @@ good checklist to remind you of the aspects of your code users will be
 interested in knowing about.</p>
 <h5 id="documentation-comments-as-tests"><a class="header" href="#documentation-comments-as-tests">Documentation Comments as Tests</a></h5>
 <p>Adding example code blocks in your documentation comments can help demonstrate
-how to use your library and has an additional bonus: Running <code>cargo test</code> will
+how to use your library and has an additional bonus: Running <code class="syntax" data-syntax="bash">cargo test</code> will
 run the code examples in your documentation as tests! Nothing is better than
 documentation with examples. But nothing is worse than examples that don’t work
 because the code has changed since the documentation was written. If we run
-<code>cargo test</code> with the documentation for the <code>add_one</code> function from Listing
+<code class="syntax" data-syntax="bash">cargo test</code> with the documentation for the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function from Listing
 14-1, we will see a section in the test results that looks like this:</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/listing-14-01/
 cargo test
 copy just the doc-tests section below
 -->
-<pre><code class="language-text">   Doc-tests my_crate
+<pre><code class="language-text syntax" data-syntax="output">   Doc-tests my_crate
 
-running 1 test
-test src/lib.rs - add_one (line 5) ... ok
+running <span class="ri">1</span> test
+test src/lib.rs - add_one (line <span class="ri">5</span>) ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+test result: <span class="rk">ok</span>. <span class="ri">1</span> passed; <span class="ri">0</span> failed; <span class="ri">0</span> ignored; <span class="ri">0</span> measured; <span class="ri">0</span> filtered out; finished in <span class="ri">0</span>.27s
 </code></pre>
-<p>Now, if we change either the function or the example so that the <code>assert_eq!</code>
-in the example panics, and run <code>cargo test</code> again, we’ll see that the doc tests
+<p>Now, if we change either the function or the example so that the <code class="syntax" data-syntax="rust"><span class="rf">assert_eq!</span></code>
+in the example panics, and run <code class="syntax" data-syntax="bash">cargo test</code> again, we’ll see that the doc tests
 catch that the example and the code are out of sync with each other!</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="commenting-contained-items"></a></p>
 <h5 id="contained-item-comments"><a class="header" href="#contained-item-comments">Contained Item Comments</a></h5>
-<p>The style of doc comment <code>//!</code> adds documentation to the item that <em>contains</em>
+<p>The style of doc comment <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span><span class="ro">!</span></code> adds documentation to the item that <em>contains</em>
 the comments rather than to the items <em>following</em> the comments. We typically
 use these doc comments inside the crate root file (<em>src/lib.rs</em> by convention)
 or inside a module to document the crate or the module as a whole.</p>
-<p>For example, to add documentation that describes the purpose of the <code>my_crate</code>
-crate that contains the <code>add_one</code> function, we add documentation comments that
-start with <code>//!</code> to the beginning of the <em>src/lib.rs</em> file, as shown in Listing
+<p>For example, to add documentation that describes the purpose of the <code class="syntax" data-syntax="rust"><span class="rn">my_crate</span></code>
+crate that contains the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function, we add documentation comments that
+start with <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span><span class="ro">!</span></code> to the beginning of the <em>src/lib.rs</em> file, as shown in Listing
 14-2.</p>
 <figure class="listing" id="listing-14-2">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust ignore">//! # My Crate
-//!
-//! `my_crate` is a collection of utilities to make performing certain
-//! calculations more convenient.
-
-/// Adds one to the number given.
-// --snip--
-<span class="boring">///
-</span><span class="boring">/// # Examples
-</span><span class="boring">///
-</span><span class="boring">/// ```
-</span><span class="boring">/// let arg = 5;
-</span><span class="boring">/// let answer = my_crate::add_one(arg);
-</span><span class="boring">///
-</span><span class="boring">/// assert_eq!(6, answer);
-</span><span class="boring">/// ```
-</span><span class="boring">pub fn add_one(x: i32) -&gt; i32 {
-</span><span class="boring">    x + 1
-</span><span class="boring">}</span></code></pre>
-<figcaption><a href="#listing-14-2">Listing 14-2</a>: The documentation for the <code>my_crate</code> crate as a whole</figcaption>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rs">//! # My Crate
+</span><span class="rs">//!
+</span><span class="rs">//! `my_crate` is a collection of utilities to make performing certain
+</span><span class="rs">//! calculations more convenient.
+</span>
+<span class="rs">/// Adds one to the number given.
+</span><span class="rc">// --snip--
+</span><span class="boring"><span class="rs">///
+</span></span><span class="boring"><span class="rs">/// # Examples
+</span></span><span class="boring"><span class="rs">///
+</span></span><span class="boring"><span class="rs">/// ```
+</span></span><span class="boring"><span class="rs">/// let arg = 5;
+</span></span><span class="boring"><span class="rs">/// let answer = my_crate::add_one(arg);
+</span></span><span class="boring"><span class="rs">///
+</span></span><span class="boring"><span class="rs">/// assert_eq!(6, answer);
+</span></span><span class="boring"><span class="rs">/// ```
+</span></span><span class="boring"><span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_one</span><span class="ro">(</span><span class="rn">x</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">i32</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-14-2">Listing 14-2</a>: The documentation for the <code class="syntax" data-syntax="rust"><span class="rn">my_crate</span></code> crate as a whole</figcaption>
 </figure>
-<p>Notice there isn’t any code after the last line that begins with <code>//!</code>. Because
-we started the comments with <code>//!</code> instead of <code>///</code>, we’re documenting the item
+<p>Notice there isn’t any code after the last line that begins with <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span><span class="ro">!</span></code>. Because
+we started the comments with <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span><span class="ro">!</span></code> instead of <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="ro">/</span><span class="ro">/</span></code>, we’re documenting the item
 that contains this comment rather than an item that follows this comment. In
 this case, that item is the <em>src/lib.rs</em> file, which is the crate root. These
 comments describe the entire crate.</p>
-<p>When we run <code>cargo doc --open</code>, these comments will display on the front page
-of the documentation for <code>my_crate</code> above the list of public items in the
+<p>When we run <code class="syntax" data-syntax="bash">cargo doc --open</code>, these comments will display on the front page
+of the documentation for <code class="syntax" data-syntax="rust"><span class="rn">my_crate</span></code> above the list of public items in the
 crate, as shown in Figure 14-2.</p>
 <p>Documentation comments within items are useful for describing crates and
 modules especially. Use them to explain the overall purpose of the container to
 help your users understand the crate’s organization.</p>
 <img alt="Rendered HTML documentation with a comment for the crate as a whole" src="assets/trpl14-02.png" class="center">
-<p><span class="caption">Figure 14-2: The rendered documentation for <code>my_crate</code>,
+<p><span class="caption">Figure 14-2: The rendered documentation for <code class="syntax" data-syntax="rust"><span class="rn">my_crate</span></code>,
 including the comment describing the crate as a whole</span></p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="exporting-a-convenient-public-api-with-pub-use"></a></p>
@@ -412,160 +419,160 @@ including the comment describing the crate as a whole</span></p>
 crate. People who use your crate are less familiar with the structure than you
 are and might have difficulty finding the pieces they want to use if your crate
 has a large module hierarchy.</p>
-<p>In Chapter 7, we covered how to make items public using the <code>pub</code> keyword, and
-how to bring items into a scope with the <code>use</code> keyword. However, the structure
+<p>In Chapter 7, we covered how to make items public using the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword, and
+how to bring items into a scope with the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> keyword. However, the structure
 that makes sense to you while you’re developing a crate might not be very
 convenient for your users. You might want to organize your structs in a
 hierarchy containing multiple levels, but then people who want to use a type
 you’ve defined deep in the hierarchy might have trouble finding out that type
-exists. They might also be annoyed at having to enter <code>use my_crate::some_module::another_module::UsefulType;</code> rather than <code>use my_crate::UsefulType;</code>.</p>
+exists. They might also be annoyed at having to enter <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">my_crate</span><span class="ro">::</span><span class="rn">some_module</span><span class="ro">::</span><span class="rn">another_module</span><span class="ro">::</span><span class="rt">UsefulType</span><span class="ro">;</span></code> rather than <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">my_crate</span><span class="ro">::</span><span class="rt">UsefulType</span><span class="ro">;</span></code>.</p>
 <p>The good news is that if the structure <em>isn’t</em> convenient for others to use
 from another library, you don’t have to rearrange your internal organization:
 Instead, you can re-export items to make a public structure that’s different
-from your private structure by using <code>pub use</code>. <em>Re-exporting</em> takes a public
+from your private structure by using <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code>. <em>Re-exporting</em> takes a public
 item in one location and makes it public in another location, as if it were
 defined in the other location instead.</p>
-<p>For example, say we made a library named <code>art</code> for modeling artistic concepts.
-Within this library are two modules: a <code>kinds</code> module containing two enums
-named <code>PrimaryColor</code> and <code>SecondaryColor</code> and a <code>utils</code> module containing a
-function named <code>mix</code>, as shown in Listing 14-3.</p>
+<p>For example, say we made a library named <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> for modeling artistic concepts.
+Within this library are two modules: a <code class="syntax" data-syntax="rust"><span class="rn">kinds</span></code> module containing two enums
+named <code class="syntax" data-syntax="rust"><span class="rt">PrimaryColor</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">SecondaryColor</span></code> and a <code class="syntax" data-syntax="rust"><span class="rn">utils</span></code> module containing a
+function named <code class="syntax" data-syntax="rust"><span class="rn">mix</span></code>, as shown in Listing 14-3.</p>
 <figure class="listing" id="listing-14-3">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground test_harness">//! # Art
-//!
-//! A library for modeling artistic concepts.
+<pre><code class="language-rust noplayground test_harness syntax" data-syntax="rust"><span class="rs">//! # Art
+</span><span class="rs">//!
+</span><span class="rs">//! A library for modeling artistic concepts.
+</span>
+<span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">kinds</span> <span class="ro">{</span>
+    <span class="rs">/// The primary colors according to the RYB color model.
+</span>    <span class="rk">pub</span> <span class="rk">enum</span> <span class="rt">PrimaryColor</span> <span class="ro">{</span>
+        <span class="rt">Red</span><span class="ro">,</span>
+        <span class="rt">Yellow</span><span class="ro">,</span>
+        <span class="rt">Blue</span><span class="ro">,</span>
+    <span class="ro">}</span>
 
-pub mod kinds {
-    /// The primary colors according to the RYB color model.
-    pub enum PrimaryColor {
-        Red,
-        Yellow,
-        Blue,
-    }
+    <span class="rs">/// The secondary colors according to the RYB color model.
+</span>    <span class="rk">pub</span> <span class="rk">enum</span> <span class="rt">SecondaryColor</span> <span class="ro">{</span>
+        <span class="rt">Orange</span><span class="ro">,</span>
+        <span class="rt">Green</span><span class="ro">,</span>
+        <span class="rt">Purple</span><span class="ro">,</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-    /// The secondary colors according to the RYB color model.
-    pub enum SecondaryColor {
-        Orange,
-        Green,
-        Purple,
-    }
-}
+<span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">utils</span> <span class="ro">{</span>
+    <span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">kinds</span><span class="ro">:</span><span class="ro">:</span><span class="ro">*</span><span class="ro">;</span>
 
-pub mod utils {
-    use crate::kinds::*;
-
-    /// Combines two primary colors in equal amounts to create
-    /// a secondary color.
-    pub fn mix(c1: PrimaryColor, c2: PrimaryColor) -&gt; SecondaryColor {
-        // --snip--
-<span class="boring">        unimplemented!();
-</span>    }
-}</code></pre>
-<figcaption><a href="#listing-14-3">Listing 14-3</a>: An <code>art</code> library with items organized into <code>kinds</code> and <code>utils</code> modules</figcaption>
+    <span class="rs">/// Combines two primary colors in equal amounts to create
+</span>    <span class="rs">/// a secondary color.
+</span>    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">mix</span><span class="ro">(</span><span class="rn">c1</span><span class="ro">:</span> <span class="rt">PrimaryColor</span><span class="ro">,</span> <span class="rn">c2</span><span class="ro">:</span> <span class="rt">PrimaryColor</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">SecondaryColor</span> <span class="ro">{</span>
+        <span class="rc">// --snip--
+</span><span class="boring">        <span class="rf">unimplemented!</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+</span>    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-14-3">Listing 14-3</a>: An <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> library with items organized into <code class="syntax" data-syntax="rust"><span class="rn">kinds</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">utils</span></code> modules</figcaption>
 </figure>
 <p>Figure 14-3 shows what the front page of the documentation for this crate
-generated by <code>cargo doc</code> would look like.</p>
+generated by <code class="syntax" data-syntax="bash">cargo doc</code> would look like.</p>
 <img alt="Rendered documentation for the `art` crate that lists the `kinds` and `utils` modules" src="assets/trpl14-03.png" class="center">
-<p><span class="caption">Figure 14-3: The front page of the documentation for <code>art</code>
-that lists the <code>kinds</code> and <code>utils</code> modules</span></p>
-<p>Note that the <code>PrimaryColor</code> and <code>SecondaryColor</code> types aren’t listed on the
-front page, nor is the <code>mix</code> function. We have to click <code>kinds</code> and <code>utils</code> to
+<p><span class="caption">Figure 14-3: The front page of the documentation for <code class="syntax" data-syntax="rust"><span class="rn">art</span></code>
+that lists the <code class="syntax" data-syntax="rust"><span class="rn">kinds</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">utils</span></code> modules</span></p>
+<p>Note that the <code class="syntax" data-syntax="rust"><span class="rt">PrimaryColor</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">SecondaryColor</span></code> types aren’t listed on the
+front page, nor is the <code class="syntax" data-syntax="rust"><span class="rn">mix</span></code> function. We have to click <code class="syntax" data-syntax="rust"><span class="rn">kinds</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">utils</span></code> to
 see them.</p>
-<p>Another crate that depends on this library would need <code>use</code> statements that
-bring the items from <code>art</code> into scope, specifying the module structure that’s
+<p>Another crate that depends on this library would need <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements that
+bring the items from <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> into scope, specifying the module structure that’s
 currently defined. Listing 14-4 shows an example of a crate that uses the
-<code>PrimaryColor</code> and <code>mix</code> items from the <code>art</code> crate.</p>
+<code class="syntax" data-syntax="rust"><span class="rt">PrimaryColor</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">mix</span></code> items from the <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate.</p>
 <figure class="listing" id="listing-14-4">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust ignore">use art::kinds::PrimaryColor;
-use art::utils::mix;
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">art</span><span class="ro">::</span><span class="rn">kinds</span><span class="ro">::</span><span class="rt">PrimaryColor</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">art</span><span class="ro">::</span><span class="rn">utils</span><span class="ro">::</span><span class="rn">mix</span><span class="ro">;</span>
 
-fn main() {
-    let red = PrimaryColor::Red;
-    let yellow = PrimaryColor::Yellow;
-    mix(red, yellow);
-}</code></pre>
-<figcaption><a href="#listing-14-4">Listing 14-4</a>: A crate using the <code>art</code> crate’s items with its internal structure exported</figcaption>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">red</span> <span class="ro">=</span> <span class="rt">PrimaryColor</span><span class="ro">::</span><span class="rt">Red</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">yellow</span> <span class="ro">=</span> <span class="rt">PrimaryColor</span><span class="ro">::</span><span class="rt">Yellow</span><span class="ro">;</span>
+    <span class="rn">mix</span><span class="ro">(</span><span class="rn">red</span><span class="ro">,</span> <span class="rn">yellow</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-14-4">Listing 14-4</a>: A crate using the <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate’s items with its internal structure exported</figcaption>
 </figure>
-<p>The author of the code in Listing 14-4, which uses the <code>art</code> crate, had to
-figure out that <code>PrimaryColor</code> is in the <code>kinds</code> module and <code>mix</code> is in the
-<code>utils</code> module. The module structure of the <code>art</code> crate is more relevant to
-developers working on the <code>art</code> crate than to those using it. The internal
+<p>The author of the code in Listing 14-4, which uses the <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate, had to
+figure out that <code class="syntax" data-syntax="rust"><span class="rt">PrimaryColor</span></code> is in the <code class="syntax" data-syntax="rust"><span class="rn">kinds</span></code> module and <code class="syntax" data-syntax="rust"><span class="rn">mix</span></code> is in the
+<code class="syntax" data-syntax="rust"><span class="rn">utils</span></code> module. The module structure of the <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate is more relevant to
+developers working on the <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate than to those using it. The internal
 structure doesn’t contain any useful information for someone trying to
-understand how to use the <code>art</code> crate, but rather causes confusion because
+understand how to use the <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate, but rather causes confusion because
 developers who use it have to figure out where to look, and must specify the
-module names in the <code>use</code> statements.</p>
+module names in the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements.</p>
 <p>To remove the internal organization from the public API, we can modify the
-<code>art</code> crate code in Listing 14-3 to add <code>pub use</code> statements to re-export the
+<code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate code in Listing 14-3 to add <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code> statements to re-export the
 items at the top level, as shown in Listing 14-5.</p>
 <figure class="listing" id="listing-14-5">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust ignore">//! # Art
-//!
-//! A library for modeling artistic concepts.
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rs">//! # Art
+</span><span class="rs">//!
+</span><span class="rs">//! A library for modeling artistic concepts.
+</span>
+<span class="rk">pub</span> <span class="rk">use</span> <span class="rt">self</span><span class="ro">::</span><span class="rn">kinds</span><span class="ro">::</span><span class="rt">PrimaryColor</span><span class="ro">;</span>
+<span class="rk">pub</span> <span class="rk">use</span> <span class="rt">self</span><span class="ro">::</span><span class="rn">kinds</span><span class="ro">::</span><span class="rt">SecondaryColor</span><span class="ro">;</span>
+<span class="rk">pub</span> <span class="rk">use</span> <span class="rt">self</span><span class="ro">::</span><span class="rn">utils</span><span class="ro">::</span><span class="rn">mix</span><span class="ro">;</span>
 
-pub use self::kinds::PrimaryColor;
-pub use self::kinds::SecondaryColor;
-pub use self::utils::mix;
-
-pub mod kinds {
-    // --snip--
-<span class="boring">    /// The primary colors according to the RYB color model.
-</span><span class="boring">    pub enum PrimaryColor {
-</span><span class="boring">        Red,
-</span><span class="boring">        Yellow,
-</span><span class="boring">        Blue,
-</span><span class="boring">    }
+<span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">kinds</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">    <span class="rs">/// The primary colors according to the RYB color model.
+</span></span><span class="boring">    <span class="rk">pub</span> <span class="rk">enum</span> <span class="rt">PrimaryColor</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rt">Red</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Yellow</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Blue</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span>
 </span><span class="boring">
-</span><span class="boring">    /// The secondary colors according to the RYB color model.
-</span><span class="boring">    pub enum SecondaryColor {
-</span><span class="boring">        Orange,
-</span><span class="boring">        Green,
-</span><span class="boring">        Purple,
-</span><span class="boring">    }
-</span>}
+</span><span class="boring">    <span class="rs">/// The secondary colors according to the RYB color model.
+</span></span><span class="boring">    <span class="rk">pub</span> <span class="rk">enum</span> <span class="rt">SecondaryColor</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rt">Orange</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Green</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Purple</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span>
+</span><span class="ro">}</span>
 
-pub mod utils {
-    // --snip--
-<span class="boring">    use crate::kinds::*;
+<span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">utils</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">    <span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">kinds</span><span class="ro">:</span><span class="ro">:</span><span class="ro">*</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    /// Combines two primary colors in equal amounts to create
-</span><span class="boring">    /// a secondary color.
-</span><span class="boring">    pub fn mix(c1: PrimaryColor, c2: PrimaryColor) -&gt; SecondaryColor {
-</span><span class="boring">        SecondaryColor::Orange
-</span><span class="boring">    }
-</span>}</code></pre>
-<figcaption><a href="#listing-14-5">Listing 14-5</a>: Adding <code>pub use</code> statements to re-export items</figcaption>
+</span><span class="boring">    <span class="rs">/// Combines two primary colors in equal amounts to create
+</span></span><span class="boring">    <span class="rs">/// a secondary color.
+</span></span><span class="boring">    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">mix</span><span class="ro">(</span><span class="rn">c1</span><span class="ro">:</span> <span class="rt">PrimaryColor</span><span class="ro">,</span> <span class="rn">c2</span><span class="ro">:</span> <span class="rt">PrimaryColor</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">SecondaryColor</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rt">SecondaryColor</span><span class="ro">::</span><span class="rt">Orange</span>
+</span><span class="boring">    <span class="ro">}</span>
+</span><span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-14-5">Listing 14-5</a>: Adding <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code> statements to re-export items</figcaption>
 </figure>
-<p>The API documentation that <code>cargo doc</code> generates for this crate will now list
+<p>The API documentation that <code class="syntax" data-syntax="bash">cargo doc</code> generates for this crate will now list
 and link re-exports on the front page, as shown in Figure 14-4, making the
-<code>PrimaryColor</code> and <code>SecondaryColor</code> types and the <code>mix</code> function easier to find.</p>
+<code class="syntax" data-syntax="rust"><span class="rt">PrimaryColor</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">SecondaryColor</span></code> types and the <code class="syntax" data-syntax="rust"><span class="rn">mix</span></code> function easier to find.</p>
 <img alt="Rendered documentation for the `art` crate with the re-exports on the front page" src="assets/trpl14-04.png" class="center">
-<p><span class="caption">Figure 14-4: The front page of the documentation for <code>art</code>
+<p><span class="caption">Figure 14-4: The front page of the documentation for <code class="syntax" data-syntax="rust"><span class="rn">art</span></code>
 that lists the re-exports</span></p>
-<p>The <code>art</code> crate users can still see and use the internal structure from Listing
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate users can still see and use the internal structure from Listing
 14-3 as demonstrated in Listing 14-4, or they can use the more convenient
 structure in Listing 14-5, as shown in Listing 14-6.</p>
 <figure class="listing" id="listing-14-6">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust ignore">use art::PrimaryColor;
-use art::mix;
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">art</span><span class="ro">::</span><span class="rt">PrimaryColor</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">art</span><span class="ro">::</span><span class="rn">mix</span><span class="ro">;</span>
 
-fn main() {
-    // --snip--
-<span class="boring">    let red = PrimaryColor::Red;
-</span><span class="boring">    let yellow = PrimaryColor::Yellow;
-</span><span class="boring">    mix(red, yellow);
-</span>}</code></pre>
-<figcaption><a href="#listing-14-6">Listing 14-6</a>: A program using the re-exported items from the <code>art</code> crate</figcaption>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">red</span> <span class="ro">=</span> <span class="rt">PrimaryColor</span><span class="ro">::</span><span class="rt">Red</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">yellow</span> <span class="ro">=</span> <span class="rt">PrimaryColor</span><span class="ro">::</span><span class="rt">Yellow</span><span class="ro">;</span>
+</span><span class="boring">    <span class="rn">mix</span><span class="ro">(</span><span class="rn">red</span><span class="ro">,</span> <span class="rn">yellow</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-14-6">Listing 14-6</a>: A program using the re-exported items from the <code class="syntax" data-syntax="rust"><span class="rn">art</span></code> crate</figcaption>
 </figure>
 <p>In cases where there are many nested modules, re-exporting the types at the top
-level with <code>pub use</code> can make a significant difference in the experience of
-people who use the crate. Another common use of <code>pub use</code> is to re-export
+level with <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code> can make a significant difference in the experience of
+people who use the crate. Another common use of <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code> is to re-export
 definitions of a dependency in the current crate to make that crate’s
 definitions part of your crate’s public API.</p>
 <p>Creating a useful public API structure is more an art than a science, and you
-can iterate to find the API that works best for your users. Choosing <code>pub use</code>
+can iterate to find the API that works best for your users. Choosing <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code>
 gives you flexibility in how you structure your crate internally and decouples
 that internal structure from what you present to your users. Look at some of
 the code of crates you’ve installed to see if their internal structure differs
@@ -578,8 +585,8 @@ in via a GitHub account. (The GitHub account is currently a requirement, but
 the site might support other ways of creating an account in the future.) Once
 you’re logged in, visit your account settings at
 <a href="https://crates.io/me/">https://crates.io/me/</a><!-- ignore --> and retrieve your
-API key. Then, run the <code>cargo login</code> command and paste your API key when prompted, like this:</p>
-<pre><code class="language-console">$ cargo login
+API key. Then, run the <code class="syntax" data-syntax="bash">cargo login</code> command and paste your API key when prompted, like this:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo login
 abcdefghijklmnopqrstuvwxyz012345
 </code></pre>
 <p>This command will inform Cargo of your API token and store it locally in
@@ -589,7 +596,7 @@ revoke it and generate a new token on <a href="https://crates.io/">crates.io</a>
 -->.</p>
 <h4 id="adding-metadata-to-a-new-crate"><a class="header" href="#adding-metadata-to-a-new-crate">Adding Metadata to a New Crate</a></h4>
 <p>Let’s say you have a crate you want to publish. Before publishing, you’ll need
-to add some metadata in the <code>[package]</code> section of the crate’s <em>Cargo.toml</em>
+to add some metadata in the <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">package</span><span class="ro">]</span></code> section of the crate’s <em>Cargo.toml</em>
 file.</p>
 <p>Your crate will need a unique name. While you’re working on a crate locally,
 you can name a crate whatever you’d like. However, crate names on
@@ -597,13 +604,13 @@ you can name a crate whatever you’d like. However, crate names on
 first-served basis. Once a crate name is taken, no one else can publish a crate
 with that name. Before attempting to publish a crate, search for the name you
 want to use. If the name has been used, you will need to find another name and
-edit the <code>name</code> field in the <em>Cargo.toml</em> file under the <code>[package]</code> section to
+edit the <code class="syntax" data-syntax="rust"><span class="rn">name</span></code> field in the <em>Cargo.toml</em> file under the <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">package</span><span class="ro">]</span></code> section to
 use the new name for publishing, like so:</p>
 <p><span class="filename">Filename: Cargo.toml</span></p>
-<pre><code class="language-toml">[package]
-name = "guessing_game"
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">package</span><span class="rk">]</span>
+<span class="rn">name</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">guessing_game</span><span class="rs">"</span>
 </code></pre>
-<p>Even if you’ve chosen a unique name, when you run <code>cargo publish</code> to publish
+<p>Even if you’ve chosen a unique name, when you run <code class="syntax" data-syntax="bash">cargo publish</code> to publish
 the crate at this point, you’ll get a warning and then an error:</p>
 <!-- manual-regeneration
 Create a new package with an unregistered name, making no further modifications
@@ -611,49 +618,49 @@ Create a new package with an unregistered name, making no further modifications
 cargo publish
 copy just the relevant lines below
 -->
-<pre><code class="language-console">$ cargo publish
-    Updating crates.io index
-warning: manifest has no description, license, license-file, documentation, homepage or repository.
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo publish
+<span class="rk">    Updating</span> crates.io index
+<span class="re">warning</span>: manifest has no description, license, license-file, documentation, homepage or repository.
 See https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info.
 --snip--
-error: failed to publish to registry at https://crates.io
+<span class="re">error</span>: failed to publish to registry at https://crates.io
 
 Caused by:
-  the remote server responded with an error (status 400 Bad Request): missing or empty metadata fields: description, license. Please see https://doc.rust-lang.org/cargo/reference/manifest.html for more information on configuring these fields
+  the remote server responded with an error (status <span class="ri">400</span> Bad Request): missing or empty metadata fields: description, license. Please see https://doc.rust-lang.org/cargo/reference/manifest.html for more information on configuring these fields
 </code></pre>
 <p>This results in an error because you’re missing some crucial information: A
 description and license are required so that people will know what your crate
 does and under what terms they can use it. In <em>Cargo.toml</em>, add a description
 that’s just a sentence or two, because it will appear with your crate in search
-results. For the <code>license</code> field, you need to give a <em>license identifier
+results. For the <code class="syntax" data-syntax="rust"><span class="rn">license</span></code> field, you need to give a <em>license identifier
 value</em>. The <a href="https://spdx.org/licenses/">Linux Foundation’s Software Package Data Exchange (SPDX)</a>
 lists the identifiers you can use for this value. For example, to specify that
-you’ve licensed your crate using the MIT License, add the <code>MIT</code> identifier:</p>
+you’ve licensed your crate using the MIT License, add the <code class="syntax" data-syntax="rust"><span class="rt">MIT</span></code> identifier:</p>
 <p><span class="filename">Filename: Cargo.toml</span></p>
-<pre><code class="language-toml">[package]
-name = "guessing_game"
-license = "MIT"
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">package</span><span class="rk">]</span>
+<span class="rn">name</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">guessing_game</span><span class="rs">"</span>
+<span class="rn">license</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">MIT</span><span class="rs">"</span>
 </code></pre>
 <p>If you want to use a license that doesn’t appear in the SPDX, you need to place
 the text of that license in a file, include the file in your project, and then
-use <code>license-file</code> to specify the name of that file instead of using the
-<code>license</code> key.</p>
+use <code class="syntax" data-syntax="rust"><span class="rn">license</span><span class="ro">-</span><span class="rn">file</span></code> to specify the name of that file instead of using the
+<code class="syntax" data-syntax="rust"><span class="rn">license</span></code> key.</p>
 <p>Guidance on which license is appropriate for your project is beyond the scope
 of this book. Many people in the Rust community license their projects in the
-same way as Rust by using a dual license of <code>MIT OR Apache-2.0</code>. This practice
+same way as Rust by using a dual license of <code class="syntax" data-syntax="rust"><span class="rt">MIT</span> <span class="rt">OR</span> <span class="rt">Apache</span><span class="ro">-</span><span class="ri">2.0</span></code>. This practice
 demonstrates that you can also specify multiple license identifiers separated
-by <code>OR</code> to have multiple licenses for your project.</p>
+by <code class="syntax" data-syntax="rust"><span class="rt">OR</span></code> to have multiple licenses for your project.</p>
 <p>With a unique name, the version, your description, and a license added, the
 <em>Cargo.toml</em> file for a project that is ready to publish might look like this:</p>
 <p><span class="filename">Filename: Cargo.toml</span></p>
-<pre><code class="language-toml">[package]
-name = "guessing_game"
-version = "0.1.0"
-edition = "2024"
-description = "A fun game where you guess what number the computer has chosen."
-license = "MIT OR Apache-2.0"
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">package</span><span class="rk">]</span>
+<span class="rn">name</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">guessing_game</span><span class="rs">"</span>
+<span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.1.0</span><span class="rs">"</span>
+<span class="rn">edition</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">2024</span><span class="rs">"</span>
+<span class="rn">description</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">A fun game where you guess what number the computer has chosen.</span><span class="rs">"</span>
+<span class="rn">license</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">MIT OR Apache-2.0</span><span class="rs">"</span>
 
-[dependencies]
+<span class="rk">[</span><span class="rk">dependencies</span><span class="rk">]</span>
 </code></pre>
 <p><a href="https://doc.rust-lang.org/cargo/">Cargo’s documentation</a> describes other
 metadata you can specify to ensure that others can discover and use your crate
@@ -670,35 +677,35 @@ builds of all projects that depend on crates from
 <a href="https://crates.io/">crates.io</a><!-- ignore --> will continue to work. Allowing
 version deletions would make fulfilling that goal impossible. However, there is
 no limit to the number of crate versions you can publish.</p>
-<p>Run the <code>cargo publish</code> command again. It should succeed now:</p>
+<p>Run the <code class="syntax" data-syntax="bash">cargo publish</code> command again. It should succeed now:</p>
 <!-- manual-regeneration
 go to some valid crate, publish a new version
 cargo publish
 copy just the relevant lines below
 -->
-<pre><code class="language-console">$ cargo publish
-    Updating crates.io index
-   Packaging guessing_game v0.1.0 (file:///projects/guessing_game)
-    Packaged 6 files, 1.2KiB (895.0B compressed)
-   Verifying guessing_game v0.1.0 (file:///projects/guessing_game)
-   Compiling guessing_game v0.1.0
-(file:///projects/guessing_game/target/package/guessing_game-0.1.0)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
-   Uploading guessing_game v0.1.0 (file:///projects/guessing_game)
-    Uploaded guessing_game v0.1.0 to registry `crates-io`
-note: waiting for `guessing_game v0.1.0` to be available at registry
-`crates-io`.
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo publish
+<span class="rk">    Updating</span> crates.io index
+   Packaging guessing_game v0.<span class="ri">1.0</span> (file:///projects/guessing_game)
+    Packaged <span class="ri">6</span> files, <span class="ri">1</span>.2KiB (<span class="ri">895</span>.0B compressed)
+   Verifying guessing_game v0.<span class="ri">1.0</span> (file:///projects/guessing_game)
+<span class="rk">   Compiling</span> guessing_game v0.<span class="ri">1.0</span>
+(file:///projects/guessing_game/target/package/guessing_game-<span class="ri">0.1.0</span>)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.19s
+   Uploading guessing_game v0.<span class="ri">1.0</span> (file:///projects/guessing_game)
+    Uploaded guessing_game v0.<span class="ri">1.0</span> to registry <span class="rs">`crates-io`</span>
+<span class="rk">note</span>: waiting for <span class="rs">`guessing_game v0.1.0`</span> to be available at registry
+<span class="rs">`crates-io`</span>.
 You may press ctrl-c to skip waiting; the crate should be available shortly.
-   Published guessing_game v0.1.0 at registry `crates-io`
+   Published guessing_game v0.<span class="ri">1.0</span> at registry <span class="rs">`crates-io`</span>
 </code></pre>
 <p>Congratulations! You’ve now shared your code with the Rust community, and
 anyone can easily add your crate as a dependency of their project.</p>
 <h4 id="publishing-a-new-version-of-an-existing-crate"><a class="header" href="#publishing-a-new-version-of-an-existing-crate">Publishing a New Version of an Existing Crate</a></h4>
 <p>When you’ve made changes to your crate and are ready to release a new version,
-you change the <code>version</code> value specified in your <em>Cargo.toml</em> file and
+you change the <code class="syntax" data-syntax="rust"><span class="rn">version</span></code> value specified in your <em>Cargo.toml</em> file and
 republish. Use the <a href="https://semver.org/">Semantic Versioning rules</a> to decide what an
 appropriate next version number is, based on the kinds of changes you’ve made.
-Then, run <code>cargo publish</code> to upload the new version.</p>
+Then, run <code class="syntax" data-syntax="bash">cargo publish</code> to upload the new version.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="removing-versions-from-cratesio-with-cargo-yank"></a>
 <a id="deprecating-versions-from-cratesio-with-cargo-yank"></a></p>
@@ -712,23 +719,23 @@ allowing all existing projects that depend on it to continue. Essentially, a
 yank means that all projects with a <em>Cargo.lock</em> will not break, and any future
 <em>Cargo.lock</em> files generated will not use the yanked version.</p>
 <p>To yank a version of a crate, in the directory of the crate that you’ve
-previously published, run <code>cargo yank</code> and specify which version you want to
-yank. For example, if we’ve published a crate named <code>guessing_game</code> version
+previously published, run <code class="syntax" data-syntax="bash">cargo yank</code> and specify which version you want to
+yank. For example, if we’ve published a crate named <code class="syntax" data-syntax="rust"><span class="rn">guessing_game</span></code> version
 1.0.1 and we want to yank it, then we’d run the following in the project
-directory for <code>guessing_game</code>:</p>
+directory for <code class="syntax" data-syntax="rust"><span class="rn">guessing_game</span></code>:</p>
 <!-- manual-regeneration:
 cargo yank carol-test --version 2.1.0
 cargo yank carol-test --version 2.1.0 --undo
 -->
-<pre><code class="language-console">$ cargo yank --vers 1.0.1
-    Updating crates.io index
-        Yank guessing_game@1.0.1
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo yank --vers <span class="ri">1</span>.0.1
+<span class="rk">    Updating</span> crates.io index
+        Yank guessing_game@<span class="ri">1.0.1</span>
 </code></pre>
-<p>By adding <code>--undo</code> to the command, you can also undo a yank and allow projects
+<p>By adding <code class="syntax" data-syntax="rust"><span class="ro">-</span><span class="ro">-</span><span class="rn">undo</span></code> to the command, you can also undo a yank and allow projects
 to start depending on a version again:</p>
-<pre><code class="language-console">$ cargo yank --vers 1.0.1 --undo
-    Updating crates.io index
-      Unyank guessing_game@1.0.1
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo yank --vers <span class="ri">1</span>.0.1 --undo
+<span class="rk">    Updating</span> crates.io index
+      Unyank guessing_game@<span class="ri">1.0.1</span>
 </code></pre>
 <p>A yank <em>does not</em> delete any code. It cannot, for example, delete accidentally
 uploaded secrets. If that happens, you must reset those secrets immediately.</p>
@@ -747,23 +754,23 @@ that we can concentrate on the structure of the workspace. There are multiple
 ways to structure a workspace, so we’ll just show one common way. We’ll have a
 workspace containing a binary and two libraries. The binary, which will provide
 the main functionality, will depend on the two libraries. One library will
-provide an <code>add_one</code> function and the other library an <code>add_two</code> function.
+provide an <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function and the other library an <code class="syntax" data-syntax="rust"><span class="rn">add_two</span></code> function.
 These three crates will be part of the same workspace. We’ll start by creating
 a new directory for the workspace:</p>
-<pre><code class="language-console">$ mkdir add
-$ cd add
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>mkdir add
+<span class="rk">$ </span><span class="rt">cd</span> add
 </code></pre>
 <p>Next, in the <em>add</em> directory, we create the <em>Cargo.toml</em> file that will
-configure the entire workspace. This file won’t have a <code>[package]</code> section.
-Instead, it will start with a <code>[workspace]</code> section that will allow us to add
+configure the entire workspace. This file won’t have a <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">package</span><span class="ro">]</span></code> section.
+Instead, it will start with a <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">workspace</span><span class="ro">]</span></code> section that will allow us to add
 members to the workspace. We also make a point to use the latest and greatest
 version of Cargo’s resolver algorithm in our workspace by setting the
-<code>resolver</code> value to <code>"3"</code>:</p>
+<code class="syntax" data-syntax="rust"><span class="rn">resolver</span></code> value to <code class="syntax" data-syntax="rust"><span class="rs">"</span><span class="rs">3</span><span class="rs">"</span></code>:</p>
 <p><span class="filename">Filename: Cargo.toml</span></p>
-<pre><code class="language-toml">[workspace]
-resolver = "3"
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">workspace</span><span class="rk">]</span>
+<span class="rn">resolver</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">3</span><span class="rs">"</span>
 </code></pre>
-<p>Next, we’ll create the <code>adder</code> binary crate by running <code>cargo new</code> within the
+<p>Next, we’ll create the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> binary crate by running <code class="syntax" data-syntax="bash">cargo new</code> within the
 <em>add</em> directory:</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/output-only-01-adder-crate/add
@@ -772,20 +779,20 @@ rm -rf adder
 cargo new adder
 copy output below
 -->
-<pre><code class="language-console">$ cargo new adder
-     Created binary (application) `adder` package
-      Adding `adder` as member of workspace at `file:///projects/add`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo new adder
+<span class="rk">     Created</span> binary (application) <span class="rs">`adder`</span> package
+      Adding <span class="rs">`adder`</span> as member of workspace at <span class="rs">`file:///projects/add`</span>
 </code></pre>
-<p>Running <code>cargo new</code> inside a workspace also automatically adds the newly created
-package to the <code>members</code> key in the <code>[workspace]</code> definition in the workspace
+<p>Running <code class="syntax" data-syntax="bash">cargo new</code> inside a workspace also automatically adds the newly created
+package to the <code class="syntax" data-syntax="rust"><span class="rn">members</span></code> key in the <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">workspace</span><span class="ro">]</span></code> definition in the workspace
 <em>Cargo.toml</em>, like this:</p>
-<pre><code class="language-toml">[workspace]
-resolver = "3"
-members = ["adder"]
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">workspace</span><span class="rk">]</span>
+<span class="rn">resolver</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">3</span><span class="rs">"</span>
+<span class="rn">members</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">adder</span><span class="rs">"</span><span class="ro">]</span>
 </code></pre>
-<p>At this point, we can build the workspace by running <code>cargo build</code>. The files
+<p>At this point, we can build the workspace by running <code class="syntax" data-syntax="bash">cargo build</code>. The files
 in your <em>add</em> directory should look like this:</p>
-<pre><code class="language-text">├── Cargo.lock
+<pre><code class="language-text syntax" data-syntax="output">├── Cargo.lock
 ├── Cargo.toml
 ├── adder
 │   ├── Cargo.toml
@@ -794,8 +801,8 @@ in your <em>add</em> directory should look like this:</p>
 └── target
 </code></pre>
 <p>The workspace has one <em>target</em> directory at the top level that the compiled
-artifacts will be placed into; the <code>adder</code> package doesn’t have its own
-<em>target</em> directory. Even if we were to run <code>cargo build</code> from inside the
+artifacts will be placed into; the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> package doesn’t have its own
+<em>target</em> directory. Even if we were to run <code class="syntax" data-syntax="bash">cargo build</code> from inside the
 <em>adder</em> directory, the compiled artifacts would still end up in <em>add/target</em>
 rather than <em>add/adder/target</em>. Cargo structures the <em>target</em> directory in a
 workspace like this because the crates in a workspace are meant to depend on
@@ -805,7 +812,7 @@ in its own <em>target</em> directory. By sharing one <em>target</em> directory, 
 can avoid unnecessary rebuilding.</p>
 <h4 id="creating-the-second-package-in-the-workspace"><a class="header" href="#creating-the-second-package-in-the-workspace">Creating the Second Package in the Workspace</a></h4>
 <p>Next, let’s create another member package in the workspace and call it
-<code>add_one</code>. Generate a new library crate named <code>add_one</code>:</p>
+<code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code>. Generate a new library crate named <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code>:</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/output-only-02-add-one/add
 remove `"add_one"` from `members` list in Cargo.toml
@@ -813,19 +820,19 @@ rm -rf add_one
 cargo new add_one --lib
 copy output below
 -->
-<pre><code class="language-console">$ cargo new add_one --lib
-     Created library `add_one` package
-      Adding `add_one` as member of workspace at `file:///projects/add`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo new add_one --lib
+<span class="rk">     Created</span> library <span class="rs">`add_one`</span> package
+      Adding <span class="rs">`add_one`</span> as member of workspace at <span class="rs">`file:///projects/add`</span>
 </code></pre>
-<p>The top-level <em>Cargo.toml</em> will now include the <em>add_one</em> path in the <code>members</code>
+<p>The top-level <em>Cargo.toml</em> will now include the <em>add_one</em> path in the <code class="syntax" data-syntax="rust"><span class="rn">members</span></code>
 list:</p>
 <p><span class="filename">Filename: Cargo.toml</span></p>
-<pre><code class="language-toml">[workspace]
-resolver = "3"
-members = ["adder", "add_one"]
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">workspace</span><span class="rk">]</span>
+<span class="rn">resolver</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">3</span><span class="rs">"</span>
+<span class="rn">members</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">adder</span><span class="rs">"</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">add_one</span><span class="rs">"</span><span class="ro">]</span>
 </code></pre>
 <p>Your <em>add</em> directory should now have these directories and files:</p>
-<pre><code class="language-text">├── Cargo.lock
+<pre><code class="language-text syntax" data-syntax="output">├── Cargo.lock
 ├── Cargo.toml
 ├── add_one
 │   ├── Cargo.toml
@@ -837,69 +844,69 @@ members = ["adder", "add_one"]
 │       └── main.rs
 └── target
 </code></pre>
-<p>In the <em>add_one/src/lib.rs</em> file, let’s add an <code>add_one</code> function:</p>
+<p>In the <em>add_one/src/lib.rs</em> file, let’s add an <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function:</p>
 <p><span class="filename">Filename: add_one/src/lib.rs</span></p>
-<pre><code class="language-rust noplayground">pub fn add_one(x: i32) -&gt; i32 {
-    x + 1
-}</code></pre>
-<p>Now we can have the <code>adder</code> package with our binary depend on the <code>add_one</code>
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_one</span><span class="ro">(</span><span class="rn">x</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">i32</span> <span class="ro">{</span>
+    <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span>
+<span class="ro">}</span></code></pre>
+<p>Now we can have the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> package with our binary depend on the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code>
 package that has our library. First, we’ll need to add a path dependency on
-<code>add_one</code> to <em>adder/Cargo.toml</em>.</p>
+<code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> to <em>adder/Cargo.toml</em>.</p>
 <p><span class="filename">Filename: adder/Cargo.toml</span></p>
-<pre><code class="language-toml">[dependencies]
-add_one = { path = "../add_one" }
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">dependencies</span><span class="rk">]</span>
+<span class="rn">add_one</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">path</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">../add_one</span><span class="rs">"</span> <span class="ro">}</span>
 </code></pre>
 <p>Cargo doesn’t assume that crates in a workspace will depend on each other, so
 we need to be explicit about the dependency relationships.</p>
-<p>Next, let’s use the <code>add_one</code> function (from the <code>add_one</code> crate) in the
-<code>adder</code> crate. Open the <em>adder/src/main.rs</em> file and change the <code>main</code>
-function to call the <code>add_one</code> function, as in Listing 14-7.</p>
+<p>Next, let’s use the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function (from the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> crate) in the
+<code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> crate. Open the <em>adder/src/main.rs</em> file and change the <code class="syntax" data-syntax="rust"><span class="rn">main</span></code>
+function to call the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> function, as in Listing 14-7.</p>
 <figure class="listing" id="listing-14-7">
 <span class="file-name">Filename: adder/src/main.rs</span>
-<pre><code class="language-rust ignore">fn main() {
-    let num = 10;
-    println!("Hello, world! {num} plus one is {}!", add_one::add_one(num));
-}</code></pre>
-<figcaption><a href="#listing-14-7">Listing 14-7</a>: Using the <code>add_one</code> library crate from the <code>adder</code> crate</figcaption>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">num</span> <span class="ro">=</span> <span class="ri">10</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Hello, world! {num} plus one is {}!</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">add_one</span><span class="ro">::</span><span class="rn">add_one</span><span class="ro">(</span><span class="rn">num</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-14-7">Listing 14-7</a>: Using the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> library crate from the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> crate</figcaption>
 </figure>
-<p>Let’s build the workspace by running <code>cargo build</code> in the top-level <em>add</em>
+<p>Let’s build the workspace by running <code class="syntax" data-syntax="bash">cargo build</code> in the top-level <em>add</em>
 directory!</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/listing-14-07/add
 cargo build
 copy output below; the output updating script doesn't handle subdirectories in paths properly
 -->
-<pre><code class="language-console">$ cargo build
-   Compiling add_one v0.1.0 (file:///projects/add/add_one)
-   Compiling adder v0.1.0 (file:///projects/add/adder)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.22s
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">   Compiling</span> add_one v0.<span class="ri">1.0</span> (file:///projects/add/add_one)
+<span class="rk">   Compiling</span> adder v0.<span class="ri">1.0</span> (file:///projects/add/adder)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.22s
 </code></pre>
 <p>To run the binary crate from the <em>add</em> directory, we can specify which package
-in the workspace we want to run by using the <code>-p</code> argument and the package name
-with <code>cargo run</code>:</p>
+in the workspace we want to run by using the <code class="syntax" data-syntax="rust"><span class="ro">-</span><span class="rn">p</span></code> argument and the package name
+with <code class="syntax" data-syntax="bash">cargo run</code>:</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/listing-14-07/add
 cargo run -p adder
 copy output below; the output updating script doesn't handle subdirectories in paths properly
 -->
-<pre><code class="language-console">$ cargo run -p adder
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.00s
-     Running `target/debug/adder`
-Hello, world! 10 plus one is 11!
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run -p adder
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.00s
+<span class="rk">     Running</span> <span class="rs">`target/debug/adder`</span>
+Hello, world! <span class="ri">10</span> plus one is <span class="ri">11</span>!
 </code></pre>
-<p>This runs the code in <em>adder/src/main.rs</em>, which depends on the <code>add_one</code> crate.</p>
+<p>This runs the code in <em>adder/src/main.rs</em>, which depends on the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> crate.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="depending-on-an-external-package-in-a-workspace"></a></p>
 <h4 id="depending-on-an-external-package"><a class="header" href="#depending-on-an-external-package">Depending on an External Package</a></h4>
 <p>Notice that the workspace has only one <em>Cargo.lock</em> file at the top level,
 rather than having a <em>Cargo.lock</em> in each crate’s directory. This ensures that
-all crates are using the same version of all dependencies. If we add the <code>rand</code>
+all crates are using the same version of all dependencies. If we add the <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code>
 package to the <em>adder/Cargo.toml</em> and <em>add_one/Cargo.toml</em> files, Cargo will
-resolve both of those to one version of <code>rand</code> and record that in the one
+resolve both of those to one version of <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> and record that in the one
 <em>Cargo.lock</em>. Making all crates in the workspace use the same dependencies
 means the crates will always be compatible with each other. Let’s add the
-<code>rand</code> crate to the <code>[dependencies]</code> section in the <em>add_one/Cargo.toml</em> file
-so that we can use the <code>rand</code> crate in the <code>add_one</code> crate:</p>
+<code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> crate to the <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">dependencies</span><span class="ro">]</span></code> section in the <em>add_one/Cargo.toml</em> file
+so that we can use the <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> crate in the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> crate:</p>
 <!-- When updating the version of `rand` used, also update the version of
 `rand` used in these files so they all match:
 
@@ -908,84 +915,84 @@ so that we can use the <code>rand</code> crate in the <code>add_one</code> crate
 * ch07-04-bringing-paths-into-scope-with-the-use-keyword.md
 -->
 <p><span class="filename">Filename: add_one/Cargo.toml</span></p>
-<pre><code class="language-toml">[dependencies]
-rand = "0.10.1"
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">dependencies</span><span class="rk">]</span>
+<span class="rn">rand</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.10.1</span><span class="rs">"</span>
 </code></pre>
-<p>We can now add <code>use rand;</code> to the <em>add_one/src/lib.rs</em> file, and building the
-whole workspace by running <code>cargo build</code> in the <em>add</em> directory will bring in
-and compile the <code>rand</code> crate. We will get one warning because we aren’t
-referring to the <code>rand</code> we brought into scope:</p>
+<p>We can now add <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">rand</span><span class="ro">;</span></code> to the <em>add_one/src/lib.rs</em> file, and building the
+whole workspace by running <code class="syntax" data-syntax="bash">cargo build</code> in the <em>add</em> directory will bring in
+and compile the <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> crate. We will get one warning because we aren’t
+referring to the <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> we brought into scope:</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/no-listing-03-workspace-with-external-dependency/add
 cargo build
 copy output below; the output updating script doesn't handle subdirectories in paths properly
 -->
-<pre><code class="language-console">$ cargo build
-    Updating crates.io index
-  Downloaded rand v0.10.1
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">    Updating</span> crates.io index
+<span class="rk">  Downloaded</span> rand v0.<span class="ri">10.1</span>
    --snip--
-   Compiling rand v0.10.1
-   Compiling add_one v0.1.0 (file:///projects/add/add_one)
-warning: unused import: `rand`
- --&gt; add_one/src/lib.rs:1:5
+<span class="rk">   Compiling</span> rand v0.<span class="ri">10.1</span>
+<span class="rk">   Compiling</span> add_one v0.<span class="ri">1.0</span> (file:///projects/add/add_one)
+<span class="re">warning</span>: unused import: <span class="rs">`rand`</span>
+ --&gt; add_one/src/lib.rs:<span class="ri">1</span>:<span class="ri">5</span>
   |
-1 | use rand;
+<span class="ri">1</span> | use rand;
   |     ^^^^
   |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+  = <span class="rk">note</span>: <span class="rs">`#[warn(unused_imports)]`</span> (part of <span class="rs">`#[warn(unused)]`</span>) on by default
 
-warning: `add_one` (lib) generated 1 warning (run `cargo fix --lib -p add_one` to apply 1 suggestion)
-   Compiling adder v0.1.0 (file:///projects/add/adder)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.95s
+<span class="re">warning</span>: <span class="rs">`add_one`</span> (lib) generated <span class="ri">1</span> warning (run <span class="rs">`cargo fix --lib -p add_one`</span> to apply <span class="ri">1</span> suggestion)
+<span class="rk">   Compiling</span> adder v0.<span class="ri">1.0</span> (file:///projects/add/adder)
+<span class="rk">    Finished</span> <span class="rs">`dev`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.95s
 </code></pre>
 <p>The top-level <em>Cargo.lock</em> now contains information about the dependency of
-<code>add_one</code> on <code>rand</code>. However, even though <code>rand</code> is used somewhere in the
+<code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> on <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code>. However, even though <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> is used somewhere in the
 workspace, we can’t use it in other crates in the workspace unless we add
-<code>rand</code> to their <em>Cargo.toml</em> files as well. For example, if we add <code>use rand;</code>
-to the <em>adder/src/main.rs</em> file for the <code>adder</code> package, we’ll get an error:</p>
+<code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> to their <em>Cargo.toml</em> files as well. For example, if we add <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">rand</span><span class="ro">;</span></code>
+to the <em>adder/src/main.rs</em> file for the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> package, we’ll get an error:</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/output-only-03-use-rand/add
 cargo build
 copy output below; the output updating script doesn't handle subdirectories in paths properly
 -->
-<pre><code class="language-console">$ cargo build
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
   --snip--
-   Compiling adder v0.1.0 (file:///projects/add/adder)
-error[E0432]: unresolved import `rand`
- --&gt; adder/src/main.rs:2:5
+<span class="rk">   Compiling</span> adder v0.<span class="ri">1.0</span> (file:///projects/add/adder)
+<span class="re">error[E0432]</span>: unresolved import <span class="rs">`rand`</span>
+ --&gt; adder/src/main.rs:<span class="ri">2</span>:<span class="ri">5</span>
   |
-2 | use rand;
-  |     ^^^^ no external crate `rand`
+<span class="ri">2</span> | use rand;
+  |     ^^^^ no external crate <span class="rs">`rand`</span>
 </code></pre>
-<p>To fix this, edit the <em>Cargo.toml</em> file for the <code>adder</code> package and indicate
-that <code>rand</code> is a dependency for it as well. Building the <code>adder</code> package will
-add <code>rand</code> to the list of dependencies for <code>adder</code> in <em>Cargo.lock</em>, but no
-additional copies of <code>rand</code> will be downloaded. Cargo will ensure that every
-crate in every package in the workspace using the <code>rand</code> package will use the
-same version as long as they specify compatible versions of <code>rand</code>, saving us
+<p>To fix this, edit the <em>Cargo.toml</em> file for the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> package and indicate
+that <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> is a dependency for it as well. Building the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> package will
+add <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> to the list of dependencies for <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> in <em>Cargo.lock</em>, but no
+additional copies of <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> will be downloaded. Cargo will ensure that every
+crate in every package in the workspace using the <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> package will use the
+same version as long as they specify compatible versions of <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code>, saving us
 space and ensuring that the crates in the workspace will be compatible with
 each other.</p>
 <p>If crates in the workspace specify incompatible versions of the same
 dependency, Cargo will resolve each of them but will still try to resolve as
 few versions as possible.</p>
 <h4 id="adding-a-test-to-a-workspace"><a class="header" href="#adding-a-test-to-a-workspace">Adding a Test to a Workspace</a></h4>
-<p>For another enhancement, let’s add a test of the <code>add_one::add_one</code> function
-within the <code>add_one</code> crate:</p>
+<p>For another enhancement, let’s add a test of the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span><span class="ro">::</span><span class="rn">add_one</span></code> function
+within the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> crate:</p>
 <p><span class="filename">Filename: add_one/src/lib.rs</span></p>
-<pre><code class="language-rust noplayground">pub fn add_one(x: i32) -&gt; i32 {
-    x + 1
-}
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_one</span><span class="ro">(</span><span class="rn">x</span><span class="ro">:</span> <span class="rt">i32</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">i32</span> <span class="ro">{</span>
+    <span class="rn">x</span> <span class="ro">+</span> <span class="ri">1</span>
+<span class="ro">}</span>
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+<span class="rc">#[</span><span class="rc">cfg(test)</span><span class="rc">]</span>
+<span class="rk">mod</span> <span class="rn">tests</span> <span class="ro">{</span>
+    <span class="rk">use</span> <span class="rk">super</span><span class="ro">:</span><span class="ro">:</span><span class="ro">*</span><span class="ro">;</span>
 
-    #[test]
-    fn it_works() {
-        assert_eq!(3, add_one(2));
-    }
-}</code></pre>
-<p>Now run <code>cargo test</code> in the top-level <em>add</em> directory. Running <code>cargo test</code> in
+    <span class="rc">#[</span><span class="rc">test</span><span class="rc">]</span>
+    <span class="rk">fn</span> <span class="rf">it_works</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+        <span class="rf">assert_eq!</span><span class="ro">(</span><span class="ri">3</span><span class="ro">,</span> <span class="rn">add_one</span><span class="ro">(</span><span class="ri">2</span><span class="ro">)</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<p>Now run <code class="syntax" data-syntax="bash">cargo test</code> in the top-level <em>add</em> directory. Running <code class="syntax" data-syntax="bash">cargo test</code> in
 a workspace structured like this one will run the tests for all the crates in
 the workspace:</p>
 <!-- manual-regeneration
@@ -994,65 +1001,65 @@ cargo test
 copy output below; the output updating script doesn't handle subdirectories in
 paths properly
 -->
-<pre><code class="language-console">$ cargo test
-   Compiling add_one v0.1.0 (file:///projects/add/add_one)
-   Compiling adder v0.1.0 (file:///projects/add/adder)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
-     Running unittests src/lib.rs (target/debug/deps/add_one-93c49ee75dc46543)
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo <span class="rt">test</span>
+<span class="rk">   Compiling</span> add_one v0.<span class="ri">1.0</span> (file:///projects/add/add_one)
+<span class="rk">   Compiling</span> adder v0.<span class="ri">1.0</span> (file:///projects/add/adder)
+<span class="rk">    Finished</span> <span class="rs">`test`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.20s
+<span class="rk">     Running</span> unittests src/lib.rs (target/debug/deps/add_one-93c49ee75dc46543)
 
-running 1 test
+running <span class="ri">1</span> test
 test tests::it_works ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: <span class="rk">ok</span>. <span class="ri">1</span> passed; <span class="ri">0</span> failed; <span class="ri">0</span> ignored; <span class="ri">0</span> measured; <span class="ri">0</span> filtered out; finished in <span class="ri">0</span>.00s
 
-     Running unittests src/main.rs (target/debug/deps/adder-3a47283c568d2b6a)
+<span class="rk">     Running</span> unittests src/main.rs (target/debug/deps/adder-3a47283c568d2b6a)
 
-running 0 tests
+running <span class="ri">0</span> tests
 
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: <span class="rk">ok</span>. <span class="ri">0</span> passed; <span class="ri">0</span> failed; <span class="ri">0</span> ignored; <span class="ri">0</span> measured; <span class="ri">0</span> filtered out; finished in <span class="ri">0</span>.00s
 
    Doc-tests add_one
 
-running 0 tests
+running <span class="ri">0</span> tests
 
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: <span class="rk">ok</span>. <span class="ri">0</span> passed; <span class="ri">0</span> failed; <span class="ri">0</span> ignored; <span class="ri">0</span> measured; <span class="ri">0</span> filtered out; finished in <span class="ri">0</span>.00s
 </code></pre>
-<p>The first section of the output shows that the <code>it_works</code> test in the <code>add_one</code>
-crate passed. The next section shows that zero tests were found in the <code>adder</code>
+<p>The first section of the output shows that the <code class="syntax" data-syntax="rust"><span class="rn">it_works</span></code> test in the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code>
+crate passed. The next section shows that zero tests were found in the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code>
 crate, and then the last section shows that zero documentation tests were found
-in the <code>add_one</code> crate.</p>
+in the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> crate.</p>
 <p>We can also run tests for one particular crate in a workspace from the
-top-level directory by using the <code>-p</code> flag and specifying the name of the crate
+top-level directory by using the <code class="syntax" data-syntax="rust"><span class="ro">-</span><span class="rn">p</span></code> flag and specifying the name of the crate
 we want to test:</p>
 <!-- manual-regeneration
 cd listings/ch14-more-about-cargo/no-listing-04-workspace-with-tests/add
 cargo test -p add_one
 copy output below; the output updating script doesn't handle subdirectories in paths properly
 -->
-<pre><code class="language-console">$ cargo test -p add_one
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.00s
-     Running unittests src/lib.rs (target/debug/deps/add_one-93c49ee75dc46543)
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo <span class="rt">test</span> -p add_one
+<span class="rk">    Finished</span> <span class="rs">`test`</span> profile [unoptimized + debuginfo] target(s) in <span class="ri">0</span>.00s
+<span class="rk">     Running</span> unittests src/lib.rs (target/debug/deps/add_one-93c49ee75dc46543)
 
-running 1 test
+running <span class="ri">1</span> test
 test tests::it_works ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: <span class="rk">ok</span>. <span class="ri">1</span> passed; <span class="ri">0</span> failed; <span class="ri">0</span> ignored; <span class="ri">0</span> measured; <span class="ri">0</span> filtered out; finished in <span class="ri">0</span>.00s
 
    Doc-tests add_one
 
-running 0 tests
+running <span class="ri">0</span> tests
 
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: <span class="rk">ok</span>. <span class="ri">0</span> passed; <span class="ri">0</span> failed; <span class="ri">0</span> ignored; <span class="ri">0</span> measured; <span class="ri">0</span> filtered out; finished in <span class="ri">0</span>.00s
 </code></pre>
-<p>This output shows <code>cargo test</code> only ran the tests for the <code>add_one</code> crate and
-didn’t run the <code>adder</code> crate tests.</p>
+<p>This output shows <code class="syntax" data-syntax="bash">cargo test</code> only ran the tests for the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> crate and
+didn’t run the <code class="syntax" data-syntax="rust"><span class="rn">adder</span></code> crate tests.</p>
 <p>If you publish the crates in the workspace to
 <a href="https://crates.io/">crates.io</a><!-- ignore -->, each crate in the workspace
-will need to be published separately. Like <code>cargo test</code>, we can publish a
-particular crate in our workspace by using the <code>-p</code> flag and specifying the
+will need to be published separately. Like <code class="syntax" data-syntax="bash">cargo test</code>, we can publish a
+particular crate in our workspace by using the <code class="syntax" data-syntax="rust"><span class="ro">-</span><span class="rn">p</span></code> flag and specifying the
 name of the crate we want to publish.</p>
-<p>For additional practice, add an <code>add_two</code> crate to this workspace in a similar
-way as the <code>add_one</code> crate!</p>
+<p>For additional practice, add an <code class="syntax" data-syntax="rust"><span class="rn">add_two</span></code> crate to this workspace in a similar
+way as the <code class="syntax" data-syntax="rust"><span class="rn">add_one</span></code> crate!</p>
 <p>As your project grows, consider using a workspace: It enables you to work with
 smaller, easier-to-understand components than one big blob of code.
 Furthermore, keeping the crates in a workspace can make coordination between
@@ -1061,8 +1068,8 @@ crates easier if they are often changed at the same time.</p>
 <h2 id="installing-binaries-with-cargo-install-1"><a href="#installing-binaries-with-cargo-install-1" class="header">Installing Binaries with cargo install</a></h2>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="installing-binaries-from-cratesio-with-cargo-install"></a></p>
-<h3 id="installing-binaries-with-cargo-install"><a class="header" href="#installing-binaries-with-cargo-install">Installing Binaries with <code>cargo install</code></a></h3>
-<p>The <code>cargo install</code> command allows you to install and use binary crates
+<h3 id="installing-binaries-with-cargo-install"><a class="header" href="#installing-binaries-with-cargo-install">Installing Binaries with <code class="syntax" data-syntax="bash">cargo install</code></a></h3>
+<p>The <code class="syntax" data-syntax="bash">cargo install</code> command allows you to install and use binary crates
 locally. This isn’t intended to replace system packages; it’s meant to be a
 convenient way for Rust developers to install tools that others have shared on
 <a href="https://crates.io/">crates.io</a><!-- ignore -->. Note that you can only install
@@ -1072,40 +1079,40 @@ as a binary, as opposed to a library target that isn’t runnable on its own but
 is suitable for including within other programs. Usually, crates have
 information in the README file about whether a crate is a library, has a
 binary target, or both.</p>
-<p>All binaries installed with <code>cargo install</code> are stored in the installation
+<p>All binaries installed with <code class="syntax" data-syntax="bash">cargo install</code> are stored in the installation
 root’s <em>bin</em> folder. If you installed Rust using <em>rustup.rs</em> and don’t have any
 custom configurations, this directory will be <em>$HOME/.cargo/bin</em>. Ensure that
-this directory is in your <code>$PATH</code> to be able to run programs you’ve installed
-with <code>cargo install</code>.</p>
+this directory is in your <code class="syntax" data-syntax="rust"><span class="rc">$PATH</span></code> to be able to run programs you’ve installed
+with <code class="syntax" data-syntax="bash">cargo install</code>.</p>
 <p>For example, in Chapter 12 we mentioned that there’s a Rust implementation of
-the <code>grep</code> tool called <code>ripgrep</code> for searching files. To install <code>ripgrep</code>, we
+the <code class="syntax" data-syntax="rust"><span class="rn">grep</span></code> tool called <code class="syntax" data-syntax="rust"><span class="rn">ripgrep</span></code> for searching files. To install <code class="syntax" data-syntax="rust"><span class="rn">ripgrep</span></code>, we
 can run the following:</p>
 <!-- manual-regeneration
 cargo install something you don't have, copy relevant output below
 -->
-<pre><code class="language-console">$ cargo install ripgrep
-    Updating crates.io index
-  Downloaded ripgrep v14.1.1
-  Downloaded 1 crate (213.6 KB) in 0.40s
-  Installing ripgrep v14.1.1
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo install ripgrep
+<span class="rk">    Updating</span> crates.io index
+<span class="rk">  Downloaded</span> ripgrep v14.<span class="ri">1.1</span>
+<span class="rk">  Downloaded</span> <span class="ri">1</span> crate (<span class="ri">213.6</span> KB) in <span class="ri">0</span>.40s
+  Installing ripgrep v14.<span class="ri">1.1</span>
 --snip--
-   Compiling grep v0.3.2
-    Finished `release` profile [optimized + debuginfo] target(s) in 6.73s
+<span class="rk">   Compiling</span> grep v0.<span class="ri">3.2</span>
+<span class="rk">    Finished</span> <span class="rs">`release`</span> profile [optimized + debuginfo] target(s) in <span class="ri">6</span>.73s
   Installing ~/.cargo/bin/rg
-   Installed package `ripgrep v14.1.1` (executable `rg`)
+   Installed package <span class="rs">`ripgrep v14.1.1`</span> (executable <span class="rs">`rg`</span>)
 </code></pre>
 <p>The second-to-last line of the output shows the location and the name of the
-installed binary, which in the case of <code>ripgrep</code> is <code>rg</code>. As long as the
-installation directory is in your <code>$PATH</code>, as mentioned previously, you can
-then run <code>rg --help</code> and start using a faster, Rustier tool for searching files!</p>
+installed binary, which in the case of <code class="syntax" data-syntax="rust"><span class="rn">ripgrep</span></code> is <code class="syntax" data-syntax="rust"><span class="rn">rg</span></code>. As long as the
+installation directory is in your <code class="syntax" data-syntax="rust"><span class="rc">$PATH</span></code>, as mentioned previously, you can
+then run <code class="syntax" data-syntax="rust"><span class="rn">rg</span> <span class="ro">-</span><span class="ro">-</span><span class="rn">help</span></code> and start using a faster, Rustier tool for searching files!</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h2 id="extending-cargo-with-custom-commands-1"><a href="#extending-cargo-with-custom-commands-1" class="header">Extending Cargo with Custom Commands</a></h2>
 <h3 id="extending-cargo-with-custom-commands"><a class="header" href="#extending-cargo-with-custom-commands">Extending Cargo with Custom Commands</a></h3>
 <p>Cargo is designed so that you can extend it with new subcommands without having
-to modify it. If a binary in your <code>$PATH</code> is named <code>cargo-something</code>, you can
-run it as if it were a Cargo subcommand by running <code>cargo something</code>. Custom
-commands like this are also listed when you run <code>cargo --list</code>. Being able to
-use <code>cargo install</code> to install extensions and then run them just like the
+to modify it. If a binary in your <code class="syntax" data-syntax="rust"><span class="rc">$PATH</span></code> is named <code class="syntax" data-syntax="rust"><span class="rn">cargo</span><span class="ro">-</span><span class="rn">something</span></code>, you can
+run it as if it were a Cargo subcommand by running <code class="syntax" data-syntax="bash">cargo something</code>. Custom
+commands like this are also listed when you run <code class="syntax" data-syntax="bash">cargo --list</code>. Being able to
+use <code class="syntax" data-syntax="bash">cargo install</code> to install extensions and then run them just like the
 built-in Cargo tools is a super-convenient benefit of Cargo’s design!</p>
 <h3 id="summary-13"><a class="header" href="#summary-13">Summary</a></h3>
 <p>Sharing code with Cargo and <a href="https://crates.io/">crates.io</a><!-- ignore --> is

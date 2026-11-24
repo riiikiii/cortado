@@ -164,52 +164,59 @@ section > p, section > ul, section > ol {max-width:76ch}
 .chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
 .hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
 @media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+
+/* Offline token colours. Inline code follows the page theme; listings have a dark surface. */
+code.syntax {--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
+@media(prefers-color-scheme:dark){code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}}
+pre code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}
+.syntax .rk{color:var(--kw)}.syntax .rs{color:var(--str)}.syntax .ri{color:var(--num)}.syntax .rf{color:var(--fn)}.syntax .rt{color:var(--ty)}.syntax .rc{color:var(--cm);font-style:italic}.syntax .ro{color:var(--op)}.syntax .rn{color:var(--nm)}.syntax .re{color:var(--err)}
+html[data-theme="dark"] :not(pre)>code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa} html:is([data-theme="light"],[data-theme="sepia"]) :not(pre)>code.syntax{--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
 </style></head><body id="top">
 <header><div class="head"><div class="mast"><span>Rust in Practice · 01 / 21</span></div>
 <div class="hero"><div><h1>Toolchain and Cargo</h1><p>Build an order intake service from a clean checkout.</p></div>
 <div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>clone the lab</span></div><div class="trace"><b>Observe</b><span>cargo test --locked</span></div><div class="trace"><b>Result</b><span>successful contract checks</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="02%20An%20Input%20to%20a%20Decision.html">02 An Input to a Decision →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#getting-started">Getting Started</a><a href="#installation-1">Installation</a><a href="#hello-world-1">Hello, World!</a><a href="#hello-cargo-1">Hello, Cargo!</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Build an order intake service from a clean checkout</h2><p>A Rust application has two version choices that are easy to conflate. The edition controls language compatibility for a crate. The compiler version determines which language and library features you can actually use. Open the lab manifest and find edition 2024. Then run rustc -Vv and cargo -V. If two developers get different diagnostics, compare those outputs before changing the code. The lockfile fixes dependency resolution for this application; it cannot install a compiler or a native linker.</p><figure class="code"><figcaption>Cargo.toml</figcaption><pre><code><span class="k">[package]</span>
-<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"order-intake"</span>
-<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.1.0"</span>
-<span class="n">edition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"2024"</span>
-<span class="n">publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="02%20An%20Input%20to%20a%20Decision.html">02 An Input to a Decision →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#getting-started">Getting Started</a><a href="#installation-1">Installation</a><a href="#hello-world-1">Hello, World!</a><a href="#hello-cargo-1">Hello, Cargo!</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Build an order intake service from a clean checkout</h2><p>A Rust application has two version choices that are easy to conflate. The edition controls language compatibility for a crate. The compiler version determines which language and library features you can actually use. Open the lab manifest and find edition 2024. Then run rustc -Vv and cargo -V. If two developers get different diagnostics, compare those outputs before changing the code. The lockfile fixes dependency resolution for this application; it cannot install a compiler or a native linker.</p><figure class="code"><figcaption>Cargo.toml</figcaption><pre><code class="syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">package</span><span class="rk">]</span>
+<span class="rn">name</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">order-intake</span><span class="rs">"</span>
+<span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.1.0</span><span class="rs">"</span>
+<span class="rn">edition</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">2024</span><span class="rs">"</span>
+<span class="rn">publish</span> <span class="ro">=</span> <span class="rk">false</span>
 
-<span class="k">[dependencies]</span>
-<span class="n">anyhow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1"</span>
-<span class="n">axum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.8"</span>
-<span class="n">clap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"4"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"derive"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">rusqlite</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"0.37"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"bundled"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"derive"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">thiserror</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"2"</span>
-<span class="n">tokio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"macros"</span><span class="p">,</span><span class="s2">"rt-multi-thread"</span><span class="p">,</span><span class="s2">"signal"</span><span class="p">,</span><span class="s2">"net"</span><span class="p">,</span><span class="s2">"sync"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">tracing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.1"</span>
-<span class="n">tracing-subscriber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.3"</span>
+<span class="rk">[</span><span class="rk">dependencies</span><span class="rk">]</span>
+<span class="rn">anyhow</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span>
+<span class="rn">axum</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.8</span><span class="rs">"</span>
+<span class="rn">clap</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">4</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">derive</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">rusqlite</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.37</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">bundled</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">serde</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">derive</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">thiserror</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">2</span><span class="rs">"</span>
+<span class="rn">tokio</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">macros</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">rt-multi-thread</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">signal</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">net</span><span class="rs">"</span><span class="ro">,</span><span class="rs">"</span><span class="rs">sync</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">tracing</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.1</span><span class="rs">"</span>
+<span class="rn">tracing-subscriber</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.3</span><span class="rs">"</span>
 
-<span class="k">[dev-dependencies]</span>
-<span class="n">tempfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"3"</span>
-<span class="n">tower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"0.5"</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"util"</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">proptest</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1"</span>
-</code></pre></figure><p>From the lab directory, run cargo test --locked, then cargo run --locked --example replay. Expect raw=72 unique=42. That distinction is the thread through this course. There are three input records but only two business commands. Keeping those counts separate will eventually require types, a durable key, an explicit transaction boundary and an HTTP contract. Use cargo check while editing for fast type feedback; use cargo test when you need to know whether the behaviour survived the edit.</p><h3>Choose a feedback loop</h3><p>Start with the fastest command that can answer the question. If your change is to the order constructor&#x27;s signature, cargo check will tell you which callers need updating. If your change is to the order definition&#x27;s range, compile success says little: run the contract and property tests. If your change is to shutdown behaviour, tests that call the router in memory cannot observe the process exiting. Run the executable, start a request, send the appropriate operating-system signal and observe whether the process drains. In each case the costlier check answers a question the cheaper one cannot answer. Keep the command that reproduces a defect alongside the fix.</p><h3>Set up the running example</h3><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a>. The locked project was built and exercised with Rust 1.100.0 on Linux. Install a stable toolchain and a native C toolchain for bundled SQLite. Dependency downloads need a connection on first build. Use a fresh file for the initial run.</p><figure class="code"><figcaption>Shell · from the download directory</figcaption><pre><code>unzip order-intake.zip
-cd order-intake
-cargo test --locked
+<span class="rk">[</span><span class="rk">dev-dependencies</span><span class="rk">]</span>
+<span class="rn">tempfile</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">3</span><span class="rs">"</span>
+<span class="rn">tower</span> <span class="ro">=</span> <span class="ro">{</span> <span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.5</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">features</span> <span class="ro">=</span> <span class="ro">[</span><span class="rs">"</span><span class="rs">util</span><span class="rs">"</span><span class="ro">]</span> <span class="ro">}</span>
+<span class="rn">proptest</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">1</span><span class="rs">"</span>
+</code></pre></figure><p>From the lab directory, run cargo test --locked, then cargo run --locked --example replay. Expect raw=72 unique=42. That distinction is the thread through this course. There are three input records but only two business commands. Keeping those counts separate will eventually require types, a durable key, an explicit transaction boundary and an HTTP contract. Use cargo check while editing for fast type feedback; use cargo test when you need to know whether the behaviour survived the edit.</p><h3>Choose a feedback loop</h3><p>Start with the fastest command that can answer the question. If your change is to the order constructor&#x27;s signature, cargo check will tell you which callers need updating. If your change is to the order definition&#x27;s range, compile success says little: run the contract and property tests. If your change is to shutdown behaviour, tests that call the router in memory cannot observe the process exiting. Run the executable, start a request, send the appropriate operating-system signal and observe whether the process drains. In each case the costlier check answers a question the cheaper one cannot answer. Keep the command that reproduces a defect alongside the fix.</p><h3>Set up the running example</h3><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a>. The locked project was built and exercised with Rust 1.100.0 on Linux. Install a stable toolchain and a native C toolchain for bundled SQLite. Dependency downloads need a connection on first build. Use a fresh file for the initial run.</p><figure class="code"><figcaption>Shell · from the download directory</figcaption><pre><code class="syntax" data-syntax="bash">unzip order-intake.zip
+<span class="rt">cd</span> order-intake
+cargo <span class="rt">test</span> --locked
 cargo run --locked --example replay
 cargo run --locked -- --db orders.sqlite</code></pre></figure><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><section id="series"><h2>Read the series</h2><ol class="chapters"><li><a href="01%20Toolchain%20and%20Cargo.html">Toolchain and Cargo</a></li><li><a href="02%20An%20Input%20to%20a%20Decision.html">An Input to a Decision</a></li><li><a href="03%20Values%20and%20Control%20Flow.html">Values and Control Flow</a></li><li><a href="04%20Ownership%20and%20Borrowing.html">Ownership and Borrowing</a></li><li><a href="05%20Structs%20and%20Invariants.html">Structs and Invariants</a></li><li><a href="06%20Enums%20and%20Exhaustiveness.html">Enums and Exhaustiveness</a></li><li><a href="07%20Modules%20and%20Boundaries.html">Modules and Boundaries</a></li><li><a href="08%20Collections%20and%20Replay.html">Collections and Replay</a></li><li><a href="09%20Errors%20Across%20Boundaries.html">Errors Across Boundaries</a></li><li><a href="10%20Generics%20Traits%20and%20Lifetimes.html">Generics Traits and Lifetimes</a></li><li><a href="11%20Tests%20That%20Protect%20Contracts.html">Tests That Protect Contracts</a></li><li><a href="12%20A%20Command%20Line%20Adapter.html">A Command Line Adapter</a></li><li><a href="13%20Closures%20and%20Iterator%20Pipelines.html">Closures and Iterator Pipelines</a></li><li><a href="14%20Cargo%20for%20a%20Team.html">Cargo for a Team</a></li><li><a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html">Smart Pointers and Shared Ownership</a></li><li><a href="16%20Concurrency%20and%20Admission%20Control.html">Concurrency and Admission Control</a></li><li><a href="17%20Async%20Rust%20and%20Blocking%20Work.html">Async Rust and Blocking Work</a></li><li><a href="18%20State%20and%20Behaviour%20Patterns.html">State and Behaviour Patterns</a></li><li><a href="19%20Patterns%20as%20Decisions.html">Patterns as Decisions</a></li><li><a href="20%20Advanced%20Rust%20and%20Crate%20Boundaries.html">Advanced Rust and Crate Boundaries</a></li><li><a href="21%20A%20Production%20Service%20from%20End%20to%20End.html">A Production Service from End to End</a></li></ol></section><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/cargo/guide/creating-a-new-project.html">doc.rust-lang.org/cargo/guide/creating-a-new-project.html</a></p></section><div class="book"><h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
 <p>Let’s start your Rust journey! There’s a lot to learn, but every journey starts
 somewhere. In this chapter, we’ll discuss:</p>
 <ul>
 <li>Installing Rust on Linux, macOS, and Windows</li>
-<li>Writing a program that prints <code>Hello, world!</code></li>
-<li>Using <code>cargo</code>, Rust’s package manager and build system</li>
+<li>Writing a program that prints <code class="syntax" data-syntax="rust"><span class="rt">Hello</span><span class="ro">,</span> <span class="rn">world</span><span class="ro">!</span></code></li>
+<li>Using <code class="syntax" data-syntax="rust"><span class="rn">cargo</span></code>, Rust’s package manager and build system</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h2 id="installation-1"><a href="#installation-1" class="header">Installation</a></h2>
 <h3 id="installation"><a class="header" href="#installation">Installation</a></h3>
-<p>The first step is to install Rust. We’ll download Rust through <code>rustup</code>, a
+<p>The first step is to install Rust. We’ll download Rust through <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code>, a
 command line tool for managing Rust versions and associated tools. You’ll need
 an internet connection for the download.</p>
 <section class="note" aria-role="note">
-<p>Note: If you prefer not to use <code>rustup</code> for some reason, please see the
+<p>Note: If you prefer not to use <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code> for some reason, please see the
 <a href="https://forge.rust-lang.org/infra/other-installation-methods.html">Other Rust Installation Methods page</a> for more options.</p>
 </section>
 <p>The following steps install the latest stable version of the Rust compiler.
@@ -221,20 +228,20 @@ these steps should work as expected with the content of this book.</p>
 <section class="note" aria-role="note">
 <h4 id="command-line-notation"><a class="header" href="#command-line-notation">Command Line Notation</a></h4>
 <p>In this chapter and throughout the book, we’ll show some commands used in the
-terminal. Lines that you should enter in a terminal all start with <code>$</code>. You
-don’t need to type the <code>$</code> character; it’s the command line prompt shown to
-indicate the start of each command. Lines that don’t start with <code>$</code> typically
+terminal. Lines that you should enter in a terminal all start with <code class="syntax" data-syntax="rust"><span class="rc">$</span></code>. You
+don’t need to type the <code class="syntax" data-syntax="rust"><span class="rc">$</span></code> character; it’s the command line prompt shown to
+indicate the start of each command. Lines that don’t start with <code class="syntax" data-syntax="rust"><span class="rc">$</span></code> typically
 show the output of the previous command. Additionally, PowerShell-specific
-examples will use <code>&gt;</code> rather than <code>$</code>.</p>
+examples will use <code class="syntax" data-syntax="rust"><span class="ro">&gt;</span></code> rather than <code class="syntax" data-syntax="rust"><span class="rc">$</span></code>.</p>
 </section>
-<h4 id="installing-rustup-on-linux-or-macos"><a class="header" href="#installing-rustup-on-linux-or-macos">Installing <code>rustup</code> on Linux or macOS</a></h4>
+<h4 id="installing-rustup-on-linux-or-macos"><a class="header" href="#installing-rustup-on-linux-or-macos">Installing <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code> on Linux or macOS</a></h4>
 <p>If you’re using Linux or macOS, open a terminal and enter the following command:</p>
-<pre><code class="language-console">$ curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>curl --proto <span class="rs">'=https'</span> --tlsv1.2 https://sh.rustup.rs -sSf <span class="ro">|</span> sh
 </code></pre>
-<p>The command downloads a script and starts the installation of the <code>rustup</code>
+<p>The command downloads a script and starts the installation of the <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code>
 tool, which installs the latest stable version of Rust. You might be prompted
 for your password. If the install is successful, the following line will appear:</p>
-<pre><code class="language-text">Rust is installed now. Great!
+<pre><code class="language-text syntax" data-syntax="output">Rust is installed now. Great!
 </code></pre>
 <p>You will also need a <em>linker</em>, which is a program that Rust uses to join its
 compiled outputs into one file. It is likely you already have one. If you get
@@ -242,12 +249,12 @@ linker errors, you should install a C compiler, which will typically include a
 linker. A C compiler is also useful because some common Rust packages depend on
 C code and will need a C compiler.</p>
 <p>On macOS, you can get a C compiler by running:</p>
-<pre><code class="language-console">$ xcode-select --install
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>xcode-select --install
 </code></pre>
 <p>Linux users should generally install GCC or Clang, according to their
 distribution’s documentation. For example, if you use Ubuntu, you can install
-the <code>build-essential</code> package.</p>
-<h4 id="installing-rustup-on-windows"><a class="header" href="#installing-rustup-on-windows">Installing <code>rustup</code> on Windows</a></h4>
+the <code class="syntax" data-syntax="rust"><span class="rn">build</span><span class="ro">-</span><span class="rn">essential</span></code> package.</p>
+<h4 id="installing-rustup-on-windows"><a class="header" href="#installing-rustup-on-windows">Installing <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code> on Windows</a></h4>
 <p>On Windows, go to <a href="https://www.rust-lang.org/tools/install">https://www.rust-lang.org/tools/install</a><!-- ignore
 --> and follow the instructions for installing Rust. At some point in the
 installation, you’ll be prompted to install Visual Studio. This provides a
@@ -260,41 +267,41 @@ If there are specific differences, we’ll explain which to use.</p>
 <h4 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h4>
 <p>To check whether you have Rust installed correctly, open a shell and enter this
 line:</p>
-<pre><code class="language-console">$ rustc --version
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>rustc --version
 </code></pre>
 <p>You should see the version number, commit hash, and commit date for the latest
 stable version that has been released, in the following format:</p>
-<pre><code class="language-text">rustc x.y.z (abcabcabc yyyy-mm-dd)
+<pre><code class="language-text syntax" data-syntax="output">rustc x.y.z (abcabcabc yyyy-mm-dd)
 </code></pre>
 <p>If you see this information, you have installed Rust successfully! If you don’t
-see this information, check that Rust is in your <code>%PATH%</code> system variable as
+see this information, check that Rust is in your <code class="syntax" data-syntax="rust"><span class="ro">%</span><span class="rt">PATH</span><span class="ro">%</span></code> system variable as
 follows.</p>
 <p>In Windows CMD, use:</p>
-<pre><code class="language-console">&gt; echo %PATH%
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">&gt; </span><span class="rt">echo</span> %PATH%
 </code></pre>
 <p>In PowerShell, use:</p>
-<pre><code class="language-powershell">&gt; echo $env:Path
+<pre><code class="language-powershell syntax" data-syntax="powershell-session"><span class="rk">&gt; </span><span class="rt">echo </span><span class="rn">$env:Path</span>
 </code></pre>
 <p>In Linux and macOS, use:</p>
-<pre><code class="language-console">$ echo $PATH
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span><span class="rt">echo</span> <span class="rn">$PATH</span>
 </code></pre>
 <p>If that’s all correct and Rust still isn’t working, there are a number of
 places you can get help. Find out how to get in touch with other Rustaceans (a
 silly nickname we call ourselves) on <a href="https://www.rust-lang.org/community">the community page</a>.</p>
 <h4 id="updating-and-uninstalling"><a class="header" href="#updating-and-uninstalling">Updating and Uninstalling</a></h4>
-<p>Once Rust is installed via <code>rustup</code>, updating to a newly released version is
+<p>Once Rust is installed via <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code>, updating to a newly released version is
 easy. From your shell, run the following update script:</p>
-<pre><code class="language-console">$ rustup update
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>rustup update
 </code></pre>
-<p>To uninstall Rust and <code>rustup</code>, run the following uninstall script from your
+<p>To uninstall Rust and <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code>, run the following uninstall script from your
 shell:</p>
-<pre><code class="language-console">$ rustup self uninstall
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>rustup self uninstall
 </code></pre>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="local-documentation"></a></p>
 <h4 id="reading-the-local-documentation"><a class="header" href="#reading-the-local-documentation">Reading the Local Documentation</a></h4>
 <p>The installation of Rust also includes a local copy of the documentation so
-that you can read it offline. Run <code>rustup doc</code> to open the local documentation
+that you can read it offline. Run <code class="syntax" data-syntax="bash">rustup doc</code> to open the local documentation
 in your browser.</p>
 <p>Any time a type or function is provided by the standard library and you’re not
 sure what it does or how to use it, use the application programming interface
@@ -312,7 +319,7 @@ page</a> on the Rust website.</p>
 work through those examples, you will either need to have an internet connection
 or to have downloaded those dependencies ahead of time. To download the
 dependencies ahead of time, you can run the following commands. (We’ll explain
-what <code>cargo</code> is and what each of these commands does in detail later.)</p>
+what <code class="syntax" data-syntax="rust"><span class="rn">cargo</span></code> is and what each of these commands does in detail later.)</p>
 <!-- When updating the version of `rand` used, also update the version of
 `rand` used in these files so they all match:
 
@@ -320,28 +327,28 @@ what <code>cargo</code> is and what each of these commands does in detail later.
 * ch07-04-bringing-paths-into-scope-with-the-use-keyword.md
 * ch14-03-cargo-workspaces.md
 -->
-<pre><code class="language-console">$ cargo new get-dependencies
-$ cd get-dependencies
-$ cargo add rand@0.10.1 trpl@0.2.0
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo new get-dependencies
+<span class="rk">$ </span><span class="rt">cd</span> get-dependencies
+<span class="rk">$ </span>cargo add rand@0.10.1 trpl@0.2.0
 </code></pre>
 <p>This will cache the downloads for these packages so you will not need to
 download them later. Once you have run this command, you do not need to keep the
-<code>get-dependencies</code> folder. If you have run this command, you can use the
-<code>--offline</code> flag with all <code>cargo</code> commands in the rest of the book to use these
+<code class="syntax" data-syntax="rust"><span class="rn">get</span><span class="ro">-</span><span class="rn">dependencies</span></code> folder. If you have run this command, you can use the
+<code class="syntax" data-syntax="rust"><span class="ro">-</span><span class="ro">-</span><span class="rn">offline</span></code> flag with all <code class="syntax" data-syntax="rust"><span class="rn">cargo</span></code> commands in the rest of the book to use these
 cached versions instead of attempting to use the network.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h2 id="hello-world-1"><a href="#hello-world-1" class="header">Hello, World!</a></h2>
 <h3 id="hello-world"><a class="header" href="#hello-world">Hello, World!</a></h3>
 <p>Now that you’ve installed Rust, it’s time to write your first Rust program.
 It’s traditional when learning a new language to write a little program that
-prints the text <code>Hello, world!</code> to the screen, so we’ll do the same here!</p>
+prints the text <code class="syntax" data-syntax="rust"><span class="rt">Hello</span><span class="ro">,</span> <span class="rn">world</span><span class="ro">!</span></code> to the screen, so we’ll do the same here!</p>
 <section class="note" aria-role="note">
 <p>Note: This book assumes basic familiarity with the command line. Rust makes
 no specific demands about your editing or tooling or where your code lives, so
 if you prefer to use an IDE instead of the command line, feel free to use your
 favorite IDE. Many IDEs now have some degree of Rust support; check the IDE’s
 documentation for details. The Rust team has been focusing on enabling great
-IDE support via <code>rust-analyzer</code>. See <a href="https://doc.rust-lang.org/stable/book/print.html#d---useful-development-tools">Appendix D</a><!-- ignore -->
+IDE support via <code class="syntax" data-syntax="rust"><span class="rn">rust</span><span class="ro">-</span><span class="rn">analyzer</span></code>. See <a href="https://doc.rust-lang.org/stable/book/print.html#d---useful-development-tools">Appendix D</a><!-- ignore -->
 for more details.</p>
 </section>
 <!-- Old headings. Do not remove or links may break. -->
@@ -354,16 +361,16 @@ your projects there.</p>
 <p>Open a terminal and enter the following commands to make a <em>projects</em> directory
 and a directory for the “Hello, world!” project within the <em>projects</em> directory.</p>
 <p>For Linux, macOS, and PowerShell on Windows, enter this:</p>
-<pre><code class="language-console">$ mkdir ~/projects
-$ cd ~/projects
-$ mkdir hello_world
-$ cd hello_world
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>mkdir ~/projects
+<span class="rk">$ </span><span class="rt">cd</span> ~/projects
+<span class="rk">$ </span>mkdir hello_world
+<span class="rk">$ </span><span class="rt">cd</span> hello_world
 </code></pre>
 <p>For Windows CMD, enter this:</p>
-<pre><code class="language-cmd">&gt; mkdir "%USERPROFILE%\projects"
-&gt; cd /d "%USERPROFILE%\projects"
-&gt; mkdir hello_world
-&gt; cd hello_world
+<pre><code class="language-cmd syntax" data-syntax="cmd-session"><span class="rk">&gt; </span><span class="rk">mkdir</span> <span class="rs">"</span><span class="rn">%USERPROFILE%</span><span class="rs">\projects</span><span class="rs">"</span>
+<span class="rk">&gt; </span><span class="rk">cd</span> /d <span class="rs">"</span><span class="rn">%USERPROFILE%</span><span class="rs">\projects</span><span class="rs">"</span>
+<span class="rk">&gt; </span><span class="rk">mkdir</span> hello_world
+<span class="rk">&gt; </span><span class="rk">cd</span> hello_world
 </code></pre>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="writing-and-running-a-rust-program"></a></p>
@@ -375,68 +382,68 @@ convention is to use an underscore to separate them. For example, use
 <p>Now open the <em>main.rs</em> file you just created and enter the code in Listing 1-1.</p>
 <figure class="listing" id="listing-1-1">
 <span class="file-name">Filename: main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    println!("Hello, world!");
-}</code></pre>
-<figcaption><a href="#listing-1-1">Listing 1-1</a>: A program that prints <code>Hello, world!</code></figcaption>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Hello, world!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-1-1">Listing 1-1</a>: A program that prints <code class="syntax" data-syntax="rust"><span class="rt">Hello</span><span class="ro">,</span> <span class="rn">world</span><span class="ro">!</span></code></figcaption>
 </figure>
 <p>Save the file and go back to your terminal window in the
 <em>~/projects/hello_world</em> directory. On Linux or macOS, enter the following
 commands to compile and run the file:</p>
-<pre><code class="language-console">$ rustc main.rs
-$ ./main
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>rustc main.rs
+<span class="rk">$ </span>./main
 Hello, world!
 </code></pre>
-<p>On Windows, enter the command <code>.\main</code> instead of <code>./main</code>:</p>
-<pre><code class="language-powershell">&gt; rustc main.rs
-&gt; .\main
+<p>On Windows, enter the command <code class="syntax" data-syntax="rust"><span class="ro">.</span>\<span class="rn">main</span></code> instead of <code class="syntax" data-syntax="rust"><span class="ro">.</span><span class="ro">/</span><span class="rn">main</span></code>:</p>
+<pre><code class="language-powershell syntax" data-syntax="powershell-session"><span class="rk">&gt; </span><span class="rn">rustc</span> <span class="rn">main</span><span class="ro">.</span><span class="rn">rs</span>
+<span class="rk">&gt; </span><span class="ro">.</span><span class="ro">\</span><span class="rn">main</span>
 Hello, world!
 </code></pre>
-<p>Regardless of your operating system, the string <code>Hello, world!</code> should print to
+<p>Regardless of your operating system, the string <code class="syntax" data-syntax="rust"><span class="rt">Hello</span><span class="ro">,</span> <span class="rn">world</span><span class="ro">!</span></code> should print to
 the terminal. If you don’t see this output, refer back to the
 <a href="#troubleshooting">“Troubleshooting”</a><!-- ignore --> part of the Installation
 section for ways to get help.</p>
-<p>If <code>Hello, world!</code> did print, congratulations! You’ve officially written a Rust
+<p>If <code class="syntax" data-syntax="rust"><span class="rt">Hello</span><span class="ro">,</span> <span class="rn">world</span><span class="ro">!</span></code> did print, congratulations! You’ve officially written a Rust
 program. That makes you a Rust programmer—welcome!</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="anatomy-of-a-rust-program"></a></p>
 <h4 id="the-anatomy-of-a-rust-program"><a class="header" href="#the-anatomy-of-a-rust-program">The Anatomy of a Rust Program</a></h4>
 <p>Let’s review this “Hello, world!” program in detail. Here’s the first piece of
 the puzzle:</p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
 
-}</code></pre>
-<p>These lines define a function named <code>main</code>. The <code>main</code> function is special: It
+<span class="ro">}</span></code></pre>
+<p>These lines define a function named <code class="syntax" data-syntax="rust"><span class="rn">main</span></code>. The <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function is special: It
 is always the first code that runs in every executable Rust program. Here, the
-first line declares a function named <code>main</code> that has no parameters and returns
-nothing. If there were parameters, they would go inside the parentheses (<code>()</code>).</p>
-<p>The function body is wrapped in <code>{}</code>. Rust requires curly brackets around all
+first line declares a function named <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> that has no parameters and returns
+nothing. If there were parameters, they would go inside the parentheses (<code class="syntax" data-syntax="rust"><span class="ro">(</span><span class="ro">)</span></code>).</p>
+<p>The function body is wrapped in <code class="syntax" data-syntax="rust"><span class="ro">{</span><span class="ro">}</span></code>. Rust requires curly brackets around all
 function bodies. It’s good style to place the opening curly bracket on the same
 line as the function declaration, adding one space in between.</p>
 <section class="note" aria-role="note">
 <p>Note: If you want to stick to a standard style across Rust projects, you can
-use an automatic formatter tool called <code>rustfmt</code> to format your code in a
-particular style (more on <code>rustfmt</code> in
+use an automatic formatter tool called <code class="syntax" data-syntax="rust"><span class="rn">rustfmt</span></code> to format your code in a
+particular style (more on <code class="syntax" data-syntax="rust"><span class="rn">rustfmt</span></code> in
 <a href="https://doc.rust-lang.org/stable/book/print.html#d---useful-development-tools">Appendix D</a><!-- ignore -->). The Rust team has included this tool
-with the standard Rust distribution, as <code>rustc</code> is, so it should already be
+with the standard Rust distribution, as <code class="syntax" data-syntax="rust"><span class="rn">rustc</span></code> is, so it should already be
 installed on your computer!</p>
 </section>
-<p>The body of the <code>main</code> function holds the following code:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>println!("Hello, world!");
-<span class="boring">}</span></code></pre>
+<p>The body of the <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function holds the following code:</p>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Hello, world!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
 <p>This line does all the work in this little program: It prints text to the
 screen. There are three important details to notice here.</p>
-<p>First, <code>println!</code> calls a Rust macro. If it had called a function instead, it
-would be entered as <code>println</code> (without the <code>!</code>). Rust macros are a way to write
+<p>First, <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code> calls a Rust macro. If it had called a function instead, it
+would be entered as <code class="syntax" data-syntax="rust"><span class="rn">println</span></code> (without the <code class="syntax" data-syntax="rust"><span class="ro">!</span></code>). Rust macros are a way to write
 code that generates code to extend Rust syntax, and we’ll discuss them in more
 detail in <a href="20%20Advanced%20Rust%20and%20Crate%20Boundaries.html#macros-1">Chapter 20</a><!-- ignore -->. For now, you just need to
-know that using a <code>!</code> means that you’re calling a macro instead of a normal
+know that using a <code class="syntax" data-syntax="rust"><span class="ro">!</span></code> means that you’re calling a macro instead of a normal
 function and that macros don’t always follow the same rules as functions.</p>
-<p>Second, you see the <code>"Hello, world!"</code> string. We pass this string as an argument
-to <code>println!</code>, and the string is printed to the screen.</p>
-<p>Third, we end the line with a semicolon (<code>;</code>), which indicates that this
+<p>Second, you see the <code class="syntax" data-syntax="rust"><span class="rs">"</span><span class="rs">Hello, world!</span><span class="rs">"</span></code> string. We pass this string as an argument
+to <code class="syntax" data-syntax="rust"><span class="rf">println!</span></code>, and the string is printed to the screen.</p>
+<p>Third, we end the line with a semicolon (<code class="syntax" data-syntax="rust"><span class="ro">;</span></code>), which indicates that this
 expression is over, and the next one is ready to begin. Most lines of Rust code
 end with a semicolon.</p>
 <!-- Old headings. Do not remove or links may break. -->
@@ -445,21 +452,21 @@ end with a semicolon.</p>
 <p>You’ve just run a newly created program, so let’s examine each step in the
 process.</p>
 <p>Before running a Rust program, you must compile it using the Rust compiler by
-entering the <code>rustc</code> command and passing it the name of your source file, like
+entering the <code class="syntax" data-syntax="rust"><span class="rn">rustc</span></code> command and passing it the name of your source file, like
 this:</p>
-<pre><code class="language-console">$ rustc main.rs
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>rustc main.rs
 </code></pre>
-<p>If you have a C or C++ background, you’ll notice that this is similar to <code>gcc</code>
-or <code>clang</code>. After compiling successfully, Rust outputs a binary executable.</p>
+<p>If you have a C or C++ background, you’ll notice that this is similar to <code class="syntax" data-syntax="rust"><span class="rn">gcc</span></code>
+or <code class="syntax" data-syntax="rust"><span class="rn">clang</span></code>. After compiling successfully, Rust outputs a binary executable.</p>
 <p>On Linux, macOS, and PowerShell on Windows, you can see the executable by
-entering the <code>ls</code> command in your shell:</p>
-<pre><code class="language-console">$ ls
+entering the <code class="syntax" data-syntax="rust"><span class="rn">ls</span></code> command in your shell:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>ls
 main  main.rs
 </code></pre>
 <p>On Linux and macOS, you’ll see two files. With PowerShell on Windows, you’ll
 see the same three files that you would see using CMD. With CMD on Windows, you
 would enter the following:</p>
-<pre><code class="language-cmd">&gt; dir /B %= the /B option says to only show the file names =%
+<pre><code class="language-cmd syntax" data-syntax="cmd-session"><span class="rk">&gt; </span><span class="rk">dir</span> /B <span class="rn">%= the /B option says to only show the file names =%</span>
 main.exe
 main.pdb
 main.rs
@@ -468,9 +475,9 @@ main.rs
 (<em>main.exe</em> on Windows, but <em>main</em> on all other platforms), and, when using
 Windows, a file containing debugging information with the <em>.pdb</em> extension.
 From here, you run the <em>main</em> or <em>main.exe</em> file, like this:</p>
-<pre><code class="language-console">$ ./main # or .\main on Windows
-</code></pre>
-<p>If your <em>main.rs</em> is your “Hello, world!” program, this line prints <code>Hello, world!</code> to your terminal.</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>./main <span class="rc"># or .\main on Windows
+</span></code></pre>
+<p>If your <em>main.rs</em> is your “Hello, world!” program, this line prints <code class="syntax" data-syntax="rust"><span class="rt">Hello</span><span class="ro">,</span> <span class="rn">world</span><span class="ro">!</span></code> to your terminal.</p>
 <p>If you’re more familiar with a dynamic language, such as Ruby, Python, or
 JavaScript, you might not be used to compiling and running a program as
 separate steps. Rust is an <em>ahead-of-time compiled</em> language, meaning you can
@@ -479,7 +486,7 @@ even without having Rust installed. If you give someone a <em>.rb</em>, <em>.py<
 <em>.js</em> file, they need to have a Ruby, Python, or JavaScript implementation
 installed (respectively). But in those languages, you only need one command to
 compile and run your program. Everything is a trade-off in language design.</p>
-<p>Just compiling with <code>rustc</code> is fine for simple programs, but as your project
+<p>Just compiling with <code class="syntax" data-syntax="rust"><span class="rn">rustc</span></code> is fine for simple programs, but as your project
 grows, you’ll want to manage all the options and make it easy to share your
 code. Next, we’ll introduce you to the Cargo tool, which will help you write
 real-world Rust programs.</p>
@@ -502,17 +509,17 @@ used the official installers discussed in the
 <a href="#installation">“Installation”</a><!-- ignore --> section. If you installed Rust
 through some other means, check whether Cargo is installed by entering the
 following in your terminal:</p>
-<pre><code class="language-console">$ cargo --version
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo --version
 </code></pre>
-<p>If you see a version number, you have it! If you see an error, such as <code>command not found</code>, look at the documentation for your method of installation to
+<p>If you see a version number, you have it! If you see an error, such as <code class="syntax" data-syntax="rust"><span class="rn">command</span> <span class="rn">not</span> <span class="rn">found</span></code>, look at the documentation for your method of installation to
 determine how to install Cargo separately.</p>
 <h4 id="creating-a-project-with-cargo"><a class="header" href="#creating-a-project-with-cargo">Creating a Project with Cargo</a></h4>
 <p>Let’s create a new project using Cargo and look at how it differs from our
 original “Hello, world!” project. Navigate back to your <em>projects</em> directory
 (or wherever you decided to store your code). Then, on any operating system,
 run the following:</p>
-<pre><code class="language-console">$ cargo new hello_cargo
-$ cd hello_cargo
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo new hello_cargo
+<span class="rk">$ </span><span class="rt">cd</span> hello_cargo
 </code></pre>
 <p>The first command creates a new directory and project called <em>hello_cargo</em>.
 We’ve named our project <em>hello_cargo</em>, and Cargo creates its files in a
@@ -521,43 +528,43 @@ directory of the same name.</p>
 has generated two files and one directory for us: a <em>Cargo.toml</em> file and a
 <em>src</em> directory with a <em>main.rs</em> file inside.</p>
 <p>It has also initialized a new Git repository along with a <em>.gitignore</em> file.
-Git files won’t be generated if you run <code>cargo new</code> within an existing Git
-repository; you can override this behavior by using <code>cargo new --vcs=git</code>.</p>
+Git files won’t be generated if you run <code class="syntax" data-syntax="bash">cargo new</code> within an existing Git
+repository; you can override this behavior by using <code class="syntax" data-syntax="bash">cargo new --vcs<span class="ro">=</span>git</code>.</p>
 <section class="note" aria-role="note">
-<p>Note: Git is a common version control system. You can change <code>cargo new</code> to
+<p>Note: Git is a common version control system. You can change <code class="syntax" data-syntax="bash">cargo new</code> to
 use a different version control system or no version control system by using
-the <code>--vcs</code> flag. Run <code>cargo new --help</code> to see the available options.</p>
+the <code class="syntax" data-syntax="rust"><span class="ro">-</span><span class="ro">-</span><span class="rn">vcs</span></code> flag. Run <code class="syntax" data-syntax="bash">cargo new --help</code> to see the available options.</p>
 </section>
 <p>Open <em>Cargo.toml</em> in your text editor of choice. It should look similar to the
 code in Listing 1-2.</p>
 <figure class="listing" id="listing-1-2">
 <span class="file-name">Filename: Cargo.toml</span>
-<pre><code class="language-toml">[package]
-name = "hello_cargo"
-version = "0.1.0"
-edition = "2024"
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rk">[</span><span class="rk">package</span><span class="rk">]</span>
+<span class="rn">name</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">hello_cargo</span><span class="rs">"</span>
+<span class="rn">version</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.1.0</span><span class="rs">"</span>
+<span class="rn">edition</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">2024</span><span class="rs">"</span>
 
-[dependencies]
+<span class="rk">[</span><span class="rk">dependencies</span><span class="rk">]</span>
 </code></pre>
-<figcaption><a href="#listing-1-2">Listing 1-2</a>: Contents of <em>Cargo.toml</em> generated by <code>cargo new</code></figcaption>
+<figcaption><a href="#listing-1-2">Listing 1-2</a>: Contents of <em>Cargo.toml</em> generated by <code class="syntax" data-syntax="bash">cargo new</code></figcaption>
 </figure>
 <p>This file is in the <a href="https://toml.io"><em>TOML</em></a><!-- ignore --> (<em>Tom’s Obvious, Minimal
 Language</em>) format, which is Cargo’s configuration format.</p>
-<p>The first line, <code>[package]</code>, is a section heading that indicates that the
+<p>The first line, <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">package</span><span class="ro">]</span></code>, is a section heading that indicates that the
 following statements are configuring a package. As we add more information to
 this file, we’ll add other sections.</p>
 <p>The next three lines set the configuration information Cargo needs to compile
 your program: the name, the version, and the edition of Rust to use. We’ll talk
-about the <code>edition</code> key in <a href="https://doc.rust-lang.org/stable/book/print.html#e---editions">Appendix E</a><!-- ignore -->.</p>
-<p>The last line, <code>[dependencies]</code>, is the start of a section for you to list any
+about the <code class="syntax" data-syntax="rust"><span class="rn">edition</span></code> key in <a href="https://doc.rust-lang.org/stable/book/print.html#e---editions">Appendix E</a><!-- ignore -->.</p>
+<p>The last line, <code class="syntax" data-syntax="rust"><span class="ro">[</span><span class="rn">dependencies</span><span class="ro">]</span></code>, is the start of a section for you to list any
 of your project’s dependencies. In Rust, packages of code are referred to as
 <em>crates</em>. We won’t need any other crates for this project, but we will in the
 first project in Chapter 2, so we’ll use this dependencies section then.</p>
 <p>Now open <em>src/main.rs</em> and take a look:</p>
 <p><span class="filename">Filename: src/main.rs</span></p>
-<pre class="playground"><code class="language-rust edition2024">fn main() {
-    println!("Hello, world!");
-}</code></pre>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Hello, world!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <p>Cargo has generated a “Hello, world!” program for you, just like the one we
 wrote in Listing 1-1! So far, the differences between our project and the
 project Cargo generated are that Cargo placed the code in the <em>src</em> directory,
@@ -570,68 +577,68 @@ everything is in its place.</p>
 <p>If you started a project that doesn’t use Cargo, as we did with the “Hello,
 world!” project, you can convert it to a project that does use Cargo. Move the
 project code into the <em>src</em> directory and create an appropriate <em>Cargo.toml</em>
-file. One easy way to get that <em>Cargo.toml</em> file is to run <code>cargo init</code>, which
+file. One easy way to get that <em>Cargo.toml</em> file is to run <code class="syntax" data-syntax="bash">cargo init</code>, which
 will create it for you automatically.</p>
 <h4 id="building-and-running-a-cargo-project"><a class="header" href="#building-and-running-a-cargo-project">Building and Running a Cargo Project</a></h4>
 <p>Now let’s look at what’s different when we build and run the “Hello, world!”
 program with Cargo! From your <em>hello_cargo</em> directory, build your project by
 entering the following command:</p>
-<pre><code class="language-console">$ cargo build
-   Compiling hello_cargo v0.1.0 (file:///projects/hello_cargo)
-    Finished dev [unoptimized + debuginfo] target(s) in 2.85 secs
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">   Compiling</span> hello_cargo v0.<span class="ri">1.0</span> (file:///projects/hello_cargo)
+<span class="rk">    Finished</span> dev [unoptimized + debuginfo] target(s) in <span class="ri">2.85</span> secs
 </code></pre>
 <p>This command creates an executable file in <em>target/debug/hello_cargo</em> (or
 <em>target\debug\hello_cargo.exe</em> on Windows) rather than in your current
 directory. Because the default build is a debug build, Cargo puts the binary in
 a directory named <em>debug</em>. You can run the executable with this command:</p>
-<pre><code class="language-console">$ ./target/debug/hello_cargo # or .\target\debug\hello_cargo.exe on Windows
-Hello, world!
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>./target/debug/hello_cargo <span class="rc"># or .\target\debug\hello_cargo.exe on Windows
+</span>Hello, world!
 </code></pre>
-<p>If all goes well, <code>Hello, world!</code> should print to the terminal. Running <code>cargo build</code> for the first time also causes Cargo to create a new file at the top
+<p>If all goes well, <code class="syntax" data-syntax="rust"><span class="rt">Hello</span><span class="ro">,</span> <span class="rn">world</span><span class="ro">!</span></code> should print to the terminal. Running <code class="syntax" data-syntax="bash">cargo build</code> for the first time also causes Cargo to create a new file at the top
 level: <em>Cargo.lock</em>. This file keeps track of the exact versions of
 dependencies in your project. This project doesn’t have dependencies, so the
 file is a bit sparse. You won’t ever need to change this file manually; Cargo
 manages its contents for you.</p>
-<p>We just built a project with <code>cargo build</code> and ran it with
-<code>./target/debug/hello_cargo</code>, but we can also use <code>cargo run</code> to compile the
+<p>We just built a project with <code class="syntax" data-syntax="bash">cargo build</code> and ran it with
+<code class="syntax" data-syntax="rust"><span class="ro">.</span><span class="ro">/</span><span class="rn">target</span><span class="ro">/</span><span class="rn">debug</span><span class="ro">/</span><span class="rn">hello_cargo</span></code>, but we can also use <code class="syntax" data-syntax="bash">cargo run</code> to compile the
 code and then run the resultant executable all in one command:</p>
-<pre><code class="language-console">$ cargo run
-    Finished dev [unoptimized + debuginfo] target(s) in 0.0 secs
-     Running `target/debug/hello_cargo`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">    Finished</span> dev [unoptimized + debuginfo] target(s) in <span class="ri">0.0</span> secs
+<span class="rk">     Running</span> <span class="rs">`target/debug/hello_cargo`</span>
 Hello, world!
 </code></pre>
-<p>Using <code>cargo run</code> is more convenient than having to remember to run <code>cargo build</code> and then use the whole path to the binary, so most developers use <code>cargo run</code>.</p>
+<p>Using <code class="syntax" data-syntax="bash">cargo run</code> is more convenient than having to remember to run <code class="syntax" data-syntax="bash">cargo build</code> and then use the whole path to the binary, so most developers use <code class="syntax" data-syntax="bash">cargo run</code>.</p>
 <p>Notice that this time we didn’t see output indicating that Cargo was compiling
-<code>hello_cargo</code>. Cargo figured out that the files hadn’t changed, so it didn’t
+<code class="syntax" data-syntax="rust"><span class="rn">hello_cargo</span></code>. Cargo figured out that the files hadn’t changed, so it didn’t
 rebuild but just ran the binary. If you had modified your source code, Cargo
 would have rebuilt the project before running it, and you would have seen this
 output:</p>
-<pre><code class="language-console">$ cargo run
-   Compiling hello_cargo v0.1.0 (file:///projects/hello_cargo)
-    Finished dev [unoptimized + debuginfo] target(s) in 0.33 secs
-     Running `target/debug/hello_cargo`
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo run
+<span class="rk">   Compiling</span> hello_cargo v0.<span class="ri">1.0</span> (file:///projects/hello_cargo)
+<span class="rk">    Finished</span> dev [unoptimized + debuginfo] target(s) in <span class="ri">0.33</span> secs
+<span class="rk">     Running</span> <span class="rs">`target/debug/hello_cargo`</span>
 Hello, world!
 </code></pre>
-<p>Cargo also provides a command called <code>cargo check</code>. This command quickly checks
+<p>Cargo also provides a command called <code class="syntax" data-syntax="bash">cargo check</code>. This command quickly checks
 your code to make sure it compiles but doesn’t produce an executable:</p>
-<pre><code class="language-console">$ cargo check
-   Checking hello_cargo v0.1.0 (file:///projects/hello_cargo)
-    Finished dev [unoptimized + debuginfo] target(s) in 0.32 secs
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo check
+<span class="rk">   Checking</span> hello_cargo v0.<span class="ri">1.0</span> (file:///projects/hello_cargo)
+<span class="rk">    Finished</span> dev [unoptimized + debuginfo] target(s) in <span class="ri">0.32</span> secs
 </code></pre>
-<p>Why would you not want an executable? Often, <code>cargo check</code> is much faster than
-<code>cargo build</code> because it skips the step of producing an executable. If you’re
-continually checking your work while writing the code, using <code>cargo check</code> will
+<p>Why would you not want an executable? Often, <code class="syntax" data-syntax="bash">cargo check</code> is much faster than
+<code class="syntax" data-syntax="bash">cargo build</code> because it skips the step of producing an executable. If you’re
+continually checking your work while writing the code, using <code class="syntax" data-syntax="bash">cargo check</code> will
 speed up the process of letting you know if your project is still compiling! As
-such, many Rustaceans run <code>cargo check</code> periodically as they write their
-program to make sure it compiles. Then, they run <code>cargo build</code> when they’re
+such, many Rustaceans run <code class="syntax" data-syntax="bash">cargo check</code> periodically as they write their
+program to make sure it compiles. Then, they run <code class="syntax" data-syntax="bash">cargo build</code> when they’re
 ready to use the executable.</p>
 <p>Let’s recap what we’ve learned so far about Cargo:</p>
 <ul>
-<li>We can create a project using <code>cargo new</code>.</li>
-<li>We can build a project using <code>cargo build</code>.</li>
-<li>We can build and run a project in one step using <code>cargo run</code>.</li>
+<li>We can create a project using <code class="syntax" data-syntax="bash">cargo new</code>.</li>
+<li>We can build a project using <code class="syntax" data-syntax="bash">cargo build</code>.</li>
+<li>We can build and run a project in one step using <code class="syntax" data-syntax="bash">cargo run</code>.</li>
 <li>We can build a project without producing a binary to check for errors using
-<code>cargo check</code>.</li>
+<code class="syntax" data-syntax="bash">cargo check</code>.</li>
 <li>Instead of saving the result of the build in the same directory as our code,
 Cargo stores it in the <em>target/debug</em> directory.</li>
 </ul>
@@ -639,39 +646,39 @@ Cargo stores it in the <em>target/debug</em> directory.</li>
 matter which operating system you’re working on. So, at this point, we’ll no
 longer provide specific instructions for Linux and macOS versus Windows.</p>
 <h4 id="building-for-release"><a class="header" href="#building-for-release">Building for Release</a></h4>
-<p>When your project is finally ready for release, you can use <code>cargo build --release</code> to compile it with optimizations. This command will create an
+<p>When your project is finally ready for release, you can use <code class="syntax" data-syntax="bash">cargo build --release</code> to compile it with optimizations. This command will create an
 executable in <em>target/release</em> instead of <em>target/debug</em>. The optimizations
 make your Rust code run faster, but turning them on lengthens the time it takes
 for your program to compile. This is why there are two different profiles: one
 for development, when you want to rebuild quickly and often, and another for
 building the final program you’ll give to a user that won’t be rebuilt
 repeatedly and that will run as fast as possible. If you’re benchmarking your
-code’s running time, be sure to run <code>cargo build --release</code> and benchmark with
+code’s running time, be sure to run <code class="syntax" data-syntax="bash">cargo build --release</code> and benchmark with
 the executable in <em>target/release</em>.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="cargo-as-convention"></a></p>
 <h4 id="leveraging-cargos-conventions"><a class="header" href="#leveraging-cargos-conventions">Leveraging Cargo’s Conventions</a></h4>
 <p>With simple projects, Cargo doesn’t provide a lot of value over just using
-<code>rustc</code>, but it will prove its worth as your programs become more intricate.
+<code class="syntax" data-syntax="rust"><span class="rn">rustc</span></code>, but it will prove its worth as your programs become more intricate.
 Once programs grow to multiple files or need a dependency, it’s much easier to
 let Cargo coordinate the build.</p>
-<p>Even though the <code>hello_cargo</code> project is simple, it now uses much of the real
+<p>Even though the <code class="syntax" data-syntax="rust"><span class="rn">hello_cargo</span></code> project is simple, it now uses much of the real
 tooling you’ll use in the rest of your Rust career. In fact, to work on any
 existing projects, you can use the following commands to check out the code
 using Git, change to that project’s directory, and build:</p>
-<pre><code class="language-console">$ git clone example.org/someproject
-$ cd someproject
-$ cargo build
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>git clone example.org/someproject
+<span class="rk">$ </span><span class="rt">cd</span> someproject
+<span class="rk">$ </span>cargo build
 </code></pre>
 <p>For more information about Cargo, check out <a href="https://doc.rust-lang.org/cargo/">its documentation</a>.</p>
 <h3 id="summary"><a class="header" href="#summary">Summary</a></h3>
 <p>You’re already off to a great start on your Rust journey! In this chapter, you
 learned how to:</p>
 <ul>
-<li>Install the latest stable version of Rust using <code>rustup</code>.</li>
+<li>Install the latest stable version of Rust using <code class="syntax" data-syntax="rust"><span class="rn">rustup</span></code>.</li>
 <li>Update to a newer Rust version.</li>
 <li>Open locally installed documentation.</li>
-<li>Write and run a “Hello, world!” program using <code>rustc</code> directly.</li>
+<li>Write and run a “Hello, world!” program using <code class="syntax" data-syntax="rust"><span class="rn">rustc</span></code> directly.</li>
 <li>Create and run a new project using the conventions of Cargo.</li>
 </ul>
 <p>This is a great time to build a more substantial program to get used to reading

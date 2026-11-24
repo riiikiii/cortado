@@ -164,44 +164,51 @@ section > p, section > ul, section > ol {max-width:76ch}
 .chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
 .hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
 @media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+
+/* Offline token colours. Inline code follows the page theme; listings have a dark surface. */
+code.syntax {--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
+@media(prefers-color-scheme:dark){code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}}
+pre code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa}
+.syntax .rk{color:var(--kw)}.syntax .rs{color:var(--str)}.syntax .ri{color:var(--num)}.syntax .rf{color:var(--fn)}.syntax .rt{color:var(--ty)}.syntax .rc{color:var(--cm);font-style:italic}.syntax .ro{color:var(--op)}.syntax .rn{color:var(--nm)}.syntax .re{color:var(--err)}
+html[data-theme="dark"] :not(pre)>code.syntax{--kw:#8ddbd2;--str:#f2cf87;--num:#ffc69a;--fn:#ffb79d;--ty:#d4baff;--cm:#b9aaa0;--op:#b5ceca;--nm:#e4e9dd;--err:#ffacaa} html:is([data-theme="light"],[data-theme="sepia"]) :not(pre)>code.syntax{--kw:#165d61;--str:#774713;--num:#924819;--fn:#87351f;--ty:#624287;--cm:#66594f;--op:#345b58;--nm:#315157;--err:#932b32}
 </style></head><body id="top">
 <header><div class="head"><div class="mast"><span>Rust in Practice · 07 / 21</span></div>
 <div class="hero"><div><h1>Modules and Boundaries</h1><p>Separate transport, domain and storage without a framework.</p></div>
 <div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>main.rs wires</span></div><div class="trace"><b>Observe</b><span>api.rs translates</span></div><div class="trace"><b>Result</b><span>store.rs commits</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="06%20Enums%20and%20Exhaustiveness.html">← 06 Enums and Exhaustiveness</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="08%20Collections%20and%20Replay.html">08 Collections and Replay →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#packages-crates-and-modules">Packages, Crates, and Modules</a><a href="#packages-and-crates-1">Packages and Crates</a><a href="#control-scope-and-privacy-with-modules-1">Control Scope and Privacy with Modules</a><a href="#paths-for-referring-to-an-item-in-the-module-tree-1">Paths for Referring to an Item in the Module Tree</a><a href="#bringing-paths-into-scope-with-the-use-keyword-1">Bringing Paths Into Scope with the use Keyword</a><a href="#separating-modules-into-different-files-1">Separating Modules into Different Files</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Separate transport, domain and storage without a framework</h2><p>Read the lab from outside in. The binary parses configuration, opens the store, binds the socket and decides how the process stops. The library exposes a router constructor so a test can invoke the HTTP stack without allocating a port. Inside the library, the domain validates an order independently of axum and rusqlite. The store depends on that domain object. This direction of dependency keeps transport concerns from leaking into the rule for a valid order.</p><figure class="code"><figcaption>src/main.rs</figcaption><pre><code><span class="k">use</span><span class="w"> </span><span class="n">anyhow</span><span class="p">::{</span><span class="n">Context</span><span class="p">,</span><span class="w"> </span><span class="nb">Result</span><span class="p">};</span>
-<span class="k">use</span><span class="w"> </span><span class="n">clap</span><span class="p">::</span><span class="n">Parser</span><span class="p">;</span>
-<span class="k">use</span><span class="w"> </span><span class="n">order_intake</span><span class="p">::{</span><span class="n">api</span><span class="p">::</span><span class="n">router</span><span class="p">,</span><span class="w"> </span><span class="n">store</span><span class="p">::</span><span class="n">Store</span><span class="p">};</span>
-<span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::{</span><span class="n">net</span><span class="p">::</span><span class="n">SocketAddr</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">::</span><span class="n">PathBuf</span><span class="p">};</span>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="06%20Enums%20and%20Exhaustiveness.html">← 06 Enums and Exhaustiveness</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="08%20Collections%20and%20Replay.html">08 Collections and Replay →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#packages-crates-and-modules">Packages, Crates, and Modules</a><a href="#packages-and-crates-1">Packages and Crates</a><a href="#control-scope-and-privacy-with-modules-1">Control Scope and Privacy with Modules</a><a href="#paths-for-referring-to-an-item-in-the-module-tree-1">Paths for Referring to an Item in the Module Tree</a><a href="#bringing-paths-into-scope-with-the-use-keyword-1">Bringing Paths Into Scope with the use Keyword</a><a href="#separating-modules-into-different-files-1">Separating Modules into Different Files</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Separate transport, domain and storage without a framework</h2><p>Read the lab from outside in. The binary parses configuration, opens the store, binds the socket and decides how the process stops. The library exposes a router constructor so a test can invoke the HTTP stack without allocating a port. Inside the library, the domain validates an order independently of axum and rusqlite. The store depends on that domain object. This direction of dependency keeps transport concerns from leaking into the rule for a valid order.</p><figure class="code"><figcaption>src/main.rs</figcaption><pre><code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">anyhow</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rt">Context</span><span class="ro">,</span> <span class="rt">Result</span><span class="ro">}</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">clap</span><span class="ro">::</span><span class="rt">Parser</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">order_intake</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rn">api</span><span class="ro">::</span><span class="rn">router</span><span class="ro">,</span> <span class="rn">store</span><span class="ro">::</span><span class="rt">Store</span><span class="ro">}</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rn">net</span><span class="ro">::</span><span class="rt">SocketAddr</span><span class="ro">,</span> <span class="rn">path</span><span class="ro">::</span><span class="rt">PathBuf</span><span class="ro">}</span><span class="ro">;</span>
 
-<span class="cp">#[derive(Parser)]</span>
-<span class="k">struct</span><span class="w"> </span><span class="nc">Args</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="cp">#[arg(long, default_value = </span><span class="s">"127.0.0.1:8080"</span><span class="cp">)]</span>
-<span class="w">    </span><span class="n">listen</span><span class="p">:</span><span class="w"> </span><span class="nc">SocketAddr</span><span class="p">,</span>
-<span class="w">    </span><span class="cp">#[arg(long, default_value = </span><span class="s">"orders.sqlite"</span><span class="cp">)]</span>
-<span class="w">    </span><span class="n">db</span><span class="p">:</span><span class="w"> </span><span class="nc">PathBuf</span><span class="p">,</span>
-<span class="p">}</span>
+<span class="rc">#[</span><span class="rc">derive(Parser)</span><span class="rc">]</span>
+<span class="rk">struct</span> <span class="rt">Args</span> <span class="ro">{</span>
+    <span class="rc">#[</span><span class="rc">arg(long, default_value = </span><span class="rs">"</span><span class="rs">127.0.0.1:8080</span><span class="rs">"</span><span class="rc">)</span><span class="rc">]</span>
+    <span class="rn">listen</span><span class="ro">:</span> <span class="rt">SocketAddr</span><span class="ro">,</span>
+    <span class="rc">#[</span><span class="rc">arg(long, default_value = </span><span class="rs">"</span><span class="rs">orders.sqlite</span><span class="rs">"</span><span class="rc">)</span><span class="rc">]</span>
+    <span class="rn">db</span><span class="ro">:</span> <span class="rt">PathBuf</span><span class="ro">,</span>
+<span class="ro">}</span>
 
-<span class="cp">#[tokio::main]</span>
-<span class="k">async</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="p">()</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Args</span><span class="p">::</span><span class="n">parse</span><span class="p">();</span>
-<span class="w">    </span><span class="n">tracing_subscriber</span><span class="p">::</span><span class="n">fmt</span><span class="p">()</span>
-<span class="w">        </span><span class="p">.</span><span class="n">with_writer</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">io</span><span class="p">::</span><span class="n">stderr</span><span class="p">)</span>
-<span class="w">        </span><span class="p">.</span><span class="n">init</span><span class="p">();</span>
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Store</span><span class="p">::</span><span class="n">open</span><span class="p">(</span><span class="o">&amp;</span><span class="n">args</span><span class="p">.</span><span class="n">db</span><span class="p">).</span><span class="n">context</span><span class="p">(</span><span class="s">"initialise order database"</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">listener</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tokio</span><span class="p">::</span><span class="n">net</span><span class="p">::</span><span class="n">TcpListener</span><span class="p">::</span><span class="n">bind</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="n">listen</span><span class="p">)</span>
-<span class="w">        </span><span class="p">.</span><span class="k">await</span>
-<span class="w">        </span><span class="p">.</span><span class="n">context</span><span class="p">(</span><span class="s">"bind listener"</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-<span class="w">    </span><span class="n">tracing</span><span class="p">::</span><span class="n">info</span><span class="o">!</span><span class="p">(</span><span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">%</span><span class="n">listener</span><span class="p">.</span><span class="n">local_addr</span><span class="p">()</span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="s">"listening"</span><span class="p">);</span>
-<span class="w">    </span><span class="n">axum</span><span class="p">::</span><span class="n">serve</span><span class="p">(</span><span class="n">listener</span><span class="p">,</span><span class="w"> </span><span class="n">router</span><span class="p">(</span><span class="n">store</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">))</span>
-<span class="w">        </span><span class="p">.</span><span class="n">with_graceful_shutdown</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tokio</span><span class="p">::</span><span class="n">signal</span><span class="p">::</span><span class="n">ctrl_c</span><span class="p">().</span><span class="k">await</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="n">tracing</span><span class="p">::</span><span class="n">error</span><span class="o">!</span><span class="p">(</span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">%</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="s">"signal handler failed"</span><span class="p">);</span>
-<span class="w">            </span><span class="p">}</span>
-<span class="w">        </span><span class="p">})</span>
-<span class="w">        </span><span class="p">.</span><span class="k">await</span>
-<span class="w">        </span><span class="p">.</span><span class="n">context</span><span class="p">(</span><span class="s">"serve requests"</span><span class="p">)</span>
-<span class="p">}</span>
+<span class="rc">#[</span><span class="rc">tokio::main</span><span class="rc">]</span>
+<span class="rk">async</span> <span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">Result</span><span class="ro">&lt;</span><span class="ro">(</span><span class="ro">)</span><span class="ro">&gt;</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">args</span> <span class="ro">=</span> <span class="rt">Args</span><span class="ro">::</span><span class="rn">parse</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rn">tracing_subscriber</span><span class="ro">::</span><span class="rn">fmt</span><span class="ro">(</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rn">with_writer</span><span class="ro">(</span><span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">::</span><span class="rn">stderr</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rn">init</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">store</span> <span class="ro">=</span> <span class="rt">Store</span><span class="ro">::</span><span class="rn">open</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">args</span><span class="ro">.</span><span class="rn">db</span><span class="ro">)</span><span class="ro">.</span><span class="rn">context</span><span class="ro">(</span><span class="rs">"</span><span class="rs">initialise order database</span><span class="rs">"</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">listener</span> <span class="ro">=</span> <span class="rn">tokio</span><span class="ro">::</span><span class="rn">net</span><span class="ro">::</span><span class="rt">TcpListener</span><span class="ro">::</span><span class="rn">bind</span><span class="ro">(</span><span class="rn">args</span><span class="ro">.</span><span class="rn">listen</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rk">await</span>
+        <span class="ro">.</span><span class="rn">context</span><span class="ro">(</span><span class="rs">"</span><span class="rs">bind listener</span><span class="rs">"</span><span class="ro">)</span><span class="ro">?</span><span class="ro">;</span>
+    <span class="rn">tracing</span><span class="ro">::</span><span class="rn">info</span><span class="ro">!</span><span class="ro">(</span><span class="rn">address</span> <span class="ro">=</span> <span class="ro">%</span><span class="rn">listener</span><span class="ro">.</span><span class="rn">local_addr</span><span class="ro">(</span><span class="ro">)</span><span class="ro">?</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">listening</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rn">axum</span><span class="ro">::</span><span class="rn">serve</span><span class="ro">(</span><span class="rn">listener</span><span class="ro">,</span> <span class="rn">router</span><span class="ro">(</span><span class="rn">store</span><span class="ro">,</span> <span class="ri">4</span><span class="ro">)</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rn">with_graceful_shutdown</span><span class="ro">(</span><span class="rk">async</span> <span class="ro">{</span>
+            <span class="rk">if</span> <span class="rk">let</span> <span class="rt">Err</span><span class="ro">(</span><span class="rn">e</span><span class="ro">)</span> <span class="ro">=</span> <span class="rn">tokio</span><span class="ro">::</span><span class="rn">signal</span><span class="ro">::</span><span class="rn">ctrl_c</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rk">await</span> <span class="ro">{</span>
+                <span class="rn">tracing</span><span class="ro">::</span><span class="rn">error</span><span class="ro">!</span><span class="ro">(</span><span class="rn">error</span> <span class="ro">=</span> <span class="ro">%</span><span class="rn">e</span><span class="ro">,</span> <span class="rs">"</span><span class="rs">signal handler failed</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+            <span class="ro">}</span>
+        <span class="ro">}</span><span class="ro">)</span>
+        <span class="ro">.</span><span class="rk">await</span>
+        <span class="ro">.</span><span class="rn">context</span><span class="ro">(</span><span class="rs">"</span><span class="rs">serve requests</span><span class="rs">"</span><span class="ro">)</span>
+<span class="ro">}</span>
 </code></pre></figure><p>The concrete Store is intentional. There is one implementation, its constructor is cheap to inject and the test can run against a real temporary SQLite file. Introducing a repository trait solely to mock it would test a fake implementation of the most consequential behaviour: uniqueness under concurrency. Introduce a trait when a second adapter or a genuinely external boundary earns its cost. To see the seam today, change the listen address. Neither the domain nor the SQL needs an edit.</p><h3>Expose the narrowest useful entry point</h3><p>An integration test is a different crate from the library under test. Private implementation details are naturally unavailable. That is helpful for the contract test: it cannot bypass the HTTP router&#x27;s validation or response mapping accidentally when it submits a request. At the same time the public Store constructor gives the test a way to supply a temporary database. If a future refactor replaces SQLite, the externally observable HTTP assertions should still make sense even though the test fixture might change. Try describing each public item by naming a caller that needs it. An item with no such caller can usually stay private.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/reference/visibility-and-privacy.html">doc.rust-lang.org/reference/visibility-and-privacy.html</a></p></section><div class="book"><h2 id="packages-crates-and-modules"><a class="header" href="#packages-crates-and-modules">Packages, Crates, and Modules</a></h2>
 <p>As you write large programs, organizing your code will become increasingly
 important. By grouping related functionality and separating code with distinct
@@ -248,7 +255,7 @@ understanding of the module system and be able to work with scopes like a pro!</
 <h3 id="packages-and-crates"><a class="header" href="#packages-and-crates">Packages and Crates</a></h3>
 <p>The first parts of the module system we’ll cover are packages and crates.</p>
 <p>A <em>crate</em> is the smallest amount of code that the Rust compiler considers at a
-time. Even if you run <code>rustc</code> rather than <code>cargo</code> and pass a single source code
+time. Even if you run <code class="syntax" data-syntax="rust"><span class="rn">rustc</span></code> rather than <code class="syntax" data-syntax="rust"><span class="rn">cargo</span></code> and pass a single source code
 file (as we did all the way back in <a href="01%20Toolchain%20and%20Cargo.html#rust-program-basics">“Rust Program Basics”</a><!-- ignore
 --> in Chapter 1), the compiler considers that file to be a crate. Crates can
 contain modules, and the modules may be defined in other files that get
@@ -256,11 +263,11 @@ compiled with the crate, as we’ll see in the coming sections.</p>
 <p>A crate can come in one of two forms: a binary crate or a library crate.
 <em>Binary crates</em> are programs you can compile to an executable that you can run,
 such as a command line program or a server. Each must have a function called
-<code>main</code> that defines what happens when the executable runs. All the crates we’ve
+<code class="syntax" data-syntax="rust"><span class="rn">main</span></code> that defines what happens when the executable runs. All the crates we’ve
 created so far have been binary crates.</p>
-<p><em>Library crates</em> don’t have a <code>main</code> function, and they don’t compile to an
+<p><em>Library crates</em> don’t have a <code class="syntax" data-syntax="rust"><span class="rn">main</span></code> function, and they don’t compile to an
 executable. Instead, they define functionality intended to be shared with
-multiple projects. For example, the <code>rand</code> crate we used in <a href="02%20An%20Input%20to%20a%20Decision.html#generating-a-random-number">Chapter
+multiple projects. For example, the <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> crate we used in <a href="02%20An%20Input%20to%20a%20Decision.html#generating-a-random-number">Chapter
 2</a><!-- ignore --> provides functionality that generates random numbers.
 Most of the time when Rustaceans say “crate,” they mean library crate, and they
 use “crate” interchangeably with the general programming concept of a “library.”</p>
@@ -278,16 +285,16 @@ command line tool uses.</p>
 library crate. A package must contain at least one crate, whether that’s a
 library or binary crate.</p>
 <p>Let’s walk through what happens when we create a package. First, we enter the
-command <code>cargo new my-project</code>:</p>
-<pre><code class="language-console">$ cargo new my-project
-     Created binary (application) `my-project` package
-$ ls my-project
+command <code class="syntax" data-syntax="bash">cargo new my-project</code>:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo new my-project
+<span class="rk">     Created</span> binary (application) <span class="rs">`my-project`</span> package
+<span class="rk">$ </span>ls my-project
 Cargo.toml
 src
-$ ls my-project/src
+<span class="rk">$ </span>ls my-project/src
 main.rs
 </code></pre>
-<p>After we run <code>cargo new my-project</code>, we use <code>ls</code> to see what Cargo creates. In
+<p>After we run <code class="syntax" data-syntax="bash">cargo new my-project</code>, we use <code class="syntax" data-syntax="rust"><span class="rn">ls</span></code> to see what Cargo creates. In
 the <em>my-project</em> directory, there’s a <em>Cargo.toml</em> file, giving us a package.
 There’s also a <em>src</em> directory that contains <em>main.rs</em>. Open <em>Cargo.toml</em> in
 your text editor and note that there’s no mention of <em>src/main.rs</em>. Cargo
@@ -295,9 +302,9 @@ follows a convention that <em>src/main.rs</em> is the crate root of a binary cra
 with the same name as the package. Likewise, Cargo knows that if the package
 directory contains <em>src/lib.rs</em>, the package contains a library crate with the
 same name as the package, and <em>src/lib.rs</em> is its crate root. Cargo passes the
-crate root files to <code>rustc</code> to build the library or binary.</p>
+crate root files to <code class="syntax" data-syntax="rust"><span class="rn">rustc</span></code> to build the library or binary.</p>
 <p>Here, we have a package that only contains <em>src/main.rs</em>, meaning it only
-contains a binary crate named <code>my-project</code>. If a package contains <em>src/main.rs</em>
+contains a binary crate named <code class="syntax" data-syntax="rust"><span class="rn">my</span><span class="ro">-</span><span class="rn">project</span></code>. If a package contains <em>src/main.rs</em>
 and <em>src/lib.rs</em>, it has two crates: a binary and a library, both with the same
 name as the package. A package can have multiple binary crates by placing files
 in the <em>src/bin</em> directory: Each file will be a separate binary crate.</p>
@@ -307,12 +314,12 @@ in the <em>src/bin</em> directory: Each file will be a separate binary crate.</p
 <p><a id="defining-modules-to-control-scope-and-privacy"></a></p>
 <h3 id="control-scope-and-privacy-with-modules"><a class="header" href="#control-scope-and-privacy-with-modules">Control Scope and Privacy with Modules</a></h3>
 <p>In this section, we’ll talk about modules and other parts of the module system,
-namely <em>paths</em>, which allow you to name items; the <code>use</code> keyword that brings a
-path into scope; and the <code>pub</code> keyword to make items public. We’ll also discuss
-the <code>as</code> keyword, external packages, and the glob operator.</p>
+namely <em>paths</em>, which allow you to name items; the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> keyword that brings a
+path into scope; and the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword to make items public. We’ll also discuss
+the <code class="syntax" data-syntax="rust"><span class="rk">as</span></code> keyword, external packages, and the glob operator.</p>
 <h4 id="modules-cheat-sheet"><a class="header" href="#modules-cheat-sheet">Modules Cheat Sheet</a></h4>
 <p>Before we get to the details of modules and paths, here we provide a quick
-reference on how modules, paths, the <code>use</code> keyword, and the <code>pub</code> keyword work
+reference on how modules, paths, the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> keyword, and the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword work
 in the compiler, and how most developers organize their code. We’ll be going
 through examples of each of these rules throughout this chapter, but this is a
 great place to refer to as a reminder of how modules work.</p>
@@ -321,20 +328,20 @@ great place to refer to as a reminder of how modules work.</p>
 looks in the crate root file (usually <em>src/lib.rs</em> for a library crate and
 <em>src/main.rs</em> for a binary crate) for code to compile.</li>
 <li><strong>Declaring modules</strong>: In the crate root file, you can declare new modules;
-say you declare a “garden” module with <code>mod garden;</code>. The compiler will look
+say you declare a “garden” module with <code class="syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">garden</span><span class="ro">;</span></code>. The compiler will look
 for the module’s code in these places:
 <ul>
-<li>Inline, within curly brackets that replace the semicolon following <code>mod garden</code></li>
+<li>Inline, within curly brackets that replace the semicolon following <code class="syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">garden</span></code></li>
 <li>In the file <em>src/garden.rs</em></li>
 <li>In the file <em>src/garden/mod.rs</em></li>
 </ul>
 </li>
 <li><strong>Declaring submodules</strong>: In any file other than the crate root, you can
-declare submodules. For example, you might declare <code>mod vegetables;</code> in
+declare submodules. For example, you might declare <code class="syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">vegetables</span><span class="ro">;</span></code> in
 <em>src/garden.rs</em>. The compiler will look for the submodule’s code within the
 directory named for the parent module in these places:
 <ul>
-<li>Inline, directly following <code>mod vegetables</code>, within curly brackets instead
+<li>Inline, directly following <code class="syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">vegetables</span></code>, within curly brackets instead
 of the semicolon</li>
 <li>In the file <em>src/garden/vegetables.rs</em></li>
 <li>In the file <em>src/garden/vegetables/mod.rs</em></li>
@@ -343,21 +350,21 @@ of the semicolon</li>
 <li><strong>Paths to code in modules</strong>: Once a module is part of your crate, you can
 refer to code in that module from anywhere else in that same crate, as long
 as the privacy rules allow, using the path to the code. For example, an
-<code>Asparagus</code> type in the garden vegetables module would be found at
-<code>crate::garden::vegetables::Asparagus</code>.</li>
+<code class="syntax" data-syntax="rust"><span class="rt">Asparagus</span></code> type in the garden vegetables module would be found at
+<code class="syntax" data-syntax="rust"><span class="rk">crate</span><span class="ro">::</span><span class="rn">garden</span><span class="ro">::</span><span class="rn">vegetables</span><span class="ro">::</span><span class="rt">Asparagus</span></code>.</li>
 <li><strong>Private vs. public</strong>: Code within a module is private from its parent
-modules by default. To make a module public, declare it with <code>pub mod</code>
-instead of <code>mod</code>. To make items within a public module public as well, use
-<code>pub</code> before their declarations.</li>
-<li><strong>The <code>use</code> keyword</strong>: Within a scope, the <code>use</code> keyword creates shortcuts to
+modules by default. To make a module public, declare it with <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">mod</span></code>
+instead of <code class="syntax" data-syntax="rust"><span class="rk">mod</span></code>. To make items within a public module public as well, use
+<code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> before their declarations.</li>
+<li><strong>The <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> keyword</strong>: Within a scope, the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> keyword creates shortcuts to
 items to reduce repetition of long paths. In any scope that can refer to
-<code>crate::garden::vegetables::Asparagus</code>, you can create a shortcut with <code>use crate::garden::vegetables::Asparagus;</code>, and from then on you only need to
-write <code>Asparagus</code> to make use of that type in the scope.</li>
+<code class="syntax" data-syntax="rust"><span class="rk">crate</span><span class="ro">::</span><span class="rn">garden</span><span class="ro">::</span><span class="rn">vegetables</span><span class="ro">::</span><span class="rt">Asparagus</span></code>, you can create a shortcut with <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">garden</span><span class="ro">::</span><span class="rn">vegetables</span><span class="ro">::</span><span class="rt">Asparagus</span><span class="ro">;</span></code>, and from then on you only need to
+write <code class="syntax" data-syntax="rust"><span class="rt">Asparagus</span></code> to make use of that type in the scope.</li>
 </ul>
-<p>Here, we create a binary crate named <code>backyard</code> that illustrates these rules.
+<p>Here, we create a binary crate named <code class="syntax" data-syntax="rust"><span class="rn">backyard</span></code> that illustrates these rules.
 The crate’s directory, also named <em>backyard</em>, contains these files and
 directories:</p>
-<pre><code class="language-text">backyard
+<pre><code class="language-text syntax" data-syntax="output">backyard
 ├── Cargo.lock
 ├── Cargo.toml
 └── src
@@ -369,25 +376,25 @@ directories:</p>
 <p>The crate root file in this case is <em>src/main.rs</em>, and it contains:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust noplayground ignore">use crate::garden::vegetables::Asparagus;
+<pre><code class="language-rust noplayground ignore syntax" data-syntax="rust"><span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">garden</span><span class="ro">::</span><span class="rn">vegetables</span><span class="ro">::</span><span class="rt">Asparagus</span><span class="ro">;</span>
 
-pub mod garden;
+<span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">garden</span><span class="ro">;</span>
 
-fn main() {
-    let plant = Asparagus {};
-    println!("I'm growing {plant:?}!");
-}</code></pre>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">plant</span> <span class="ro">=</span> <span class="rt">Asparagus</span> <span class="ro">{</span><span class="ro">}</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">I'm growing {plant:?}!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 </figure>
-<p>The <code>pub mod garden;</code> line tells the compiler to include the code it finds in
+<p>The <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">garden</span><span class="ro">;</span></code> line tells the compiler to include the code it finds in
 <em>src/garden.rs</em>, which is:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/garden.rs</span>
-<pre><code class="language-rust noplayground ignore">pub mod vegetables;</code></pre>
+<pre><code class="language-rust noplayground ignore syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">vegetables</span><span class="ro">;</span></code></pre>
 </figure>
-<p>Here, <code>pub mod vegetables;</code> means the code in <em>src/garden/vegetables.rs</em> is
+<p>Here, <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">vegetables</span><span class="ro">;</span></code> means the code in <em>src/garden/vegetables.rs</em> is
 included too. That code is:</p>
-<pre><code class="language-rust noplayground ignore">#[derive(Debug)]
-pub struct Asparagus {}</code></pre>
+<pre><code class="language-rust noplayground ignore syntax" data-syntax="rust"><span class="rc">#[</span><span class="rc">derive(Debug)</span><span class="rc">]</span>
+<span class="rk">pub</span> <span class="rk">struct</span> <span class="rt">Asparagus</span> <span class="ro">{</span><span class="ro">}</span></code></pre>
 <p>Now let’s get into the details of these rules and demonstrate them in action!</p>
 <h4 id="grouping-related-code-in-modules"><a class="header" href="#grouping-related-code-in-modules">Grouping Related Code in Modules</a></h4>
 <p><em>Modules</em> let us organize code within a crate for readability and easy reuse.
@@ -407,32 +414,32 @@ payment, and bartenders make drinks. <em>Back of house</em> is where the chefs a
 cooks work in the kitchen, dishwashers clean up, and managers do administrative
 work.</p>
 <p>To structure our crate in this way, we can organize its functions into nested
-modules. Create a new library named <code>restaurant</code> by running <code>cargo new restaurant --lib</code>. Then, enter the code in Listing 7-1 into <em>src/lib.rs</em> to
+modules. Create a new library named <code class="syntax" data-syntax="rust"><span class="rn">restaurant</span></code> by running <code class="syntax" data-syntax="bash">cargo new restaurant --lib</code>. Then, enter the code in Listing 7-1 into <em>src/lib.rs</em> to
 define some modules and function signatures; this code is the front of house
 section.</p>
 <figure class="listing" id="listing-7-1">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground">mod front_of_house {
-    mod hosting {
-        fn add_to_waitlist() {}
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
 
-        fn seat_at_table() {}
-    }
+        <span class="rk">fn</span> <span class="rf">seat_at_table</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
 
-    mod serving {
-        fn take_order() {}
+    <span class="rk">mod</span> <span class="rn">serving</span> <span class="ro">{</span>
+        <span class="rk">fn</span> <span class="rf">take_order</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
 
-        fn serve_order() {}
+        <span class="rk">fn</span> <span class="rf">serve_order</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
 
-        fn take_payment() {}
-    }
-}</code></pre>
-<figcaption><a href="#listing-7-1">Listing 7-1</a>: A <code>front_of_house</code> module containing other modules that then contain functions</figcaption>
+        <span class="rk">fn</span> <span class="rf">take_payment</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-1">Listing 7-1</a>: A <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module containing other modules that then contain functions</figcaption>
 </figure>
-<p>We define a module with the <code>mod</code> keyword followed by the name of the module
-(in this case, <code>front_of_house</code>). The body of the module then goes inside curly
+<p>We define a module with the <code class="syntax" data-syntax="rust"><span class="rk">mod</span></code> keyword followed by the name of the module
+(in this case, <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>). The body of the module then goes inside curly
 brackets. Inside modules, we can place other modules, as in this case with the
-modules <code>hosting</code> and <code>serving</code>. Modules can also hold definitions for other
+modules <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">serving</span></code>. Modules can also hold definitions for other
 items, such as structs, enums, constants, traits, and as in Listing 7-1,
 functions.</p>
 <p>By using modules, we can group related definitions together and name why
@@ -442,11 +449,11 @@ to find the definitions relevant to them. Programmers adding new functionality
 to this code would know where to place the code to keep the program organized.</p>
 <p>Earlier, we mentioned that <em>src/main.rs</em> and <em>src/lib.rs</em> are called <em>crate
 roots</em>. The reason for their name is that the contents of either of these two
-files form a module named <code>crate</code> at the root of the crate’s module structure,
+files form a module named <code class="syntax" data-syntax="rust"><span class="rk">crate</span></code> at the root of the crate’s module structure,
 known as the <em>module tree</em>.</p>
 <p>Listing 7-2 shows the module tree for the structure in Listing 7-1.</p>
 <figure class="listing" id="listing-7-2">
-<pre><code class="language-text">crate
+<pre><code class="language-text syntax" data-syntax="output">crate
  └── front_of_house
      ├── hosting
      │   ├── add_to_waitlist
@@ -459,12 +466,12 @@ known as the <em>module tree</em>.</p>
 <figcaption><a href="#listing-7-2">Listing 7-2</a>: The module tree for the code in Listing 7-1</figcaption>
 </figure>
 <p>This tree shows how some of the modules nest inside other modules; for example,
-<code>hosting</code> nests inside <code>front_of_house</code>. The tree also shows that some modules
-are <em>siblings</em>, meaning they’re defined in the same module; <code>hosting</code> and
-<code>serving</code> are siblings defined within <code>front_of_house</code>. If module A is
+<code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> nests inside <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>. The tree also shows that some modules
+are <em>siblings</em>, meaning they’re defined in the same module; <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> and
+<code class="syntax" data-syntax="rust"><span class="rn">serving</span></code> are siblings defined within <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>. If module A is
 contained inside module B, we say that module A is the <em>child</em> of module B and
 that module B is the <em>parent</em> of module A. Notice that the entire module tree
-is rooted under the implicit module named <code>crate</code>.</p>
+is rooted under the implicit module named <code class="syntax" data-syntax="rust"><span class="rk">crate</span></code>.</p>
 <p>The module tree might remind you of the filesystem’s directory tree on your
 computer; this is a very apt comparison! Just like directories in a filesystem,
 you use modules to organize your code. And just like files in a directory, we
@@ -479,105 +486,105 @@ know its path.</p>
 <ul>
 <li>An <em>absolute path</em> is the full path starting from a crate root; for code
 from an external crate, the absolute path begins with the crate name, and for
-code from the current crate, it starts with the literal <code>crate</code>.</li>
-<li>A <em>relative path</em> starts from the current module and uses <code>self</code>, <code>super</code>, or
+code from the current crate, it starts with the literal <code class="syntax" data-syntax="rust"><span class="rk">crate</span></code>.</li>
+<li>A <em>relative path</em> starts from the current module and uses <code class="syntax" data-syntax="rust"><span class="rt">self</span></code>, <code class="syntax" data-syntax="rust"><span class="rk">super</span></code>, or
 an identifier in the current module.</li>
 </ul>
 <p>Both absolute and relative paths are followed by one or more identifiers
-separated by double colons (<code>::</code>).</p>
-<p>Returning to Listing 7-1, say we want to call the <code>add_to_waitlist</code> function.
-This is the same as asking: What’s the path of the <code>add_to_waitlist</code> function?
+separated by double colons (<code class="syntax" data-syntax="rust"><span class="ro">:</span><span class="ro">:</span></code>).</p>
+<p>Returning to Listing 7-1, say we want to call the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function.
+This is the same as asking: What’s the path of the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function?
 Listing 7-3 contains Listing 7-1 with some of the modules and functions removed.</p>
-<p>We’ll show two ways to call the <code>add_to_waitlist</code> function from a new function,
-<code>eat_at_restaurant</code>, defined in the crate root. These paths are correct, but
+<p>We’ll show two ways to call the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function from a new function,
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>, defined in the crate root. These paths are correct, but
 there’s another problem remaining that will prevent this example from compiling
 as is. We’ll explain why in a bit.</p>
-<p>The <code>eat_at_restaurant</code> function is part of our library crate’s public API, so
-we mark it with the <code>pub</code> keyword. In the <a href="#exposing-paths-with-the-pub-keyword">“Exposing Paths with the <code>pub</code>
-Keyword”</a><!-- ignore --> section, we’ll go into more detail about <code>pub</code>.</p>
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> function is part of our library crate’s public API, so
+we mark it with the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword. In the <a href="#exposing-paths-with-the-pub-keyword">“Exposing Paths with the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>
+Keyword”</a><!-- ignore --> section, we’ll go into more detail about <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>.</p>
 <figure class="listing" id="listing-7-3">
 <span class="file-name">Filename: src/lib.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">mod front_of_house {
-    mod hosting {
-        fn add_to_waitlist() {}
-    }
-}
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-pub fn eat_at_restaurant() {
-    // Absolute path
-    crate::front_of_house::hosting::add_to_waitlist();
+<span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rc">// Absolute path
+</span>    <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 
-    // Relative path
-    front_of_house::hosting::add_to_waitlist();
-}</code></pre>
-<figcaption><a href="#listing-7-3">Listing 7-3</a>: Calling the <code>add_to_waitlist</code> function using absolute and relative paths</figcaption>
+    <span class="rc">// Relative path
+</span>    <span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-3">Listing 7-3</a>: Calling the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function using absolute and relative paths</figcaption>
 </figure>
-<p>The first time we call the <code>add_to_waitlist</code> function in <code>eat_at_restaurant</code>,
-we use an absolute path. The <code>add_to_waitlist</code> function is defined in the same
-crate as <code>eat_at_restaurant</code>, which means we can use the <code>crate</code> keyword to
+<p>The first time we call the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function in <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>,
+we use an absolute path. The <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function is defined in the same
+crate as <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>, which means we can use the <code class="syntax" data-syntax="rust"><span class="rk">crate</span></code> keyword to
 start an absolute path. We then include each of the successive modules until we
-make our way to <code>add_to_waitlist</code>. You can imagine a filesystem with the same
-structure: We’d specify the path <code>/front_of_house/hosting/add_to_waitlist</code> to
-run the <code>add_to_waitlist</code> program; using the <code>crate</code> name to start from the
-crate root is like using <code>/</code> to start from the filesystem root in your shell.</p>
-<p>The second time we call <code>add_to_waitlist</code> in <code>eat_at_restaurant</code>, we use a
-relative path. The path starts with <code>front_of_house</code>, the name of the module
-defined at the same level of the module tree as <code>eat_at_restaurant</code>. Here the
+make our way to <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code>. You can imagine a filesystem with the same
+structure: We’d specify the path <code class="syntax" data-syntax="rust"><span class="ro">/</span><span class="rn">front_of_house</span><span class="ro">/</span><span class="rn">hosting</span><span class="ro">/</span><span class="rn">add_to_waitlist</span></code> to
+run the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> program; using the <code class="syntax" data-syntax="rust"><span class="rk">crate</span></code> name to start from the
+crate root is like using <code class="syntax" data-syntax="rust"><span class="ro">/</span></code> to start from the filesystem root in your shell.</p>
+<p>The second time we call <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> in <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>, we use a
+relative path. The path starts with <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>, the name of the module
+defined at the same level of the module tree as <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>. Here the
 filesystem equivalent would be using the path
-<code>front_of_house/hosting/add_to_waitlist</code>. Starting with a module name means
+<code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span><span class="ro">/</span><span class="rn">hosting</span><span class="ro">/</span><span class="rn">add_to_waitlist</span></code>. Starting with a module name means
 that the path is relative.</p>
 <p>Choosing whether to use a relative or absolute path is a decision you’ll make
 based on your project, and it depends on whether you’re more likely to move
 item definition code separately from or together with the code that uses the
-item. For example, if we moved the <code>front_of_house</code> module and the
-<code>eat_at_restaurant</code> function into a module named <code>customer_experience</code>, we’d
-need to update the absolute path to <code>add_to_waitlist</code>, but the relative path
-would still be valid. However, if we moved the <code>eat_at_restaurant</code> function
-separately into a module named <code>dining</code>, the absolute path to the
-<code>add_to_waitlist</code> call would stay the same, but the relative path would need to
+item. For example, if we moved the <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module and the
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> function into a module named <code class="syntax" data-syntax="rust"><span class="rn">customer_experience</span></code>, we’d
+need to update the absolute path to <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code>, but the relative path
+would still be valid. However, if we moved the <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> function
+separately into a module named <code class="syntax" data-syntax="rust"><span class="rn">dining</span></code>, the absolute path to the
+<code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> call would stay the same, but the relative path would need to
 be updated. Our preference in general is to specify absolute paths because it’s
 more likely we’ll want to move code definitions and item calls independently of
 each other.</p>
 <p>Let’s try to compile Listing 7-3 and find out why it won’t compile yet! The
 errors we get are shown in Listing 7-4.</p>
 <figure class="listing" id="listing-7-4">
-<pre><code class="language-console">$ cargo build
-   Compiling restaurant v0.1.0 (file:///projects/restaurant)
-error[E0603]: module `hosting` is private
- --&gt; src/lib.rs:9:28
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">   Compiling</span> restaurant v0.<span class="ri">1.0</span> (file:///projects/restaurant)
+<span class="re">error[E0603]</span>: module <span class="rs">`hosting`</span> is private
+ --&gt; src/lib.rs:<span class="ri">9</span>:<span class="ri">28</span>
   |
-9 |     crate::front_of_house::hosting::add_to_waitlist();
-  |                            ^^^^^^^  --------------- function `add_to_waitlist` is not publicly re-exported
+<span class="ri">9</span> |     crate::front_of_house::hosting::add_to_waitlist();
+  |                            ^^^^^^^  --------------- function <span class="rs">`add_to_waitlist`</span> is not publicly re-exported
   |                            |
   |                            private module
   |
-note: the module `hosting` is defined here
- --&gt; src/lib.rs:2:5
+<span class="rk">note</span>: the module <span class="rs">`hosting`</span> is defined here
+ --&gt; src/lib.rs:<span class="ri">2</span>:<span class="ri">5</span>
   |
-2 |     mod hosting {
+<span class="ri">2</span> |     mod hosting {
   |     ^^^^^^^^^^^
 
-error[E0603]: module `hosting` is private
-  --&gt; src/lib.rs:12:21
+<span class="re">error[E0603]</span>: module <span class="rs">`hosting`</span> is private
+  --&gt; src/lib.rs:<span class="ri">12</span>:<span class="ri">21</span>
    |
-12 |     front_of_house::hosting::add_to_waitlist();
-   |                     ^^^^^^^  --------------- function `add_to_waitlist` is not publicly re-exported
+<span class="ri">12</span> |     front_of_house::hosting::add_to_waitlist();
+   |                     ^^^^^^^  --------------- function <span class="rs">`add_to_waitlist`</span> is not publicly re-exported
    |                     |
    |                     private module
    |
-note: the module `hosting` is defined here
-  --&gt; src/lib.rs:2:5
+<span class="rk">note</span>: the module <span class="rs">`hosting`</span> is defined here
+  --&gt; src/lib.rs:<span class="ri">2</span>:<span class="ri">5</span>
    |
- 2 |     mod hosting {
+ <span class="ri">2</span> |     mod hosting {
    |     ^^^^^^^^^^^
 
-For more information about this error, try `rustc --explain E0603`.
-error: could not compile `restaurant` (lib) due to 2 previous errors
+For more information about this error, try <span class="rs">`rustc --explain E0603`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`restaurant`</span> (lib) due to <span class="ri">2</span> previous errors
 </code></pre>
 <figcaption><a href="#listing-7-4">Listing 7-4</a>: Compiler errors from building the code in Listing 7-3</figcaption>
 </figure>
-<p>The error messages say that module <code>hosting</code> is private. In other words, we
-have the correct paths for the <code>hosting</code> module and the <code>add_to_waitlist</code>
+<p>The error messages say that module <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> is private. In other words, we
+have the correct paths for the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module and the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code>
 function, but Rust won’t let us use them because it doesn’t have access to the
 private sections. In Rust, all items (functions, methods, structs, enums,
 modules, and constants) are private to parent modules by default. If you want
@@ -593,113 +600,113 @@ office managers can see and do everything in the restaurant they operate.</p>
 implementation details is the default. That way, you know which parts of the
 inner code you can change without breaking the outer code. However, Rust does
 give you the option to expose inner parts of child modules’ code to outer
-ancestor modules by using the <code>pub</code> keyword to make an item public.</p>
-<h4 id="exposing-paths-with-the-pub-keyword"><a class="header" href="#exposing-paths-with-the-pub-keyword">Exposing Paths with the <code>pub</code> Keyword</a></h4>
-<p>Let’s return to the error in Listing 7-4 that told us the <code>hosting</code> module is
-private. We want the <code>eat_at_restaurant</code> function in the parent module to have
-access to the <code>add_to_waitlist</code> function in the child module, so we mark the
-<code>hosting</code> module with the <code>pub</code> keyword, as shown in Listing 7-5.</p>
+ancestor modules by using the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword to make an item public.</p>
+<h4 id="exposing-paths-with-the-pub-keyword"><a class="header" href="#exposing-paths-with-the-pub-keyword">Exposing Paths with the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> Keyword</a></h4>
+<p>Let’s return to the error in Listing 7-4 that told us the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module is
+private. We want the <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> function in the parent module to have
+access to the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function in the child module, so we mark the
+<code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module with the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword, as shown in Listing 7-5.</p>
 <figure class="listing" id="listing-7-5">
 <span class="file-name">Filename: src/lib.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">mod front_of_house {
-    pub mod hosting {
-        fn add_to_waitlist() {}
-    }
-}
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-// -- snip --
-<span class="boring">pub fn eat_at_restaurant() {
-</span><span class="boring">    // Absolute path
-</span><span class="boring">    crate::front_of_house::hosting::add_to_waitlist();
+<span class="rc">// -- snip --
+</span><span class="boring"><span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rc">// Absolute path
+</span></span><span class="boring">    <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    // Relative path
-</span><span class="boring">    front_of_house::hosting::add_to_waitlist();
-</span><span class="boring">}</span></code></pre>
-<figcaption><a href="#listing-7-5">Listing 7-5</a>: Declaring the <code>hosting</code> module as <code>pub</code> to use it from <code>eat_at_restaurant</code></figcaption>
+</span><span class="boring">    <span class="rc">// Relative path
+</span></span><span class="boring">    <span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-7-5">Listing 7-5</a>: Declaring the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module as <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> to use it from <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code></figcaption>
 </figure>
 <p>Unfortunately, the code in Listing 7-5 still results in compiler errors, as
 shown in Listing 7-6.</p>
 <figure class="listing" id="listing-7-6">
-<pre><code class="language-console">$ cargo build
-   Compiling restaurant v0.1.0 (file:///projects/restaurant)
-error[E0603]: function `add_to_waitlist` is private
-  --&gt; src/lib.rs:10:37
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">   Compiling</span> restaurant v0.<span class="ri">1.0</span> (file:///projects/restaurant)
+<span class="re">error[E0603]</span>: function <span class="rs">`add_to_waitlist`</span> is private
+  --&gt; src/lib.rs:<span class="ri">10</span>:<span class="ri">37</span>
    |
-10 |     crate::front_of_house::hosting::add_to_waitlist();
+<span class="ri">10</span> |     crate::front_of_house::hosting::add_to_waitlist();
    |                                     ^^^^^^^^^^^^^^^ private function
    |
-note: the function `add_to_waitlist` is defined here
-  --&gt; src/lib.rs:3:9
+<span class="rk">note</span>: the function <span class="rs">`add_to_waitlist`</span> is defined here
+  --&gt; src/lib.rs:<span class="ri">3</span>:<span class="ri">9</span>
    |
- 3 |         fn add_to_waitlist() {}
+ <span class="ri">3</span> |         fn add_to_waitlist() {}
    |         ^^^^^^^^^^^^^^^^^^^^
 
-error[E0603]: function `add_to_waitlist` is private
-  --&gt; src/lib.rs:13:30
+<span class="re">error[E0603]</span>: function <span class="rs">`add_to_waitlist`</span> is private
+  --&gt; src/lib.rs:<span class="ri">13</span>:<span class="ri">30</span>
    |
-13 |     front_of_house::hosting::add_to_waitlist();
+<span class="ri">13</span> |     front_of_house::hosting::add_to_waitlist();
    |                              ^^^^^^^^^^^^^^^ private function
    |
-note: the function `add_to_waitlist` is defined here
-  --&gt; src/lib.rs:3:9
+<span class="rk">note</span>: the function <span class="rs">`add_to_waitlist`</span> is defined here
+  --&gt; src/lib.rs:<span class="ri">3</span>:<span class="ri">9</span>
    |
- 3 |         fn add_to_waitlist() {}
+ <span class="ri">3</span> |         fn add_to_waitlist() {}
    |         ^^^^^^^^^^^^^^^^^^^^
 
-For more information about this error, try `rustc --explain E0603`.
-error: could not compile `restaurant` (lib) due to 2 previous errors
+For more information about this error, try <span class="rs">`rustc --explain E0603`</span>.
+<span class="re">error</span>: could not compile <span class="rs">`restaurant`</span> (lib) due to <span class="ri">2</span> previous errors
 </code></pre>
 <figcaption><a href="#listing-7-6">Listing 7-6</a>: Compiler errors from building the code in Listing 7-5</figcaption>
 </figure>
-<p>What happened? Adding the <code>pub</code> keyword in front of <code>mod hosting</code> makes the
-module public. With this change, if we can access <code>front_of_house</code>, we can
-access <code>hosting</code>. But the <em>contents</em> of <code>hosting</code> are still private; making the
-module public doesn’t make its contents public. The <code>pub</code> keyword on a module
+<p>What happened? Adding the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword in front of <code class="syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">hosting</span></code> makes the
+module public. With this change, if we can access <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>, we can
+access <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code>. But the <em>contents</em> of <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> are still private; making the
+module public doesn’t make its contents public. The <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword on a module
 only lets code in its ancestor modules refer to it, not access its inner code.
 Because modules are containers, there’s not much we can do by only making the
 module public; we need to go further and choose to make one or more of the
 items within the module public as well.</p>
-<p>The errors in Listing 7-6 say that the <code>add_to_waitlist</code> function is private.
+<p>The errors in Listing 7-6 say that the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function is private.
 The privacy rules apply to structs, enums, functions, and methods as well as
 modules.</p>
-<p>Let’s also make the <code>add_to_waitlist</code> function public by adding the <code>pub</code>
+<p>Let’s also make the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function public by adding the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>
 keyword before its definition, as in Listing 7-7.</p>
 <figure class="listing" id="listing-7-7">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground test_harness">mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
-    }
-}
+<pre><code class="language-rust noplayground test_harness syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-// -- snip --
-<span class="boring">pub fn eat_at_restaurant() {
-</span><span class="boring">    // Absolute path
-</span><span class="boring">    crate::front_of_house::hosting::add_to_waitlist();
+<span class="rc">// -- snip --
+</span><span class="boring"><span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rc">// Absolute path
+</span></span><span class="boring">    <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    // Relative path
-</span><span class="boring">    front_of_house::hosting::add_to_waitlist();
-</span><span class="boring">}</span></code></pre>
-<figcaption><a href="#listing-7-7">Listing 7-7</a>: Adding the <code>pub</code> keyword to <code>mod hosting</code> and <code>fn add_to_waitlist</code> lets us call the function from <code>eat_at_restaurant</code>.</figcaption>
+</span><span class="boring">    <span class="rc">// Relative path
+</span></span><span class="boring">    <span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
+<figcaption><a href="#listing-7-7">Listing 7-7</a>: Adding the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword to <code class="syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">hosting</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">add_to_waitlist</span></code> lets us call the function from <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>.</figcaption>
 </figure>
-<p>Now the code will compile! To see why adding the <code>pub</code> keyword lets us use
-these paths in <code>eat_at_restaurant</code> with respect to the privacy rules, let’s
+<p>Now the code will compile! To see why adding the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword lets us use
+these paths in <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> with respect to the privacy rules, let’s
 look at the absolute and the relative paths.</p>
-<p>In the absolute path, we start with <code>crate</code>, the root of our crate’s module
-tree. The <code>front_of_house</code> module is defined in the crate root. While
-<code>front_of_house</code> isn’t public, because the <code>eat_at_restaurant</code> function is
-defined in the same module as <code>front_of_house</code> (that is, <code>eat_at_restaurant</code>
-and <code>front_of_house</code> are siblings), we can refer to <code>front_of_house</code> from
-<code>eat_at_restaurant</code>. Next is the <code>hosting</code> module marked with <code>pub</code>. We can
-access the parent module of <code>hosting</code>, so we can access <code>hosting</code>. Finally, the
-<code>add_to_waitlist</code> function is marked with <code>pub</code>, and we can access its parent
+<p>In the absolute path, we start with <code class="syntax" data-syntax="rust"><span class="rk">crate</span></code>, the root of our crate’s module
+tree. The <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module is defined in the crate root. While
+<code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> isn’t public, because the <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> function is
+defined in the same module as <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> (that is, <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>
+and <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> are siblings), we can refer to <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> from
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>. Next is the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module marked with <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>. We can
+access the parent module of <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code>, so we can access <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code>. Finally, the
+<code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function is marked with <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>, and we can access its parent
 module, so this function call works!</p>
 <p>In the relative path, the logic is the same as the absolute path except for the
 first step: Rather than starting from the crate root, the path starts from
-<code>front_of_house</code>. The <code>front_of_house</code> module is defined within the same module
-as <code>eat_at_restaurant</code>, so the relative path starting from the module in which
-<code>eat_at_restaurant</code> is defined works. Then, because <code>hosting</code> and
-<code>add_to_waitlist</code> are marked with <code>pub</code>, the rest of the path works, and this
+<code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>. The <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module is defined within the same module
+as <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>, so the relative path starting from the module in which
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> is defined works. Then, because <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> and
+<code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> are marked with <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>, the rest of the path works, and this
 function call is valid!</p>
 <p>If you plan to share your library crate so that other projects can use your
 code, your public API is your contract with users of your crate that determines
@@ -726,339 +733,339 @@ also a client!</p>
 practice with a command line program that will contain both a binary crate
 and a library crate.</p>
 </section>
-<h4 id="starting-relative-paths-with-super"><a class="header" href="#starting-relative-paths-with-super">Starting Relative Paths with <code>super</code></a></h4>
+<h4 id="starting-relative-paths-with-super"><a class="header" href="#starting-relative-paths-with-super">Starting Relative Paths with <code class="syntax" data-syntax="rust"><span class="rk">super</span></code></a></h4>
 <p>We can construct relative paths that begin in the parent module, rather than
-the current module or the crate root, by using <code>super</code> at the start of the
-path. This is like starting a filesystem path with the <code>..</code> syntax that means
-to go to the parent directory. Using <code>super</code> allows us to reference an item
+the current module or the crate root, by using <code class="syntax" data-syntax="rust"><span class="rk">super</span></code> at the start of the
+path. This is like starting a filesystem path with the <code class="syntax" data-syntax="rust"><span class="ro">..</span></code> syntax that means
+to go to the parent directory. Using <code class="syntax" data-syntax="rust"><span class="rk">super</span></code> allows us to reference an item
 that we know is in the parent module, which can make rearranging the module
 tree easier when the module is closely related to the parent but the parent
 might be moved elsewhere in the module tree someday.</p>
 <p>Consider the code in Listing 7-8 that models the situation in which a chef
 fixes an incorrect order and personally brings it out to the customer. The
-function <code>fix_incorrect_order</code> defined in the <code>back_of_house</code> module calls the
-function <code>deliver_order</code> defined in the parent module by specifying the path to
-<code>deliver_order</code>, starting with <code>super</code>.</p>
+function <code class="syntax" data-syntax="rust"><span class="rn">fix_incorrect_order</span></code> defined in the <code class="syntax" data-syntax="rust"><span class="rn">back_of_house</span></code> module calls the
+function <code class="syntax" data-syntax="rust"><span class="rn">deliver_order</span></code> defined in the parent module by specifying the path to
+<code class="syntax" data-syntax="rust"><span class="rn">deliver_order</span></code>, starting with <code class="syntax" data-syntax="rust"><span class="rk">super</span></code>.</p>
 <figure class="listing" id="listing-7-8">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground test_harness">fn deliver_order() {}
+<pre><code class="language-rust noplayground test_harness syntax" data-syntax="rust"><span class="rk">fn</span> <span class="rf">deliver_order</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
 
-mod back_of_house {
-    fn fix_incorrect_order() {
-        cook_order();
-        super::deliver_order();
-    }
+<span class="rk">mod</span> <span class="rn">back_of_house</span> <span class="ro">{</span>
+    <span class="rk">fn</span> <span class="rf">fix_incorrect_order</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+        <span class="rn">cook_order</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+        <span class="rk">super</span><span class="ro">::</span><span class="rn">deliver_order</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
 
-    fn cook_order() {}
-}</code></pre>
-<figcaption><a href="#listing-7-8">Listing 7-8</a>: Calling a function using a relative path starting with <code>super</code></figcaption>
+    <span class="rk">fn</span> <span class="rf">cook_order</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-8">Listing 7-8</a>: Calling a function using a relative path starting with <code class="syntax" data-syntax="rust"><span class="rk">super</span></code></figcaption>
 </figure>
-<p>The <code>fix_incorrect_order</code> function is in the <code>back_of_house</code> module, so we can
-use <code>super</code> to go to the parent module of <code>back_of_house</code>, which in this case
-is <code>crate</code>, the root. From there, we look for <code>deliver_order</code> and find it.
-Success! We think the <code>back_of_house</code> module and the <code>deliver_order</code> function
+<p>The <code class="syntax" data-syntax="rust"><span class="rn">fix_incorrect_order</span></code> function is in the <code class="syntax" data-syntax="rust"><span class="rn">back_of_house</span></code> module, so we can
+use <code class="syntax" data-syntax="rust"><span class="rk">super</span></code> to go to the parent module of <code class="syntax" data-syntax="rust"><span class="rn">back_of_house</span></code>, which in this case
+is <code class="syntax" data-syntax="rust"><span class="rk">crate</span></code>, the root. From there, we look for <code class="syntax" data-syntax="rust"><span class="rn">deliver_order</span></code> and find it.
+Success! We think the <code class="syntax" data-syntax="rust"><span class="rn">back_of_house</span></code> module and the <code class="syntax" data-syntax="rust"><span class="rn">deliver_order</span></code> function
 are likely to stay in the same relationship to each other and get moved
 together should we decide to reorganize the crate’s module tree. Therefore, we
-used <code>super</code> so that we’ll have fewer places to update code in the future if
+used <code class="syntax" data-syntax="rust"><span class="rk">super</span></code> so that we’ll have fewer places to update code in the future if
 this code gets moved to a different module.</p>
 <h4 id="making-structs-and-enums-public"><a class="header" href="#making-structs-and-enums-public">Making Structs and Enums Public</a></h4>
-<p>We can also use <code>pub</code> to designate structs and enums as public, but there are a
-few extra details to the usage of <code>pub</code> with structs and enums. If we use <code>pub</code>
+<p>We can also use <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> to designate structs and enums as public, but there are a
+few extra details to the usage of <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> with structs and enums. If we use <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>
 before a struct definition, we make the struct public, but the struct’s fields
 will still be private. We can make each field public or not on a case-by-case
-basis. In Listing 7-9, we’ve defined a public <code>back_of_house::Breakfast</code> struct
-with a public <code>toast</code> field but a private <code>seasonal_fruit</code> field. This models
+basis. In Listing 7-9, we’ve defined a public <code class="syntax" data-syntax="rust"><span class="rn">back_of_house</span><span class="ro">::</span><span class="rt">Breakfast</span></code> struct
+with a public <code class="syntax" data-syntax="rust"><span class="rn">toast</span></code> field but a private <code class="syntax" data-syntax="rust"><span class="rn">seasonal_fruit</span></code> field. This models
 the case in a restaurant where the customer can pick the type of bread that
 comes with a meal, but the chef decides which fruit accompanies the meal based
 on what’s in season and in stock. The available fruit changes quickly, so
 customers can’t choose the fruit or even see which fruit they’ll get.</p>
 <figure class="listing" id="listing-7-9">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground">mod back_of_house {
-    pub struct Breakfast {
-        pub toast: String,
-        seasonal_fruit: String,
-    }
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">back_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">struct</span> <span class="rt">Breakfast</span> <span class="ro">{</span>
+        <span class="rk">pub</span> <span class="rn">toast</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+        <span class="rn">seasonal_fruit</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">,</span>
+    <span class="ro">}</span>
 
-    impl Breakfast {
-        pub fn summer(toast: &amp;str) -&gt; Breakfast {
-            Breakfast {
-                toast: String::from(toast),
-                seasonal_fruit: String::from("peaches"),
-            }
-        }
-    }
-}
+    <span class="rk">impl</span> <span class="rt">Breakfast</span> <span class="ro">{</span>
+        <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">summer</span><span class="ro">(</span><span class="rn">toast</span><span class="ro">:</span> <span class="rk">&amp;</span><span class="rt">str</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">Breakfast</span> <span class="ro">{</span>
+            <span class="rt">Breakfast</span> <span class="ro">{</span>
+                <span class="rn">toast</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rn">toast</span><span class="ro">)</span><span class="ro">,</span>
+                <span class="rn">seasonal_fruit</span><span class="ro">:</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">peaches</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+            <span class="ro">}</span>
+        <span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-pub fn eat_at_restaurant() {
-    // Order a breakfast in the summer with Rye toast.
-    let mut meal = back_of_house::Breakfast::summer("Rye");
-    // Change our mind about what bread we'd like.
-    meal.toast = String::from("Wheat");
-    println!("I'd like {} toast please", meal.toast);
+<span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rc">// Order a breakfast in the summer with Rye toast.
+</span>    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">meal</span> <span class="ro">=</span> <span class="rn">back_of_house</span><span class="ro">::</span><span class="rt">Breakfast</span><span class="ro">::</span><span class="rn">summer</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Rye</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rc">// Change our mind about what bread we'd like.
+</span>    <span class="rn">meal</span><span class="ro">.</span><span class="rn">toast</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">from</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Wheat</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">I'd like {} toast please</span><span class="rs">"</span><span class="ro">,</span> <span class="rn">meal</span><span class="ro">.</span><span class="rn">toast</span><span class="ro">)</span><span class="ro">;</span>
 
-    // The next line won't compile if we uncomment it; we're not allowed
-    // to see or modify the seasonal fruit that comes with the meal.
-    // meal.seasonal_fruit = String::from("blueberries");
-}</code></pre>
+    <span class="rc">// The next line won't compile if we uncomment it; we're not allowed
+</span>    <span class="rc">// to see or modify the seasonal fruit that comes with the meal.
+</span>    <span class="rc">// meal.seasonal_fruit = String::from("blueberries");
+</span><span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-7-9">Listing 7-9</a>: A struct with some public fields and some private fields</figcaption>
 </figure>
-<p>Because the <code>toast</code> field in the <code>back_of_house::Breakfast</code> struct is public,
-in <code>eat_at_restaurant</code> we can write and read to the <code>toast</code> field using dot
-notation. Notice that we can’t use the <code>seasonal_fruit</code> field in
-<code>eat_at_restaurant</code>, because <code>seasonal_fruit</code> is private. Try uncommenting the
-line modifying the <code>seasonal_fruit</code> field value to see what error you get!</p>
-<p>Also, note that because <code>back_of_house::Breakfast</code> has a private field, the
+<p>Because the <code class="syntax" data-syntax="rust"><span class="rn">toast</span></code> field in the <code class="syntax" data-syntax="rust"><span class="rn">back_of_house</span><span class="ro">::</span><span class="rt">Breakfast</span></code> struct is public,
+in <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> we can write and read to the <code class="syntax" data-syntax="rust"><span class="rn">toast</span></code> field using dot
+notation. Notice that we can’t use the <code class="syntax" data-syntax="rust"><span class="rn">seasonal_fruit</span></code> field in
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>, because <code class="syntax" data-syntax="rust"><span class="rn">seasonal_fruit</span></code> is private. Try uncommenting the
+line modifying the <code class="syntax" data-syntax="rust"><span class="rn">seasonal_fruit</span></code> field value to see what error you get!</p>
+<p>Also, note that because <code class="syntax" data-syntax="rust"><span class="rn">back_of_house</span><span class="ro">::</span><span class="rt">Breakfast</span></code> has a private field, the
 struct needs to provide a public associated function that constructs an
-instance of <code>Breakfast</code> (we’ve named it <code>summer</code> here). If <code>Breakfast</code> didn’t
-have such a function, we couldn’t create an instance of <code>Breakfast</code> in
-<code>eat_at_restaurant</code>, because we couldn’t set the value of the private
-<code>seasonal_fruit</code> field in <code>eat_at_restaurant</code>.</p>
+instance of <code class="syntax" data-syntax="rust"><span class="rt">Breakfast</span></code> (we’ve named it <code class="syntax" data-syntax="rust"><span class="rn">summer</span></code> here). If <code class="syntax" data-syntax="rust"><span class="rt">Breakfast</span></code> didn’t
+have such a function, we couldn’t create an instance of <code class="syntax" data-syntax="rust"><span class="rt">Breakfast</span></code> in
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>, because we couldn’t set the value of the private
+<code class="syntax" data-syntax="rust"><span class="rn">seasonal_fruit</span></code> field in <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>.</p>
 <p>In contrast, if we make an enum public, all of its variants are then public. We
-only need the <code>pub</code> before the <code>enum</code> keyword, as shown in Listing 7-10.</p>
+only need the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> before the <code class="syntax" data-syntax="rust"><span class="rk">enum</span></code> keyword, as shown in Listing 7-10.</p>
 <figure class="listing" id="listing-7-10">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground">mod back_of_house {
-    pub enum Appetizer {
-        Soup,
-        Salad,
-    }
-}
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">back_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">enum</span> <span class="rt">Appetizer</span> <span class="ro">{</span>
+        <span class="rt">Soup</span><span class="ro">,</span>
+        <span class="rt">Salad</span><span class="ro">,</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-pub fn eat_at_restaurant() {
-    let order1 = back_of_house::Appetizer::Soup;
-    let order2 = back_of_house::Appetizer::Salad;
-}</code></pre>
+<span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rn">order1</span> <span class="ro">=</span> <span class="rn">back_of_house</span><span class="ro">::</span><span class="rt">Appetizer</span><span class="ro">::</span><span class="rt">Soup</span><span class="ro">;</span>
+    <span class="rk">let</span> <span class="rn">order2</span> <span class="ro">=</span> <span class="rn">back_of_house</span><span class="ro">::</span><span class="rt">Appetizer</span><span class="ro">::</span><span class="rt">Salad</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-7-10">Listing 7-10</a>: Designating an enum as public makes all its variants public.</figcaption>
 </figure>
-<p>Because we made the <code>Appetizer</code> enum public, we can use the <code>Soup</code> and <code>Salad</code>
-variants in <code>eat_at_restaurant</code>.</p>
+<p>Because we made the <code class="syntax" data-syntax="rust"><span class="rt">Appetizer</span></code> enum public, we can use the <code class="syntax" data-syntax="rust"><span class="rt">Soup</span></code> and <code class="syntax" data-syntax="rust"><span class="rt">Salad</span></code>
+variants in <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>.</p>
 <p>Enums aren’t very useful unless their variants are public; it would be annoying
-to have to annotate all enum variants with <code>pub</code> in every case, so the default
+to have to annotate all enum variants with <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> in every case, so the default
 for enum variants is to be public. Structs are often useful without their
 fields being public, so struct fields follow the general rule of everything
-being private by default unless annotated with <code>pub</code>.</p>
-<p>There’s one more situation involving <code>pub</code> that we haven’t covered, and that is
-our last module system feature: the <code>use</code> keyword. We’ll cover <code>use</code> by itself
-first, and then we’ll show how to combine <code>pub</code> and <code>use</code>.</p>
+being private by default unless annotated with <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>.</p>
+<p>There’s one more situation involving <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> that we haven’t covered, and that is
+our last module system feature: the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> keyword. We’ll cover <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> by itself
+first, and then we’ll show how to combine <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h2 id="bringing-paths-into-scope-with-the-use-keyword-1"><a href="#bringing-paths-into-scope-with-the-use-keyword-1" class="header">Bringing Paths Into Scope with the use Keyword</a></h2>
-<h3 id="bringing-paths-into-scope-with-the-use-keyword"><a class="header" href="#bringing-paths-into-scope-with-the-use-keyword">Bringing Paths into Scope with the <code>use</code> Keyword</a></h3>
+<h3 id="bringing-paths-into-scope-with-the-use-keyword"><a class="header" href="#bringing-paths-into-scope-with-the-use-keyword">Bringing Paths into Scope with the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> Keyword</a></h3>
 <p>Having to write out the paths to call functions can feel inconvenient and
 repetitive. In Listing 7-7, whether we chose the absolute or relative path to
-the <code>add_to_waitlist</code> function, every time we wanted to call <code>add_to_waitlist</code>
-we had to specify <code>front_of_house</code> and <code>hosting</code> too. Fortunately, there’s a
-way to simplify this process: We can create a shortcut to a path with the <code>use</code>
+the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function, every time we wanted to call <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code>
+we had to specify <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> too. Fortunately, there’s a
+way to simplify this process: We can create a shortcut to a path with the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>
 keyword once and then use the shorter name everywhere else in the scope.</p>
-<p>In Listing 7-11, we bring the <code>crate::front_of_house::hosting</code> module into the
-scope of the <code>eat_at_restaurant</code> function so that we only have to specify
-<code>hosting::add_to_waitlist</code> to call the <code>add_to_waitlist</code> function in
-<code>eat_at_restaurant</code>.</p>
+<p>In Listing 7-11, we bring the <code class="syntax" data-syntax="rust"><span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span></code> module into the
+scope of the <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> function so that we only have to specify
+<code class="syntax" data-syntax="rust"><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span></code> to call the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function in
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>.</p>
 <figure class="listing" id="listing-7-11">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground test_harness">mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
-    }
-}
+<pre><code class="language-rust noplayground test_harness syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-use crate::front_of_house::hosting;
+<span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">;</span>
 
-pub fn eat_at_restaurant() {
-    hosting::add_to_waitlist();
-}</code></pre>
-<figcaption><a href="#listing-7-11">Listing 7-11</a>: Bringing a module into scope with <code>use</code></figcaption>
+<span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-11">Listing 7-11</a>: Bringing a module into scope with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code></figcaption>
 </figure>
-<p>Adding <code>use</code> and a path in a scope is similar to creating a symbolic link in
-the filesystem. By adding <code>use crate::front_of_house::hosting</code> in the crate
-root, <code>hosting</code> is now a valid name in that scope, just as though the <code>hosting</code>
-module had been defined in the crate root. Paths brought into scope with <code>use</code>
+<p>Adding <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> and a path in a scope is similar to creating a symbolic link in
+the filesystem. By adding <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span></code> in the crate
+root, <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> is now a valid name in that scope, just as though the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code>
+module had been defined in the crate root. Paths brought into scope with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>
 also check privacy, like any other paths.</p>
-<p>Note that <code>use</code> only creates the shortcut for the particular scope in which the
-<code>use</code> occurs. Listing 7-12 moves the <code>eat_at_restaurant</code> function into a new
-child module named <code>customer</code>, which is then a different scope than the <code>use</code>
+<p>Note that <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> only creates the shortcut for the particular scope in which the
+<code class="syntax" data-syntax="rust"><span class="rk">use</span></code> occurs. Listing 7-12 moves the <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> function into a new
+child module named <code class="syntax" data-syntax="rust"><span class="rn">customer</span></code>, which is then a different scope than the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>
 statement, so the function body won’t compile.</p>
 <figure class="listing" id="listing-7-12">
 <span class="file-name">Filename: src/lib.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust noplayground test_harness does_not_compile ignore">mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
-    }
-}
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust noplayground test_harness does_not_compile ignore syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-use crate::front_of_house::hosting;
+<span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">;</span>
 
-mod customer {
-    pub fn eat_at_restaurant() {
-        hosting::add_to_waitlist();
-    }
-}</code></pre>
-<figcaption><a href="#listing-7-12">Listing 7-12</a>: A <code>use</code> statement only applies in the scope it’s in.</figcaption>
+<span class="rk">mod</span> <span class="rn">customer</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+        <span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-12">Listing 7-12</a>: A <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statement only applies in the scope it’s in.</figcaption>
 </figure>
 <p>The compiler error shows that the shortcut no longer applies within the
-<code>customer</code> module:</p>
-<pre><code class="language-console">$ cargo build
-   Compiling restaurant v0.1.0 (file:///projects/restaurant)
-error[E0433]: cannot find module or crate `hosting` in this scope
-  --&gt; src/lib.rs:11:9
+<code class="syntax" data-syntax="rust"><span class="rn">customer</span></code> module:</p>
+<pre><code class="language-console syntax" data-syntax="console"><span class="rk">$ </span>cargo build
+<span class="rk">   Compiling</span> restaurant v0.<span class="ri">1.0</span> (file:///projects/restaurant)
+<span class="re">error[E0433]</span>: cannot find module or crate <span class="rs">`hosting`</span> in this scope
+  --&gt; src/lib.rs:<span class="ri">11</span>:<span class="ri">9</span>
    |
-11 |         hosting::add_to_waitlist();
-   |         ^^^^^^^ use of unresolved module or unlinked crate `hosting`
+<span class="ri">11</span> |         hosting::add_to_waitlist();
+   |         ^^^^^^^ use of unresolved module or unlinked crate <span class="rs">`hosting`</span>
    |
-   = help: if you wanted to use a crate named `hosting`, use `cargo add hosting` to add it to your `Cargo.toml`
-help: consider importing this module through its public re-export
+   = <span class="rk">help</span>: if you wanted to use a crate named <span class="rs">`hosting`</span>, use <span class="rs">`cargo add hosting`</span> to add it to your <span class="rs">`Cargo.toml`</span>
+<span class="rk">help</span>: consider importing this module through its public re-export
    |
-10 +     use crate::hosting;
+<span class="ri">10</span> +     use crate::hosting;
    |
 
-warning: unused import: `crate::front_of_house::hosting`
- --&gt; src/lib.rs:7:5
+<span class="re">warning</span>: unused import: <span class="rs">`crate::front_of_house::hosting`</span>
+ --&gt; src/lib.rs:<span class="ri">7</span>:<span class="ri">5</span>
   |
-7 | use crate::front_of_house::hosting;
+<span class="ri">7</span> | use crate::front_of_house::hosting;
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+  = <span class="rk">note</span>: <span class="rs">`#[warn(unused_imports)]`</span> (part of <span class="rs">`#[warn(unused)]`</span>) on by default
 
-For more information about this error, try `rustc --explain E0433`.
-warning: `restaurant` (lib) generated 1 warning
-error: could not compile `restaurant` (lib) due to 1 previous error; 1 warning emitted
+For more information about this error, try <span class="rs">`rustc --explain E0433`</span>.
+<span class="re">warning</span>: <span class="rs">`restaurant`</span> (lib) generated <span class="ri">1</span> warning
+<span class="re">error</span>: could not compile <span class="rs">`restaurant`</span> (lib) due to <span class="ri">1</span> previous error; <span class="ri">1</span> warning emitted
 </code></pre>
-<p>Notice there’s also a warning that the <code>use</code> is no longer used in its scope! To
-fix this problem, move the <code>use</code> within the <code>customer</code> module too, or reference
-the shortcut in the parent module with <code>super::hosting</code> within the child
-<code>customer</code> module.</p>
-<h4 id="creating-idiomatic-use-paths"><a class="header" href="#creating-idiomatic-use-paths">Creating Idiomatic <code>use</code> Paths</a></h4>
-<p>In Listing 7-11, you might have wondered why we specified <code>use crate::front_of_house::hosting</code> and then called <code>hosting::add_to_waitlist</code> in
-<code>eat_at_restaurant</code>, rather than specifying the <code>use</code> path all the way out to
-the <code>add_to_waitlist</code> function to achieve the same result, as in Listing 7-13.</p>
+<p>Notice there’s also a warning that the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> is no longer used in its scope! To
+fix this problem, move the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> within the <code class="syntax" data-syntax="rust"><span class="rn">customer</span></code> module too, or reference
+the shortcut in the parent module with <code class="syntax" data-syntax="rust"><span class="rk">super</span><span class="ro">::</span><span class="rn">hosting</span></code> within the child
+<code class="syntax" data-syntax="rust"><span class="rn">customer</span></code> module.</p>
+<h4 id="creating-idiomatic-use-paths"><a class="header" href="#creating-idiomatic-use-paths">Creating Idiomatic <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> Paths</a></h4>
+<p>In Listing 7-11, you might have wondered why we specified <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span></code> and then called <code class="syntax" data-syntax="rust"><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span></code> in
+<code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code>, rather than specifying the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> path all the way out to
+the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function to achieve the same result, as in Listing 7-13.</p>
 <figure class="listing" id="listing-7-13">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground test_harness">mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
-    }
-}
+<pre><code class="language-rust noplayground test_harness syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-use crate::front_of_house::hosting::add_to_waitlist;
+<span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">;</span>
 
-pub fn eat_at_restaurant() {
-    add_to_waitlist();
-}</code></pre>
-<figcaption><a href="#listing-7-13">Listing 7-13</a>: Bringing the <code>add_to_waitlist</code> function into scope with <code>use</code>, which is unidiomatic</figcaption>
+<span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-13">Listing 7-13</a>: Bringing the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> function into scope with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>, which is unidiomatic</figcaption>
 </figure>
 <p>Although both Listing 7-11 and Listing 7-13 accomplish the same task, Listing
-7-11 is the idiomatic way to bring a function into scope with <code>use</code>. Bringing
-the function’s parent module into scope with <code>use</code> means we have to specify the
+7-11 is the idiomatic way to bring a function into scope with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>. Bringing
+the function’s parent module into scope with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> means we have to specify the
 parent module when calling the function. Specifying the parent module when
 calling the function makes it clear that the function isn’t locally defined
 while still minimizing repetition of the full path. The code in Listing 7-13 is
-unclear as to where <code>add_to_waitlist</code> is defined.</p>
-<p>On the other hand, when bringing in structs, enums, and other items with <code>use</code>,
+unclear as to where <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code> is defined.</p>
+<p>On the other hand, when bringing in structs, enums, and other items with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>,
 it’s idiomatic to specify the full path. Listing 7-14 shows the idiomatic way
-to bring the standard library’s <code>HashMap</code> struct into the scope of a binary
+to bring the standard library’s <code class="syntax" data-syntax="rust"><span class="rt">HashMap</span></code> struct into the scope of a binary
 crate.</p>
 <figure class="listing" id="listing-7-14">
 <span class="file-name">Filename: src/main.rs</span>
-<pre class="playground"><code class="language-rust edition2024">use std::collections::HashMap;
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">collections</span><span class="ro">::</span><span class="rt">HashMap</span><span class="ro">;</span>
 
-fn main() {
-    let mut map = HashMap::new();
-    map.insert(1, 2);
-}</code></pre>
-<figcaption><a href="#listing-7-14">Listing 7-14</a>: Bringing <code>HashMap</code> into scope in an idiomatic way</figcaption>
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">map</span> <span class="ro">=</span> <span class="rt">HashMap</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+    <span class="rn">map</span><span class="ro">.</span><span class="rn">insert</span><span class="ro">(</span><span class="ri">1</span><span class="ro">,</span> <span class="ri">2</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-14">Listing 7-14</a>: Bringing <code class="syntax" data-syntax="rust"><span class="rt">HashMap</span></code> into scope in an idiomatic way</figcaption>
 </figure>
 <p>There’s no strong reason behind this idiom: It’s just the convention that has
 emerged, and folks have gotten used to reading and writing Rust code this way.</p>
 <p>The exception to this idiom is if we’re bringing two items with the same name
-into scope with <code>use</code> statements, because Rust doesn’t allow that. Listing 7-15
-shows how to bring two <code>Result</code> types into scope that have the same name but
+into scope with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements, because Rust doesn’t allow that. Listing 7-15
+shows how to bring two <code class="syntax" data-syntax="rust"><span class="rt">Result</span></code> types into scope that have the same name but
 different parent modules, and how to refer to them.</p>
 <figure class="listing" id="listing-7-15">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground">use std::fmt;
-use std::io;
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">fmt</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">;</span>
 
-fn function1() -&gt; fmt::Result {
-    // --snip--
-<span class="boring">    Ok(())
-</span>}
+<span class="rk">fn</span> <span class="rf">function1</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">fmt</span><span class="ro">::</span><span class="rt">Result</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">    <span class="rt">Ok</span><span class="ro">(</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span>
+</span><span class="ro">}</span>
 
-fn function2() -&gt; io::Result&lt;()&gt; {
-    // --snip--
-<span class="boring">    Ok(())
-</span>}</code></pre>
+<span class="rk">fn</span> <span class="rf">function2</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">io</span><span class="ro">::</span><span class="rt">Result</span><span class="ro">&lt;</span><span class="ro">(</span><span class="ro">)</span><span class="ro">&gt;</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">    <span class="rt">Ok</span><span class="ro">(</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span>
+</span><span class="ro">}</span></code></pre>
 <figcaption><a href="#listing-7-15">Listing 7-15</a>: Bringing two types with the same name into the same scope requires using their parent modules.</figcaption>
 </figure>
-<p>As you can see, using the parent modules distinguishes the two <code>Result</code> types.
-If instead we specified <code>use std::fmt::Result</code> and <code>use std::io::Result</code>, we’d
-have two <code>Result</code> types in the same scope, and Rust wouldn’t know which one we
-meant when we used <code>Result</code>.</p>
-<h4 id="providing-new-names-with-the-as-keyword"><a class="header" href="#providing-new-names-with-the-as-keyword">Providing New Names with the <code>as</code> Keyword</a></h4>
+<p>As you can see, using the parent modules distinguishes the two <code class="syntax" data-syntax="rust"><span class="rt">Result</span></code> types.
+If instead we specified <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">fmt</span><span class="ro">::</span><span class="rt">Result</span></code> and <code class="syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">::</span><span class="rt">Result</span></code>, we’d
+have two <code class="syntax" data-syntax="rust"><span class="rt">Result</span></code> types in the same scope, and Rust wouldn’t know which one we
+meant when we used <code class="syntax" data-syntax="rust"><span class="rt">Result</span></code>.</p>
+<h4 id="providing-new-names-with-the-as-keyword"><a class="header" href="#providing-new-names-with-the-as-keyword">Providing New Names with the <code class="syntax" data-syntax="rust"><span class="rk">as</span></code> Keyword</a></h4>
 <p>There’s another solution to the problem of bringing two types of the same name
-into the same scope with <code>use</code>: After the path, we can specify <code>as</code> and a new
+into the same scope with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code>: After the path, we can specify <code class="syntax" data-syntax="rust"><span class="rk">as</span></code> and a new
 local name, or <em>alias</em>, for the type. Listing 7-16 shows another way to write
-the code in Listing 7-15 by renaming one of the two <code>Result</code> types using <code>as</code>.</p>
+the code in Listing 7-15 by renaming one of the two <code class="syntax" data-syntax="rust"><span class="rt">Result</span></code> types using <code class="syntax" data-syntax="rust"><span class="rk">as</span></code>.</p>
 <figure class="listing" id="listing-7-16">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground">use std::fmt::Result;
-use std::io::Result as IoResult;
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">fmt</span><span class="ro">::</span><span class="rt">Result</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">::</span><span class="rt">Result</span> <span class="rk">as</span> <span class="rt">IoResult</span><span class="ro">;</span>
 
-fn function1() -&gt; Result {
-    // --snip--
-<span class="boring">    Ok(())
-</span>}
+<span class="rk">fn</span> <span class="rf">function1</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">Result</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">    <span class="rt">Ok</span><span class="ro">(</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span>
+</span><span class="ro">}</span>
 
-fn function2() -&gt; IoResult&lt;()&gt; {
-    // --snip--
-<span class="boring">    Ok(())
-</span>}</code></pre>
-<figcaption><a href="#listing-7-16">Listing 7-16</a>: Renaming a type when it’s brought into scope with the <code>as</code> keyword</figcaption>
+<span class="rk">fn</span> <span class="rf">function2</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">-&gt;</span> <span class="rt">IoResult</span><span class="ro">&lt;</span><span class="ro">(</span><span class="ro">)</span><span class="ro">&gt;</span> <span class="ro">{</span>
+    <span class="rc">// --snip--
+</span><span class="boring">    <span class="rt">Ok</span><span class="ro">(</span><span class="ro">(</span><span class="ro">)</span><span class="ro">)</span>
+</span><span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-16">Listing 7-16</a>: Renaming a type when it’s brought into scope with the <code class="syntax" data-syntax="rust"><span class="rk">as</span></code> keyword</figcaption>
 </figure>
-<p>In the second <code>use</code> statement, we chose the new name <code>IoResult</code> for the
-<code>std::io::Result</code> type, which won’t conflict with the <code>Result</code> from <code>std::fmt</code>
+<p>In the second <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statement, we chose the new name <code class="syntax" data-syntax="rust"><span class="rt">IoResult</span></code> for the
+<code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">::</span><span class="rt">Result</span></code> type, which won’t conflict with the <code class="syntax" data-syntax="rust"><span class="rt">Result</span></code> from <code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">fmt</span></code>
 that we’ve also brought into scope. Listing 7-15 and Listing 7-16 are
 considered idiomatic, so the choice is up to you!</p>
-<h4 id="re-exporting-names-with-pub-use"><a class="header" href="#re-exporting-names-with-pub-use">Re-exporting Names with <code>pub use</code></a></h4>
-<p>When we bring a name into scope with the <code>use</code> keyword, the name is private to
+<h4 id="re-exporting-names-with-pub-use"><a class="header" href="#re-exporting-names-with-pub-use">Re-exporting Names with <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code></a></h4>
+<p>When we bring a name into scope with the <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> keyword, the name is private to
 the scope into which we imported it. To enable code outside that scope to refer
-to that name as if it had been defined in that scope, we can combine <code>pub</code> and
-<code>use</code>. This technique is called <em>re-exporting</em> because we’re bringing an item
+to that name as if it had been defined in that scope, we can combine <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> and
+<code class="syntax" data-syntax="rust"><span class="rk">use</span></code>. This technique is called <em>re-exporting</em> because we’re bringing an item
 into scope but also making that item available for others to bring into their
 scope.</p>
-<p>Listing 7-17 shows the code in Listing 7-11 with <code>use</code> in the root module
-changed to <code>pub use</code>.</p>
+<p>Listing 7-17 shows the code in Listing 7-11 with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> in the root module
+changed to <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code>.</p>
 <figure class="listing" id="listing-7-17">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground test_harness">mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
-    }
-}
+<pre><code class="language-rust noplayground test_harness syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+        <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+    <span class="ro">}</span>
+<span class="ro">}</span>
 
-pub use crate::front_of_house::hosting;
+<span class="rk">pub</span> <span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">;</span>
 
-pub fn eat_at_restaurant() {
-    hosting::add_to_waitlist();
-}</code></pre>
-<figcaption><a href="#listing-7-17">Listing 7-17</a>: Making a name available for any code to use from a new scope with <code>pub use</code></figcaption>
+<span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-17">Listing 7-17</a>: Making a name available for any code to use from a new scope with <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code></figcaption>
 </figure>
-<p>Before this change, external code would have to call the <code>add_to_waitlist</code>
+<p>Before this change, external code would have to call the <code class="syntax" data-syntax="rust"><span class="rn">add_to_waitlist</span></code>
 function by using the path
-<code>restaurant::front_of_house::hosting::add_to_waitlist()</code>, which also would have
-required the <code>front_of_house</code> module to be marked as <code>pub</code>. Now that this <code>pub use</code> has re-exported the <code>hosting</code> module from the root module, external code
-can use the path <code>restaurant::hosting::add_to_waitlist()</code> instead.</p>
+<code class="syntax" data-syntax="rust"><span class="rn">restaurant</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span></code>, which also would have
+required the <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module to be marked as <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code>. Now that this <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code> has re-exported the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module from the root module, external code
+can use the path <code class="syntax" data-syntax="rust"><span class="rn">restaurant</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span></code> instead.</p>
 <p>Re-exporting is useful when the internal structure of your code is different
 from how programmers calling your code would think about the domain. For
 example, in this restaurant metaphor, the people running the restaurant think
 about “front of house” and “back of house.” But customers visiting a restaurant
-probably won’t think about the parts of the restaurant in those terms. With <code>pub use</code>, we can write our code with one structure but expose a different structure.
+probably won’t think about the parts of the restaurant in those terms. With <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code>, we can write our code with one structure but expose a different structure.
 Doing so makes our library well organized for programmers working on the library
-and programmers calling the library. We’ll look at another example of <code>pub use</code>
+and programmers calling the library. We’ll look at another example of <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span></code>
 and how it affects your crate’s documentation in <a href="14%20Cargo%20for%20a%20Team.html#exporting-a-convenient-public-api">“Exporting a Convenient Public
 API”</a><!-- ignore --> in Chapter 14.</p>
 <h4 id="using-external-packages"><a class="header" href="#using-external-packages">Using External Packages</a></h4>
 <p>In Chapter 2, we programmed a guessing game project that used an external
-package called <code>rand</code> to get random numbers. To use <code>rand</code> in our project, we
+package called <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> to get random numbers. To use <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> in our project, we
 added this line to <em>Cargo.toml</em>:</p>
 <!-- When updating the version of `rand` used, also update the version of
 `rand` used in these files so they all match:
@@ -1069,92 +1076,92 @@ added this line to <em>Cargo.toml</em>:</p>
 -->
 <figure class="listing">
 <span class="file-name">Filename: Cargo.toml</span>
-<pre><code class="language-toml">rand = "0.10.1"
+<pre><code class="language-toml syntax" data-syntax="toml"><span class="rn">rand</span> <span class="ro">=</span> <span class="rs">"</span><span class="rs">0.10.1</span><span class="rs">"</span>
 </code></pre>
 </figure>
-<p>Adding <code>rand</code> as a dependency in <em>Cargo.toml</em> tells Cargo to download the
-<code>rand</code> package and any dependencies from <a href="https://crates.io/">crates.io</a> and
-make <code>rand</code> available to our project.</p>
-<p>Then, to bring <code>rand</code> definitions into the scope of our package, we added a
-<code>use</code> line starting with the name of the crate, <code>rand</code>, and listed the items we
+<p>Adding <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> as a dependency in <em>Cargo.toml</em> tells Cargo to download the
+<code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> package and any dependencies from <a href="https://crates.io/">crates.io</a> and
+make <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> available to our project.</p>
+<p>Then, to bring <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code> definitions into the scope of our package, we added a
+<code class="syntax" data-syntax="rust"><span class="rk">use</span></code> line starting with the name of the crate, <code class="syntax" data-syntax="rust"><span class="rn">rand</span></code>, and listed the items we
 wanted to bring into scope. Recall that in <a href="02%20An%20Input%20to%20a%20Decision.html#generating-a-random-number">“Generating a Random
 Number”</a><!-- ignore --> in Chapter 2, we brought items in the
-<code>rand::prelude</code> module into scope and called the <code>rand::rng</code> function:</p>
-<pre><code class="language-rust ignore"><span class="boring">use std::io;
+<code class="syntax" data-syntax="rust"><span class="rn">rand</span><span class="ro">::</span><span class="rn">prelude</span></code> module into scope and called the <code class="syntax" data-syntax="rust"><span class="rn">rand</span><span class="ro">::</span><span class="rn">rng</span></code> function:</p>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="boring"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">;</span>
 </span><span class="boring">
-</span>use rand::prelude::*;
+</span><span class="rk">use</span> <span class="rn">rand</span><span class="ro">::</span><span class="rn">prelude</span><span class="ro">:</span><span class="ro">:</span><span class="ro">*</span><span class="ro">;</span>
 
-fn main() {
-<span class="boring">    println!("Guess the number!");
+<span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+<span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Guess the number!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span>    let secret_number = rand::rng().random_range(1..=100);
+</span>    <span class="rk">let</span> <span class="rn">secret_number</span> <span class="ro">=</span> <span class="rn">rand</span><span class="ro">::</span><span class="rn">rng</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">random_range</span><span class="ro">(</span><span class="ri">1</span><span class="ro">..=</span><span class="ri">100</span><span class="ro">)</span><span class="ro">;</span>
 <span class="boring">
-</span><span class="boring">    println!("The secret number is: {secret_number}");
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The secret number is: {secret_number}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("Please input your guess.");
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Please input your guess.</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    let mut guess = String::new();
+</span><span class="boring">    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">guess</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    io::stdin()
-</span><span class="boring">        .read_line(&amp;mut guess)
-</span><span class="boring">        .expect("Failed to read line");
+</span><span class="boring">    <span class="rn">io</span><span class="ro">::</span><span class="rn">stdin</span><span class="ro">(</span><span class="ro">)</span>
+</span><span class="boring">        <span class="ro">.</span><span class="rn">read_line</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rk">mut</span> <span class="rn">guess</span><span class="ro">)</span>
+</span><span class="boring">        <span class="ro">.</span><span class="rn">expect</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Failed to read line</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("You guessed: {guess}");
-</span>}</code></pre>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">You guessed: {guess}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="ro">}</span></code></pre>
 <p>Members of the Rust community have made many packages available at
 <a href="https://crates.io/">crates.io</a>, and pulling any of them into your package
 involves these same steps: listing them in your package’s <em>Cargo.toml</em> file and
-using <code>use</code> to bring items from their crates into scope.</p>
-<p>Note that the standard <code>std</code> library is also a crate that’s external to our
+using <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> to bring items from their crates into scope.</p>
+<p>Note that the standard <code class="syntax" data-syntax="rust"><span class="rn">std</span></code> library is also a crate that’s external to our
 package. Because the standard library is shipped with the Rust language, we
-don’t need to change <em>Cargo.toml</em> to include <code>std</code>. But we do need to refer to
-it with <code>use</code> to bring items from there into our package’s scope. For example,
-with <code>HashMap</code> we would use this line:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use std::collections::HashMap;
-<span class="boring">}</span></code></pre>
-<p>This is an absolute path starting with <code>std</code>, the name of the standard library
+don’t need to change <em>Cargo.toml</em> to include <code class="syntax" data-syntax="rust"><span class="rn">std</span></code>. But we do need to refer to
+it with <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> to bring items from there into our package’s scope. For example,
+with <code class="syntax" data-syntax="rust"><span class="rt">HashMap</span></code> we would use this line:</p>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">collections</span><span class="ro">::</span><span class="rt">HashMap</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>This is an absolute path starting with <code class="syntax" data-syntax="rust"><span class="rn">std</span></code>, the name of the standard library
 crate.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="using-nested-paths-to-clean-up-large-use-lists"></a></p>
-<h4 id="using-nested-paths-to-clean-up-use-lists"><a class="header" href="#using-nested-paths-to-clean-up-use-lists">Using Nested Paths to Clean Up <code>use</code> Lists</a></h4>
+<h4 id="using-nested-paths-to-clean-up-use-lists"><a class="header" href="#using-nested-paths-to-clean-up-use-lists">Using Nested Paths to Clean Up <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> Lists</a></h4>
 <p>If we’re using multiple items defined in the same crate or same module, listing
 each item on its own line can take up a lot of vertical space in our files. For
-example, these two <code>use</code> statements we had in the guessing game in Listing 2-4
-bring items from <code>std</code> into scope:</p>
+example, these two <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements we had in the guessing game in Listing 2-4
+bring items from <code class="syntax" data-syntax="rust"><span class="rn">std</span></code> into scope:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust ignore">// --snip--
-use std::cmp::Ordering;
-use std::io;
-// --snip--
-<span class="boring">
-</span><span class="boring">use rand::prelude::*;
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rc">// --snip--
+</span><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">cmp</span><span class="ro">::</span><span class="rt">Ordering</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">;</span>
+<span class="rc">// --snip--
 </span><span class="boring">
-</span><span class="boring">fn main() {
-</span><span class="boring">    println!("Guess the number!");
+</span><span class="boring"><span class="rk">use</span> <span class="rn">rand</span><span class="ro">::</span><span class="rn">prelude</span><span class="ro">:</span><span class="ro">:</span><span class="ro">*</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    let secret_number = rand::rng().random_range(1..=100);
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Guess the number!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("The secret number is: {secret_number}");
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">secret_number</span> <span class="ro">=</span> <span class="rn">rand</span><span class="ro">::</span><span class="rn">rng</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">random_range</span><span class="ro">(</span><span class="ri">1</span><span class="ro">..=</span><span class="ri">100</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("Please input your guess.");
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The secret number is: {secret_number}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    let mut guess = String::new();
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Please input your guess.</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    io::stdin()
-</span><span class="boring">        .read_line(&amp;mut guess)
-</span><span class="boring">        .expect("Failed to read line");
+</span><span class="boring">    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">guess</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("You guessed: {guess}");
+</span><span class="boring">    <span class="rn">io</span><span class="ro">::</span><span class="rn">stdin</span><span class="ro">(</span><span class="ro">)</span>
+</span><span class="boring">        <span class="ro">.</span><span class="rn">read_line</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rk">mut</span> <span class="rn">guess</span><span class="ro">)</span>
+</span><span class="boring">        <span class="ro">.</span><span class="rn">expect</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Failed to read line</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    match guess.cmp(&amp;secret_number) {
-</span><span class="boring">        Ordering::Less =&gt; println!("Too small!"),
-</span><span class="boring">        Ordering::Greater =&gt; println!("Too big!"),
-</span><span class="boring">        Ordering::Equal =&gt; println!("You win!"),
-</span><span class="boring">    }
-</span><span class="boring">}</span></code></pre>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">You guessed: {guess}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring">
+</span><span class="boring">    <span class="rk">match</span> <span class="rn">guess</span><span class="ro">.</span><span class="rn">cmp</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">secret_number</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rt">Ordering</span><span class="ro">::</span><span class="rt">Less</span> <span class="ro">=</span><span class="ro">&gt;</span> <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Too small!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Ordering</span><span class="ro">::</span><span class="rt">Greater</span> <span class="ro">=</span><span class="ro">&gt;</span> <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Too big!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Ordering</span><span class="ro">::</span><span class="rt">Equal</span> <span class="ro">=</span><span class="ro">&gt;</span> <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">You win!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
 </figure>
 <p>Instead, we can use nested paths to bring the same items into scope in one
 line. We do this by specifying the common part of the path, followed by two
@@ -1162,70 +1169,70 @@ colons, and then curly brackets around a list of the parts of the paths that
 differ, as shown in Listing 7-18.</p>
 <figure class="listing" id="listing-7-18">
 <span class="file-name">Filename: src/main.rs</span>
-<pre><code class="language-rust ignore"><span class="boring">use rand::prelude::*;
-</span>// --snip--
-use std::{cmp::Ordering, io};
-// --snip--
-<span class="boring">
-</span><span class="boring">fn main() {
-</span><span class="boring">    println!("Guess the number!");
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="boring"><span class="rk">use</span> <span class="rn">rand</span><span class="ro">::</span><span class="rn">prelude</span><span class="ro">:</span><span class="ro">:</span><span class="ro">*</span><span class="ro">;</span>
+</span><span class="rc">// --snip--
+</span><span class="rk">use</span> <span class="rn">std</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rn">cmp</span><span class="ro">::</span><span class="rt">Ordering</span><span class="ro">,</span> <span class="rn">io</span><span class="ro">}</span><span class="ro">;</span>
+<span class="rc">// --snip--
 </span><span class="boring">
-</span><span class="boring">    let secret_number = rand::rng().random_range(1..=100);
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Guess the number!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("The secret number is: {secret_number}");
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">secret_number</span> <span class="ro">=</span> <span class="rn">rand</span><span class="ro">::</span><span class="rn">rng</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">random_range</span><span class="ro">(</span><span class="ri">1</span><span class="ro">..=</span><span class="ri">100</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("Please input your guess.");
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">The secret number is: {secret_number}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    let mut guess = String::new();
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Please input your guess.</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    io::stdin()
-</span><span class="boring">        .read_line(&amp;mut guess)
-</span><span class="boring">        .expect("Failed to read line");
+</span><span class="boring">    <span class="rk">let</span> <span class="rk">mut</span> <span class="rn">guess</span> <span class="ro">=</span> <span class="rt">String</span><span class="ro">::</span><span class="rn">new</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    let guess: u32 = guess.trim().parse().expect("Please type a number!");
+</span><span class="boring">    <span class="rn">io</span><span class="ro">::</span><span class="rn">stdin</span><span class="ro">(</span><span class="ro">)</span>
+</span><span class="boring">        <span class="ro">.</span><span class="rn">read_line</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rk">mut</span> <span class="rn">guess</span><span class="ro">)</span>
+</span><span class="boring">        <span class="ro">.</span><span class="rn">expect</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Failed to read line</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    println!("You guessed: {guess}");
+</span><span class="boring">    <span class="rk">let</span> <span class="rn">guess</span><span class="ro">:</span> <span class="rt">u32</span> <span class="ro">=</span> <span class="rn">guess</span><span class="ro">.</span><span class="rn">trim</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">parse</span><span class="ro">(</span><span class="ro">)</span><span class="ro">.</span><span class="rn">expect</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Please type a number!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
 </span><span class="boring">
-</span><span class="boring">    match guess.cmp(&amp;secret_number) {
-</span><span class="boring">        Ordering::Less =&gt; println!("Too small!"),
-</span><span class="boring">        Ordering::Greater =&gt; println!("Too big!"),
-</span><span class="boring">        Ordering::Equal =&gt; println!("You win!"),
-</span><span class="boring">    }
-</span><span class="boring">}</span></code></pre>
+</span><span class="boring">    <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">You guessed: {guess}</span><span class="rs">"</span><span class="ro">)</span><span class="ro">;</span>
+</span><span class="boring">
+</span><span class="boring">    <span class="rk">match</span> <span class="rn">guess</span><span class="ro">.</span><span class="rn">cmp</span><span class="ro">(</span><span class="ro">&amp;</span><span class="rn">secret_number</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="boring">        <span class="rt">Ordering</span><span class="ro">::</span><span class="rt">Less</span> <span class="ro">=</span><span class="ro">&gt;</span> <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Too small!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Ordering</span><span class="ro">::</span><span class="rt">Greater</span> <span class="ro">=</span><span class="ro">&gt;</span> <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">Too big!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">        <span class="rt">Ordering</span><span class="ro">::</span><span class="rt">Equal</span> <span class="ro">=</span><span class="ro">&gt;</span> <span class="rf">println!</span><span class="ro">(</span><span class="rs">"</span><span class="rs">You win!</span><span class="rs">"</span><span class="ro">)</span><span class="ro">,</span>
+</span><span class="boring">    <span class="ro">}</span>
+</span><span class="boring"><span class="ro">}</span></span></code></pre>
 <figcaption><a href="#listing-7-18">Listing 7-18</a>: Specifying a nested path to bring multiple items with the same prefix into scope</figcaption>
 </figure>
 <p>In bigger programs, bringing many items into scope from the same crate or
-module using nested paths can reduce the number of separate <code>use</code> statements
+module using nested paths can reduce the number of separate <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements
 needed by a lot!</p>
 <p>We can use a nested path at any level in a path, which is useful when combining
-two <code>use</code> statements that share a subpath. For example, Listing 7-19 shows two
-<code>use</code> statements: one that brings <code>std::io</code> into scope and one that brings
-<code>std::io::Write</code> into scope.</p>
+two <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements that share a subpath. For example, Listing 7-19 shows two
+<code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements: one that brings <code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">io</span></code> into scope and one that brings
+<code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">::</span><span class="rt">Write</span></code> into scope.</p>
 <figure class="listing" id="listing-7-19">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground">use std::io;
-use std::io::Write;</code></pre>
-<figcaption><a href="#listing-7-19">Listing 7-19</a>: Two <code>use</code> statements where one is a subpath of the other</figcaption>
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">;</span>
+<span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">::</span><span class="rt">Write</span><span class="ro">;</span></code></pre>
+<figcaption><a href="#listing-7-19">Listing 7-19</a>: Two <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statements where one is a subpath of the other</figcaption>
 </figure>
-<p>The common part of these two paths is <code>std::io</code>, and that’s the complete first
-path. To merge these two paths into one <code>use</code> statement, we can use <code>self</code> in
+<p>The common part of these two paths is <code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">io</span></code>, and that’s the complete first
+path. To merge these two paths into one <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statement, we can use <code class="syntax" data-syntax="rust"><span class="rt">self</span></code> in
 the nested path, as shown in Listing 7-20.</p>
 <figure class="listing" id="listing-7-20">
 <span class="file-name">Filename: src/lib.rs</span>
-<pre><code class="language-rust noplayground">use std::io::{self, Write};</code></pre>
-<figcaption><a href="#listing-7-20">Listing 7-20</a>: Combining the paths in Listing 7-19 into one <code>use</code> statement</figcaption>
+<pre><code class="language-rust noplayground syntax" data-syntax="rust"><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">:</span><span class="ro">:</span><span class="ro">{</span><span class="rt">self</span><span class="ro">,</span> <span class="rt">Write</span><span class="ro">}</span><span class="ro">;</span></code></pre>
+<figcaption><a href="#listing-7-20">Listing 7-20</a>: Combining the paths in Listing 7-19 into one <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statement</figcaption>
 </figure>
-<p>This line brings <code>std::io</code> and <code>std::io::Write</code> into scope.</p>
+<p>This line brings <code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">io</span></code> and <code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">io</span><span class="ro">::</span><span class="rt">Write</span></code> into scope.</p>
 <!-- Old headings. Do not remove or links may break. -->
 <p><a id="the-glob-operator"></a></p>
 <h4 id="importing-items-with-the-glob-operator"><a class="header" href="#importing-items-with-the-glob-operator">Importing Items with the Glob Operator</a></h4>
 <p>If we want to bring <em>all</em> public items defined in a path into scope, we can
-specify that path followed by the <code>*</code> glob operator:</p>
-<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use std::collections::*;
-<span class="boring">}</span></code></pre>
-<p>This <code>use</code> statement brings all public items defined in <code>std::collections</code> into
+specify that path followed by the <code class="syntax" data-syntax="rust"><span class="ro">*</span></code> glob operator:</p>
+<pre class="playground"><code class="language-rust edition2024 syntax" data-syntax="rust"><span class="boring"><span class="rc">#![</span><span class="rc">allow(unused)</span><span class="rc">]</span>
+</span><span class="boring"><span class="rk">fn</span> <span class="rf">main</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+</span><span class="rk">use</span> <span class="rn">std</span><span class="ro">::</span><span class="rn">collections</span><span class="ro">:</span><span class="ro">:</span><span class="ro">*</span><span class="ro">;</span>
+<span class="boring"><span class="ro">}</span></span></code></pre>
+<p>This <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statement brings all public items defined in <code class="syntax" data-syntax="rust"><span class="rn">std</span><span class="ro">::</span><span class="rn">collections</span></code> into
 the current scope. Be careful when using the glob operator! Glob can make it
 harder to tell what names are in scope and where a name used in your program
 was defined. Additionally, if the dependency changes its definitions, what
@@ -1233,7 +1240,7 @@ you’ve imported changes as well, which may lead to compiler errors when you
 upgrade the dependency if the dependency adds a definition with the same name
 as a definition of yours in the same scope, for example.</p>
 <p>The glob operator is often used when testing to bring everything under test into
-the <code>tests</code> module; we’ll talk about that in <a href="11%20Tests%20That%20Protect%20Contracts.html#how-to-write-tests">“How to Write
+the <code class="syntax" data-syntax="rust"><span class="rn">tests</span></code> module; we’ll talk about that in <a href="11%20Tests%20That%20Protect%20Contracts.html#how-to-write-tests">“How to Write
 Tests”</a><!-- ignore --> in Chapter 11. The glob operator is also
 sometimes used as part of the prelude pattern: See <a href="https://doc.rust-lang.org/stable/std/prelude/index.html#other-preludes">the standard library
 documentation</a><!-- ignore --> for more
@@ -1249,73 +1256,73 @@ restaurant modules. We’ll extract modules into files instead of having all the
 modules defined in the crate root file. In this case, the crate root file is
 <em>src/lib.rs</em>, but this procedure also works with binary crates whose crate root
 file is <em>src/main.rs</em>.</p>
-<p>First, we’ll extract the <code>front_of_house</code> module to its own file. Remove the
-code inside the curly brackets for the <code>front_of_house</code> module, leaving only
-the <code>mod front_of_house;</code> declaration, so that <em>src/lib.rs</em> contains the code
+<p>First, we’ll extract the <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module to its own file. Remove the
+code inside the curly brackets for the <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module, leaving only
+the <code class="syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span><span class="ro">;</span></code> declaration, so that <em>src/lib.rs</em> contains the code
 shown in Listing 7-21. Note that this won’t compile until we create the
 <em>src/front_of_house.rs</em> file in Listing 7-22.</p>
 <figure class="listing" id="listing-7-21">
 <span class="file-name">Filename: src/lib.rs</span>
-<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">mod front_of_house;
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile syntax" data-syntax="rust"><span class="rk">mod</span> <span class="rn">front_of_house</span><span class="ro">;</span>
 
-pub use crate::front_of_house::hosting;
+<span class="rk">pub</span> <span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span><span class="ro">;</span>
 
-pub fn eat_at_restaurant() {
-    hosting::add_to_waitlist();
-}</code></pre>
-<figcaption><a href="#listing-7-21">Listing 7-21</a>: Declaring the <code>front_of_house</code> module whose body will be in <em>src/front_of_house.rs</em></figcaption>
+<span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">eat_at_restaurant</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span>
+    <span class="rn">hosting</span><span class="ro">::</span><span class="rn">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span><span class="ro">;</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-21">Listing 7-21</a>: Declaring the <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module whose body will be in <em>src/front_of_house.rs</em></figcaption>
 </figure>
 <p>Next, place the code that was in the curly brackets into a new file named
 <em>src/front_of_house.rs</em>, as shown in Listing 7-22. The compiler knows to look
 in this file because it came across the module declaration in the crate root
-with the name <code>front_of_house</code>.</p>
+with the name <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>.</p>
 <figure class="listing" id="listing-7-22">
 <span class="file-name">Filename: src/front_of_house.rs</span>
-<pre><code class="language-rust ignore">pub mod hosting {
-    pub fn add_to_waitlist() {}
-}</code></pre>
-<figcaption><a href="#listing-7-22">Listing 7-22</a>: Definitions inside the <code>front_of_house</code> module in <em>src/front_of_house.rs</em></figcaption>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span> <span class="ro">{</span>
+    <span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span>
+<span class="ro">}</span></code></pre>
+<figcaption><a href="#listing-7-22">Listing 7-22</a>: Definitions inside the <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module in <em>src/front_of_house.rs</em></figcaption>
 </figure>
-<p>Note that you only need to load a file using a <code>mod</code> declaration <em>once</em> in your
+<p>Note that you only need to load a file using a <code class="syntax" data-syntax="rust"><span class="rk">mod</span></code> declaration <em>once</em> in your
 module tree. Once the compiler knows the file is part of the project (and knows
-where in the module tree the code resides because of where you’ve put the <code>mod</code>
+where in the module tree the code resides because of where you’ve put the <code class="syntax" data-syntax="rust"><span class="rk">mod</span></code>
 statement), other files in your project should refer to the loaded file’s code
 using a path to where it was declared, as covered in the <a href="#paths-for-referring-to-an-item-in-the-module-tree-1">“Paths for Referring
 to an Item in the Module Tree”</a><!-- ignore --> section. In other words,
-<code>mod</code> is <em>not</em> an “include” operation that you may have seen in other
+<code class="syntax" data-syntax="rust"><span class="rk">mod</span></code> is <em>not</em> an “include” operation that you may have seen in other
 programming languages.</p>
-<p>Next, we’ll extract the <code>hosting</code> module to its own file. The process is a bit
-different because <code>hosting</code> is a child module of <code>front_of_house</code>, not of the
-root module. We’ll place the file for <code>hosting</code> in a new directory that will be
+<p>Next, we’ll extract the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module to its own file. The process is a bit
+different because <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> is a child module of <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>, not of the
+root module. We’ll place the file for <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> in a new directory that will be
 named for its ancestors in the module tree, in this case <em>src/front_of_house</em>.</p>
-<p>To start moving <code>hosting</code>, we change <em>src/front_of_house.rs</em> to contain only
-the declaration of the <code>hosting</code> module:</p>
+<p>To start moving <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code>, we change <em>src/front_of_house.rs</em> to contain only
+the declaration of the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/front_of_house.rs</span>
-<pre><code class="language-rust ignore">pub mod hosting;</code></pre>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">mod</span> <span class="rn">hosting</span><span class="ro">;</span></code></pre>
 </figure>
 <p>Then, we create a <em>src/front_of_house</em> directory and a <em>hosting.rs</em> file to
-contain the definitions made in the <code>hosting</code> module:</p>
+contain the definitions made in the <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module:</p>
 <figure class="listing">
 <span class="file-name">Filename: src/front_of_house/hosting.rs</span>
-<pre><code class="language-rust ignore">pub fn add_to_waitlist() {}</code></pre>
+<pre><code class="language-rust ignore syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">fn</span> <span class="rf">add_to_waitlist</span><span class="ro">(</span><span class="ro">)</span> <span class="ro">{</span><span class="ro">}</span></code></pre>
 </figure>
 <p>If we instead put <em>hosting.rs</em> in the <em>src</em> directory, the compiler would
-expect the <em>hosting.rs</em> code to be in a <code>hosting</code> module declared in the crate
-root and not declared as a child of the <code>front_of_house</code> module. The
+expect the <em>hosting.rs</em> code to be in a <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> module declared in the crate
+root and not declared as a child of the <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> module. The
 compiler’s rules for which files to check for which modules’ code mean the
 directories and files more closely match the module tree.</p>
 <section class="note" aria-role="note">
 <h4 id="alternate-file-paths"><a class="header" href="#alternate-file-paths">Alternate File Paths</a></h4>
 <p>So far we’ve covered the most idiomatic file paths the Rust compiler uses,
 but Rust also supports an older style of file path. For a module named
-<code>front_of_house</code> declared in the crate root, the compiler will look for the
+<code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code> declared in the crate root, the compiler will look for the
 module’s code in:</p>
 <ul>
 <li><em>src/front_of_house.rs</em> (what we covered)</li>
 <li><em>src/front_of_house/mod.rs</em> (older style, still supported path)</li>
 </ul>
-<p>For a module named <code>hosting</code> that is a submodule of <code>front_of_house</code>, the
+<p>For a module named <code class="syntax" data-syntax="rust"><span class="rn">hosting</span></code> that is a submodule of <code class="syntax" data-syntax="rust"><span class="rn">front_of_house</span></code>, the
 compiler will look for the module’s code in:</p>
 <ul>
 <li><em>src/front_of_house/hosting.rs</em> (what we covered)</li>
@@ -1329,21 +1336,21 @@ project can end up with many files named <em>mod.rs</em>, which can get confusin
 when you have them open in your editor at the same time.</p>
 </section>
 <p>We’ve moved each module’s code to a separate file, and the module tree remains
-the same. The function calls in <code>eat_at_restaurant</code> will work without any
+the same. The function calls in <code class="syntax" data-syntax="rust"><span class="rn">eat_at_restaurant</span></code> will work without any
 modification, even though the definitions live in different files. This
 technique lets you move modules to new files as they grow in size.</p>
-<p>Note that the <code>pub use crate::front_of_house::hosting</code> statement in
-<em>src/lib.rs</em> also hasn’t changed, nor does <code>use</code> have any impact on what files
-are compiled as part of the crate. The <code>mod</code> keyword declares modules, and Rust
+<p>Note that the <code class="syntax" data-syntax="rust"><span class="rk">pub</span> <span class="rk">use</span> <span class="rk">crate</span><span class="ro">::</span><span class="rn">front_of_house</span><span class="ro">::</span><span class="rn">hosting</span></code> statement in
+<em>src/lib.rs</em> also hasn’t changed, nor does <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> have any impact on what files
+are compiled as part of the crate. The <code class="syntax" data-syntax="rust"><span class="rk">mod</span></code> keyword declares modules, and Rust
 looks in a file with the same name as the module for the code that goes into
 that module.</p>
 <h3 id="summary-6"><a class="header" href="#summary-6">Summary</a></h3>
 <p>Rust lets you split a package into multiple crates and a crate into modules so
 that you can refer to items defined in one module from another module. You can
 do this by specifying absolute or relative paths. These paths can be brought
-into scope with a <code>use</code> statement so that you can use a shorter path for
+into scope with a <code class="syntax" data-syntax="rust"><span class="rk">use</span></code> statement so that you can use a shorter path for
 multiple uses of the item in that scope. Module code is private by default, but
-you can make definitions public by adding the <code>pub</code> keyword.</p>
+you can make definitions public by adding the <code class="syntax" data-syntax="rust"><span class="rk">pub</span></code> keyword.</p>
 <p>In the next chapter, we’ll look at some collection data structures in the
 standard library that you can use in your neatly organized code.</p>
 <div style="break-before: page; page-break-before: always;"></div>
