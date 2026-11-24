@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Collections and Replay</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-espresso-pull.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 08 / 21</span></div>
+<div class="hero"><div><h1>Collections and Replay</h1><p>Keep ordering and lookup as two separate concerns.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>A-1, A-1, B-2</span></div><div class="trace"><b>Observe</b><span>hash by id</span></div><div class="trace"><b>Result</b><span>A-1, B-2</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="07%20Modules%20and%20Boundaries.html">← 07 Modules and Boundaries</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="09%20Errors%20Across%20Boundaries.html">09 Errors Across Boundaries →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#common-collections">Common Collections</a><a href="#storing-lists-of-values-with-vectors-1">Storing Lists of Values with Vectors</a><a href="#storing-utf-8-encoded-text-with-strings-1">Storing UTF-8 Encoded Text with Strings</a><a href="#storing-keys-with-associated-values-in-hash-maps-1">Storing Keys with Associated Values in Hash Maps</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Keep ordering and lookup as two separate concerns</h2><p>The standard HashMap gives convenient expected constant-time lookup, but its iteration order does not express arrival order. The replay inspector uses a map for identity and a vector for the ordered output. Entry::Vacant gives one place to record the first quantity. The guard on Occupied separates a harmless repeat from incompatible data. A HashSet alone would tell you that the id had appeared without retaining the quantity needed for that second decision.</p><figure class="code"><figcaption>examples/replay.rs · excerpt</figcaption><pre><code><span class="k">fn</span><span class="w"> </span><span class="nf">unique</span><span class="o">&lt;'</span><span class="na">a</span><span class="o">&gt;</span><span class="p">(</span><span class="n">orders</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="o">'</span><span class="na">a</span><span class="w"> </span><span class="p">[</span><span class="n">Order</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;&amp;'</span><span class="na">a</span><span class="w"> </span><span class="n">Order</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;'</span><span class="na">a</span><span class="w"> </span><span class="kt">str</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">collections</span><span class="p">::</span><span class="n">hash_map</span><span class="p">::</span><span class="n">Entry</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">seen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HashMap</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">accepted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Vec</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">orders</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">match</span><span class="w"> </span><span class="n">seen</span><span class="p">.</span><span class="n">entry</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">Entry</span><span class="p">::</span><span class="n">Vacant</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">key</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">());</span>
+<span class="w">                </span><span class="n">accepted</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">Entry</span><span class="p">::</span><span class="n">Occupied</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="o">*</span><span class="n">key</span><span class="p">.</span><span class="n">get</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">            </span><span class="n">Entry</span><span class="p">::</span><span class="n">Occupied</span><span class="p">(</span><span class="n">_</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">()),</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(</span><span class="n">accepted</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></figure><p>Start with [A-1:30, A-1:30, B-2:12]. The map ends with two keys, the vector has two references, and the unique total is 42. Replace the second 30 with 31 and the routine stops with the id A-1. This in-memory design uses memory proportional to the number of distinct keys and forgets everything on restart. The durable service uses a primary key to implement the related policy across requests. Expiring that key changes the time window during which retries are safe.</p><h3>Cost a replay window</h3><p>A map that remembers every id will grow with the business history. Clearing it on a timer caps memory but creates a new semantic boundary. An old request replayed after that timer can be counted again. If clients are allowed to retry for twenty-four hours, deleting records after an hour violates the contract even when average memory and response time look excellent. Specify the guarantee in terms of identity, scope and time. Then decide whether an in-memory cache is an optimisation on top of durable history or the only mechanism in the system. Those two designs behave differently on a cold start.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/std/collections/hash_map/enum.Entry.html">doc.rust-lang.org/std/collections/hash_map/enum.Entry.html</a></p></section><div class="book"><h2 id="common-collections"><a class="header" href="#common-collections">Common Collections</a></h2>
+<p>Rust’s standard library includes a number of very useful data structures called
+<em>collections</em>. Most other data types represent one specific value, but
+collections can contain multiple values. Unlike the built-in array and tuple
+types, the data that these collections point to is stored on the heap, which
+means the amount of data does not need to be known at compile time and can grow
+or shrink as the program runs. Each kind of collection has different
+capabilities and costs, and choosing an appropriate one for your current
+situation is a skill you’ll develop over time. In this chapter, we’ll discuss
+three collections that are used very often in Rust programs:</p>
+<ul>
+<li>A <em>vector</em> allows you to store a variable number of values next to each other.</li>
+<li>A <em>string</em> is a collection of characters. We’ve mentioned the <code>String</code> type
+previously, but in this chapter, we’ll talk about it in depth.</li>
+<li>A <em>hash map</em> allows you to associate a value with a specific key. It’s a
+particular implementation of the more general data structure called a <em>map</em>.</li>
+</ul>
+<p>To learn about the other kinds of collections provided by the standard library,
+see <a href="https://doc.rust-lang.org/stable/std/collections/index.html">the documentation</a>.</p>
+<p>We’ll discuss how to create and update vectors, strings, and hash maps, as well
+as what makes each special.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="storing-lists-of-values-with-vectors-1"><a href="#storing-lists-of-values-with-vectors-1" class="header">Storing Lists of Values with Vectors</a></h2>
+<h3 id="storing-lists-of-values-with-vectors"><a class="header" href="#storing-lists-of-values-with-vectors">Storing Lists of Values with Vectors</a></h3>
+<p>The first collection type we’ll look at is <code>Vec&lt;T&gt;</code>, also known as a vector.
+Vectors allow you to store more than one value in a single data structure that
+puts all the values next to each other in memory. Vectors can only store values
+of the same type. They are useful when you have a list of items, such as the
+lines of text in a file or the prices of items in a shopping cart.</p>
+<h4 id="creating-a-new-vector"><a class="header" href="#creating-a-new-vector">Creating a New Vector</a></h4>
+<p>To create a new, empty vector, we call the <code>Vec::new</code> function, as shown in
+Listing 8-1.</p>
+<figure class="listing" id="listing-8-1">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v: Vec&lt;i32&gt; = Vec::new();
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-1">Listing 8-1</a>: Creating a new, empty vector to hold values of type <code>i32</code></figcaption>
+</figure>
+<p>Note that we added a type annotation here. Because we aren’t inserting any
+values into this vector, Rust doesn’t know what kind of elements we intend to
+store. This is an important point. Vectors are implemented using generics;
+we’ll cover how to use generics with your own types in Chapter 10. For now,
+know that the <code>Vec&lt;T&gt;</code> type provided by the standard library can hold any type.
+When we create a vector to hold a specific type, we can specify the type within
+angle brackets. In Listing 8-1, we’ve told Rust that the <code>Vec&lt;T&gt;</code> in <code>v</code> will
+hold elements of the <code>i32</code> type.</p>
+<p>More often, you’ll create a <code>Vec&lt;T&gt;</code> with initial values, and Rust will infer
+the type of value you want to store, so you rarely need to do this type
+annotation. Rust conveniently provides the <code>vec!</code> macro, which will create a
+new vector that holds the values you give it. Listing 8-2 creates a new
+<code>Vec&lt;i32&gt;</code> that holds the values <code>1</code>, <code>2</code>, and <code>3</code>. The integer type is <code>i32</code>
+because that’s the default integer type, as we discussed in the <a href="03%20Values%20and%20Control%20Flow.html#data-types">“Data
+Types”</a><!-- ignore --> section of Chapter 3.</p>
+<figure class="listing" id="listing-8-2">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v = vec![1, 2, 3];
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-2">Listing 8-2</a>: Creating a new vector containing values</figcaption>
+</figure>
+<p>Because we’ve given initial <code>i32</code> values, Rust can infer that the type of <code>v</code>
+is <code>Vec&lt;i32&gt;</code>, and the type annotation isn’t necessary. Next, we’ll look at how
+to modify a vector.</p>
+<h4 id="updating-a-vector"><a class="header" href="#updating-a-vector">Updating a Vector</a></h4>
+<p>To create a vector and then add elements to it, we can use the <code>push</code> method,
+as shown in Listing 8-3.</p>
+<figure class="listing" id="listing-8-3">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut v = Vec::new();
+
+    v.push(5);
+    v.push(6);
+    v.push(7);
+    v.push(8);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-3">Listing 8-3</a>: Using the <code>push</code> method to add values to a vector</figcaption>
+</figure>
+<p>As with any variable, if we want to be able to change its value, we need to
+make it mutable using the <code>mut</code> keyword, as discussed in Chapter 3. The numbers
+we place inside are all of type <code>i32</code>, and Rust infers this from the data, so
+we don’t need the <code>Vec&lt;i32&gt;</code> annotation.</p>
+<h4 id="reading-elements-of-vectors"><a class="header" href="#reading-elements-of-vectors">Reading Elements of Vectors</a></h4>
+<p>There are two ways to reference a value stored in a vector: via indexing or by
+using the <code>get</code> method. In the following examples, we’ve annotated the types of
+the values that are returned from these functions for extra clarity.</p>
+<p>Listing 8-4 shows both methods of accessing a value in a vector, with indexing
+syntax and the <code>get</code> method.</p>
+<figure class="listing" id="listing-8-4">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v = vec![1, 2, 3, 4, 5];
+
+    let third: &amp;i32 = &amp;v[2];
+    println!("The third element is {third}");
+
+    let third: Option&lt;&amp;i32&gt; = v.get(2);
+    match third {
+        Some(third) =&gt; println!("The third element is {third}"),
+        None =&gt; println!("There is no third element."),
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-4">Listing 8-4</a>: Using indexing syntax and using the <code>get</code> method to access an item in a vector</figcaption>
+</figure>
+<p>Note a few details here. We use the index value of <code>2</code> to get the third element
+because vectors are indexed by number, starting at zero. Using <code>&amp;</code> and <code>[]</code>
+gives us a reference to the element at the index value. When we use the <code>get</code>
+method with the index passed as an argument, we get an <code>Option&lt;&amp;T&gt;</code> that we can
+use with <code>match</code>.</p>
+<p>Rust provides these two ways to reference an element so that you can choose how
+the program behaves when you try to use an index value outside the range of
+existing elements. As an example, let’s see what happens when we have a vector
+of five elements and then we try to access an element at index 100 with each
+technique, as shown in Listing 8-5.</p>
+<figure class="listing" id="listing-8-5">
+<span class="sample-flag">Runtime panic example</span><pre class="playground"><code class="language-rust should_panic panics edition2024"><span class="boring">fn main() {
+</span>    let v = vec![1, 2, 3, 4, 5];
+
+    let does_not_exist = &amp;v[100];
+    let does_not_exist = v.get(100);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-5">Listing 8-5</a>: Attempting to access the element at index 100 in a vector containing five elements</figcaption>
+</figure>
+<p>When we run this code, the first <code>[]</code> method will cause the program to panic
+because it references a nonexistent element. This method is best used when you
+want your program to crash if there’s an attempt to access an element past the
+end of the vector.</p>
+<p>When the <code>get</code> method is passed an index that is outside the vector, it returns
+<code>None</code> without panicking. You would use this method if accessing an element
+beyond the range of the vector may happen occasionally under normal
+circumstances. Your code will then have logic to handle having either
+<code>Some(&amp;element)</code> or <code>None</code>, as discussed in Chapter 6. For example, the index
+could be coming from a person entering a number. If they accidentally enter a
+number that’s too large and the program gets a <code>None</code> value, you could tell the
+user how many items are in the current vector and give them another chance to
+enter a valid value. That would be more user-friendly than crashing the program
+due to a typo!</p>
+<p>When the program has a valid reference, the borrow checker enforces the
+ownership and borrowing rules (covered in Chapter 4) to ensure that this
+reference and any other references to the contents of the vector remain valid.
+Recall the rule that states you can’t have mutable and immutable references in
+the same scope. That rule applies in Listing 8-6, where we hold an immutable
+reference to the first element in a vector and try to add an element to the
+end. This program won’t work if we also try to refer to that element later in
+the function.</p>
+<figure class="listing" id="listing-8-6">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span>    let mut v = vec![1, 2, 3, 4, 5];
+
+    let first = &amp;v[0];
+
+    v.push(6);
+
+    println!("The first element is: {first}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-6">Listing 8-6</a>: Attempting to add an element to a vector while holding a reference to an item</figcaption>
+</figure>
+<p>Compiling this code will result in this error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling collections v0.1.0 (file:///projects/collections)
+error[E0502]: cannot borrow `v` as mutable because it is also borrowed as immutable
+ --&gt; src/main.rs:6:5
+  |
+4 |     let first = &amp;v[0];
+  |                  - immutable borrow occurs here
+5 |
+6 |     v.push(6);
+  |     ^^^^^^^^^ mutable borrow occurs here
+7 |
+8 |     println!("The first element is: {first}");
+  |                                      ----- immutable borrow later used here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `collections` (bin "collections") due to 1 previous error
+</code></pre>
+<p>The code in Listing 8-6 might look like it should work: Why should a reference
+to the first element care about changes at the end of the vector? This error is
+due to the way vectors work: Because vectors put the values next to each other
+in memory, adding a new element onto the end of the vector might require
+allocating new memory and copying the old elements to the new space, if there
+isn’t enough room to put all the elements next to each other where the vector
+is currently stored. In that case, the reference to the first element would be
+pointing to deallocated memory. The borrowing rules prevent programs from
+ending up in that situation.</p>
+<section class="note" aria-role="note">
+<p>Note: For more on the implementation details of the <code>Vec&lt;T&gt;</code> type, see <a href="https://doc.rust-lang.org/stable/nomicon/vec/vec.html">“The
+Rustonomicon”</a>.</p>
+</section>
+<h4 id="iterating-over-the-values-in-a-vector"><a class="header" href="#iterating-over-the-values-in-a-vector">Iterating Over the Values in a Vector</a></h4>
+<p>To access each element in a vector in turn, we would iterate through all of the
+elements rather than use indices to access one at a time. Listing 8-7 shows how
+to use a <code>for</code> loop to get immutable references to each element in a vector of
+<code>i32</code> values and print them.</p>
+<figure class="listing" id="listing-8-7">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v = vec![100, 32, 57];
+    for i in &amp;v {
+        println!("{i}");
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-7">Listing 8-7</a>: Printing each element in a vector by iterating over the elements using a <code>for</code> loop</figcaption>
+</figure>
+<p>We can also iterate over mutable references to each element in a mutable vector
+in order to make changes to all the elements. The <code>for</code> loop in Listing 8-8
+will add <code>50</code> to each element.</p>
+<figure class="listing" id="listing-8-8">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut v = vec![100, 32, 57];
+    for i in &amp;mut v {
+        *i += 50;
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-8">Listing 8-8</a>: Iterating over mutable references to elements in a vector</figcaption>
+</figure>
+<p>To change the value that the mutable reference refers to, we have to use the
+<code>*</code> dereference operator to get to the value in <code>i</code> before we can use the <code>+=</code>
+operator. We’ll talk more about the dereference operator in the <a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html#following-the-pointer-to-the-value-with-the-dereference-operator">“Following the
+Reference to the Value”</a><!-- ignore --> section of Chapter 15.</p>
+<p>Iterating over a vector, whether immutably or mutably, is safe because of the
+borrow checker’s rules. If we attempted to insert or remove items in the <code>for</code>
+loop bodies in Listing 8-7 and Listing 8-8, we would get a compiler error
+similar to the one we got with the code in Listing 8-6. The reference to the
+vector that the <code>for</code> loop holds prevents simultaneous modification of the
+whole vector.</p>
+<h4 id="using-an-enum-to-store-multiple-types"><a class="header" href="#using-an-enum-to-store-multiple-types">Using an Enum to Store Multiple Types</a></h4>
+<p>Vectors can only store values that are of the same type. This can be
+inconvenient; there are definitely use cases for needing to store a list of
+items of different types. Fortunately, the variants of an enum are defined
+under the same enum type, so when we need one type to represent elements of
+different types, we can define and use an enum!</p>
+<p>For example, say we want to get values from a row in a spreadsheet in which
+some of the columns in the row contain integers, some floating-point numbers,
+and some strings. We can define an enum whose variants will hold the different
+value types, and all the enum variants will be considered the same type: that
+of the enum. Then, we can create a vector to hold that enum and so, ultimately,
+hold different types. We’ve demonstrated this in Listing 8-9.</p>
+<figure class="listing" id="listing-8-9">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    enum SpreadsheetCell {
+        Int(i32),
+        Float(f64),
+        Text(String),
+    }
+
+    let row = vec![
+        SpreadsheetCell::Int(3),
+        SpreadsheetCell::Text(String::from("blue")),
+        SpreadsheetCell::Float(10.12),
+    ];
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-9">Listing 8-9</a>: Defining an enum to store values of different types in one vector</figcaption>
+</figure>
+<p>Rust needs to know what types will be in the vector at compile time so that it
+knows exactly how much memory on the heap will be needed to store each element.
+We must also be explicit about what types are allowed in this vector. If Rust
+allowed a vector to hold any type, there would be a chance that one or more of
+the types would cause errors with the operations performed on the elements of
+the vector. Using an enum plus a <code>match</code> expression means that Rust will ensure
+at compile time that every possible case is handled, as discussed in Chapter 6.</p>
+<p>If you don’t know the exhaustive set of types a program will get at runtime to
+store in a vector, the enum technique won’t work. Instead, you can use a trait
+object, which we’ll cover in Chapter 18.</p>
+<p>Now that we’ve discussed some of the most common ways to use vectors, be sure
+to review <a href="https://doc.rust-lang.org/stable/std/vec/struct.Vec.html">the API documentation</a><!-- ignore --> for all of the many
+useful methods defined on <code>Vec&lt;T&gt;</code> by the standard library. For example, in
+addition to <code>push</code>, a <code>pop</code> method removes and returns the last element.</p>
+<h4 id="dropping-a-vector-drops-its-elements"><a class="header" href="#dropping-a-vector-drops-its-elements">Dropping a Vector Drops Its Elements</a></h4>
+<p>Like any other <code>struct</code>, a vector is freed when it goes out of scope, as
+annotated in Listing 8-10.</p>
+<figure class="listing" id="listing-8-10">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    {
+        let v = vec![1, 2, 3, 4];
+
+        // do stuff with v
+    } // &lt;- v goes out of scope and is freed here
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-10">Listing 8-10</a>: Showing where the vector and its elements are dropped</figcaption>
+</figure>
+<p>When the vector gets dropped, all of its contents are also dropped, meaning the
+integers it holds will be cleaned up. The borrow checker ensures that any
+references to contents of a vector are only used while the vector itself is
+valid.</p>
+<p>Let’s move on to the next collection type: <code>String</code>!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="storing-utf-8-encoded-text-with-strings-1"><a href="#storing-utf-8-encoded-text-with-strings-1" class="header">Storing UTF-8 Encoded Text with Strings</a></h2>
+<h3 id="storing-utf-8-encoded-text-with-strings"><a class="header" href="#storing-utf-8-encoded-text-with-strings">Storing UTF-8 Encoded Text with Strings</a></h3>
+<p>We talked about strings in Chapter 4, but we’ll look at them in more depth now.
+New Rustaceans commonly get stuck on strings for a combination of three
+reasons: Rust’s propensity for exposing possible errors, strings being a more
+complicated data structure than many programmers give them credit for, and
+UTF-8. These factors combine in a way that can seem difficult when you’re
+coming from other programming languages.</p>
+<p>We discuss strings in the context of collections because strings are
+implemented as a collection of bytes, plus some methods to provide useful
+functionality when those bytes are interpreted as text. In this section, we’ll
+talk about the operations on <code>String</code> that every collection type has, such as
+creating, updating, and reading. We’ll also discuss the ways in which <code>String</code>
+is different from the other collections, namely, how indexing into a <code>String</code> is
+complicated by the differences between how people and computers interpret
+<code>String</code> data.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="what-is-a-string"></a></p>
+<h4 id="defining-strings"><a class="header" href="#defining-strings">Defining Strings</a></h4>
+<p>We’ll first define what we mean by the term <em>string</em>. Rust has only one string
+type in the core language, which is the string slice <code>str</code> that is usually seen
+in its borrowed form, <code>&amp;str</code>. In Chapter 4, we talked about string slices,
+which are references to some UTF-8 encoded string data stored elsewhere. String
+literals, for example, are stored in the program’s binary and are therefore
+string slices.</p>
+<p>The <code>String</code> type, which is provided by Rust’s standard library rather than
+coded into the core language, is a growable, mutable, owned, UTF-8 encoded
+string type. When Rustaceans refer to “strings” in Rust, they might be
+referring to either the <code>String</code> or the string slice <code>&amp;str</code> types, not just one
+of those types. Although this section is largely about <code>String</code>, both types are
+used heavily in Rust’s standard library, and both <code>String</code> and string slices
+are UTF-8 encoded.</p>
+<h4 id="creating-a-new-string"><a class="header" href="#creating-a-new-string">Creating a New String</a></h4>
+<p>Many of the same operations available with <code>Vec&lt;T&gt;</code> are available with <code>String</code>
+as well because <code>String</code> is actually implemented as a wrapper around a vector
+of bytes with some extra guarantees, restrictions, and capabilities. An example
+of a function that works the same way with <code>Vec&lt;T&gt;</code> and <code>String</code> is the <code>new</code>
+function to create an instance, shown in Listing 8-11.</p>
+<figure class="listing" id="listing-8-11">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut s = String::new();
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-11">Listing 8-11</a>: Creating a new, empty <code>String</code></figcaption>
+</figure>
+<p>This line creates a new, empty string called <code>s</code>, into which we can then load
+data. Often, we’ll have some initial data with which we want to start the
+string. For that, we use the <code>to_string</code> method, which is available on any type
+that implements the <code>Display</code> trait, as string literals do. Listing 8-12 shows
+two examples.</p>
+<figure class="listing" id="listing-8-12">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let data = "initial contents";
+
+    let s = data.to_string();
+
+    // The method also works on a literal directly:
+    let s = "initial contents".to_string();
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-12">Listing 8-12</a>: Using the <code>to_string</code> method to create a <code>String</code> from a string literal</figcaption>
+</figure>
+<p>This code creates a string containing <code>initial contents</code>.</p>
+<p>We can also use the function <code>String::from</code> to create a <code>String</code> from a string
+literal. The code in Listing 8-13 is equivalent to the code in Listing 8-12
+that uses <code>to_string</code>.</p>
+<figure class="listing" id="listing-8-13">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let s = String::from("initial contents");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-13">Listing 8-13</a>: Using the <code>String::from</code> function to create a <code>String</code> from a string literal</figcaption>
+</figure>
+<p>Because strings are used for so many things, we can use many different generic
+APIs for strings, providing us with a lot of options. Some of them can seem
+redundant, but they all have their place! In this case, <code>String::from</code> and
+<code>to_string</code> do the same thing, so which one you choose is a matter of style and
+readability.</p>
+<p>Remember that strings are UTF-8 encoded, so we can include any properly encoded
+data in them, as shown in Listing 8-14.</p>
+<figure class="listing" id="listing-8-14">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let hello = String::from("السلام عليكم");
+    let hello = String::from("Dobrý den");
+    let hello = String::from("Hello");
+    let hello = String::from("שלום");
+    let hello = String::from("नमस्ते");
+    let hello = String::from("こんにちは");
+    let hello = String::from("안녕하세요");
+    let hello = String::from("你好");
+    let hello = String::from("Olá");
+    let hello = String::from("Здравствуйте");
+    let hello = String::from("Hola");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-14">Listing 8-14</a>: Storing greetings in different languages in strings</figcaption>
+</figure>
+<p>All of these are valid <code>String</code> values.</p>
+<h4 id="updating-a-string"><a class="header" href="#updating-a-string">Updating a String</a></h4>
+<p>A <code>String</code> can grow in size and its contents can change, just like the contents
+of a <code>Vec&lt;T&gt;</code>, if you push more data into it. In addition, you can conveniently
+use the <code>+</code> operator or the <code>format!</code> macro to concatenate <code>String</code> values.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="appending-to-a-string-with-push_str-and-push"></a></p>
+<h5 id="appending-with-push_str-or-push"><a class="header" href="#appending-with-push_str-or-push">Appending with <code>push_str</code> or <code>push</code></a></h5>
+<p>We can grow a <code>String</code> by using the <code>push_str</code> method to append a string slice,
+as shown in Listing 8-15.</p>
+<figure class="listing" id="listing-8-15">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut s = String::from("foo");
+    s.push_str("bar");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-15">Listing 8-15</a>: Appending a string slice to a <code>String</code> using the <code>push_str</code> method</figcaption>
+</figure>
+<p>After these two lines, <code>s</code> will contain <code>foobar</code>. The <code>push_str</code> method takes a
+string slice because we don’t necessarily want to take ownership of the
+parameter. For example, in the code in Listing 8-16, we want to be able to use
+<code>s2</code> after appending its contents to <code>s1</code>.</p>
+<figure class="listing" id="listing-8-16">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut s1 = String::from("foo");
+    let s2 = "bar";
+    s1.push_str(s2);
+    println!("s2 is {s2}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-16">Listing 8-16</a>: Using a string slice after appending its contents to a <code>String</code></figcaption>
+</figure>
+<p>If the <code>push_str</code> method took ownership of <code>s2</code>, we wouldn’t be able to print
+its value on the last line. However, this code works as we’d expect!</p>
+<p>The <code>push</code> method takes a single character as a parameter and adds it to the
+<code>String</code>. Listing 8-17 adds the letter <em>l</em> to a <code>String</code> using the <code>push</code>
+method.</p>
+<figure class="listing" id="listing-8-17">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut s = String::from("lo");
+    s.push('l');
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-17">Listing 8-17</a>: Adding one character to a <code>String</code> value using <code>push</code></figcaption>
+</figure>
+<p>As a result, <code>s</code> will contain <code>lol</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="concatenation-with-the--operator-or-the-format-macro"></a></p>
+<h5 id="concatenating-with--or-format"><a class="header" href="#concatenating-with--or-format">Concatenating with <code>+</code> or <code>format!</code></a></h5>
+<p>Often, you’ll want to combine two existing strings. One way to do so is to use
+the <code>+</code> operator, as shown in Listing 8-18.</p>
+<figure class="listing" id="listing-8-18">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let s1 = String::from("Hello, ");
+    let s2 = String::from("world!");
+    let s3 = s1 + &amp;s2; // note s1 has been moved here and can no longer be used
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-18">Listing 8-18</a>: Using the <code>+</code> operator to combine two <code>String</code> values into a new <code>String</code> value</figcaption>
+</figure>
+<p>The string <code>s3</code> will contain <code>Hello, world!</code>. The reason <code>s1</code> is no longer
+valid after the addition, and the reason we used a reference to <code>s2</code>, has to do
+with the signature of the method that’s called when we use the <code>+</code> operator.
+The <code>+</code> operator uses the <code>add</code> method, whose signature looks something like
+this:</p>
+<pre><code class="language-rust ignore">fn add(self, s: &amp;str) -&gt; String {</code></pre>
+<p>In the standard library, you’ll see <code>add</code> defined using generics and associated
+types. Here, we’ve substituted in concrete types, which is what happens when we
+call this method with <code>String</code> values. We’ll discuss generics in Chapter 10.
+This signature gives us the clues we need in order to understand the tricky
+bits of the <code>+</code> operator.</p>
+<p>First, <code>s2</code> has an <code>&amp;</code>, meaning that we’re adding a reference of the second
+string to the first string. This is because of the <code>s</code> parameter in the <code>add</code>
+function: We can only add a string slice to a <code>String</code>; we can’t add two
+<code>String</code> values together. But wait—the type of <code>&amp;s2</code> is <code>&amp;String</code>, not <code>&amp;str</code>,
+as specified in the second parameter to <code>add</code>. So, why does Listing 8-18
+compile?</p>
+<p>The reason we’re able to use <code>&amp;s2</code> in the call to <code>add</code> is that the compiler
+can coerce the <code>&amp;String</code> argument into a <code>&amp;str</code>. When we call the <code>add</code> method,
+Rust uses a deref coercion, which here turns <code>&amp;s2</code> into <code>&amp;s2[..]</code>. We’ll
+discuss deref coercion in more depth in Chapter 15. Because <code>add</code> does not take
+ownership of the <code>s</code> parameter, <code>s2</code> will still be a valid <code>String</code> after this
+operation.</p>
+<p>Second, we can see in the signature that <code>add</code> takes ownership of <code>self</code>
+because <code>self</code> does <em>not</em> have an <code>&amp;</code>. This means <code>s1</code> in Listing 8-18 will be
+moved into the <code>add</code> call and will no longer be valid after that. So, although
+<code>let s3 = s1 + &amp;s2;</code> looks like it will copy both strings and create a new one,
+this statement actually takes ownership of <code>s1</code>, appends a copy of the contents
+of <code>s2</code>, and then returns ownership of the result. In other words, it looks
+like it’s making a lot of copies, but it isn’t; the implementation is more
+efficient than copying.</p>
+<p>If we need to concatenate multiple strings, the behavior of the <code>+</code> operator
+gets unwieldy:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let s1 = String::from("tic");
+    let s2 = String::from("tac");
+    let s3 = String::from("toe");
+
+    let s = s1 + "-" + &amp;s2 + "-" + &amp;s3;
+<span class="boring">}</span></code></pre>
+<p>At this point, <code>s</code> will be <code>tic-tac-toe</code>. With all of the <code>+</code> and <code>"</code>
+characters, it’s difficult to see what’s going on. For combining strings in
+more complicated ways, we can instead use the <code>format!</code> macro:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let s1 = String::from("tic");
+    let s2 = String::from("tac");
+    let s3 = String::from("toe");
+
+    let s = format!("{s1}-{s2}-{s3}");
+<span class="boring">}</span></code></pre>
+<p>This code also sets <code>s</code> to <code>tic-tac-toe</code>. The <code>format!</code> macro works like
+<code>println!</code>, but instead of printing the output to the screen, it returns a
+<code>String</code> with the contents. The version of the code using <code>format!</code> is much
+easier to read, and the code generated by the <code>format!</code> macro uses references
+so that this call doesn’t take ownership of any of its parameters.</p>
+<h4 id="indexing-into-strings"><a class="header" href="#indexing-into-strings">Indexing into Strings</a></h4>
+<p>In many other programming languages, accessing individual characters in a
+string by referencing them by index is a valid and common operation. However,
+if you try to access parts of a <code>String</code> using indexing syntax in Rust, you’ll
+get an error. Consider the invalid code in Listing 8-19.</p>
+<figure class="listing" id="listing-8-19">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span>    let s1 = String::from("hi");
+    let h = s1[0];
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-19">Listing 8-19</a>: Attempting to use indexing syntax with a <code>String</code></figcaption>
+</figure>
+<p>This code will result in the following error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling collections v0.1.0 (file:///projects/collections)
+error[E0277]: the type `str` cannot be indexed by `{integer}`
+ --&gt; src/main.rs:3:16
+  |
+3 |     let h = s1[0];
+  |                ^ string indices are ranges of `usize`
+  |
+  = help: the trait `SliceIndex&lt;str&gt;` is not implemented for `{integer}`
+  = note: you can use `.chars().nth()` or `.bytes().nth()`
+          for more information, see chapter 8 in The Book: &lt;https://doc.rust-lang.org/book/ch08-02-strings.html#indexing-into-strings&gt;
+help: `usize` implements trait `SliceIndex&lt;T&gt;`
+ --&gt; /rustc/88d9e12ae178fab0fb5cc050a94da85685d449ea/library/core/src/slice/index.rs:179:0
+  |
+  = note: `SliceIndex&lt;[T]&gt;`
+ --&gt; /rustc/88d9e12ae178fab0fb5cc050a94da85685d449ea/library/core/src/bstr/traits.rs:197:0
+  |
+  = note: `SliceIndex&lt;ByteStr&gt;`
+  = note: required for `String` to implement `Index&lt;{integer}&gt;`
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `collections` (bin "collections") due to 1 previous error
+</code></pre>
+<p>The error tells the story: Rust strings don’t support indexing. But why not? To
+answer that question, we need to discuss how Rust stores strings in memory.</p>
+<h5 id="internal-representation"><a class="header" href="#internal-representation">Internal Representation</a></h5>
+<p>A <code>String</code> is a wrapper over a <code>Vec&lt;u8&gt;</code>. Let’s look at some of our properly
+encoded UTF-8 example strings from Listing 8-14. First, this one:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    let hello = String::from("السلام عليكم");
+</span><span class="boring">    let hello = String::from("Dobrý den");
+</span><span class="boring">    let hello = String::from("Hello");
+</span><span class="boring">    let hello = String::from("שלום");
+</span><span class="boring">    let hello = String::from("नमस्ते");
+</span><span class="boring">    let hello = String::from("こんにちは");
+</span><span class="boring">    let hello = String::from("안녕하세요");
+</span><span class="boring">    let hello = String::from("你好");
+</span><span class="boring">    let hello = String::from("Olá");
+</span><span class="boring">    let hello = String::from("Здравствуйте");
+</span>    let hello = String::from("Hola");
+<span class="boring">}</span></code></pre>
+<p>In this case, <code>len</code> will be <code>4</code>, which means the vector storing the string
+<code>"Hola"</code> is 4 bytes long. Each of these letters takes 1 byte when encoded in
+UTF-8. The following line, however, may surprise you (note that this string
+begins with the capital Cyrillic letter <em>Ze</em>, not the number 3):</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    let hello = String::from("السلام عليكم");
+</span><span class="boring">    let hello = String::from("Dobrý den");
+</span><span class="boring">    let hello = String::from("Hello");
+</span><span class="boring">    let hello = String::from("שלום");
+</span><span class="boring">    let hello = String::from("नमस्ते");
+</span><span class="boring">    let hello = String::from("こんにちは");
+</span><span class="boring">    let hello = String::from("안녕하세요");
+</span><span class="boring">    let hello = String::from("你好");
+</span><span class="boring">    let hello = String::from("Olá");
+</span>    let hello = String::from("Здравствуйте");
+<span class="boring">    let hello = String::from("Hola");
+</span><span class="boring">}</span></code></pre>
+<p>If you were asked how long the string is, you might say 12. In fact, Rust’s
+answer is 24: That’s the number of bytes it takes to encode “Здравствуйте” in
+UTF-8, because each Unicode scalar value in that string takes 2 bytes of
+storage. Therefore, an index into the string’s bytes will not always correlate
+to a valid Unicode scalar value. To demonstrate, consider this invalid Rust
+code:</p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">let hello = "Здравствуйте";
+let answer = &amp;hello[0];</code></pre>
+<p>You already know that <code>answer</code> will not be <code>З</code>, the first letter. When encoded
+in UTF-8, the first byte of <code>З</code> is <code>208</code> and the second is <code>151</code>, so it would
+seem that <code>answer</code> should in fact be <code>208</code>, but <code>208</code> is not a valid character
+on its own. Returning <code>208</code> is likely not what a user would want if they asked
+for the first letter of this string; however, that’s the only data that Rust
+has at byte index 0. Users generally don’t want the byte value returned, even
+if the string contains only Latin letters: If <code>&amp;"hi"[0]</code> were valid code that
+returned the byte value, it would return <code>104</code>, not <code>h</code>.</p>
+<p>The answer, then, is that to avoid returning an unexpected value and causing
+bugs that might not be discovered immediately, Rust doesn’t compile this code
+at all and prevents misunderstandings early in the development process.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="bytes-and-scalar-values-and-grapheme-clusters-oh-my"></a></p>
+<h5 id="bytes-scalar-values-and-grapheme-clusters"><a class="header" href="#bytes-scalar-values-and-grapheme-clusters">Bytes, Scalar Values, and Grapheme Clusters</a></h5>
+<p>Another point about UTF-8 is that there are actually three relevant ways to
+look at strings from Rust’s perspective: as bytes, scalar values, and grapheme
+clusters (the closest thing to what we would call <em>letters</em>).</p>
+<p>If we look at the Hindi word “नमस्ते” written in the Devanagari script, it is
+stored as a vector of <code>u8</code> values that looks like this:</p>
+<pre><code class="language-text">[224, 164, 168, 224, 164, 174, 224, 164, 184, 224, 165, 141, 224, 164, 164,
+224, 165, 135]
+</code></pre>
+<p>That’s 18 bytes and is how computers ultimately store this data. If we look at
+them as Unicode scalar values, which are what Rust’s <code>char</code> type is, those
+bytes look like this:</p>
+<pre><code class="language-text">['न', 'म', 'स', '्', 'त', 'े']
+</code></pre>
+<p>There are six <code>char</code> values here, but the fourth and sixth are not letters:
+They’re diacritics that don’t make sense on their own. Finally, if we look at
+them as grapheme clusters, we’d get what a person would call the four letters
+that make up the Hindi word:</p>
+<pre><code class="language-text">["न", "म", "स्", "ते"]
+</code></pre>
+<p>Rust provides different ways of interpreting the raw string data that computers
+store so that each program can choose the interpretation it needs, no matter
+what human language the data is in.</p>
+<p>A final reason Rust doesn’t allow us to index into a <code>String</code> to get a
+character is that indexing operations are expected to always take constant time
+(O(1)). But it isn’t possible to guarantee that performance with a <code>String</code>,
+because Rust would have to walk through the contents from the beginning to the
+index to determine how many valid characters there were.</p>
+<h4 id="slicing-strings"><a class="header" href="#slicing-strings">Slicing Strings</a></h4>
+<p>Indexing into a string is often a bad idea because it’s not clear what the
+return type of the string-indexing operation should be: a byte value, a
+character, a grapheme cluster, or a string slice. If you really need to use
+indices to create string slices, therefore, Rust asks you to be more specific.</p>
+<p>Rather than indexing using <code>[]</code> with a single number, you can use <code>[]</code> with a
+range to create a string slice containing particular bytes:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let hello = "Здравствуйте";
+
+let s = &amp;hello[0..4];
+<span class="boring">}</span></code></pre>
+<p>Here, <code>s</code> will be a <code>&amp;str</code> that contains the first 4 bytes of the string.
+Earlier, we mentioned that each of these characters was 2 bytes, which means
+<code>s</code> will be <code>Зд</code>.</p>
+<p>If we were to try to slice only part of a character’s bytes with something like
+<code>&amp;hello[0..1]</code>, Rust would panic at runtime in the same way as if an invalid
+index were accessed in a vector:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling collections v0.1.0 (file:///projects/collections)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.43s
+     Running `target/debug/collections`
+
+thread 'main' (6017738) panicked at src/main.rs:4:19:
+end byte index 1 is not a char boundary; it is inside 'З' (bytes 0..2 of string)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>You should use caution when creating string slices with ranges, because doing
+so can crash your program.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="methods-for-iterating-over-strings"></a></p>
+<h4 id="iterating-over-strings"><a class="header" href="#iterating-over-strings">Iterating Over Strings</a></h4>
+<p>The best way to operate on pieces of strings is to be explicit about whether
+you want characters or bytes. For individual Unicode scalar values, use the
+<code>chars</code> method. Calling <code>chars</code> on “Зд” separates out and returns two values of
+type <code>char</code>, and you can iterate over the result to access each element:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>for c in "Зд".chars() {
+    println!("{c}");
+}
+<span class="boring">}</span></code></pre>
+<p>This code will print the following:</p>
+<pre><code class="language-text">З
+д
+</code></pre>
+<p>Alternatively, the <code>bytes</code> method returns each raw byte, which might be
+appropriate for your domain:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>for b in "Зд".bytes() {
+    println!("{b}");
+}
+<span class="boring">}</span></code></pre>
+<p>This code will print the 4 bytes that make up this string:</p>
+<pre><code class="language-text">208
+151
+208
+180
+</code></pre>
+<p>But be sure to remember that valid Unicode scalar values may be made up of more
+than 1 byte.</p>
+<p>Getting grapheme clusters from strings, as with the Devanagari script, is
+complex, so this functionality is not provided by the standard library. Crates
+are available on <a href="https://crates.io/">crates.io</a><!-- ignore --> if this is the
+functionality you need.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="strings-are-not-so-simple"></a></p>
+<h4 id="handling-the-complexities-of-strings"><a class="header" href="#handling-the-complexities-of-strings">Handling the Complexities of Strings</a></h4>
+<p>To summarize, strings are complicated. Different programming languages make
+different choices about how to present this complexity to the programmer. Rust
+has chosen to make the correct handling of <code>String</code> data the default behavior
+for all Rust programs, which means programmers have to put more thought into
+handling UTF-8 data up front. This trade-off exposes more of the complexity of
+strings than is apparent in other programming languages, but it prevents you
+from having to handle errors involving non-ASCII characters later in your
+development life cycle.</p>
+<p>The good news is that the standard library offers a lot of functionality built
+off the <code>String</code> and <code>&amp;str</code> types to help handle these complex situations
+correctly. Be sure to check out the documentation for useful methods like
+<code>contains</code> for searching in a string and <code>replace</code> for substituting parts of a
+string with another string.</p>
+<p>Let’s switch to something a bit less complex: hash maps!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="storing-keys-with-associated-values-in-hash-maps-1"><a href="#storing-keys-with-associated-values-in-hash-maps-1" class="header">Storing Keys with Associated Values in Hash Maps</a></h2>
+<h3 id="storing-keys-with-associated-values-in-hash-maps"><a class="header" href="#storing-keys-with-associated-values-in-hash-maps">Storing Keys with Associated Values in Hash Maps</a></h3>
+<p>The last of our common collections is the hash map. The type <code>HashMap&lt;K, V&gt;</code>
+stores a mapping of keys of type <code>K</code> to values of type <code>V</code> using a <em>hashing
+function</em>, which determines how it places these keys and values into memory.
+Many programming languages support this kind of data structure, but they often
+use a different name, such as <em>hash</em>, <em>map</em>, <em>object</em>, <em>hash table</em>,
+<em>dictionary</em>, or <em>associative array</em>, just to name a few.</p>
+<p>Hash maps are useful when you want to look up data not by using an index, as
+you can with vectors, but by using a key that can be of any type. For example,
+in a game, you could keep track of each team’s score in a hash map in which
+each key is a team’s name and the values are each team’s score. Given a team
+name, you can retrieve its score.</p>
+<p>We’ll go over the basic API of hash maps in this section, but many more goodies
+are hiding in the functions defined on <code>HashMap&lt;K, V&gt;</code> by the standard library.
+As always, check the standard library documentation for more information.</p>
+<h4 id="creating-a-new-hash-map"><a class="header" href="#creating-a-new-hash-map">Creating a New Hash Map</a></h4>
+<p>One way to create an empty hash map is to use <code>new</code> and to add elements with
+<code>insert</code>. In Listing 8-20, we’re keeping track of the scores of two teams whose
+names are <em>Blue</em> and <em>Yellow</em>. The Blue team starts with 10 points, and the
+Yellow team starts with 50.</p>
+<figure class="listing" id="listing-8-20">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::collections::HashMap;
+
+    let mut scores = HashMap::new();
+
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Yellow"), 50);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-20">Listing 8-20</a>: Creating a new hash map and inserting some keys and values</figcaption>
+</figure>
+<p>Note that we need to first <code>use</code> the <code>HashMap</code> from the collections portion of
+the standard library. Of our three common collections, this one is the least
+often used, so it’s not included in the features brought into scope
+automatically in the prelude. Hash maps also have less support from the
+standard library; there’s no built-in macro to construct them, for example.</p>
+<p>Just like vectors, hash maps store their data on the heap. This <code>HashMap</code> has
+keys of type <code>String</code> and values of type <code>i32</code>. Like vectors, hash maps are
+homogeneous: All of the keys must have the same type, and all of the values
+must have the same type.</p>
+<h4 id="accessing-values-in-a-hash-map"><a class="header" href="#accessing-values-in-a-hash-map">Accessing Values in a Hash Map</a></h4>
+<p>We can get a value out of the hash map by providing its key to the <code>get</code>
+method, as shown in Listing 8-21.</p>
+<figure class="listing" id="listing-8-21">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::collections::HashMap;
+
+    let mut scores = HashMap::new();
+
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Yellow"), 50);
+
+    let team_name = String::from("Blue");
+    let score = scores.get(&amp;team_name).copied().unwrap_or(0);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-21">Listing 8-21</a>: Accessing the score for the Blue team stored in the hash map</figcaption>
+</figure>
+<p>Here, <code>score</code> will have the value that’s associated with the Blue team, and the
+result will be <code>10</code>. The <code>get</code> method returns an <code>Option&lt;&amp;V&gt;</code>; if there’s no
+value for that key in the hash map, <code>get</code> will return <code>None</code>. This program
+handles the <code>Option</code> by calling <code>copied</code> to get an <code>Option&lt;i32&gt;</code> rather than an
+<code>Option&lt;&amp;i32&gt;</code>, then <code>unwrap_or</code> to set <code>score</code> to zero if <code>scores</code> doesn’t
+have an entry for the key.</p>
+<p>We can iterate over each key-value pair in a hash map in a similar manner as we
+do with vectors, using a <code>for</code> loop:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::collections::HashMap;
+
+    let mut scores = HashMap::new();
+
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Yellow"), 50);
+
+    for (key, value) in &amp;scores {
+        println!("{key}: {value}");
+    }
+<span class="boring">}</span></code></pre>
+<p>This code will print each pair in an arbitrary order:</p>
+<pre><code class="language-text">Yellow: 50
+Blue: 10
+</code></pre>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="hash-maps-and-ownership"></a></p>
+<h4 id="managing-ownership-in-hash-maps"><a class="header" href="#managing-ownership-in-hash-maps">Managing Ownership in Hash Maps</a></h4>
+<p>For types that implement the <code>Copy</code> trait, like <code>i32</code>, the values are copied
+into the hash map. For owned values like <code>String</code>, the values will be moved and
+the hash map will be the owner of those values, as demonstrated in Listing 8-22.</p>
+<figure class="listing" id="listing-8-22">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::collections::HashMap;
+
+    let field_name = String::from("Favorite color");
+    let field_value = String::from("Blue");
+
+    let mut map = HashMap::new();
+    map.insert(field_name, field_value);
+    // field_name and field_value are invalid at this point, try using them and
+    // see what compiler error you get!
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-22">Listing 8-22</a>: Showing that keys and values are owned by the hash map once they’re inserted</figcaption>
+</figure>
+<p>We aren’t able to use the variables <code>field_name</code> and <code>field_value</code> after
+they’ve been moved into the hash map with the call to <code>insert</code>.</p>
+<p>If we insert references to values into the hash map, the values won’t be moved
+into the hash map. The values that the references point to must be valid for at
+least as long as the hash map is valid. We’ll talk more about these issues in
+<a href="10%20Generics%20Traits%20and%20Lifetimes.html#validating-references-with-lifetimes">“Validating References with
+Lifetimes”</a><!-- ignore --> in Chapter 10.</p>
+<h4 id="updating-a-hash-map"><a class="header" href="#updating-a-hash-map">Updating a Hash Map</a></h4>
+<p>Although the number of key and value pairs is growable, each unique key can
+only have one value associated with it at a time (but not vice versa: For
+example, both the Blue team and the Yellow team could have the value <code>10</code>
+stored in the <code>scores</code> hash map).</p>
+<p>When you want to change the data in a hash map, you have to decide how to
+handle the case when a key already has a value assigned. You could replace the
+old value with the new value, completely disregarding the old value. You could
+keep the old value and ignore the new value, only adding the new value if the
+key <em>doesn’t</em> already have a value. Or you could combine the old value and the
+new value. Let’s look at how to do each of these!</p>
+<h5 id="overwriting-a-value"><a class="header" href="#overwriting-a-value">Overwriting a Value</a></h5>
+<p>If we insert a key and a value into a hash map and then insert that same key
+with a different value, the value associated with that key will be replaced.
+Even though the code in Listing 8-23 calls <code>insert</code> twice, the hash map will
+only contain one key-value pair because we’re inserting the value for the Blue
+team’s key both times.</p>
+<figure class="listing" id="listing-8-23">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::collections::HashMap;
+
+    let mut scores = HashMap::new();
+
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Blue"), 25);
+
+    println!("{scores:?}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-23">Listing 8-23</a>: Replacing a value stored with a particular key</figcaption>
+</figure>
+<p>This code will print <code>{"Blue": 25}</code>. The original value of <code>10</code> has been
+overwritten.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="only-inserting-a-value-if-the-key-has-no-value"></a></p>
+<h5 id="adding-a-key-and-value-only-if-a-key-isnt-present"><a class="header" href="#adding-a-key-and-value-only-if-a-key-isnt-present">Adding a Key and Value Only If a Key Isn’t Present</a></h5>
+<p>It’s common to check whether a particular key already exists in the hash map
+with a value and then to take the following actions: If the key does exist in
+the hash map, the existing value should remain the way it is; if the key
+doesn’t exist, insert it and a value for it.</p>
+<p>Hash maps have a special API for this called <code>entry</code> that takes the key you
+want to check as a parameter. The return value of the <code>entry</code> method is an enum
+called <code>Entry</code> that represents a value that might or might not exist. Let’s say
+we want to check whether the key for the Yellow team has a value associated
+with it. If it doesn’t, we want to insert the value <code>50</code>, and the same for the
+Blue team. Using the <code>entry</code> API, the code looks like Listing 8-24.</p>
+<figure class="listing" id="listing-8-24">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::collections::HashMap;
+
+    let mut scores = HashMap::new();
+    scores.insert(String::from("Blue"), 10);
+
+    scores.entry(String::from("Yellow")).or_insert(50);
+    scores.entry(String::from("Blue")).or_insert(50);
+
+    println!("{scores:?}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-24">Listing 8-24</a>: Using the <code>entry</code> method to only insert if the key does not already have a value</figcaption>
+</figure>
+<p>The <code>or_insert</code> method on <code>Entry</code> is defined to return a mutable reference to
+the value for the corresponding <code>Entry</code> key if that key exists, and if not, it
+inserts the parameter as the new value for this key and returns a mutable
+reference to the new value. This technique is much cleaner than writing the
+logic ourselves and, in addition, plays more nicely with the borrow checker.</p>
+<p>Running the code in Listing 8-24 will print <code>{"Yellow": 50, "Blue": 10}</code>. The
+first call to <code>entry</code> will insert the key for the Yellow team with the value
+<code>50</code> because the Yellow team doesn’t have a value already. The second call to
+<code>entry</code> will not change the hash map, because the Blue team already has the
+value <code>10</code>.</p>
+<h5 id="updating-a-value-based-on-the-old-value"><a class="header" href="#updating-a-value-based-on-the-old-value">Updating a Value Based on the Old Value</a></h5>
+<p>Another common use case for hash maps is to look up a key’s value and then
+update it based on the old value. For instance, Listing 8-25 shows code that
+counts how many times each word appears in some text. We use a hash map with
+the words as keys and increment the value to keep track of how many times we’ve
+seen that word. If it’s the first time we’ve seen a word, we’ll first insert
+the value <code>0</code>.</p>
+<figure class="listing" id="listing-8-25">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::collections::HashMap;
+
+    let text = "hello world wonderful world";
+
+    let mut map = HashMap::new();
+
+    for word in text.split_whitespace() {
+        let count = map.entry(word).or_insert(0);
+        *count += 1;
+    }
+
+    println!("{map:?}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-8-25">Listing 8-25</a>: Counting occurrences of words using a hash map that stores words and counts</figcaption>
+</figure>
+<p>This code will print <code>{"world": 2, "hello": 1, "wonderful": 1}</code>. You might see
+the same key-value pairs printed in a different order: Recall from <a href="#accessing-values-in-a-hash-map">“Accessing
+Values in a Hash Map”</a><!-- ignore --> that iterating over a hash map
+happens in an arbitrary order.</p>
+<p>The <code>split_whitespace</code> method returns an iterator over subslices, separated by
+whitespace, of the value in <code>text</code>. The <code>or_insert</code> method returns a mutable
+reference (<code>&amp;mut V</code>) to the value for the specified key. Here, we store that
+mutable reference in the <code>count</code> variable, so in order to assign to that value,
+we must first dereference <code>count</code> using the asterisk (<code>*</code>). The mutable
+reference goes out of scope at the end of the <code>for</code> loop, so all of these
+changes are safe and allowed by the borrowing rules.</p>
+<h4 id="hashing-functions"><a class="header" href="#hashing-functions">Hashing Functions</a></h4>
+<p>By default, <code>HashMap</code> uses a hashing function called <em>SipHash</em> that can provide
+resistance to denial-of-service (DoS) attacks involving hash
+tables<sup class="footnote-reference" id="fr-siphash-1"><a href="#footnote-siphash">1</a></sup><!-- ignore -->. This is not the fastest hashing algorithm
+available, but the trade-off for better security that comes with the drop in
+performance is worth it. If you profile your code and find that the default
+hash function is too slow for your purposes, you can switch to another function
+by specifying a different hasher. A <em>hasher</em> is a type that implements the
+<code>BuildHasher</code> trait. We’ll talk about traits and how to implement them in
+<a href="10%20Generics%20Traits%20and%20Lifetimes.html#defining-shared-behavior-with-traits-1">Chapter 10</a><!-- ignore -->. You don’t necessarily have to implement
+your own hasher from scratch; <a href="https://crates.io/">crates.io</a><!-- ignore -->
+has libraries shared by other Rust users that provide hashers implementing many
+common hashing algorithms.</p>
+<h3 id="summary-7"><a class="header" href="#summary-7">Summary</a></h3>
+<p>Vectors, strings, and hash maps will provide a large amount of functionality
+necessary in programs when you need to store, access, and modify data. Here are
+some exercises you should now be equipped to solve:</p>
+<ol>
+<li>Given a list of integers, use a vector and return the median (when sorted,
+the value in the middle position) and mode (the value that occurs most
+often; a hash map will be helpful here) of the list.</li>
+<li>Convert strings to Pig Latin. The first consonant of each word is moved to
+the end of the word and <em>ay</em> is added, so <em>first</em> becomes <em>irst-fay</em>. Words
+that start with a vowel have <em>hay</em> added to the end instead (<em>apple</em> becomes
+<em>apple-hay</em>). Keep in mind the details about UTF-8 encoding!</li>
+<li>Using a hash map and vectors, create a text interface to allow a user to add
+employee names to a department in a company; for example, “Add Sally to
+Engineering” or “Add Amir to Sales.” Then, let the user retrieve a list of
+all people in a department or all people in the company by department, sorted
+alphabetically.</li>
+</ol>
+<p>The standard library API documentation describes methods that vectors, strings,
+and hash maps have that will be helpful for these exercises!</p>
+<p>We’re getting into more complex programs in which operations can fail, so it’s
+a perfect time to discuss error handling. We’ll do that next!</p>
+<hr>
+<ol class="footnote-definition">
+<li id="footnote-siphash">
+<p><a href="https://en.wikipedia.org/wiki/SipHash">https://en.wikipedia.org/wiki/SipHash</a> <a href="#fr-siphash-1">↩</a></p>
+</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="07%20Modules%20and%20Boundaries.html">← 07 Modules and Boundaries</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="09%20Errors%20Across%20Boundaries.html">09 Errors Across Boundaries →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#common-collections">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

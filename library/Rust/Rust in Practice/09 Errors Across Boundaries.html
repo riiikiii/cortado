@@ -1,0 +1,1218 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Errors Across Boundaries</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-grinder.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 09 / 21</span></div>
+<div class="hero"><div><h1>Errors Across Boundaries</h1><p>Give clients a stable contract and operators enough evidence.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>database busy</span></div><div class="trace"><b>Observe</b><span>transient contention</span></div><div class="trace"><b>Result</b><span>HTTP 503</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="08%20Collections%20and%20Replay.html">← 08 Collections and Replay</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="10%20Generics%20Traits%20and%20Lifetimes.html">10 Generics Traits and Lifetimes →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#error-handling">Error Handling</a><a href="#unrecoverable-errors-with-panic-1">Unrecoverable Errors with panic!</a><a href="#recoverable-errors-with-result-1">Recoverable Errors with Result</a><a href="#to-panic-or-not-to-panic-1">To panic! or Not to panic!</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Give clients a stable contract and operators enough evidence</h2><p>Use thiserror for the errors a caller can handle by variant. Use anyhow with context at process startup, where the next decision is normally to stop and report why. A failure to open a file and a failure to bind a socket can both rise out of main with ?, but their context strings should point the operator to different fixes. In the request path the application instead needs a deliberate classification.</p><figure class="code"><figcaption>src/api.rs · excerpt</figcaption><pre><code><span class="kd">let</span><span class="w"> </span><span class="p">(</span><span class="n">status</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">match</span><span class="w"> </span><span class="n">task</span><span class="p">.</span><span class="k">await</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(</span><span class="nb">Ok</span><span class="p">(</span><span class="n">Outcome</span><span class="p">::</span><span class="n">Created</span><span class="p">))</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">StatusCode</span><span class="p">::</span><span class="n">CREATED</span><span class="p">,</span><span class="w"> </span><span class="s">"created"</span><span class="p">),</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(</span><span class="nb">Ok</span><span class="p">(</span><span class="n">Outcome</span><span class="p">::</span><span class="n">Replay</span><span class="p">))</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">StatusCode</span><span class="p">::</span><span class="n">OK</span><span class="p">,</span><span class="w"> </span><span class="s">"replayed"</span><span class="p">),</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(</span><span class="nb">Ok</span><span class="p">(</span><span class="n">Outcome</span><span class="p">::</span><span class="n">Conflict</span><span class="p">))</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">StatusCode</span><span class="p">::</span><span class="n">CONFLICT</span><span class="p">,</span><span class="w"> </span><span class="s">"id reused"</span><span class="p">),</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(</span><span class="nb">Err</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="fm">matches!</span><span class="p">(</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">sqlite_error_code</span><span class="p">(),</span>
+<span class="w">            </span><span class="nb">Some</span><span class="p">(</span><span class="n">rusqlite</span><span class="p">::</span><span class="n">ErrorCode</span><span class="p">::</span><span class="n">DatabaseBusy</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">rusqlite</span><span class="p">::</span><span class="n">ErrorCode</span><span class="p">::</span><span class="n">DatabaseLocked</span><span class="p">)</span>
+<span class="w">        </span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="p">(</span><span class="n">StatusCode</span><span class="p">::</span><span class="n">SERVICE_UNAVAILABLE</span><span class="p">,</span><span class="w"> </span><span class="s">"database busy"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(</span><span class="nb">Err</span><span class="p">(</span><span class="n">e</span><span class="p">))</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">tracing</span><span class="p">::</span><span class="n">error</span><span class="o">!</span><span class="p">(</span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">%</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="s">"storage error"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">(</span><span class="n">StatusCode</span><span class="p">::</span><span class="n">INTERNAL_SERVER_ERROR</span><span class="p">,</span><span class="w"> </span><span class="s">"storage failure"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nb">Err</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">tracing</span><span class="p">::</span><span class="n">error</span><span class="o">!</span><span class="p">(</span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">%</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="s">"worker failed"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">(</span><span class="n">StatusCode</span><span class="p">::</span><span class="n">INTERNAL_SERVER_ERROR</span><span class="p">,</span><span class="w"> </span><span class="s">"worker failure"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+</code></pre></figure><p>Read the nested result from the outside in. A JoinError says the scheduled worker did not return a value normally. Inside a successful join, rusqlite may still report a busy database. Inside a successful database call, the application may still report a conflicting command. Flattening all three cases to 500 would throw away information. Returning SQL errors directly to the HTTP caller would expose implementation details. The adapter records diagnostic detail internally and emits a small external vocabulary.</p><h3>Make error context actionable</h3><p>Imagine the on-call engineer sees only &quot;storage failure&quot;. That is a reasonable public response but an incomplete operator diagnosis. A structured event can record which operation failed and the underlying error category without logging the submitted body. When investigating intermittent 503 responses, separate admission rejections from database busy errors: both happen under load but call for different investigations. The first means this process has no free permit. The second means an admitted operation could not obtain the required database access in time. The public status alone cannot establish which resource is saturated. Use distinct event fields or counters if you operate this service.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://docs.rs/thiserror/">docs.rs/thiserror</a> · <a href="https://docs.rs/anyhow/">docs.rs/anyhow</a></p></section><div class="book"><h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<p>Errors are a fact of life in software, so Rust has a number of features for
+handling situations in which something goes wrong. In many cases, Rust requires
+you to acknowledge the possibility of an error and take some action before your
+code will compile. This requirement makes your program more robust by ensuring
+that you’ll discover errors and handle them appropriately before deploying your
+code to production!</p>
+<p>Rust groups errors into two major categories: recoverable and unrecoverable
+errors. For a <em>recoverable error</em>, such as a <em>file not found</em> error, we most
+likely just want to report the problem to the user and retry the operation.
+<em>Unrecoverable errors</em> are always symptoms of bugs, such as trying to access a
+location beyond the end of an array, and so we want to immediately stop the
+program.</p>
+<p>Most languages don’t distinguish between these two kinds of errors and handle
+both in the same way, using mechanisms such as exceptions. Rust doesn’t have
+exceptions. Instead, it has the type <code>Result&lt;T, E&gt;</code> for recoverable errors and
+the <code>panic!</code> macro that stops execution when the program encounters an
+unrecoverable error. This chapter covers calling <code>panic!</code> first and then talks
+about returning <code>Result&lt;T, E&gt;</code> values. Additionally, we’ll explore
+considerations when deciding whether to try to recover from an error or to stop
+execution.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="unrecoverable-errors-with-panic-1"><a href="#unrecoverable-errors-with-panic-1" class="header">Unrecoverable Errors with panic!</a></h2>
+<h3 id="unrecoverable-errors-with-panic"><a class="header" href="#unrecoverable-errors-with-panic">Unrecoverable Errors with <code>panic!</code></a></h3>
+<p>Sometimes bad things happen in your code, and there’s nothing you can do about
+it. In these cases, Rust has the <code>panic!</code> macro. There are two ways to cause a
+panic in practice: by taking an action that causes our code to panic (such as
+accessing an array past the end) or by explicitly calling the <code>panic!</code> macro.
+In both cases, we cause a panic in our program. By default, these panics will
+print a failure message, unwind, clean up the stack, and quit. Via an
+environment variable, you can also have Rust display the call stack when a
+panic occurs to make it easier to track down the source of the panic.</p>
+<section class="note" aria-role="note">
+<h4 id="unwinding-the-stack-or-aborting-in-response-to-a-panic"><a class="header" href="#unwinding-the-stack-or-aborting-in-response-to-a-panic">Unwinding the Stack or Aborting in Response to a Panic</a></h4>
+<p>By default, when a panic occurs, the program starts <em>unwinding</em>, which means
+Rust walks back up the stack and cleans up the data from each function it
+encounters. However, walking back and cleaning up is a lot of work. Rust
+therefore allows you to choose the alternative of immediately <em>aborting</em>,
+which ends the program without cleaning up.</p>
+<p>Memory that the program was using will then need to be cleaned up by the
+operating system. If in your project you need to make the resultant binary as
+small as possible, you can switch from unwinding to aborting upon a panic by
+adding <code>panic = 'abort'</code> to the appropriate <code>[profile]</code> sections in your
+<em>Cargo.toml</em> file. For example, if you want to abort on panic in release mode,
+add this:</p>
+<pre><code class="language-toml">[profile.release]
+panic = 'abort'
+</code></pre>
+</section>
+<p>Let’s try calling <code>panic!</code> in a simple program:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Runtime panic example</span><pre class="playground"><code class="language-rust should_panic panics edition2024">fn main() {
+    panic!("crash and burn");
+}</code></pre>
+</figure>
+<p>When you run the program, you’ll see something like this:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling panic v0.1.0 (file:///projects/panic)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.25s
+     Running `target/debug/panic`
+
+thread 'main' (6018279) panicked at src/main.rs:2:5:
+crash and burn
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>The call to <code>panic!</code> causes the error message contained in the last two lines.
+The first line shows our panic message and the place in our source code where
+the panic occurred: <em>src/main.rs:2:5</em> indicates that it’s the second line,
+fifth character of our <em>src/main.rs</em> file.</p>
+<p>In this case, the line indicated is part of our code, and if we go to that
+line, we see the <code>panic!</code> macro call. In other cases, the <code>panic!</code> call might
+be in code that our code calls, and the filename and line number reported by
+the error message will be someone else’s code where the <code>panic!</code> macro is
+called, not the line of our code that eventually led to the <code>panic!</code> call.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-a-panic-backtrace"></a></p>
+<p>We can use the backtrace of the functions the <code>panic!</code> call came from to figure
+out the part of our code that is causing the problem. To understand how to use
+a <code>panic!</code> backtrace, let’s look at another example and see what it’s like when
+a <code>panic!</code> call comes from a library because of a bug in our code instead of
+from our code calling the macro directly. Listing 9-1 has some code that
+attempts to access an index in a vector beyond the range of valid indexes.</p>
+<figure class="listing" id="listing-9-1">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Runtime panic example</span><pre class="playground"><code class="language-rust should_panic panics edition2024">fn main() {
+    let v = vec![1, 2, 3];
+
+    v[99];
+}</code></pre>
+<figcaption><a href="#listing-9-1">Listing 9-1</a>: Attempting to access an element beyond the end of a vector, which will cause a call to <code>panic!</code></figcaption>
+</figure>
+<p>Here, we’re attempting to access the 100th element of our vector (which is at
+index 99 because indexing starts at zero), but the vector has only three
+elements. In this situation, Rust will panic. Using <code>[]</code> is supposed to return
+an element, but if you pass an invalid index, there’s no element that Rust
+could return here that would be correct.</p>
+<p>In C, attempting to read beyond the end of a data structure is undefined
+behavior. You might get whatever is at the location in memory that would
+correspond to that element in the data structure, even though the memory
+doesn’t belong to that structure. This is called a <em>buffer overread</em> and can
+lead to security vulnerabilities if an attacker is able to manipulate the index
+in such a way as to read data they shouldn’t be allowed to that is stored after
+the data structure.</p>
+<p>To protect your program from this sort of vulnerability, if you try to read an
+element at an index that doesn’t exist, Rust will stop execution and refuse to
+continue. Let’s try it and see:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling panic v0.1.0 (file:///projects/panic)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s
+     Running `target/debug/panic`
+
+thread 'main' (6017887) panicked at src/main.rs:4:6:
+index out of bounds: the len is 3 but the index is 99
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>This error points at line 4 of our <em>main.rs</em> where we attempt to access index
+99 of the vector in <code>v</code>.</p>
+<p>The <code>note:</code> line tells us that we can set the <code>RUST_BACKTRACE</code> environment
+variable to get a backtrace of exactly what happened to cause the error. A
+<em>backtrace</em> is a list of all the functions that have been called to get to this
+point. Backtraces in Rust work as they do in other languages: The key to
+reading the backtrace is to start from the top and read until you see files you
+wrote. That’s the spot where the problem originated. The lines above that spot
+are code that your code has called; the lines below are code that called your
+code. These before-and-after lines might include core Rust code, standard
+library code, or crates that you’re using. Let’s try to get a backtrace by
+setting the <code>RUST_BACKTRACE</code> environment variable to any value except <code>0</code>.
+Listing 9-2 shows output similar to what you’ll see.</p>
+<!-- manual-regeneration
+cd listings/ch09-error-handling/listing-09-01
+RUST_BACKTRACE=1 cargo run
+copy the backtrace output below
+check the backtrace number mentioned in the text below the listing
+-->
+<figure class="listing" id="listing-9-2">
+<pre><code class="language-console">$ RUST_BACKTRACE=1 cargo run
+thread 'main' panicked at src/main.rs:4:6:
+index out of bounds: the len is 3 but the index is 99
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/4d91de4e48198da2e33413efdcd9cd2cc0c46688/library/std/src/panicking.rs:692:5
+   1: core::panicking::panic_fmt
+             at /rustc/4d91de4e48198da2e33413efdcd9cd2cc0c46688/library/core/src/panicking.rs:75:14
+   2: core::panicking::panic_bounds_check
+             at /rustc/4d91de4e48198da2e33413efdcd9cd2cc0c46688/library/core/src/panicking.rs:273:5
+   3: &lt;usize as core::slice::index::SliceIndex&lt;[T]&gt;&gt;::index
+             at file:///home/.rustup/toolchains/1.85/lib/rustlib/src/rust/library/core/src/slice/index.rs:274:10
+   4: core::slice::index::&lt;impl core::ops::index::Index&lt;I&gt; for [T]&gt;::index
+             at file:///home/.rustup/toolchains/1.85/lib/rustlib/src/rust/library/core/src/slice/index.rs:16:9
+   5: &lt;alloc::vec::Vec&lt;T,A&gt; as core::ops::index::Index&lt;I&gt;&gt;::index
+             at file:///home/.rustup/toolchains/1.85/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:3361:9
+   6: panic::main
+             at ./src/main.rs:4:6
+   7: core::ops::function::FnOnce::call_once
+             at file:///home/.rustup/toolchains/1.85/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+</code></pre>
+<figcaption><a href="#listing-9-2">Listing 9-2</a>: The backtrace generated by a call to <code>panic!</code> displayed when the environment variable <code>RUST_BACKTRACE</code> is set</figcaption>
+</figure>
+<p>That’s a lot of output! The exact output you see might be different depending
+on your operating system and Rust version. In order to get backtraces with this
+information, debug symbols must be enabled. Debug symbols are enabled by
+default when using <code>cargo build</code> or <code>cargo run</code> without the <code>--release</code> flag,
+as we have here.</p>
+<p>In the output in Listing 9-2, line 6 of the backtrace points to the line in our
+project that’s causing the problem: line 4 of <em>src/main.rs</em>. If we don’t want
+our program to panic, we should start our investigation at the location pointed
+to by the first line mentioning a file we wrote. In Listing 9-1, where we
+deliberately wrote code that would panic, the way to fix the panic is to not
+request an element beyond the range of the vector indexes. When your code
+panics in the future, you’ll need to figure out what action the code is taking
+with what values to cause the panic and what the code should do instead.</p>
+<p>We’ll come back to <code>panic!</code> and when we should and should not use <code>panic!</code> to
+handle error conditions in the <a href="#to-panic-or-not-to-panic">“To <code>panic!</code> or Not to
+<code>panic!</code>”</a><!-- ignore --> section later in this
+chapter. Next, we’ll look at how to recover from an error using <code>Result</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="recoverable-errors-with-result-1"><a href="#recoverable-errors-with-result-1" class="header">Recoverable Errors with Result</a></h2>
+<h3 id="recoverable-errors-with-result"><a class="header" href="#recoverable-errors-with-result">Recoverable Errors with <code>Result</code></a></h3>
+<p>Most errors aren’t serious enough to require the program to stop entirely.
+Sometimes when a function fails, it’s for a reason that you can easily interpret
+and respond to. For example, if you try to open a file and that operation fails
+because the file doesn’t exist, you might want to create the file instead of
+terminating the process.</p>
+<p>Recall from <a href="02%20An%20Input%20to%20a%20Decision.html#handling-potential-failure-with-result">“Handling Potential Failure with <code>Result</code>”</a><!--
+ignore --> in Chapter 2 that the <code>Result</code> enum is defined as having two
+variants, <code>Ok</code> and <code>Err</code>, as follows:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Result&lt;T, E&gt; {
+    Ok(T),
+    Err(E),
+}
+<span class="boring">}</span></code></pre>
+<p>The <code>T</code> and <code>E</code> are generic type parameters: We’ll discuss generics in more
+detail in Chapter 10. What you need to know right now is that <code>T</code> represents
+the type of the value that will be returned in a success case within the <code>Ok</code>
+variant, and <code>E</code> represents the type of the error that will be returned in a
+failure case within the <code>Err</code> variant. Because <code>Result</code> has these generic type
+parameters, we can use the <code>Result</code> type and the functions defined on it in
+many different situations where the success value and error value we want to
+return may differ.</p>
+<p>Let’s call a function that returns a <code>Result</code> value because the function could
+fail. In Listing 9-3, we try to open a file.</p>
+<figure class="listing" id="listing-9-3">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::fs::File;
+
+fn main() {
+    let greeting_file_result = File::open("hello.txt");
+}</code></pre>
+<figcaption><a href="#listing-9-3">Listing 9-3</a>: Opening a file</figcaption>
+</figure>
+<p>The return type of <code>File::open</code> is a <code>Result&lt;T, E&gt;</code>. The generic parameter <code>T</code>
+has been filled in by the implementation of <code>File::open</code> with the type of the
+success value, <code>std::fs::File</code>, which is a file handle. The type of <code>E</code> used in
+the error value is <code>std::io::Error</code>. This return type means the call to
+<code>File::open</code> might succeed and return a file handle that we can read from or
+write to. The function call also might fail: For example, the file might not
+exist, or we might not have permission to access the file. The <code>File::open</code>
+function needs to have a way to tell us whether it succeeded or failed and at
+the same time give us either the file handle or error information. This
+information is exactly what the <code>Result</code> enum conveys.</p>
+<p>In the case where <code>File::open</code> succeeds, the value in the variable
+<code>greeting_file_result</code> will be an instance of <code>Ok</code> that contains a file handle.
+In the case where it fails, the value in <code>greeting_file_result</code> will be an
+instance of <code>Err</code> that contains more information about the kind of error that
+occurred.</p>
+<p>We need to add to the code in Listing 9-3 to take different actions depending
+on the value <code>File::open</code> returns. Listing 9-4 shows one way to handle the
+<code>Result</code> using a basic tool, the <code>match</code> expression that we discussed in
+Chapter 6.</p>
+<figure class="listing" id="listing-9-4">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust should_panic edition2024">use std::fs::File;
+
+fn main() {
+    let greeting_file_result = File::open("hello.txt");
+
+    let greeting_file = match greeting_file_result {
+        Ok(file) =&gt; file,
+        Err(error) =&gt; panic!("Problem opening the file: {error:?}"),
+    };
+}</code></pre>
+<figcaption><a href="#listing-9-4">Listing 9-4</a>: Using a <code>match</code> expression to handle the <code>Result</code> variants that might be returned</figcaption>
+</figure>
+<p>Note that, like the <code>Option</code> enum, the <code>Result</code> enum and its variants have been
+brought into scope by the prelude, so we don’t need to specify <code>Result::</code>
+before the <code>Ok</code> and <code>Err</code> variants in the <code>match</code> arms.</p>
+<p>When the result is <code>Ok</code>, this code will return the inner <code>file</code> value out of
+the <code>Ok</code> variant, and we then assign that file handle value to the variable
+<code>greeting_file</code>. After the <code>match</code>, we can use the file handle for reading or
+writing.</p>
+<p>The other arm of the <code>match</code> handles the case where we get an <code>Err</code> value from
+<code>File::open</code>. In this example, we’ve chosen to call the <code>panic!</code> macro. If
+there’s no file named <em>hello.txt</em> in our current directory and we run this
+code, we’ll see the following output from the <code>panic!</code> macro:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling error-handling v0.1.0 (file:///projects/error-handling)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.73s
+     Running `target/debug/error-handling`
+
+thread 'main' (6018048) panicked at src/main.rs:8:23:
+Problem opening the file: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>As usual, this output tells us exactly what has gone wrong.</p>
+<h4 id="matching-on-different-errors"><a class="header" href="#matching-on-different-errors">Matching on Different Errors</a></h4>
+<p>The code in Listing 9-4 will <code>panic!</code> no matter why <code>File::open</code> failed.
+However, we want to take different actions for different failure reasons. If
+<code>File::open</code> failed because the file doesn’t exist, we want to create the file
+and return the handle to the new file. If <code>File::open</code> failed for any other
+reason—for example, because we didn’t have permission to open the file—we still
+want the code to <code>panic!</code> in the same way it did in Listing 9-4. For this, we
+add an inner <code>match</code> expression, shown in Listing 9-5.</p>
+<figure class="listing" id="listing-9-5">
+<span class="file-name">Filename: src/main.rs</span>
+<!-- ignore this test because otherwise it creates hello.txt which causes other
+tests to fail lol -->
+<pre><code class="language-rust ignore">use std::fs::File;
+use std::io::ErrorKind;
+
+fn main() {
+    let greeting_file_result = File::open("hello.txt");
+
+    let greeting_file = match greeting_file_result {
+        Ok(file) =&gt; file,
+        Err(error) =&gt; match error.kind() {
+            ErrorKind::NotFound =&gt; match File::create("hello.txt") {
+                Ok(fc) =&gt; fc,
+                Err(e) =&gt; panic!("Problem creating the file: {e:?}"),
+            },
+            _ =&gt; {
+                panic!("Problem opening the file: {error:?}");
+            }
+        },
+    };
+}</code></pre>
+<figcaption><a href="#listing-9-5">Listing 9-5</a>: Handling different kinds of errors in different ways</figcaption>
+</figure>
+<p>The type of the value that <code>File::open</code> returns inside the <code>Err</code> variant is
+<code>io::Error</code>, which is a struct provided by the standard library. This struct
+has a method, <code>kind</code>, that we can call to get an <code>io::ErrorKind</code> value. The
+enum <code>io::ErrorKind</code> is provided by the standard library and has variants
+representing the different kinds of errors that might result from an <code>io</code>
+operation. The variant we want to use is <code>ErrorKind::NotFound</code>, which indicates
+the file we’re trying to open doesn’t exist yet. So, we match on
+<code>greeting_file_result</code>, but we also have an inner match on <code>error.kind()</code>.</p>
+<p>The condition we want to check in the inner match is whether the value returned
+by <code>error.kind()</code> is the <code>NotFound</code> variant of the <code>ErrorKind</code> enum. If it is,
+we try to create the file with <code>File::create</code>. However, because <code>File::create</code>
+could also fail, we need a second arm in the inner <code>match</code> expression. When the
+file can’t be created, a different error message is printed. The second arm of
+the outer <code>match</code> stays the same, so the program panics on any error besides
+the missing file error.</p>
+<section class="note" aria-role="note">
+<h5 id="alternatives-to-using-match-with-resultt-e"><a class="header" href="#alternatives-to-using-match-with-resultt-e">Alternatives to Using <code>match</code> with <code>Result&lt;T, E&gt;</code></a></h5>
+<p>That’s a lot of <code>match</code>! The <code>match</code> expression is very useful but also very
+much a primitive. In Chapter 13, you’ll learn about closures, which are used
+with many of the methods defined on <code>Result&lt;T, E&gt;</code>. These methods can be more
+concise than using <code>match</code> when handling <code>Result&lt;T, E&gt;</code> values in your code.</p>
+<p>For example, here’s another way to write the same logic as shown in Listing
+9-5, this time using closures and the <code>unwrap_or_else</code> method:</p>
+<!-- CAN'T EXTRACT SEE https://github.com/rust-lang/mdBook/issues/1127 -->
+<pre><code class="language-rust ignore">use std::fs::File;
+use std::io::ErrorKind;
+
+fn main() {
+    let greeting_file = File::open("hello.txt").unwrap_or_else(|error| {
+        if error.kind() == ErrorKind::NotFound {
+            File::create("hello.txt").unwrap_or_else(|error| {
+                panic!("Problem creating the file: {error:?}");
+            })
+        } else {
+            panic!("Problem opening the file: {error:?}");
+        }
+    });
+}</code></pre>
+<p>Although this code has the same behavior as Listing 9-5, it doesn’t contain
+any <code>match</code> expressions and is cleaner to read. Come back to this example
+after you’ve read Chapter 13 and look up the <code>unwrap_or_else</code> method in the
+standard library documentation. Many more of these methods can clean up huge,
+nested <code>match</code> expressions when you’re dealing with errors.</p>
+</section>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="shortcuts-for-panic-on-error-unwrap-and-expect"></a></p>
+<h5 id="shortcuts-for-panic-on-error"><a class="header" href="#shortcuts-for-panic-on-error">Shortcuts for Panic on Error</a></h5>
+<p>Using <code>match</code> works well enough, but it can be a bit verbose and doesn’t always
+communicate intent well. The <code>Result&lt;T, E&gt;</code> type has many helper methods
+defined on it to do various, more specific tasks. The <code>unwrap</code> method is a
+shortcut method implemented just like the <code>match</code> expression we wrote in
+Listing 9-4. If the <code>Result</code> value is the <code>Ok</code> variant, <code>unwrap</code> will return
+the value inside the <code>Ok</code>. If the <code>Result</code> is the <code>Err</code> variant, <code>unwrap</code> will
+call the <code>panic!</code> macro for us. Here is an example of <code>unwrap</code> in action:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust should_panic edition2024">use std::fs::File;
+
+fn main() {
+    let greeting_file = File::open("hello.txt").unwrap();
+}</code></pre>
+</figure>
+<p>If we run this code without a <em>hello.txt</em> file, we’ll see an error message from
+the <code>panic!</code> call that the <code>unwrap</code> method makes:</p>
+<!-- manual-regeneration
+cd listings/ch09-error-handling/no-listing-04-unwrap
+cargo run
+copy and paste relevant text
+-->
+<pre><code class="language-text">thread 'main' panicked at src/main.rs:4:49:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+</code></pre>
+<p>Similarly, the <code>expect</code> method lets us also choose the <code>panic!</code> error message.
+Using <code>expect</code> instead of <code>unwrap</code> and providing good error messages can convey
+your intent and make tracking down the source of a panic easier. The syntax of
+<code>expect</code> looks like this:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust should_panic edition2024">use std::fs::File;
+
+fn main() {
+    let greeting_file = File::open("hello.txt")
+        .expect("hello.txt should be included in this project");
+}</code></pre>
+</figure>
+<p>We use <code>expect</code> in the same way as <code>unwrap</code>: to return the file handle or call
+the <code>panic!</code> macro. The error message used by <code>expect</code> in its call to <code>panic!</code>
+will be the parameter that we pass to <code>expect</code>, rather than the default
+<code>panic!</code> message that <code>unwrap</code> uses. Here’s what it looks like:</p>
+<!-- manual-regeneration
+cd listings/ch09-error-handling/no-listing-05-expect
+cargo run
+copy and paste relevant text
+-->
+<pre><code class="language-text">thread 'main' panicked at src/main.rs:5:10:
+hello.txt should be included in this project: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+</code></pre>
+<p>In production-quality code, most Rustaceans choose <code>expect</code> rather than
+<code>unwrap</code> and give more context about why the operation is expected to always
+succeed. That way, if your assumptions are ever proven wrong, you have more
+information to use in debugging.</p>
+<h4 id="propagating-errors"><a class="header" href="#propagating-errors">Propagating Errors</a></h4>
+<p>When a function’s implementation calls something that might fail, instead of
+handling the error within the function itself, you can return the error to the
+calling code so that it can decide what to do. This is known as <em>propagating</em>
+the error and gives more control to the calling code, where there might be more
+information or logic that dictates how the error should be handled than what
+you have available in the context of your code.</p>
+<p>For example, Listing 9-6 shows a function that reads a username from a file. If
+the file doesn’t exist or can’t be read, this function will return those errors
+to the code that called the function.</p>
+<figure class="listing" id="listing-9-6">
+<span class="file-name">Filename: src/main.rs</span>
+<!-- Deliberately not using rustdoc_include here; the `main` function in the
+file panics. We do want to include it for reader experimentation purposes, but
+don't want to include it for rustdoc testing purposes. -->
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::fs::File;
+use std::io::{self, Read};
+
+fn read_username_from_file() -&gt; Result&lt;String, io::Error&gt; {
+    let username_file_result = File::open("hello.txt");
+
+    let mut username_file = match username_file_result {
+        Ok(file) =&gt; file,
+        Err(e) =&gt; return Err(e),
+    };
+
+    let mut username = String::new();
+
+    match username_file.read_to_string(&amp;mut username) {
+        Ok(_) =&gt; Ok(username),
+        Err(e) =&gt; Err(e),
+    }
+}
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-9-6">Listing 9-6</a>: A function that returns errors to the calling code using <code>match</code></figcaption>
+</figure>
+<p>This function can be written in a much shorter way, but we’re going to start by
+doing a lot of it manually in order to explore error handling; at the end,
+we’ll show the shorter way. Let’s look at the return type of the function
+first: <code>Result&lt;String, io::Error&gt;</code>. This means the function is returning a
+value of the type <code>Result&lt;T, E&gt;</code>, where the generic parameter <code>T</code> has been
+filled in with the concrete type <code>String</code> and the generic type <code>E</code> has been
+filled in with the concrete type <code>io::Error</code>.</p>
+<p>If this function succeeds without any problems, the code that calls this
+function will receive an <code>Ok</code> value that holds a <code>String</code>—the <code>username</code> that
+this function read from the file. If this function encounters any problems, the
+calling code will receive an <code>Err</code> value that holds an instance of <code>io::Error</code>
+that contains more information about what the problems were. We chose
+<code>io::Error</code> as the return type of this function because that happens to be the
+type of the error value returned from both of the operations we’re calling in
+this function’s body that might fail: the <code>File::open</code> function and the
+<code>read_to_string</code> method.</p>
+<p>The body of the function starts by calling the <code>File::open</code> function. Then, we
+handle the <code>Result</code> value with a <code>match</code> similar to the <code>match</code> in Listing 9-4.
+If <code>File::open</code> succeeds, the file handle in the pattern variable <code>file</code>
+becomes the value in the mutable variable <code>username_file</code> and the function
+continues. In the <code>Err</code> case, instead of calling <code>panic!</code>, we use the <code>return</code>
+keyword to return early out of the function entirely and pass the error value
+from <code>File::open</code>, now in the pattern variable <code>e</code>, back to the calling code as
+this function’s error value.</p>
+<p>So, if we have a file handle in <code>username_file</code>, the function then creates a
+new <code>String</code> in variable <code>username</code> and calls the <code>read_to_string</code> method on
+the file handle in <code>username_file</code> to read the contents of the file into
+<code>username</code>. The <code>read_to_string</code> method also returns a <code>Result</code> because it
+might fail, even though <code>File::open</code> succeeded. So, we need another <code>match</code> to
+handle that <code>Result</code>: If <code>read_to_string</code> succeeds, then our function has
+succeeded, and we return the username from the file that’s now in <code>username</code>
+wrapped in an <code>Ok</code>. If <code>read_to_string</code> fails, we return the error value in the
+same way that we returned the error value in the <code>match</code> that handled the
+return value of <code>File::open</code>. However, we don’t need to explicitly say
+<code>return</code>, because this is the last expression in the function.</p>
+<p>The code that calls this code will then handle getting either an <code>Ok</code> value
+that contains a username or an <code>Err</code> value that contains an <code>io::Error</code>. It’s
+up to the calling code to decide what to do with those values. If the calling
+code gets an <code>Err</code> value, it could call <code>panic!</code> and crash the program, use a
+default username, or look up the username from somewhere other than a file, for
+example. We don’t have enough information on what the calling code is actually
+trying to do, so we propagate all the success or error information upward for
+it to handle appropriately.</p>
+<p>This pattern of propagating errors is so common in Rust that Rust provides the
+question mark operator <code>?</code> to make this easier.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="a-shortcut-for-propagating-errors-the--operator"></a></p>
+<h5 id="the--operator-shortcut"><a class="header" href="#the--operator-shortcut">The <code>?</code> Operator Shortcut</a></h5>
+<p>Listing 9-7 shows an implementation of <code>read_username_from_file</code> that has the
+same functionality as in Listing 9-6, but this implementation uses the <code>?</code>
+operator.</p>
+<figure class="listing" id="listing-9-7">
+<span class="file-name">Filename: src/main.rs</span>
+<!-- Deliberately not using rustdoc_include here; the `main` function in the
+file panics. We do want to include it for reader experimentation purposes, but
+don't want to include it for rustdoc testing purposes. -->
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::fs::File;
+use std::io::{self, Read};
+
+fn read_username_from_file() -&gt; Result&lt;String, io::Error&gt; {
+    let mut username_file = File::open("hello.txt")?;
+    let mut username = String::new();
+    username_file.read_to_string(&amp;mut username)?;
+    Ok(username)
+}
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-9-7">Listing 9-7</a>: A function that returns errors to the calling code using the <code>?</code> operator</figcaption>
+</figure>
+<p>The <code>?</code> placed after a <code>Result</code> value is defined to work in almost the same way
+as the <code>match</code> expressions that we defined to handle the <code>Result</code> values in
+Listing 9-6. If the value of the <code>Result</code> is an <code>Ok</code>, the value inside the <code>Ok</code>
+will get returned from this expression, and the program will continue. If the
+value is an <code>Err</code>, the <code>Err</code> will be returned from the whole function as if we
+had used the <code>return</code> keyword so that the error value gets propagated to the
+calling code.</p>
+<p>There is a difference between what the <code>match</code> expression from Listing 9-6 does
+and what the <code>?</code> operator does: Error values that have the <code>?</code> operator called
+on them go through the <code>from</code> function, defined in the <code>From</code> trait in the
+standard library, which is used to convert values from one type into another.
+When the <code>?</code> operator calls the <code>from</code> function, the error type received is
+converted into the error type defined in the return type of the current
+function. This is useful when a function returns one error type to represent
+all the ways a function might fail, even if parts might fail for many different
+reasons.</p>
+<p>For example, we could change the <code>read_username_from_file</code> function in Listing
+9-7 to return a custom error type named <code>OurError</code> that we define. If we also
+define <code>impl From&lt;io::Error&gt; for OurError</code> to construct an instance of
+<code>OurError</code> from an <code>io::Error</code>, then the <code>?</code> operator calls in the body of
+<code>read_username_from_file</code> will call <code>from</code> and convert the error types without
+needing to add any more code to the function.</p>
+<p>In the context of Listing 9-7, the <code>?</code> at the end of the <code>File::open</code> call will
+return the value inside an <code>Ok</code> to the variable <code>username_file</code>. If an error
+occurs, the <code>?</code> operator will return early out of the whole function and give
+any <code>Err</code> value to the calling code. The same thing applies to the <code>?</code> at the
+end of the <code>read_to_string</code> call.</p>
+<p>The <code>?</code> operator eliminates a lot of boilerplate and makes this function’s
+implementation simpler. We could even shorten this code further by chaining
+method calls immediately after the <code>?</code>, as shown in Listing 9-8.</p>
+<figure class="listing" id="listing-9-8">
+<span class="file-name">Filename: src/main.rs</span>
+<!-- Deliberately not using rustdoc_include here; the `main` function in the
+file panics. We do want to include it for reader experimentation purposes, but
+don't want to include it for rustdoc testing purposes. -->
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::fs::File;
+use std::io::{self, Read};
+
+fn read_username_from_file() -&gt; Result&lt;String, io::Error&gt; {
+    let mut username = String::new();
+
+    File::open("hello.txt")?.read_to_string(&amp;mut username)?;
+
+    Ok(username)
+}
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-9-8">Listing 9-8</a>: Chaining method calls after the <code>?</code> operator</figcaption>
+</figure>
+<p>We’ve moved the creation of the new <code>String</code> in <code>username</code> to the beginning of
+the function; that part hasn’t changed. Instead of creating a variable
+<code>username_file</code>, we’ve chained the call to <code>read_to_string</code> directly onto the
+result of <code>File::open("hello.txt")?</code>. We still have a <code>?</code> at the end of the
+<code>read_to_string</code> call, and we still return an <code>Ok</code> value containing <code>username</code>
+when both <code>File::open</code> and <code>read_to_string</code> succeed rather than returning
+errors. The functionality is again the same as in Listing 9-6 and Listing 9-7;
+this is just a different, more ergonomic way to write it.</p>
+<p>Listing 9-9 shows a way to make this even shorter using <code>fs::read_to_string</code>.</p>
+<figure class="listing" id="listing-9-9">
+<span class="file-name">Filename: src/main.rs</span>
+<!-- Deliberately not using rustdoc_include here; the `main` function in the
+file panics. We do want to include it for reader experimentation purposes, but
+don't want to include it for rustdoc testing purposes. -->
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::fs;
+use std::io;
+
+fn read_username_from_file() -&gt; Result&lt;String, io::Error&gt; {
+    fs::read_to_string("hello.txt")
+}
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-9-9">Listing 9-9</a>: Using <code>fs::read_to_string</code> instead of opening and then reading the file</figcaption>
+</figure>
+<p>Reading a file into a string is a fairly common operation, so the standard
+library provides the convenient <code>fs::read_to_string</code> function that opens the
+file, creates a new <code>String</code>, reads the contents of the file, puts the contents
+into that <code>String</code>, and returns it. Of course, using <code>fs::read_to_string</code>
+doesn’t give us the opportunity to explain all the error handling, so we did it
+the longer way first.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="where-the--operator-can-be-used"></a></p>
+<h5 id="where-to-use-the--operator"><a class="header" href="#where-to-use-the--operator">Where to Use the <code>?</code> Operator</a></h5>
+<p>The <code>?</code> operator can only be used in functions whose return type is compatible
+with the value the <code>?</code> is used on. This is because the <code>?</code> operator is defined
+to perform an early return of a value out of the function, in the same manner
+as the <code>match</code> expression we defined in Listing 9-6. In Listing 9-6, the
+<code>match</code> was using a <code>Result</code> value, and the early return arm returned an
+<code>Err(e)</code> value. The return type of the function has to be a <code>Result</code> so that
+it’s compatible with this <code>return</code>.</p>
+<p>In Listing 9-10, let’s look at the error we’ll get if we use the <code>?</code> operator
+in a <code>main</code> function with a return type that is incompatible with the type of
+the value we use <code>?</code> on.</p>
+<figure class="listing" id="listing-9-10">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::fs::File;
+
+fn main() {
+    let greeting_file = File::open("hello.txt")?;
+}</code></pre>
+<figcaption><a href="#listing-9-10">Listing 9-10</a>: Attempting to use the <code>?</code> in the <code>main</code> function that returns <code>()</code> won’t compile.</figcaption>
+</figure>
+<p>This code opens a file, which might fail. The <code>?</code> operator follows the <code>Result</code>
+value returned by <code>File::open</code>, but this <code>main</code> function has the return type of
+<code>()</code>, not <code>Result</code>. When we compile this code, we get the following error
+message:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling error-handling v0.1.0 (file:///projects/error-handling)
+error[E0277]: the `?` operator can only be used in a function that returns `Result` or `Option` (or another type that implements `FromResidual`)
+ --&gt; src/main.rs:4:48
+  |
+3 | fn main() {
+  | --------- this function should return `Result` or `Option` to accept `?`
+4 |     let greeting_file = File::open("hello.txt")?;
+  |                                                ^ cannot use the `?` operator in a function that returns `()`
+  |
+help: consider adding return type
+  |
+3 ~ fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+4 |     let greeting_file = File::open("hello.txt")?;
+5 +     Ok(())
+  |
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `error-handling` (bin "error-handling") due to 1 previous error
+</code></pre>
+<p>This error points out that we’re only allowed to use the <code>?</code> operator in a
+function that returns <code>Result</code>, <code>Option</code>, or another type that implements
+<code>FromResidual</code>.</p>
+<p>To fix the error, you have two choices. One choice is to change the return type
+of your function to be compatible with the value you’re using the <code>?</code> operator
+on as long as you have no restrictions preventing that. The other choice is to
+use a <code>match</code> or one of the <code>Result&lt;T, E&gt;</code> methods to handle the <code>Result&lt;T, E&gt;</code>
+in whatever way is appropriate.</p>
+<p>The error message also mentioned that <code>?</code> can be used with <code>Option&lt;T&gt;</code> values
+as well. As with using <code>?</code> on <code>Result</code>, you can only use <code>?</code> on <code>Option</code> in a
+function that returns an <code>Option</code>. The behavior of the <code>?</code> operator when called
+on an <code>Option&lt;T&gt;</code> is similar to its behavior when called on a <code>Result&lt;T, E&gt;</code>:
+If the value is <code>None</code>, the <code>None</code> will be returned early from the function at
+that point. If the value is <code>Some</code>, the value inside the <code>Some</code> is the
+resultant value of the expression, and the function continues. Listing 9-11 has
+an example of a function that finds the last character of the first line in the
+given text.</p>
+<figure class="listing" id="listing-9-11">
+<pre class="playground"><code class="language-rust edition2024">fn last_char_of_first_line(text: &amp;str) -&gt; Option&lt;char&gt; {
+    text.lines().next()?.chars().last()
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    assert_eq!(
+</span><span class="boring">        last_char_of_first_line("Hello, world\nHow are you today?"),
+</span><span class="boring">        Some('d')
+</span><span class="boring">    );
+</span><span class="boring">
+</span><span class="boring">    assert_eq!(last_char_of_first_line(""), None);
+</span><span class="boring">    assert_eq!(last_char_of_first_line("\nhi"), None);
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-9-11">Listing 9-11</a>: Using the <code>?</code> operator on an <code>Option&lt;T&gt;</code> value</figcaption>
+</figure>
+<p>This function returns <code>Option&lt;char&gt;</code> because it’s possible that there is a
+character there, but it’s also possible that there isn’t. This code takes the
+<code>text</code> string slice argument and calls the <code>lines</code> method on it, which returns
+an iterator over the lines in the string. Because this function wants to
+examine the first line, it calls <code>next</code> on the iterator to get the first value
+from the iterator. If <code>text</code> is the empty string, this call to <code>next</code> will
+return <code>None</code>, in which case we use <code>?</code> to stop and return <code>None</code> from
+<code>last_char_of_first_line</code>. If <code>text</code> is not the empty string, <code>next</code> will
+return a <code>Some</code> value containing a string slice of the first line in <code>text</code>.</p>
+<p>The <code>?</code> extracts the string slice, and we can call <code>chars</code> on that string slice
+to get an iterator of its characters. We’re interested in the last character in
+this first line, so we call <code>last</code> to return the last item in the iterator.
+This is an <code>Option</code> because it’s possible that the first line is the empty
+string; for example, if <code>text</code> starts with a blank line but has characters on
+other lines, as in <code>"\nhi"</code>. However, if there is a last character on the first
+line, it will be returned in the <code>Some</code> variant. The <code>?</code> operator in the middle
+gives us a concise way to express this logic, allowing us to implement the
+function in one line. If we couldn’t use the <code>?</code> operator on <code>Option</code>, we’d
+have to implement this logic using more method calls or a <code>match</code> expression.</p>
+<p>Note that you can use the <code>?</code> operator on a <code>Result</code> in a function that returns
+<code>Result</code>, and you can use the <code>?</code> operator on an <code>Option</code> in a function that
+returns <code>Option</code>, but you can’t mix and match. The <code>?</code> operator won’t
+automatically convert a <code>Result</code> to an <code>Option</code> or vice versa; in those cases,
+you can use methods like the <code>ok</code> method on <code>Result</code> or the <code>ok_or</code> method on
+<code>Option</code> to do the conversion explicitly.</p>
+<p>So far, all the <code>main</code> functions we’ve used return <code>()</code>. The <code>main</code> function is
+special because it’s the entry point and exit point of an executable program,
+and there are restrictions on what its return type can be for the program to
+behave as expected.</p>
+<p>Luckily, <code>main</code> can also return a <code>Result&lt;(), E&gt;</code>. Listing 9-12 has the code
+from Listing 9-10, but we’ve changed the return type of <code>main</code> to be
+<code>Result&lt;(), Box&lt;dyn Error&gt;&gt;</code> and added a return value <code>Ok(())</code> to the end. This
+code will now compile.</p>
+<figure class="listing" id="listing-9-12">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore">use std::error::Error;
+use std::fs::File;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+    let greeting_file = File::open("hello.txt")?;
+
+    Ok(())
+}</code></pre>
+<figcaption><a href="#listing-9-12">Listing 9-12</a>: Changing <code>main</code> to return <code>Result&lt;(), E&gt;</code> allows the use of the <code>?</code> operator on <code>Result</code> values.</figcaption>
+</figure>
+<p>The <code>Box&lt;dyn Error&gt;</code> type is a trait object, which we’ll talk about in <a href="18%20State%20and%20Behaviour%20Patterns.html#using-trait-objects-to-abstract-over-shared-behavior">“Using
+Trait Objects to Abstract over Shared Behavior”</a><!-- ignore -->
+in Chapter 18. For now, you can read <code>Box&lt;dyn Error&gt;</code> to mean “any kind of
+error.” Using <code>?</code> on a <code>Result</code> value in a <code>main</code> function with the error type
+<code>Box&lt;dyn Error&gt;</code> is allowed because it allows any <code>Err</code> value to be returned
+early. Even though the body of this <code>main</code> function will only ever return
+errors of type <code>std::io::Error</code>, by specifying <code>Box&lt;dyn Error&gt;</code>, this signature
+will continue to be correct even if more code that returns other errors is
+added to the body of <code>main</code>.</p>
+<p>When a <code>main</code> function returns a <code>Result&lt;(), E&gt;</code>, the executable will exit with
+a value of <code>0</code> if <code>main</code> returns <code>Ok(())</code> and will exit with a nonzero value if
+<code>main</code> returns an <code>Err</code> value. Executables written in C return integers when
+they exit: Programs that exit successfully return the integer <code>0</code>, and programs
+that error return some integer other than <code>0</code>. Rust also returns integers from
+executables to be compatible with this convention.</p>
+<p>The <code>main</code> function may return any types that implement <a href="https://doc.rust-lang.org/stable/std/process/trait.Termination.html">the
+<code>std::process::Termination</code> trait</a><!-- ignore -->, which contains
+a function <code>report</code> that returns an <code>ExitCode</code>. Consult the standard library
+documentation for more information on implementing the <code>Termination</code> trait for
+your own types.</p>
+<p>Now that we’ve discussed the details of calling <code>panic!</code> or returning <code>Result</code>,
+let’s return to the topic of how to decide which is appropriate to use in which
+cases.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="to-panic-or-not-to-panic-1"><a href="#to-panic-or-not-to-panic-1" class="header">To panic! or Not to panic!</a></h2>
+<h3 id="to-panic-or-not-to-panic"><a class="header" href="#to-panic-or-not-to-panic">To <code>panic!</code> or Not to <code>panic!</code></a></h3>
+<p>So, how do you decide when you should call <code>panic!</code> and when you should return
+<code>Result</code>? When code panics, there’s no way to recover. You could call <code>panic!</code>
+for any error situation, whether there’s a possible way to recover or not, but
+then you’re making the decision that a situation is unrecoverable on behalf of
+the calling code. When you choose to return a <code>Result</code> value, you give the
+calling code options. The calling code could choose to attempt to recover in a
+way that’s appropriate for its situation, or it could decide that an <code>Err</code>
+value in this case is unrecoverable, so it can call <code>panic!</code> and turn your
+recoverable error into an unrecoverable one. Therefore, returning <code>Result</code> is a
+good default choice when you’re defining a function that might fail.</p>
+<p>In situations such as examples, prototype code, and tests, it’s more
+appropriate to write code that panics instead of returning a <code>Result</code>. Let’s
+explore why, then discuss situations in which the compiler can’t tell that
+failure is impossible, but you as a human can. The chapter will conclude with
+some general guidelines on how to decide whether to panic in library code.</p>
+<h4 id="examples-prototype-code-and-tests"><a class="header" href="#examples-prototype-code-and-tests">Examples, Prototype Code, and Tests</a></h4>
+<p>When you’re writing an example to illustrate some concept, also including
+robust error-handling code can make the example less clear. In examples, it’s
+understood that a call to a method like <code>unwrap</code> that could panic is meant as a
+placeholder for the way you’d want your application to handle errors, which can
+differ based on what the rest of your code is doing.</p>
+<p>Similarly, the <code>unwrap</code> and <code>expect</code> methods are very handy when you’re
+prototyping and you’re not yet ready to decide how to handle errors. They leave
+clear markers in your code for when you’re ready to make your program more
+robust.</p>
+<p>If a method call fails in a test, you’d want the whole test to fail, even if
+that method isn’t the functionality under test. Because <code>panic!</code> is how a test
+is marked as a failure, calling <code>unwrap</code> or <code>expect</code> is exactly what should
+happen.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="cases-in-which-you-have-more-information-than-the-compiler"></a></p>
+<h4 id="when-you-have-more-information-than-the-compiler"><a class="header" href="#when-you-have-more-information-than-the-compiler">When You Have More Information Than the Compiler</a></h4>
+<p>It would also be appropriate to call <code>expect</code> when you have some other logic
+that ensures that the <code>Result</code> will have an <code>Ok</code> value, but the logic isn’t
+something the compiler understands. You’ll still have a <code>Result</code> value that you
+need to handle: Whatever operation you’re calling still has the possibility of
+failing in general, even though it’s logically impossible in your particular
+situation. If you can ensure by manually inspecting the code that you’ll never
+have an <code>Err</code> variant, it’s perfectly acceptable to call <code>expect</code> and document
+the reason you think you’ll never have an <code>Err</code> variant in the argument text.
+Here’s an example:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::net::IpAddr;
+
+    let home: IpAddr = "127.0.0.1"
+        .parse()
+        .expect("Hardcoded IP address should be valid");
+<span class="boring">}</span></code></pre>
+<p>We’re creating an <code>IpAddr</code> instance by parsing a hardcoded string. We can see
+that <code>127.0.0.1</code> is a valid IP address, so it’s acceptable to use <code>expect</code>
+here. However, having a hardcoded, valid string doesn’t change the return type
+of the <code>parse</code> method: We still get a <code>Result</code> value, and the compiler will
+still make us handle the <code>Result</code> as if the <code>Err</code> variant is a possibility
+because the compiler isn’t smart enough to see that this string is always a
+valid IP address. If the IP address string came from a user rather than being
+hardcoded into the program and therefore <em>did</em> have a possibility of failure,
+we’d definitely want to handle the <code>Result</code> in a more robust way instead.
+Mentioning the assumption that this IP address is hardcoded will prompt us to
+change <code>expect</code> to better error-handling code if, in the future, we need to get
+the IP address from some other source instead.</p>
+<h4 id="guidelines-for-error-handling"><a class="header" href="#guidelines-for-error-handling">Guidelines for Error Handling</a></h4>
+<p>It’s advisable to have your code panic when it’s possible that your code could
+end up in a bad state. In this context, a <em>bad state</em> is when some assumption,
+guarantee, contract, or invariant has been broken, such as when invalid values,
+contradictory values, or missing values are passed to your code—plus one or
+more of the following:</p>
+<ul>
+<li>The bad state is something that is unexpected, as opposed to something that
+will likely happen occasionally, like a user entering data in the wrong
+format.</li>
+<li>Your code after this point needs to rely on not being in this bad state,
+rather than checking for the problem at every step.</li>
+<li>There’s not a good way to encode this information in the types you use. We’ll
+work through an example of what we mean in <a href="18%20State%20and%20Behaviour%20Patterns.html#encoding-states-and-behavior-as-types">“Encoding States and Behavior as
+Types”</a><!-- ignore --> in Chapter 18.</li>
+</ul>
+<p>If someone calls your code and passes in values that don’t make sense, it’s
+best to return an error if you can so that the user of the library can decide
+what they want to do in that case. However, in cases where continuing could be
+insecure or harmful, the best choice might be to call <code>panic!</code> and alert the
+person using your library to the bug in their code so that they can fix it
+during development. Similarly, <code>panic!</code> is often appropriate if you’re calling
+external code that is out of your control and returns an invalid state that you
+have no way of fixing.</p>
+<p>However, when failure is expected, it’s more appropriate to return a <code>Result</code>
+than to make a <code>panic!</code> call. Examples include a parser being given malformed
+data or an HTTP request returning a status that indicates you have hit a rate
+limit. In these cases, returning a <code>Result</code> indicates that failure is an
+expected possibility that the calling code must decide how to handle.</p>
+<p>When your code performs an operation that could put a user at risk if it’s
+called using invalid values, your code should verify the values are valid first
+and panic if the values aren’t valid. This is mostly for safety reasons:
+Attempting to operate on invalid data can expose your code to vulnerabilities.
+This is the main reason the standard library will call <code>panic!</code> if you attempt
+an out-of-bounds memory access: Trying to access memory that doesn’t belong to
+the current data structure is a common security problem. Functions often have
+<em>contracts</em>: Their behavior is only guaranteed if the inputs meet particular
+requirements. Panicking when the contract is violated makes sense because a
+contract violation always indicates a caller-side bug, and it’s not a kind of
+error you want the calling code to have to explicitly handle. In fact, there’s
+no reasonable way for calling code to recover; the calling <em>programmers</em> need
+to fix the code. Contracts for a function, especially when a violation will
+cause a panic, should be explained in the API documentation for the function.</p>
+<p>However, having lots of error checks in all of your functions would be verbose
+and annoying. Fortunately, you can use Rust’s type system (and thus the type
+checking done by the compiler) to do many of the checks for you. If your
+function has a particular type as a parameter, you can proceed with your code’s
+logic knowing that the compiler has already ensured that you have a valid
+value. For example, if you have a type rather than an <code>Option</code>, your program
+expects to have <em>something</em> rather than <em>nothing</em>. Your code then doesn’t have
+to handle two cases for the <code>Some</code> and <code>None</code> variants: It will only have one
+case for definitely having a value. Code trying to pass nothing to your
+function won’t even compile, so your function doesn’t have to check for that
+case at runtime. Another example is using an unsigned integer type such as
+<code>u32</code>, which ensures that the parameter is never negative.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="creating-custom-types-for-validation"></a></p>
+<h4 id="custom-types-for-validation"><a class="header" href="#custom-types-for-validation">Custom Types for Validation</a></h4>
+<p>Let’s take the idea of using Rust’s type system to ensure that we have a valid
+value one step further and look at creating a custom type for validation.
+Recall the guessing game in Chapter 2 in which our code asked the user to guess
+a number between 1 and 100. We never validated that the user’s guess was
+between those numbers before checking it against our secret number; we only
+validated that the guess was positive. In this case, the consequences were not
+very dire: Our output of “Too high” or “Too low” would still be correct. But it
+would be a useful enhancement to guide the user toward valid guesses and have
+different behavior when the user guesses a number that’s out of range versus
+when the user types, for example, letters instead.</p>
+<p>One way to do this would be to parse the guess as an <code>i32</code> instead of only a
+<code>u32</code> to allow potentially negative numbers, and then add a check for the
+number being in range, like so:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::cmp::Ordering;
+</span><span class="boring">use std::io;
+</span><span class="boring">
+</span><span class="boring">use rand::prelude::*;
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    println!("Guess the number!");
+</span><span class="boring">
+</span><span class="boring">    let secret_number = rand::rng().random_range(1..=100);
+</span><span class="boring">
+</span>    loop {
+        // --snip--
+
+<span class="boring">        println!("Please input your guess.");
+</span><span class="boring">
+</span><span class="boring">        let mut guess = String::new();
+</span><span class="boring">
+</span><span class="boring">        io::stdin()
+</span><span class="boring">            .read_line(&amp;mut guess)
+</span><span class="boring">            .expect("Failed to read line");
+</span><span class="boring">
+</span>        let guess: i32 = match guess.trim().parse() {
+            Ok(num) =&gt; num,
+            Err(_) =&gt; continue,
+        };
+
+        if guess &lt; 1 || guess &gt; 100 {
+            println!("The secret number will be between 1 and 100.");
+            continue;
+        }
+
+        match guess.cmp(&amp;secret_number) {
+            // --snip--
+<span class="boring">            Ordering::Less =&gt; println!("Too small!"),
+</span><span class="boring">            Ordering::Greater =&gt; println!("Too big!"),
+</span><span class="boring">            Ordering::Equal =&gt; {
+</span><span class="boring">                println!("You win!");
+</span><span class="boring">                break;
+</span><span class="boring">            }
+</span><span class="boring">        }
+</span>    }
+<span class="boring">}</span></code></pre>
+</figure>
+<p>The <code>if</code> expression checks whether our value is out of range, tells the user
+about the problem, and calls <code>continue</code> to start the next iteration of the loop
+and ask for another guess. After the <code>if</code> expression, we can proceed with the
+comparisons between <code>guess</code> and the secret number knowing that <code>guess</code> is
+between 1 and 100.</p>
+<p>However, this is not an ideal solution: If it were absolutely critical that the
+program only operated on values between 1 and 100, and it had many functions
+with this requirement, having a check like this in every function would be
+tedious (and might impact performance).</p>
+<p>Instead, we can make a new type in a dedicated module and put the validations
+in a function to create an instance of the type rather than repeating the
+validations everywhere. That way, it’s safe for functions to use the new type
+in their signatures and confidently use the values they receive. Listing 9-13
+shows one way to define a <code>Guess</code> type that will only create an instance of
+<code>Guess</code> if the <code>new</code> function receives a value between 1 and 100.</p>
+<figure class="listing" id="listing-9-13">
+<span class="file-name">Filename: src/guessing_game.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Guess {
+    value: i32,
+}
+
+impl Guess {
+    pub fn new(value: i32) -&gt; Guess {
+        if value &lt; 1 || value &gt; 100 {
+            panic!("Guess value must be between 1 and 100, got {value}.");
+        }
+
+        Guess { value }
+    }
+
+    pub fn value(&amp;self) -&gt; i32 {
+        self.value
+    }
+}
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-9-13">Listing 9-13</a>: A <code>Guess</code> type that will only continue with values between 1 and 100</figcaption>
+</figure>
+<p>Note that this code in <em>src/guessing_game.rs</em> depends on adding a module
+declaration <code>mod guessing_game;</code> in <em>src/lib.rs</em> that we haven’t shown here.
+Within this new module’s file, we define a struct named <code>Guess</code> that has a
+field named <code>value</code> that holds an <code>i32</code>. This is where the number will be
+stored.</p>
+<p>Then, we implement an associated function named <code>new</code> on <code>Guess</code> that creates
+instances of <code>Guess</code> values. The <code>new</code> function is defined to have one
+parameter named <code>value</code> of type <code>i32</code> and to return a <code>Guess</code>. The code in the
+body of the <code>new</code> function tests <code>value</code> to make sure it’s between 1 and 100.
+If <code>value</code> doesn’t pass this test, we make a <code>panic!</code> call, which will alert
+the programmer who is writing the calling code that they have a bug they need
+to fix, because creating a <code>Guess</code> with a <code>value</code> outside this range would
+violate the contract that <code>Guess::new</code> is relying on. The conditions in which
+<code>Guess::new</code> might panic should be discussed in its public-facing API
+documentation; we’ll cover documentation conventions indicating the possibility
+of a <code>panic!</code> in the API documentation that you create in Chapter 14. If
+<code>value</code> does pass the test, we create a new <code>Guess</code> with its <code>value</code> field set
+to the <code>value</code> parameter and return the <code>Guess</code>.</p>
+<p>Next, we implement a method named <code>value</code> that borrows <code>self</code>, doesn’t have any
+other parameters, and returns an <code>i32</code>. This kind of method is sometimes called
+a <em>getter</em> because its purpose is to get some data from its fields and return
+it. This public method is necessary because the <code>value</code> field of the <code>Guess</code>
+struct is private. It’s important that the <code>value</code> field be private so that
+code using the <code>Guess</code> struct is not allowed to set <code>value</code> directly: Code
+outside the <code>guessing_game</code> module <em>must</em> use the <code>Guess::new</code> function to
+create an instance of <code>Guess</code>, thereby ensuring that there’s no way for a
+<code>Guess</code> to have a <code>value</code> that hasn’t been checked by the conditions in the
+<code>Guess::new</code> function.</p>
+<p>A function that has a parameter or returns only numbers between 1 and 100 could
+then declare in its signature that it takes or returns a <code>Guess</code> rather than an
+<code>i32</code> and wouldn’t need to do any additional checks in its body.</p>
+<h3 id="summary-8"><a class="header" href="#summary-8">Summary</a></h3>
+<p>Rust’s error-handling features are designed to help you write more robust code.
+The <code>panic!</code> macro signals that your program is in a state it can’t handle and
+lets you tell the process to stop instead of trying to proceed with invalid or
+incorrect values. The <code>Result</code> enum uses Rust’s type system to indicate that
+operations might fail in a way that your code could recover from. You can use
+<code>Result</code> to tell code that calls your code that it needs to handle potential
+success or failure as well. Using <code>panic!</code> and <code>Result</code> in the appropriate
+situations will make your code more reliable in the face of inevitable problems.</p>
+<p>Now that you’ve seen useful ways that the standard library uses generics with
+the <code>Option</code> and <code>Result</code> enums, we’ll talk about how generics work and how you
+can use them in your code.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="08%20Collections%20and%20Replay.html">← 08 Collections and Replay</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="10%20Generics%20Traits%20and%20Lifetimes.html">10 Generics Traits and Lifetimes →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#error-handling">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

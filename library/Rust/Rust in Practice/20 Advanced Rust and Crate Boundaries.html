@@ -1,0 +1,2558 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Advanced Rust and Crate Boundaries</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-espresso-pull.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 20 / 21</span></div>
+<div class="hero"><div><h1>Advanced Rust and Crate Boundaries</h1><p>Read the interface that a derive macro generates.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>Deserialize derive</span></div><div class="trace"><b>Observe</b><span>validated transport shape</span></div><div class="trace"><b>Result</b><span>explicit conversion</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="19%20Patterns%20as%20Decisions.html">← 19 Patterns as Decisions</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="21%20A%20Production%20Service%20from%20End%20to%20End.html">21 A Production Service from End to End →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#advanced-features">Advanced Features</a><a href="#unsafe-rust-1">Unsafe Rust</a><a href="#advanced-traits-1">Advanced Traits</a><a href="#advanced-types-1">Advanced Types</a><a href="#advanced-functions-and-closures-1">Advanced Functions and Closures</a><a href="#macros-1">Macros</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Read the interface that a derive macro generates</h2><p>The service contains almost no visible metaprogramming, yet macro-generated implementations sit at several boundaries. Serde&#x27;s derive provides a Deserialize implementation, clap builds its parser, and thiserror implements error formatting. Attributes on the struct participate in those contracts. With deny_unknown_fields, misspelling quantity or adding an unexpected field gets a decoding failure instead of silent acceptance. That strictness also makes additive rolling changes harder.</p><figure class="code"><figcaption>src/api.rs · excerpt</figcaption><pre><code><span class="cp">#[derive(Deserialize)]</span>
+<span class="cp">#[serde(deny_unknown_fields)]</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Submit</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<span class="w">    </span><span class="n">quantity</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></figure><p>A second advanced boundary is hidden below rusqlite: safe Rust calls an API ultimately implemented in C. Bundling SQLite changes how that dependency is built. It does not certify every possible database configuration or remove the need for transactions. Before writing an unsafe abstraction, specify its safety invariant and the requirements imposed on every safe caller. Prefer a maintained safe binding when it already owns that proof. At the Rust layer, inspect generated API behaviour with tests that use actual input rather than relying on how concise a derive declaration looks.</p><h3>Use an abstraction that can be audited</h3><p>When reviewing a macro-heavy module, write down the interface the generated code must satisfy. For the JSON adapter that includes accepted field names, numeric bounds, handling of unknown fields and the error for a missing field. You can exercise all of these with ordinary HTTP inputs. For an unsafe wrapper the review question changes: document which invariants its implementation must uphold for every safe method, including after errors and during destruction. Prefer a small surface with a few clear obligations. A wrapper exposing a convenient safe method without a valid argument for memory safety has moved the danger rather than removed it.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://serde.rs/container-attrs.html">serde.rs/container-attrs.html</a> · <a href="https://docs.rs/rusqlite/0.37/rusqlite/">docs.rs/rusqlite/0.37/rusqlite</a></p></section><div class="book"><h2 id="advanced-features"><a class="header" href="#advanced-features">Advanced Features</a></h2>
+<p>By now, you’ve learned the most commonly used parts of the Rust programming
+language. Before we do one more project, in Chapter 21, we’ll look at a few
+aspects of the language you might run into every once in a while but may not
+use every day. You can use this chapter as a reference for when you encounter
+any unknowns. The features covered here are useful in very specific situations.
+Although you might not reach for them often, we want to make sure you have a
+grasp of all the features Rust has to offer.</p>
+<p>In this chapter, we’ll cover:</p>
+<ul>
+<li>Unsafe Rust: How to opt out of some of Rust’s guarantees and take
+responsibility for manually upholding those guarantees</li>
+<li>Advanced traits: Associated types, default type parameters, fully qualified
+syntax, supertraits, and the newtype pattern in relation to traits</li>
+<li>Advanced types: More about the newtype pattern, type aliases, the never type,
+and dynamically sized types</li>
+<li>Advanced functions and closures: Function pointers and returning closures</li>
+<li>Macros: Ways to define code that defines more code at compile time</li>
+</ul>
+<p>It’s a panoply of Rust features with something for everyone! Let’s dive in!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="unsafe-rust-1"><a href="#unsafe-rust-1" class="header">Unsafe Rust</a></h2>
+<h3 id="unsafe-rust"><a class="header" href="#unsafe-rust">Unsafe Rust</a></h3>
+<p>All the code we’ve discussed so far has had Rust’s memory safety guarantees
+enforced at compile time. However, Rust has a second language hidden inside it
+that doesn’t enforce these memory safety guarantees: It’s called <em>unsafe Rust</em>
+and works just like regular Rust but gives us extra superpowers.</p>
+<p>Unsafe Rust exists because, by nature, static analysis is conservative. When
+the compiler tries to determine whether or not code upholds the guarantees,
+it’s better for it to reject some valid programs than to accept some invalid
+programs. Although the code <em>might</em> be okay, if the Rust compiler doesn’t have
+enough information to be confident, it will reject the code. In these cases,
+you can use unsafe code to tell the compiler, “Trust me, I know what I’m
+doing.” Be warned, however, that you use unsafe Rust at your own risk: If you
+use unsafe code incorrectly, problems can occur due to memory unsafety, such as
+null pointer dereferencing.</p>
+<p>Another reason Rust has an unsafe alter ego is that the underlying computer
+hardware is inherently unsafe. If Rust didn’t let you do unsafe operations, you
+couldn’t do certain tasks. Rust needs to allow you to do low-level systems
+programming, such as directly interacting with the operating system or even
+writing your own operating system. Working with low-level systems programming
+is one of the goals of the language. Let’s explore what we can do with unsafe
+Rust and how to do it.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="unsafe-superpowers"></a></p>
+<h4 id="performing-unsafe-superpowers"><a class="header" href="#performing-unsafe-superpowers">Performing Unsafe Superpowers</a></h4>
+<p>To switch to unsafe Rust, use the <code>unsafe</code> keyword and then start a new block
+that holds the unsafe code. You can take five actions in unsafe Rust that you
+can’t in safe Rust, which we call <em>unsafe superpowers</em>. Those superpowers
+include the ability to:</p>
+<ol>
+<li>Dereference a raw pointer.</li>
+<li>Call an unsafe function or method.</li>
+<li>Access or modify a mutable static variable.</li>
+<li>Implement an unsafe trait.</li>
+<li>Access fields of <code>union</code>s.</li>
+</ol>
+<p>It’s important to understand that <code>unsafe</code> doesn’t turn off the borrow checker
+or disable any of Rust’s other safety checks: If you use a reference in unsafe
+code, it will still be checked. The <code>unsafe</code> keyword only gives you access to
+these five features that are then not checked by the compiler for memory
+safety. You’ll still get some degree of safety inside an unsafe block.</p>
+<p>In addition, <code>unsafe</code> does not mean the code inside the block is necessarily
+dangerous or that it will definitely have memory safety problems: The intent is
+that as the programmer, you’ll ensure that the code inside an <code>unsafe</code> block
+will access memory in a valid way.</p>
+<p>People are fallible and mistakes will happen, but by requiring these five
+unsafe operations to be inside blocks annotated with <code>unsafe</code>, you’ll know that
+any errors related to memory safety must be within an <code>unsafe</code> block. Keep
+<code>unsafe</code> blocks small; you’ll be thankful later when you investigate memory
+bugs.</p>
+<p>To isolate unsafe code as much as possible, it’s best to enclose such code
+within a safe abstraction and provide a safe API, which we’ll discuss later in
+the chapter when we examine unsafe functions and methods. Parts of the standard
+library are implemented as safe abstractions over unsafe code that has been
+audited. Wrapping unsafe code in a safe abstraction prevents uses of <code>unsafe</code>
+from leaking out into all the places that you or your users might want to use
+the functionality implemented with <code>unsafe</code> code, because using a safe
+abstraction is safe.</p>
+<p>Let’s look at each of the five unsafe superpowers in turn. We’ll also look at
+some abstractions that provide a safe interface to unsafe code.</p>
+<h4 id="dereferencing-a-raw-pointer"><a class="header" href="#dereferencing-a-raw-pointer">Dereferencing a Raw Pointer</a></h4>
+<p>In Chapter 4, in the <a href="04%20Ownership%20and%20Borrowing.html#dangling-references">“Dangling References”</a><!-- ignore
+--> section, we mentioned that the compiler ensures that references are always
+valid. Unsafe Rust has two new types called <em>raw pointers</em> that are similar to
+references. As with references, raw pointers can be immutable or mutable and
+are written as <code>*const T</code> and <code>*mut T</code>, respectively. The asterisk isn’t the
+dereference operator; it’s part of the type name. In the context of raw
+pointers, <em>immutable</em> means that the pointer can’t be directly assigned to
+after being dereferenced.</p>
+<p>Different from references and smart pointers, raw pointers:</p>
+<ul>
+<li>Are allowed to ignore the borrowing rules by having both immutable and
+mutable pointers or multiple mutable pointers to the same location</li>
+<li>Aren’t guaranteed to point to valid memory</li>
+<li>Are allowed to be null</li>
+<li>Don’t implement any automatic cleanup</li>
+</ul>
+<p>By opting out of having Rust enforce these guarantees, you can give up
+guaranteed safety in exchange for greater performance or the ability to
+interface with another language or hardware where Rust’s guarantees don’t apply.</p>
+<p>Listing 20-1 shows how to create an immutable and a mutable raw pointer.</p>
+<figure class="listing" id="listing-20-1">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut num = 5;
+
+    let r1 = &amp;raw const num;
+    let r2 = &amp;raw mut num;
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-1">Listing 20-1</a>: Creating raw pointers with the raw borrow operators</figcaption>
+</figure>
+<p>Notice that we don’t include the <code>unsafe</code> keyword in this code. We can create
+raw pointers in safe code; we just can’t dereference raw pointers outside an
+unsafe block, as you’ll see in a bit.</p>
+<p>We’ve created raw pointers by using the raw borrow operators: <code>&amp;raw const num</code>
+creates a <code>*const i32</code> immutable raw pointer, and <code>&amp;raw mut num</code> creates a <code>*mut i32</code> mutable raw pointer. Because we created them directly from a local
+variable, we know these particular raw pointers are valid, but we can’t make
+that assumption about just any raw pointer.</p>
+<p>To demonstrate this, next we’ll create a raw pointer whose validity we can’t be
+so certain of, using the keyword <code>as</code> to cast a value instead of using the raw
+borrow operator. Listing 20-2 shows how to create a raw pointer to an arbitrary
+location in memory. Trying to use arbitrary memory is undefined: There might be
+data at that address or there might not, the compiler might optimize the code
+so that there is no memory access, or the program might terminate with a
+segmentation fault. Usually, there is no good reason to write code like this,
+especially in cases where you can use a raw borrow operator instead, but it is
+possible.</p>
+<figure class="listing" id="listing-20-2">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let address = 0x012345usize;
+    let r = address as *const i32;
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-2">Listing 20-2</a>: Creating a raw pointer to an arbitrary memory address</figcaption>
+</figure>
+<p>Recall that we can create raw pointers in safe code, but we can’t dereference
+raw pointers and read the data being pointed to. In Listing 20-3, we use the
+dereference operator <code>*</code> on a raw pointer that requires an <code>unsafe</code> block.</p>
+<figure class="listing" id="listing-20-3">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut num = 5;
+
+    let r1 = &amp;raw const num;
+    let r2 = &amp;raw mut num;
+
+    unsafe {
+        println!("r1 is: {}", *r1);
+        println!("r2 is: {}", *r2);
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-3">Listing 20-3</a>: Dereferencing raw pointers within an <code>unsafe</code> block</figcaption>
+</figure>
+<p>Creating a pointer does no harm; it’s only when we try to access the value that
+it points at that we might end up dealing with an invalid value.</p>
+<p>Note also that in Listings 20-1 and 20-3, we created <code>*const i32</code> and <code>*mut i32</code> raw pointers that both pointed to the same memory location, where <code>num</code> is
+stored. If we instead tried to create an immutable and a mutable reference to
+<code>num</code>, the code would not have compiled because Rust’s ownership rules don’t
+allow a mutable reference at the same time as any immutable references. With
+raw pointers, we can create a mutable pointer and an immutable pointer to the
+same location and change data through the mutable pointer, potentially creating
+a data race. Be careful!</p>
+<p>With all of these dangers, why would you ever use raw pointers? One major use
+case is when interfacing with C code, as you’ll see in the next section.
+Another case is when building up safe abstractions that the borrow checker
+doesn’t understand. We’ll introduce unsafe functions and then look at an
+example of a safe abstraction that uses unsafe code.</p>
+<h4 id="calling-an-unsafe-function-or-method"><a class="header" href="#calling-an-unsafe-function-or-method">Calling an Unsafe Function or Method</a></h4>
+<p>The second type of operation you can perform in an unsafe block is calling
+unsafe functions. Unsafe functions and methods look exactly like regular
+functions and methods, but they have an extra <code>unsafe</code> before the rest of the
+definition. The <code>unsafe</code> keyword in this context indicates the function has
+requirements we need to uphold when we call this function, because Rust can’t
+guarantee we’ve met these requirements. By calling an unsafe function within an
+<code>unsafe</code> block, we’re saying that we’ve read this function’s documentation and
+we take responsibility for upholding the function’s contracts.</p>
+<p>Here is an unsafe function named <code>dangerous</code> that doesn’t do anything in its
+body:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    unsafe fn dangerous() {}
+
+    unsafe {
+        dangerous();
+    }
+<span class="boring">}</span></code></pre>
+<p>We must call the <code>dangerous</code> function within a separate <code>unsafe</code> block. If we
+try to call <code>dangerous</code> without the <code>unsafe</code> block, we’ll get an error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling unsafe-example v0.1.0 (file:///projects/unsafe-example)
+error[E0133]: call to unsafe function `dangerous` is unsafe and requires unsafe block
+ --&gt; src/main.rs:4:5
+  |
+4 |     dangerous();
+  |     ^^^^^^^^^^^ call to unsafe function
+  |
+  = note: consult the function's documentation for information on how to avoid undefined behavior
+
+For more information about this error, try `rustc --explain E0133`.
+error: could not compile `unsafe-example` (bin "unsafe-example") due to 1 previous error
+</code></pre>
+<p>With the <code>unsafe</code> block, we’re asserting to Rust that we’ve read the function’s
+documentation, we understand how to use it properly, and we’ve verified that
+we’re fulfilling the contract of the function.</p>
+<p>To perform unsafe operations in the body of an <code>unsafe</code> function, you still
+need to use an <code>unsafe</code> block, just as within a regular function, and the
+compiler will warn you if you forget. This helps us keep <code>unsafe</code> blocks as
+small as possible, as unsafe operations may not be needed across the whole
+function body.</p>
+<h5 id="creating-a-safe-abstraction-over-unsafe-code"><a class="header" href="#creating-a-safe-abstraction-over-unsafe-code">Creating a Safe Abstraction over Unsafe Code</a></h5>
+<p>Just because a function contains unsafe code doesn’t mean we need to mark the
+entire function as unsafe. In fact, wrapping unsafe code in a safe function is
+a common abstraction. As an example, let’s study the <code>split_at_mut</code> function
+from the standard library, which requires some unsafe code. We’ll explore how
+we might implement it. This safe method is defined on mutable slices: It takes
+one slice and makes it two by splitting the slice at the index given as an
+argument. Listing 20-4 shows how to use <code>split_at_mut</code>.</p>
+<figure class="listing" id="listing-20-4">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut v = vec![1, 2, 3, 4, 5, 6];
+
+    let r = &amp;mut v[..];
+
+    let (a, b) = r.split_at_mut(3);
+
+    assert_eq!(a, &amp;mut [1, 2, 3]);
+    assert_eq!(b, &amp;mut [4, 5, 6]);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-4">Listing 20-4</a>: Using the safe <code>split_at_mut</code> function</figcaption>
+</figure>
+<p>We can’t implement this function using only safe Rust. An attempt might look
+something like Listing 20-5, which won’t compile. For simplicity, we’ll
+implement <code>split_at_mut</code> as a function rather than a method and only for slices
+of <code>i32</code> values rather than for a generic type <code>T</code>.</p>
+<figure class="listing" id="listing-20-5">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn split_at_mut(values: &amp;mut [i32], mid: usize) -&gt; (&amp;mut [i32], &amp;mut [i32]) {
+    let len = values.len();
+
+    assert!(mid &lt;= len);
+
+    (&amp;mut values[..mid], &amp;mut values[mid..])
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let mut vector = vec![1, 2, 3, 4, 5, 6];
+</span><span class="boring">    let (left, right) = split_at_mut(&amp;mut vector, 3);
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-5">Listing 20-5</a>: An attempted implementation of <code>split_at_mut</code> using only safe Rust</figcaption>
+</figure>
+<p>This function first gets the total length of the slice. Then, it asserts that
+the index given as a parameter is within the slice by checking whether it’s
+less than or equal to the length. The assertion means that if we pass an index
+that is greater than the length to split the slice at, the function will panic
+before it attempts to use that index.</p>
+<p>Then, we return two mutable slices in a tuple: one from the start of the
+original slice to the <code>mid</code> index and another from <code>mid</code> to the end of the
+slice.</p>
+<p>When we try to compile the code in Listing 20-5, we’ll get an error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling unsafe-example v0.1.0 (file:///projects/unsafe-example)
+error[E0499]: cannot borrow `*values` as mutable more than once at a time
+ --&gt; src/main.rs:6:31
+  |
+1 | fn split_at_mut(values: &amp;mut [i32], mid: usize) -&gt; (&amp;mut [i32], &amp;mut [i32]) {
+  |                         - let's call the lifetime of this reference `'1`
+...
+6 |     (&amp;mut values[..mid], &amp;mut values[mid..])
+  |     --------------------------^^^^^^--------
+  |     |     |                   |
+  |     |     |                   second mutable borrow occurs here
+  |     |     first mutable borrow occurs here
+  |     returning this value requires that `*values` is borrowed for `'1`
+  |
+  = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices
+
+For more information about this error, try `rustc --explain E0499`.
+error: could not compile `unsafe-example` (bin "unsafe-example") due to 1 previous error
+</code></pre>
+<p>Rust’s borrow checker can’t understand that we’re borrowing different parts of
+the slice; it only knows that we’re borrowing from the same slice twice.
+Borrowing different parts of a slice is fundamentally okay because the two
+slices aren’t overlapping, but Rust isn’t smart enough to know this. When we
+know code is okay, but Rust doesn’t, it’s time to reach for unsafe code.</p>
+<p>Listing 20-6 shows how to use an <code>unsafe</code> block, a raw pointer, and some calls
+to unsafe functions to make the implementation of <code>split_at_mut</code> work.</p>
+<figure class="listing" id="listing-20-6">
+<pre class="playground"><code class="language-rust edition2024">use std::slice;
+
+fn split_at_mut(values: &amp;mut [i32], mid: usize) -&gt; (&amp;mut [i32], &amp;mut [i32]) {
+    let len = values.len();
+    let ptr = values.as_mut_ptr();
+
+    assert!(mid &lt;= len);
+
+    unsafe {
+        (
+            slice::from_raw_parts_mut(ptr, mid),
+            slice::from_raw_parts_mut(ptr.add(mid), len - mid),
+        )
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let mut vector = vec![1, 2, 3, 4, 5, 6];
+</span><span class="boring">    let (left, right) = split_at_mut(&amp;mut vector, 3);
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-6">Listing 20-6</a>: Using unsafe code in the implementation of the <code>split_at_mut</code> function</figcaption>
+</figure>
+<p>Recall from <a href="04%20Ownership%20and%20Borrowing.html#the-slice-type">“The Slice Type”</a><!-- ignore --> section in
+Chapter 4 that a slice is a pointer to some data and the length of the slice.
+We use the <code>len</code> method to get the length of a slice and the <code>as_mut_ptr</code>
+method to access the raw pointer of a slice. In this case, because we have a
+mutable slice to <code>i32</code> values, <code>as_mut_ptr</code> returns a raw pointer with the type
+<code>*mut i32</code>, which we’ve stored in the variable <code>ptr</code>.</p>
+<p>We keep the assertion that the <code>mid</code> index is within the slice. Then, we get to
+the unsafe code: The <code>slice::from_raw_parts_mut</code> function takes a raw pointer
+and a length, and it creates a slice. We use this function to create a slice
+that starts from <code>ptr</code> and is <code>mid</code> items long. Then, we call the <code>add</code> method
+on <code>ptr</code> with <code>mid</code> as an argument to get a raw pointer that starts at <code>mid</code>,
+and we create a slice using that pointer and the remaining number of items
+after <code>mid</code> as the length.</p>
+<p>The function <code>slice::from_raw_parts_mut</code> is unsafe because it takes a raw
+pointer and must trust that this pointer is valid. The <code>add</code> method on raw
+pointers is also unsafe because it must trust that the offset location is also
+a valid pointer. Therefore, we had to put an <code>unsafe</code> block around our calls to
+<code>slice::from_raw_parts_mut</code> and <code>add</code> so that we could call them. By looking at
+the code and by adding the assertion that <code>mid</code> must be less than or equal to
+<code>len</code>, we can tell that all the raw pointers used within the <code>unsafe</code> block
+will be valid pointers to data within the slice. This is an acceptable and
+appropriate use of <code>unsafe</code>.</p>
+<p>Note that we don’t need to mark the resultant <code>split_at_mut</code> function as
+<code>unsafe</code>, and we can call this function from safe Rust. We’ve created a safe
+abstraction to the unsafe code with an implementation of the function that uses
+<code>unsafe</code> code in a safe way, because it creates only valid pointers from the
+data this function has access to.</p>
+<p>In contrast, the use of <code>slice::from_raw_parts_mut</code> in Listing 20-7 would
+likely crash when the slice is used. This code takes an arbitrary memory
+location and creates a slice 10,000 items long.</p>
+<figure class="listing" id="listing-20-7">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    use std::slice;
+
+    let address = 0x01234usize;
+    let r = address as *mut i32;
+
+    let values: &amp;[i32] = unsafe { slice::from_raw_parts_mut(r, 10000) };
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-7">Listing 20-7</a>: Creating a slice from an arbitrary memory location</figcaption>
+</figure>
+<p>We don’t own the memory at this arbitrary location, and there is no guarantee
+that the slice this code creates contains valid <code>i32</code> values. Attempting to use
+<code>values</code> as though it’s a valid slice results in undefined behavior.</p>
+<h5 id="using-extern-functions-to-call-external-code"><a class="header" href="#using-extern-functions-to-call-external-code">Using <code>extern</code> Functions to Call External Code</a></h5>
+<p>Sometimes your Rust code might need to interact with code written in another
+language. For this, Rust has the keyword <code>extern</code> that facilitates the creation
+and use of a <em>Foreign Function Interface (FFI)</em>, which is a way for a
+programming language to define functions and enable a different (foreign)
+programming language to call those functions.</p>
+<p>Listing 20-8 demonstrates how to set up an integration with the <code>abs</code> function
+from the C standard library. Functions declared within <code>extern</code> blocks are
+generally unsafe to call from Rust code, so <code>extern</code> blocks must also be marked
+<code>unsafe</code>. The reason is that other languages don’t enforce Rust’s rules and
+guarantees, and Rust can’t check them, so responsibility falls on the
+programmer to ensure safety.</p>
+<figure class="listing" id="listing-20-8">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">unsafe extern "C" {
+    fn abs(input: i32) -&gt; i32;
+}
+
+fn main() {
+    unsafe {
+        println!("Absolute value of -3 according to C: {}", abs(-3));
+    }
+}</code></pre>
+<figcaption><a href="#listing-20-8">Listing 20-8</a>: Declaring and calling an <code>extern</code> function defined in another language</figcaption>
+</figure>
+<p>Within the <code>unsafe extern "C"</code> block, we list the names and signatures of
+external functions from another language we want to call. The <code>"C"</code> part
+defines which <em>application binary interface (ABI)</em> the external function uses:
+The ABI defines how to call the function at the assembly level. The <code>"C"</code> ABI
+is the most common and follows the C programming language’s ABI. Information
+about all the ABIs Rust supports is available in <a href="https://doc.rust-lang.org/stable/reference/items/external-blocks.html#abi">the Rust Reference</a>.</p>
+<p>Every item declared within an <code>unsafe extern</code> block is implicitly unsafe.
+However, some FFI functions <em>are</em> safe to call. For example, the <code>abs</code> function
+from C’s standard library does not have any memory safety considerations, and we
+know it can be called with any <code>i32</code>. In cases like this, we can use the <code>safe</code>
+keyword to say that this specific function is safe to call even though it is in
+an <code>unsafe extern</code> block. Once we make that change, calling it no longer
+requires an <code>unsafe</code> block, as shown in Listing 20-9.</p>
+<figure class="listing" id="listing-20-9">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">unsafe extern "C" {
+    safe fn abs(input: i32) -&gt; i32;
+}
+
+fn main() {
+    println!("Absolute value of -3 according to C: {}", abs(-3));
+}</code></pre>
+<figcaption><a href="#listing-20-9">Listing 20-9</a>: Explicitly marking a function as <code>safe</code> within an <code>unsafe extern</code> block and calling it safely</figcaption>
+</figure>
+<p>Marking a function as <code>safe</code> does not inherently make it safe! Instead, it is
+like a promise you are making to Rust that it is safe. It is still your
+responsibility to make sure that promise is kept!</p>
+<h5 id="calling-rust-functions-from-other-languages"><a class="header" href="#calling-rust-functions-from-other-languages">Calling Rust Functions from Other Languages</a></h5>
+<p>We can also use <code>extern</code> to create an interface that allows other languages to
+call Rust functions. Instead of creating a whole <code>extern</code> block, we add the
+<code>extern</code> keyword and specify the ABI to use just before the <code>fn</code> keyword for
+the relevant function. We also need to add an <code>#[unsafe(no_mangle)]</code> annotation
+to tell the Rust compiler not to mangle the name of this function. <em>Mangling</em>
+is when a compiler changes the name we’ve given a function to a different name
+that contains more information for other parts of the compilation process to
+consume but is less human readable. Every programming language compiler mangles
+names slightly differently, so for a Rust function to be nameable by other
+languages, we must disable the Rust compiler’s name mangling. This is unsafe
+because there might be name collisions across libraries without the built-in
+mangling, so it is our responsibility to make sure the name we choose is safe
+to export without mangling.</p>
+<p>In the following example, we make the <code>call_from_c</code> function accessible from C
+code, after it’s compiled to a shared library and linked from C:</p>
+<pre><code>#[unsafe(no_mangle)]
+pub extern "C" fn call_from_c() {
+    println!("Just called a Rust function from C!");
+}
+</code></pre>
+<p>This usage of <code>extern</code> requires <code>unsafe</code> only in the attribute, not on the
+<code>extern</code> block.</p>
+<h4 id="accessing-or-modifying-a-mutable-static-variable"><a class="header" href="#accessing-or-modifying-a-mutable-static-variable">Accessing or Modifying a Mutable Static Variable</a></h4>
+<p>In this book, we’ve not yet talked about global variables, which Rust does
+support but which can be problematic with Rust’s ownership rules. If two
+threads are accessing the same mutable global variable, it can cause a data
+race.</p>
+<p>In Rust, global variables are called <em>static</em> variables. Listing 20-10 shows an
+example declaration and use of a static variable with a string slice as a
+value.</p>
+<figure class="listing" id="listing-20-10">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">static HELLO_WORLD: &amp;str = "Hello, world!";
+
+fn main() {
+    println!("value is: {HELLO_WORLD}");
+}</code></pre>
+<figcaption><a href="#listing-20-10">Listing 20-10</a>: Defining and using an immutable static variable</figcaption>
+</figure>
+<p>Static variables are similar to constants, which we discussed in the
+<a href="03%20Values%20and%20Control%20Flow.html#declaring-constants">“Declaring Constants”</a><!-- ignore --> section in Chapter 3. The
+names of static variables are in <code>SCREAMING_SNAKE_CASE</code> by convention. Static
+variables can only store references with the <code>'static</code> lifetime, which means
+the Rust compiler can figure out the lifetime and we aren’t required to
+annotate it explicitly. Accessing an immutable static variable is safe.</p>
+<p>A subtle difference between constants and immutable static variables is that
+values in a static variable have a fixed address in memory. Using the value
+will always access the same data. Constants, on the other hand, are allowed to
+duplicate their data whenever they’re used. Another difference is that static
+variables can be mutable. Accessing and modifying mutable static variables is
+<em>unsafe</em>. Listing 20-11 shows how to declare, access, and modify a mutable
+static variable named <code>COUNTER</code>.</p>
+<figure class="listing" id="listing-20-11">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">static mut COUNTER: u32 = 0;
+
+/// SAFETY: Calling this from more than a single thread at a time is undefined
+/// behavior, so you *must* guarantee you only call it from a single thread at
+/// a time.
+unsafe fn add_to_count(inc: u32) {
+    unsafe {
+        COUNTER += inc;
+    }
+}
+
+fn main() {
+    unsafe {
+        // SAFETY: This is only called from a single thread in `main`.
+        add_to_count(3);
+        println!("COUNTER: {}", *(&amp;raw const COUNTER));
+    }
+}</code></pre>
+<figcaption><a href="#listing-20-11">Listing 20-11</a>: Reading from or writing to a mutable static variable is unsafe.</figcaption>
+</figure>
+<p>As with regular variables, we specify mutability using the <code>mut</code> keyword. Any
+code that reads or writes from <code>COUNTER</code> must be within an <code>unsafe</code> block. The
+code in Listing 20-11 compiles and prints <code>COUNTER: 3</code> as we would expect
+because it’s single threaded. Having multiple threads access <code>COUNTER</code> would
+likely result in data races, so it is undefined behavior. Therefore, we need to
+mark the entire function as <code>unsafe</code> and document the safety limitation so that
+anyone calling the function knows what they are and are not allowed to do
+safely.</p>
+<p>Whenever we write an unsafe function, it is idiomatic to write a comment
+starting with <code>SAFETY</code> and explaining what the caller needs to do to call the
+function safely. Likewise, whenever we perform an unsafe operation, it is
+idiomatic to write a comment starting with <code>SAFETY</code> to explain how the safety
+rules are upheld.</p>
+<p>Additionally, the compiler will deny by default any attempt to create
+references to a mutable static variable through a compiler lint. You must
+either explicitly opt out of that lint’s protections by adding an
+<code>#[allow(static_mut_refs)]</code> annotation or access the mutable static variable
+via a raw pointer created with one of the raw borrow operators. That includes
+cases where the reference is created invisibly, as when it is used in the
+<code>println!</code> in this code listing. Requiring references to static mutable
+variables to be created via raw pointers helps make the safety requirements for
+using them more obvious.</p>
+<p>With mutable data that is globally accessible, it’s difficult to ensure that
+there are no data races, which is why Rust considers mutable static variables
+to be unsafe. Where possible, it’s preferable to use the concurrency techniques
+and thread-safe smart pointers we discussed in Chapter 16 so that the compiler
+checks that data access from different threads is done safely.</p>
+<h4 id="implementing-an-unsafe-trait"><a class="header" href="#implementing-an-unsafe-trait">Implementing an Unsafe Trait</a></h4>
+<p>We can use <code>unsafe</code> to implement an unsafe trait. A trait is unsafe when at
+least one of its methods has some invariant that the compiler can’t verify. We
+declare that a trait is <code>unsafe</code> by adding the <code>unsafe</code> keyword before <code>trait</code>
+and marking the implementation of the trait as <code>unsafe</code> too, as shown in
+Listing 20-12.</p>
+<figure class="listing" id="listing-20-12">
+<pre class="playground"><code class="language-rust edition2024">unsafe trait Foo {
+    // methods go here
+}
+
+unsafe impl Foo for i32 {
+    // method implementations go here
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-20-12">Listing 20-12</a>: Defining and implementing an unsafe trait</figcaption>
+</figure>
+<p>By using <code>unsafe impl</code>, we’re promising that we’ll uphold the invariants that
+the compiler can’t verify.</p>
+<p>As an example, recall the <code>Send</code> and <code>Sync</code> marker traits we discussed in the
+<a href="16%20Concurrency%20and%20Admission%20Control.html#extensible-concurrency-with-send-and-sync-1">“Extensible Concurrency with <code>Send</code> and <code>Sync</code>”</a><!-- ignore -->
+section in Chapter 16: The compiler implements these traits automatically if
+our types are composed entirely of other types that implement <code>Send</code> and
+<code>Sync</code>. If we implement a type that contains a type that does not implement
+<code>Send</code> or <code>Sync</code>, such as raw pointers, and we want to mark that type as <code>Send</code>
+or <code>Sync</code>, we must use <code>unsafe</code>. Rust can’t verify that our type upholds the
+guarantees that it can be safely sent across threads or accessed from multiple
+threads; therefore, we need to do those checks manually and indicate as such
+with <code>unsafe</code>.</p>
+<h4 id="accessing-fields-of-a-union"><a class="header" href="#accessing-fields-of-a-union">Accessing Fields of a Union</a></h4>
+<p>The final action that works only with <code>unsafe</code> is accessing fields of a union.
+A <em>union</em> is similar to a <code>struct</code>, but only one declared field is used in a
+particular instance at one time. Unions are primarily used to interface with
+unions in C code. Accessing union fields is unsafe because Rust can’t guarantee
+the type of the data currently being stored in the union instance. You can
+learn more about unions in <a href="https://doc.rust-lang.org/stable/reference/items/unions.html">the Rust Reference</a>.</p>
+<h4 id="using-miri-to-check-unsafe-code"><a class="header" href="#using-miri-to-check-unsafe-code">Using Miri to Check Unsafe Code</a></h4>
+<p>When writing unsafe code, you might want to check that what you have written
+actually is safe and correct. One of the best ways to do that is to use Miri,
+an official Rust tool for detecting undefined behavior. Whereas the borrow
+checker is a <em>static</em> tool that works at compile time, Miri is a <em>dynamic</em>
+tool that works at runtime. It checks your code by running your program, or
+its test suite, and detecting when you violate the rules it understands about
+how Rust should work.</p>
+<p>Using Miri requires a nightly build of Rust (which we talk about more in
+<a href="https://doc.rust-lang.org/stable/book/print.html#g---how-rust-is-made-and-nightly-rust">Appendix G: How Rust is Made and “Nightly Rust”</a><!-- ignore -->). You
+can install both a nightly version of Rust and the Miri tool by typing <code>rustup +nightly component add miri</code>. This does not change what version of Rust your
+project uses; it only adds the tool to your system so you can use it when you
+want to. You can run Miri on a project by typing <code>cargo +nightly miri run</code> or
+<code>cargo +nightly miri test</code>.</p>
+<p>For an example of how helpful this can be, consider what happens when we run it
+against Listing 20-7.</p>
+<pre><code class="language-console">$ cargo +nightly miri run
+   Compiling unsafe-example v0.1.0 (file:///projects/unsafe-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running `file:///home/.rustup/toolchains/nightly/bin/cargo-miri runner target/miri/debug/unsafe-example`
+warning: integer-to-pointer cast
+ --&gt; src/main.rs:5:13
+  |
+5 |     let r = address as *mut i32;
+  |             ^^^^^^^^^^^^^^^^^^^ integer-to-pointer cast
+  |
+  = help: this program is using integer-to-pointer casts or (equivalently) `ptr::with_exposed_provenance`, which means that Miri might miss pointer bugs in this program
+  = help: see https://doc.rust-lang.org/nightly/std/ptr/fn.with_exposed_provenance.html for more details on that operation
+  = help: to ensure that Miri does not miss bugs in your program, use Strict Provenance APIs (https://doc.rust-lang.org/nightly/std/ptr/index.html#strict-provenance, https://crates.io/crates/sptr) instead
+  = help: you can then set `MIRIFLAGS=-Zmiri-strict-provenance` to ensure you are not relying on `with_exposed_provenance` semantics
+  = help: alternatively, `MIRIFLAGS=-Zmiri-permissive-provenance` disables this warning
+
+error: Undefined Behavior: constructing invalid value of type &amp;mut [i32]: encountered a dangling reference (0x1234[noalloc] has no provenance)
+ --&gt; src/main.rs:7:35
+  |
+7 |     let values: &amp;[i32] = unsafe { slice::from_raw_parts_mut(r, 10000) };
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Undefined Behavior occurred here
+  |
+  = help: this indicates a bug in the program: it performed an invalid operation, and caused Undefined Behavior
+  = help: see https://doc.rust-lang.org/nightly/reference/behavior-considered-undefined.html for further information
+
+note: some details are omitted, run with `MIRIFLAGS=-Zmiri-backtrace=full` for a verbose backtrace
+
+error: aborting due to 1 previous error; 1 warning emitted
+
+</code></pre>
+<p>Miri correctly warns us that we’re casting an integer to a pointer, which might
+be a problem, but Miri can’t determine whether a problem exists because it
+doesn’t know how the pointer originated. Then, Miri returns an error where
+Listing 20-7 has undefined behavior because we have a dangling pointer. Thanks
+to Miri, we now know there is a risk of undefined behavior, and we can think
+about how to make the code safe. In some cases, Miri can even make
+recommendations about how to fix errors.</p>
+<p>Miri doesn’t catch everything you might get wrong when writing unsafe code.
+Miri is a dynamic analysis tool, so it only catches problems with code that
+actually gets run. That means you will need to use it in conjunction with good
+testing techniques to increase your confidence about the unsafe code you have
+written. Miri also does not cover every possible way your code can be unsound.</p>
+<p>Put another way: If Miri <em>does</em> catch a problem, you know there’s a bug, but
+just because Miri <em>doesn’t</em> catch a bug doesn’t mean there isn’t a problem. It
+can catch a lot, though. Try running it on the other examples of unsafe code in
+this chapter and see what it says!</p>
+<p>You can learn more about Miri at <a href="https://github.com/rust-lang/miri">its GitHub repository</a>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="when-to-use-unsafe-code"></a></p>
+<h4 id="using-unsafe-code-correctly"><a class="header" href="#using-unsafe-code-correctly">Using Unsafe Code Correctly</a></h4>
+<p>Using <code>unsafe</code> to use one of the five superpowers just discussed isn’t wrong or
+even frowned upon, but it is trickier to get <code>unsafe</code> code correct because the
+compiler can’t help uphold memory safety. When you have a reason to use
+<code>unsafe</code> code, you can do so, and having the explicit <code>unsafe</code> annotation makes
+it easier to track down the source of problems when they occur. Whenever you
+write unsafe code, you can use Miri to help you be more confident that the code
+you have written upholds Rust’s rules.</p>
+<p>For a much deeper exploration of how to work effectively with unsafe Rust, read
+Rust’s official guide for <code>unsafe</code>, <a href="https://doc.rust-lang.org/nomicon/">The Rustonomicon</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="advanced-traits-1"><a href="#advanced-traits-1" class="header">Advanced Traits</a></h2>
+<h3 id="advanced-traits"><a class="header" href="#advanced-traits">Advanced Traits</a></h3>
+<p>We first covered traits in the <a href="10%20Generics%20Traits%20and%20Lifetimes.html#defining-shared-behavior-with-traits-1">“Defining Shared Behavior with
+Traits”</a><!-- ignore --> section in Chapter 10, but we didn’t discuss
+the more advanced details. Now that you know more about Rust, we can get into
+the nitty-gritty.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="specifying-placeholder-types-in-trait-definitions-with-associated-types"></a>
+<a id="associated-types"></a></p>
+<h4 id="defining-traits-with-associated-types"><a class="header" href="#defining-traits-with-associated-types">Defining Traits with Associated Types</a></h4>
+<p><em>Associated types</em> connect a type placeholder with a trait such that the trait
+method definitions can use these placeholder types in their signatures. The
+implementor of a trait will specify the concrete type to be used instead of the
+placeholder type for the particular implementation. That way, we can define a
+trait that uses some types without needing to know exactly what those types are
+until the trait is implemented.</p>
+<p>We’ve described most of the advanced features in this chapter as being rarely
+needed. Associated types are somewhere in the middle: They’re used more rarely
+than features explained in the rest of the book but more commonly than many of
+the other features discussed in this chapter.</p>
+<p>One example of a trait with an associated type is the <code>Iterator</code> trait that the
+standard library provides. The associated type is named <code>Item</code> and stands in
+for the type of the values the type implementing the <code>Iterator</code> trait is
+iterating over. The definition of the <code>Iterator</code> trait is as shown in Listing
+20-13.</p>
+<figure class="listing" id="listing-20-13">
+<pre><code class="language-rust noplayground">pub trait Iterator {
+    type Item;
+
+    fn next(&amp;mut self) -&gt; Option&lt;Self::Item&gt;;
+}</code></pre>
+<figcaption><a href="#listing-20-13">Listing 20-13</a>: The definition of the <code>Iterator</code> trait that has an associated type <code>Item</code></figcaption>
+</figure>
+<p>The type <code>Item</code> is a placeholder, and the <code>next</code> method’s definition shows that
+it will return values of type <code>Option&lt;Self::Item&gt;</code>. Implementors of the
+<code>Iterator</code> trait will specify the concrete type for <code>Item</code>, and the <code>next</code>
+method will return an <code>Option</code> containing a value of that concrete type.</p>
+<p>Associated types might seem like a similar concept to generics, in that the
+latter allow us to define a function without specifying what types it can
+handle. To examine the difference between the two concepts, we’ll look at an
+implementation of the <code>Iterator</code> trait on a type named <code>Counter</code> that specifies
+the <code>Item</code> type is <code>u32</code>:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">struct Counter {
+</span><span class="boring">    count: u32,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Counter {
+</span><span class="boring">    fn new() -&gt; Counter {
+</span><span class="boring">        Counter { count: 0 }
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Iterator for Counter {
+    type Item = u32;
+
+    fn next(&amp;mut self) -&gt; Option&lt;Self::Item&gt; {
+        // --snip--
+<span class="boring">        if self.count &lt; 5 {
+</span><span class="boring">            self.count += 1;
+</span><span class="boring">            Some(self.count)
+</span><span class="boring">        } else {
+</span><span class="boring">            None
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+</figure>
+<p>This syntax seems comparable to that of generics. So, why not just define the
+<code>Iterator</code> trait with generics, as shown in Listing 20-14?</p>
+<figure class="listing" id="listing-20-14">
+<pre><code class="language-rust noplayground">pub trait Iterator&lt;T&gt; {
+    fn next(&amp;mut self) -&gt; Option&lt;T&gt;;
+}</code></pre>
+<figcaption><a href="#listing-20-14">Listing 20-14</a>: A hypothetical definition of the <code>Iterator</code> trait using generics</figcaption>
+</figure>
+<p>The difference is that when using generics, as in Listing 20-14, we must
+annotate the types in each implementation; because we can also implement
+<code>Iterator&lt;String&gt; for Counter</code> or any other type, we could have multiple
+implementations of <code>Iterator</code> for <code>Counter</code>. In other words, when a trait has a
+generic parameter, it can be implemented for a type multiple times, changing
+the concrete types of the generic type parameters each time. When we use the
+<code>next</code> method on <code>Counter</code>, we would have to provide type annotations to
+indicate which implementation of <code>Iterator</code> we want to use.</p>
+<p>With associated types, we don’t need to annotate types, because we can’t
+implement a trait on a type multiple times. In Listing 20-13 with the
+definition that uses associated types, we can choose what the type of <code>Item</code>
+will be only once because there can be only one <code>impl Iterator for Counter</code>. We
+don’t have to specify that we want an iterator of <code>u32</code> values everywhere we
+call <code>next</code> on <code>Counter</code>.</p>
+<p>Associated types also become part of the trait’s contract: Implementors of the
+trait must provide a type to stand in for the associated type placeholder.
+Associated types often have a name that describes how the type will be used,
+and documenting the associated type in the API documentation is a good practice.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="default-generic-type-parameters-and-operator-overloading"></a></p>
+<h4 id="using-default-generic-parameters-and-operator-overloading"><a class="header" href="#using-default-generic-parameters-and-operator-overloading">Using Default Generic Parameters and Operator Overloading</a></h4>
+<p>When we use generic type parameters, we can specify a default concrete type for
+the generic type. This eliminates the need for implementors of the trait to
+specify a concrete type if the default type works. You specify a default type
+when declaring a generic type with the <code>&lt;PlaceholderType=ConcreteType&gt;</code> syntax.</p>
+<p>A great example of a situation where this technique is useful is with <em>operator
+overloading</em>, in which you customize the behavior of an operator (such as <code>+</code>)
+in particular situations.</p>
+<p>Rust doesn’t allow you to create your own operators or overload arbitrary
+operators. But you can overload the operations and corresponding traits listed
+in <code>std::ops</code> by implementing the traits associated with the operator. For
+example, in Listing 20-15, we overload the <code>+</code> operator to add two <code>Point</code>
+instances together. We do this by implementing the <code>Add</code> trait on a <code>Point</code>
+struct.</p>
+<figure class="listing" id="listing-20-15">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::ops::Add;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, other: Point) -&gt; Point {
+        Point {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+fn main() {
+    assert_eq!(
+        Point { x: 1, y: 0 } + Point { x: 2, y: 3 },
+        Point { x: 3, y: 3 }
+    );
+}</code></pre>
+<figcaption><a href="#listing-20-15">Listing 20-15</a>: Implementing the <code>Add</code> trait to overload the <code>+</code> operator for <code>Point</code> instances</figcaption>
+</figure>
+<p>The <code>add</code> method adds the <code>x</code> values of two <code>Point</code> instances and the <code>y</code>
+values of two <code>Point</code> instances to create a new <code>Point</code>. The <code>Add</code> trait has an
+associated type named <code>Output</code> that determines the type returned from the <code>add</code>
+method.</p>
+<p>The default generic type in this code is within the <code>Add</code> trait. Here is its
+definition:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>trait Add&lt;Rhs=Self&gt; {
+    type Output;
+
+    fn add(self, rhs: Rhs) -&gt; Self::Output;
+}
+<span class="boring">}</span></code></pre>
+<p>This code should look generally familiar: a trait with one method and an
+associated type. The new part is <code>Rhs=Self</code>: This syntax is called <em>default
+type parameters</em>. The <code>Rhs</code> generic type parameter (short for “right-hand
+side”) defines the type of the <code>rhs</code> parameter in the <code>add</code> method. If we don’t
+specify a concrete type for <code>Rhs</code> when we implement the <code>Add</code> trait, the type
+of <code>Rhs</code> will default to <code>Self</code>, which will be the type we’re implementing
+<code>Add</code> on.</p>
+<p>When we implemented <code>Add</code> for <code>Point</code>, we used the default for <code>Rhs</code> because we
+wanted to add two <code>Point</code> instances. Let’s look at an example of implementing
+the <code>Add</code> trait where we want to customize the <code>Rhs</code> type rather than using the
+default.</p>
+<p>We have two structs, <code>Millimeters</code> and <code>Meters</code>, holding values in different
+units. This thin wrapping of an existing type in another struct is known as the
+<em>newtype pattern</em>, which we describe in more detail in the <a href="#implementing-external-traits-with-the-newtype-pattern">“Implementing
+External Traits with the Newtype Pattern”</a><!-- ignore --> section. We
+want to add values in millimeters to values in meters and have the
+implementation of <code>Add</code> do the conversion correctly. We can implement <code>Add</code> for
+<code>Millimeters</code> with <code>Meters</code> as the <code>Rhs</code>, as shown in Listing 20-16.</p>
+<figure class="listing" id="listing-20-16">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">use std::ops::Add;
+
+struct Millimeters(u32);
+struct Meters(u32);
+
+impl Add&lt;Meters&gt; for Millimeters {
+    type Output = Millimeters;
+
+    fn add(self, other: Meters) -&gt; Millimeters {
+        Millimeters(self.0 + (other.0 * 1000))
+    }
+}</code></pre>
+<figcaption><a href="#listing-20-16">Listing 20-16</a>: Implementing the <code>Add</code> trait on <code>Millimeters</code> to add <code>Millimeters</code> and <code>Meters</code></figcaption>
+</figure>
+<p>To add <code>Millimeters</code> and <code>Meters</code>, we specify <code>impl Add&lt;Meters&gt;</code> to set the
+value of the <code>Rhs</code> type parameter instead of using the default of <code>Self</code>.</p>
+<p>You’ll use default type parameters in two main ways:</p>
+<ol>
+<li>To extend a type without breaking existing code</li>
+<li>To allow customization in specific cases most users won’t need</li>
+</ol>
+<p>The standard library’s <code>Add</code> trait is an example of the second purpose:
+Usually, you’ll add two like types, but the <code>Add</code> trait provides the ability to
+customize beyond that. Using a default type parameter in the <code>Add</code> trait
+definition means you don’t have to specify the extra parameter most of the
+time. In other words, a bit of implementation boilerplate isn’t needed, making
+it easier to use the trait.</p>
+<p>The first purpose is similar to the second but in reverse: If you want to add a
+type parameter to an existing trait, you can give it a default to allow
+extension of the functionality of the trait without breaking the existing
+implementation code.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="fully-qualified-syntax-for-disambiguation-calling-methods-with-the-same-name"></a>
+<a id="disambiguating-between-methods-with-the-same-name"></a></p>
+<h4 id="disambiguating-between-identically-named-methods"><a class="header" href="#disambiguating-between-identically-named-methods">Disambiguating Between Identically Named Methods</a></h4>
+<p>Nothing in Rust prevents a trait from having a method with the same name as
+another trait’s method, nor does Rust prevent you from implementing both traits
+on one type. It’s also possible to implement a method directly on the type with
+the same name as methods from traits.</p>
+<p>When calling methods with the same name, you’ll need to tell Rust which one you
+want to use. Consider the code in Listing 20-17 where we’ve defined two traits,
+<code>Pilot</code> and <code>Wizard</code>, that both have a method called <code>fly</code>. We then implement
+both traits on a type <code>Human</code> that already has a method named <code>fly</code> implemented
+on it. Each <code>fly</code> method does something different.</p>
+<figure class="listing" id="listing-20-17">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">trait Pilot {
+    fn fly(&amp;self);
+}
+
+trait Wizard {
+    fn fly(&amp;self);
+}
+
+struct Human;
+
+impl Pilot for Human {
+    fn fly(&amp;self) {
+        println!("This is your captain speaking.");
+    }
+}
+
+impl Wizard for Human {
+    fn fly(&amp;self) {
+        println!("Up!");
+    }
+}
+
+impl Human {
+    fn fly(&amp;self) {
+        println!("*waving arms furiously*");
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-20-17">Listing 20-17</a>: Two traits are defined to have a <code>fly</code> method and are implemented on the <code>Human</code> type, and a <code>fly</code> method is implemented on <code>Human</code> directly.</figcaption>
+</figure>
+<p>When we call <code>fly</code> on an instance of <code>Human</code>, the compiler defaults to calling
+the method that is directly implemented on the type, as shown in Listing 20-18.</p>
+<figure class="listing" id="listing-20-18">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">trait Pilot {
+</span><span class="boring">    fn fly(&amp;self);
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">trait Wizard {
+</span><span class="boring">    fn fly(&amp;self);
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Human;
+</span><span class="boring">
+</span><span class="boring">impl Pilot for Human {
+</span><span class="boring">    fn fly(&amp;self) {
+</span><span class="boring">        println!("This is your captain speaking.");
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Wizard for Human {
+</span><span class="boring">    fn fly(&amp;self) {
+</span><span class="boring">        println!("Up!");
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Human {
+</span><span class="boring">    fn fly(&amp;self) {
+</span><span class="boring">        println!("*waving arms furiously*");
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let person = Human;
+    person.fly();
+}</code></pre>
+<figcaption><a href="#listing-20-18">Listing 20-18</a>: Calling <code>fly</code> on an instance of <code>Human</code></figcaption>
+</figure>
+<p>Running this code will print <code>*waving arms furiously*</code>, showing that Rust
+called the <code>fly</code> method implemented on <code>Human</code> directly.</p>
+<p>To call the <code>fly</code> methods from either the <code>Pilot</code> trait or the <code>Wizard</code> trait,
+we need to use more explicit syntax to specify which <code>fly</code> method we mean.
+Listing 20-19 demonstrates this syntax.</p>
+<figure class="listing" id="listing-20-19">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">trait Pilot {
+</span><span class="boring">    fn fly(&amp;self);
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">trait Wizard {
+</span><span class="boring">    fn fly(&amp;self);
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Human;
+</span><span class="boring">
+</span><span class="boring">impl Pilot for Human {
+</span><span class="boring">    fn fly(&amp;self) {
+</span><span class="boring">        println!("This is your captain speaking.");
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Wizard for Human {
+</span><span class="boring">    fn fly(&amp;self) {
+</span><span class="boring">        println!("Up!");
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Human {
+</span><span class="boring">    fn fly(&amp;self) {
+</span><span class="boring">        println!("*waving arms furiously*");
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let person = Human;
+    Pilot::fly(&amp;person);
+    Wizard::fly(&amp;person);
+    person.fly();
+}</code></pre>
+<figcaption><a href="#listing-20-19">Listing 20-19</a>: Specifying which trait’s <code>fly</code> method we want to call</figcaption>
+</figure>
+<p>Specifying the trait name before the method name clarifies to Rust which
+implementation of <code>fly</code> we want to call. We could also write
+<code>Human::fly(&amp;person)</code>, which is equivalent to the <code>person.fly()</code> that we used
+in Listing 20-19, but this is a bit longer to write if we don’t need to
+disambiguate.</p>
+<p>Running this code prints the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling traits-example v0.1.0 (file:///projects/traits-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.46s
+     Running `target/debug/traits-example`
+This is your captain speaking.
+Up!
+*waving arms furiously*
+</code></pre>
+<p>Because the <code>fly</code> method takes a <code>self</code> parameter, if we had two <em>types</em> that
+both implement one <em>trait</em>, Rust could figure out which implementation of a
+trait to use based on the type of <code>self</code>.</p>
+<p>However, associated functions that are not methods don’t have a <code>self</code>
+parameter. When there are multiple types or traits that define non-method
+functions with the same function name, Rust doesn’t always know which type you
+mean unless you use fully qualified syntax. For example, in Listing 20-20, we
+create a trait for an animal shelter that wants to name all baby dogs Spot. We
+make an <code>Animal</code> trait with an associated non-method function <code>baby_name</code>. The
+<code>Animal</code> trait is implemented for the struct <code>Dog</code>, on which we also provide an
+associated non-method function <code>baby_name</code> directly.</p>
+<figure class="listing" id="listing-20-20">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">trait Animal {
+    fn baby_name() -&gt; String;
+}
+
+struct Dog;
+
+impl Dog {
+    fn baby_name() -&gt; String {
+        String::from("Spot")
+    }
+}
+
+impl Animal for Dog {
+    fn baby_name() -&gt; String {
+        String::from("puppy")
+    }
+}
+
+fn main() {
+    println!("A baby dog is called a {}", Dog::baby_name());
+}</code></pre>
+<figcaption><a href="#listing-20-20">Listing 20-20</a>: A trait with an associated function and a type with an associated function of the same name that also implements the trait</figcaption>
+</figure>
+<p>We implement the code for naming all puppies Spot in the <code>baby_name</code> associated
+function that is defined on <code>Dog</code>. The <code>Dog</code> type also implements the trait
+<code>Animal</code>, which describes characteristics that all animals have. Baby dogs are
+called puppies, and that is expressed in the implementation of the <code>Animal</code>
+trait on <code>Dog</code> in the <code>baby_name</code> function associated with the <code>Animal</code> trait.</p>
+<p>In <code>main</code>, we call the <code>Dog::baby_name</code> function, which calls the associated
+function defined on <code>Dog</code> directly. This code prints the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling traits-example v0.1.0 (file:///projects/traits-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.54s
+     Running `target/debug/traits-example`
+A baby dog is called a Spot
+</code></pre>
+<p>This output isn’t what we wanted. We want to call the <code>baby_name</code> function that
+is part of the <code>Animal</code> trait that we implemented on <code>Dog</code> so that the code
+prints <code>A baby dog is called a puppy</code>. The technique of specifying the trait
+name that we used in Listing 20-19 doesn’t help here; if we change <code>main</code> to
+the code in Listing 20-21, we’ll get a compilation error.</p>
+<figure class="listing" id="listing-20-21">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">trait Animal {
+</span><span class="boring">    fn baby_name() -&gt; String;
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Dog;
+</span><span class="boring">
+</span><span class="boring">impl Dog {
+</span><span class="boring">    fn baby_name() -&gt; String {
+</span><span class="boring">        String::from("Spot")
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Animal for Dog {
+</span><span class="boring">    fn baby_name() -&gt; String {
+</span><span class="boring">        String::from("puppy")
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    println!("A baby dog is called a {}", Animal::baby_name());
+}</code></pre>
+<figcaption><a href="#listing-20-21">Listing 20-21</a>: Attempting to call the <code>baby_name</code> function from the <code>Animal</code> trait, but Rust doesn’t know which implementation to use</figcaption>
+</figure>
+<p>Because <code>Animal::baby_name</code> doesn’t have a <code>self</code> parameter, and there could be
+other types that implement the <code>Animal</code> trait, Rust can’t figure out which
+implementation of <code>Animal::baby_name</code> we want. We’ll get this compiler error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling traits-example v0.1.0 (file:///projects/traits-example)
+error[E0790]: cannot call associated function on trait without specifying the corresponding `impl` type
+  --&gt; src/main.rs:20:43
+   |
+ 2 |     fn baby_name() -&gt; String;
+   |     ------------------------- `Animal::baby_name` defined here
+...
+20 |     println!("A baby dog is called a {}", Animal::baby_name());
+   |                                           ^^^^^^^^^^^^^^^^^^^ cannot call associated function of trait
+   |
+help: use the fully-qualified path to the only available implementation
+   |
+20 |     println!("A baby dog is called a {}", &lt;Dog as Animal&gt;::baby_name());
+   |                                           +++++++       +
+
+For more information about this error, try `rustc --explain E0790`.
+error: could not compile `traits-example` (bin "traits-example") due to 1 previous error
+</code></pre>
+<p>To disambiguate and tell Rust that we want to use the implementation of
+<code>Animal</code> for <code>Dog</code> as opposed to the implementation of <code>Animal</code> for some other
+type, we need to use fully qualified syntax. Listing 20-22 demonstrates how to
+use fully qualified syntax.</p>
+<figure class="listing" id="listing-20-22">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">trait Animal {
+</span><span class="boring">    fn baby_name() -&gt; String;
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Dog;
+</span><span class="boring">
+</span><span class="boring">impl Dog {
+</span><span class="boring">    fn baby_name() -&gt; String {
+</span><span class="boring">        String::from("Spot")
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Animal for Dog {
+</span><span class="boring">    fn baby_name() -&gt; String {
+</span><span class="boring">        String::from("puppy")
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    println!("A baby dog is called a {}", &lt;Dog as Animal&gt;::baby_name());
+}</code></pre>
+<figcaption><a href="#listing-20-22">Listing 20-22</a>: Using fully qualified syntax to specify that we want to call the <code>baby_name</code> function from the <code>Animal</code> trait as implemented on <code>Dog</code></figcaption>
+</figure>
+<p>We’re providing Rust with a type annotation within the angle brackets, which
+indicates we want to call the <code>baby_name</code> method from the <code>Animal</code> trait as
+implemented on <code>Dog</code> by saying that we want to treat the <code>Dog</code> type as an
+<code>Animal</code> for this function call. This code will now print what we want:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling traits-example v0.1.0 (file:///projects/traits-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
+     Running `target/debug/traits-example`
+A baby dog is called a puppy
+</code></pre>
+<p>In general, fully qualified syntax is defined as follows:</p>
+<pre><code class="language-rust ignore">&lt;Type as Trait&gt;::function(receiver_if_method, next_arg, ...);</code></pre>
+<p>For associated functions that aren’t methods, there would not be a <code>receiver</code>:
+There would only be the list of other arguments. You could use fully qualified
+syntax everywhere that you call functions or methods. However, you’re allowed
+to omit any part of this syntax that Rust can figure out from other information
+in the program. You only need to use this more verbose syntax in cases where
+there are multiple implementations that use the same name and Rust needs help
+to identify which implementation you want to call.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-supertraits-to-require-one-traits-functionality-within-another-trait"></a></p>
+<h4 id="using-supertraits"><a class="header" href="#using-supertraits">Using Supertraits</a></h4>
+<p>Sometimes you might write a trait definition that depends on another trait: For
+a type to implement the first trait, you want to require that type to also
+implement the second trait. You would do this so that your trait definition can
+make use of the associated items of the second trait. The trait your trait
+definition is relying on is called a <em>supertrait</em> of your trait.</p>
+<p>For example, let’s say we want to make an <code>OutlinePrint</code> trait with an
+<code>outline_print</code> method that will print a given value formatted so that it’s
+framed in asterisks. That is, given a <code>Point</code> struct that implements the
+standard library trait <code>Display</code> to result in <code>(x, y)</code>, when we call
+<code>outline_print</code> on a <code>Point</code> instance that has <code>1</code> for <code>x</code> and <code>3</code> for <code>y</code>, it
+should print the following:</p>
+<pre><code class="language-text">**********
+*        *
+* (1, 3) *
+*        *
+**********
+</code></pre>
+<p>In the implementation of the <code>outline_print</code> method, we want to use the
+<code>Display</code> trait’s functionality. Therefore, we need to specify that the
+<code>OutlinePrint</code> trait will work only for types that also implement <code>Display</code> and
+provide the functionality that <code>OutlinePrint</code> needs. We can do that in the
+trait definition by specifying <code>OutlinePrint: Display</code>. This technique is
+similar to adding a trait bound to the trait. Listing 20-23 shows an
+implementation of the <code>OutlinePrint</code> trait.</p>
+<figure class="listing" id="listing-20-23">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::fmt;
+
+trait OutlinePrint: fmt::Display {
+    fn outline_print(&amp;self) {
+        let output = self.to_string();
+        let len = output.len();
+        println!("{}", "*".repeat(len + 4));
+        println!("*{}*", " ".repeat(len + 2));
+        println!("* {output} *");
+        println!("*{}*", " ".repeat(len + 2));
+        println!("{}", "*".repeat(len + 4));
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-20-23">Listing 20-23</a>: Implementing the <code>OutlinePrint</code> trait that requires the functionality from <code>Display</code></figcaption>
+</figure>
+<p>Because we’ve specified that <code>OutlinePrint</code> requires the <code>Display</code> trait, we
+can use the <code>to_string</code> function that is automatically implemented for any type
+that implements <code>Display</code>. If we tried to use <code>to_string</code> without adding a
+colon and specifying the <code>Display</code> trait after the trait name, we’d get an
+error saying that no method named <code>to_string</code> was found for the type <code>&amp;Self</code> in
+the current scope.</p>
+<p>Let’s see what happens when we try to implement <code>OutlinePrint</code> on a type that
+doesn’t implement <code>Display</code>, such as the <code>Point</code> struct:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">use std::fmt;
+</span><span class="boring">
+</span><span class="boring">trait OutlinePrint: fmt::Display {
+</span><span class="boring">    fn outline_print(&amp;self) {
+</span><span class="boring">        let output = self.to_string();
+</span><span class="boring">        let len = output.len();
+</span><span class="boring">        println!("{}", "*".repeat(len + 4));
+</span><span class="boring">        println!("*{}*", " ".repeat(len + 2));
+</span><span class="boring">        println!("* {output} *");
+</span><span class="boring">        println!("*{}*", " ".repeat(len + 2));
+</span><span class="boring">        println!("{}", "*".repeat(len + 4));
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl OutlinePrint for Point {}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let p = Point { x: 1, y: 3 };
+</span><span class="boring">    p.outline_print();
+</span><span class="boring">}</span></code></pre>
+</figure>
+<p>We get an error saying that <code>Display</code> is required but not implemented:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling traits-example v0.1.0 (file:///projects/traits-example)
+error[E0277]: `Point` doesn't implement `std::fmt::Display`
+  --&gt; src/main.rs:20:23
+   |
+20 | impl OutlinePrint for Point {}
+   |                       ^^^^^ unsatisfied trait bound
+   |
+help: the trait `std::fmt::Display` is not implemented for `Point`
+  --&gt; src/main.rs:15:1
+   |
+15 | struct Point {
+   | ^^^^^^^^^^^^
+note: required by a bound in `OutlinePrint`
+  --&gt; src/main.rs:3:21
+   |
+ 3 | trait OutlinePrint: fmt::Display {
+   |                     ^^^^^^^^^^^^ required by this bound in `OutlinePrint`
+
+error[E0277]: `Point` doesn't implement `std::fmt::Display`
+  --&gt; src/main.rs:24:7
+   |
+24 |     p.outline_print();
+   |       ^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `std::fmt::Display` is not implemented for `Point`
+  --&gt; src/main.rs:15:1
+   |
+15 | struct Point {
+   | ^^^^^^^^^^^^
+note: required by a bound in `OutlinePrint::outline_print`
+  --&gt; src/main.rs:3:21
+   |
+ 3 | trait OutlinePrint: fmt::Display {
+   |                     ^^^^^^^^^^^^ required by this bound in `OutlinePrint::outline_print`
+ 4 |     fn outline_print(&amp;self) {
+   |        ------------- required by a bound in this associated function
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `traits-example` (bin "traits-example") due to 2 previous errors
+</code></pre>
+<p>To fix this, we implement <code>Display</code> on <code>Point</code> and satisfy the constraint that
+<code>OutlinePrint</code> requires, like so:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">trait OutlinePrint: fmt::Display {
+</span><span class="boring">    fn outline_print(&amp;self) {
+</span><span class="boring">        let output = self.to_string();
+</span><span class="boring">        let len = output.len();
+</span><span class="boring">        println!("{}", "*".repeat(len + 4));
+</span><span class="boring">        println!("*{}*", " ".repeat(len + 2));
+</span><span class="boring">        println!("* {output} *");
+</span><span class="boring">        println!("*{}*", " ".repeat(len + 2));
+</span><span class="boring">        println!("{}", "*".repeat(len + 4));
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Point {
+</span><span class="boring">    x: i32,
+</span><span class="boring">    y: i32,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl OutlinePrint for Point {}
+</span><span class="boring">
+</span>use std::fmt;
+
+impl fmt::Display for Point {
+    fn fmt(&amp;self, f: &amp;mut fmt::Formatter) -&gt; fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let p = Point { x: 1, y: 3 };
+</span><span class="boring">    p.outline_print();
+</span><span class="boring">}</span></code></pre>
+</figure>
+<p>Then, implementing the <code>OutlinePrint</code> trait on <code>Point</code> will compile
+successfully, and we can call <code>outline_print</code> on a <code>Point</code> instance to display
+it within an outline of asterisks.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-the-newtype-pattern-to-implement-external-traits-on-external-types"></a>
+<a id="using-the-newtype-pattern-to-implement-external-traits"></a></p>
+<h4 id="implementing-external-traits-with-the-newtype-pattern"><a class="header" href="#implementing-external-traits-with-the-newtype-pattern">Implementing External Traits with the Newtype Pattern</a></h4>
+<p>In the <a href="10%20Generics%20Traits%20and%20Lifetimes.html#implementing-a-trait-on-a-type">“Implementing a Trait on a Type”</a><!--
+ignore --> section in Chapter 10, we mentioned the orphan rule that states
+we’re only allowed to implement a trait on a type if either the trait or the
+type, or both, are local to our crate. It’s possible to get around this
+restriction using the newtype pattern, which involves creating a new type in a
+tuple struct. (We covered tuple structs in the <a href="05%20Structs%20and%20Invariants.html#creating-different-types-with-tuple-structs">“Creating Different Types with
+Tuple Structs”</a><!-- ignore --> section in Chapter 5.) The tuple
+struct will have one field and be a thin wrapper around the type for which we
+want to implement a trait. Then, the wrapper type is local to our crate, and we
+can implement the trait on the wrapper. <em>Newtype</em> is a term that originates
+from the Haskell programming language. There is no runtime performance penalty
+for using this pattern, and the wrapper type is elided at compile time.</p>
+<p>As an example, let’s say we want to implement <code>Display</code> on <code>Vec&lt;T&gt;</code>, which the
+orphan rule prevents us from doing directly because the <code>Display</code> trait and the
+<code>Vec&lt;T&gt;</code> type are defined outside our crate. We can make a <code>Wrapper</code> struct
+that holds an instance of <code>Vec&lt;T&gt;</code>; then, we can implement <code>Display</code> on
+<code>Wrapper</code> and use the <code>Vec&lt;T&gt;</code> value, as shown in Listing 20-24.</p>
+<figure class="listing" id="listing-20-24">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::fmt;
+
+struct Wrapper(Vec&lt;String&gt;);
+
+impl fmt::Display for Wrapper {
+    fn fmt(&amp;self, f: &amp;mut fmt::Formatter) -&gt; fmt::Result {
+        write!(f, "[{}]", self.0.join(", "))
+    }
+}
+
+fn main() {
+    let w = Wrapper(vec![String::from("hello"), String::from("world")]);
+    println!("w = {w}");
+}</code></pre>
+<figcaption><a href="#listing-20-24">Listing 20-24</a>: Creating a <code>Wrapper</code> type around <code>Vec&lt;String&gt;</code> to implement <code>Display</code></figcaption>
+</figure>
+<p>The implementation of <code>Display</code> uses <code>self.0</code> to access the inner <code>Vec&lt;T&gt;</code>
+because <code>Wrapper</code> is a tuple struct and <code>Vec&lt;T&gt;</code> is the item at index 0 in the
+tuple. Then, we can use the functionality of the <code>Display</code> trait on <code>Wrapper</code>.</p>
+<p>The downside of using this technique is that <code>Wrapper</code> is a new type, so it
+doesn’t have the methods of the value it’s holding. We would have to implement
+all the methods of <code>Vec&lt;T&gt;</code> directly on <code>Wrapper</code> such that the methods
+delegate to <code>self.0</code>, which would allow us to treat <code>Wrapper</code> exactly like a
+<code>Vec&lt;T&gt;</code>. If we wanted the new type to have every method the inner type has,
+implementing the <code>Deref</code> trait on the <code>Wrapper</code> to return the inner type would
+be a solution (we discussed implementing the <code>Deref</code> trait in the <a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html#treating-smart-pointers-like-regular-references">“Treating
+Smart Pointers Like Regular References”</a><!-- ignore -->
+section in Chapter 15). If we didn’t want the <code>Wrapper</code> type to have all the
+methods of the inner type—for example, to restrict the <code>Wrapper</code> type’s
+behavior—we would have to implement just the methods we do want manually.</p>
+<p>This newtype pattern is also useful even when traits are not involved. Let’s
+switch focus and look at some advanced ways to interact with Rust’s type system.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="advanced-types-1"><a href="#advanced-types-1" class="header">Advanced Types</a></h2>
+<h3 id="advanced-types"><a class="header" href="#advanced-types">Advanced Types</a></h3>
+<p>The Rust type system has some features that we’ve so far mentioned but haven’t
+yet discussed. We’ll start by discussing newtypes in general as we examine why
+they are useful as types. Then, we’ll move on to type aliases, a feature
+similar to newtypes but with slightly different semantics. We’ll also discuss
+the <code>!</code> type and dynamically sized types.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-the-newtype-pattern-for-type-safety-and-abstraction"></a></p>
+<h4 id="type-safety-and-abstraction-with-the-newtype-pattern"><a class="header" href="#type-safety-and-abstraction-with-the-newtype-pattern">Type Safety and Abstraction with the Newtype Pattern</a></h4>
+<p>This section assumes you’ve read the earlier section <a href="#implementing-external-traits-with-the-newtype-pattern">“Implementing External
+Traits with the Newtype Pattern”</a><!-- ignore -->. The newtype pattern
+is also useful for tasks beyond those we’ve discussed so far, including
+statically enforcing that values are never confused and indicating the units of
+a value. You saw an example of using newtypes to indicate units in Listing
+20-16: Recall that the <code>Millimeters</code> and <code>Meters</code> structs wrapped <code>u32</code> values
+in a newtype. If we wrote a function with a parameter of type <code>Millimeters</code>, we
+wouldn’t be able to compile a program that accidentally tried to call that
+function with a value of type <code>Meters</code> or a plain <code>u32</code>.</p>
+<p>We can also use the newtype pattern to abstract away some implementation
+details of a type: The new type can expose a public API that is different from
+the API of the private inner type.</p>
+<p>Newtypes can also hide internal implementation. For example, we could provide a
+<code>People</code> type to wrap a <code>HashMap&lt;i32, String&gt;</code> that stores a person’s ID
+associated with their name. Code using <code>People</code> would only interact with the
+public API we provide, such as a method to add a name string to the <code>People</code>
+collection; that code wouldn’t need to know that we assign an <code>i32</code> ID to names
+internally. The newtype pattern is a lightweight way to achieve encapsulation
+to hide implementation details, which we discussed in the <a href="18%20State%20and%20Behaviour%20Patterns.html#encapsulation-that-hides-implementation-details">“Encapsulation that
+Hides Implementation
+Details”</a><!-- ignore -->
+section in Chapter 18.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="creating-type-synonyms-with-type-aliases"></a></p>
+<h4 id="type-synonyms-and-type-aliases"><a class="header" href="#type-synonyms-and-type-aliases">Type Synonyms and Type Aliases</a></h4>
+<p>Rust provides the ability to declare a <em>type alias</em> to give an existing type
+another name. For this we use the <code>type</code> keyword. For example, we can create
+the alias <code>Kilometers</code> to <code>i32</code> like so:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    type Kilometers = i32;
+<span class="boring">
+</span><span class="boring">    let x: i32 = 5;
+</span><span class="boring">    let y: Kilometers = 5;
+</span><span class="boring">
+</span><span class="boring">    println!("x + y = {}", x + y);
+</span><span class="boring">}</span></code></pre>
+<p>Now the alias <code>Kilometers</code> is a <em>synonym</em> for <code>i32</code>; unlike the <code>Millimeters</code>
+and <code>Meters</code> types we created in Listing 20-16, <code>Kilometers</code> is not a separate,
+new type. Values that have the type <code>Kilometers</code> will be treated the same as
+values of type <code>i32</code>:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    type Kilometers = i32;
+
+    let x: i32 = 5;
+    let y: Kilometers = 5;
+
+    println!("x + y = {}", x + y);
+<span class="boring">}</span></code></pre>
+<p>Because <code>Kilometers</code> and <code>i32</code> are the same type, we can add values of both
+types and can pass <code>Kilometers</code> values to functions that take <code>i32</code>
+parameters. However, using this method, we don’t get the type-checking benefits
+that we get from the newtype pattern discussed earlier. In other words, if we
+mix up <code>Kilometers</code> and <code>i32</code> values somewhere, the compiler will not give us
+an error.</p>
+<p>The main use case for type synonyms is to reduce repetition. For example, we
+might have a lengthy type like this:</p>
+<pre><code class="language-rust ignore">Box&lt;dyn Fn() + Send + 'static&gt;</code></pre>
+<p>Writing this lengthy type in function signatures and as type annotations all
+over the code can be tiresome and error-prone. Imagine having a project full of
+code like that in Listing 20-25.</p>
+<figure class="listing" id="listing-20-25">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let f: Box&lt;dyn Fn() + Send + 'static&gt; = Box::new(|| println!("hi"));
+
+    fn takes_long_type(f: Box&lt;dyn Fn() + Send + 'static&gt;) {
+        // --snip--
+    }
+
+    fn returns_long_type() -&gt; Box&lt;dyn Fn() + Send + 'static&gt; {
+        // --snip--
+<span class="boring">        Box::new(|| ())
+</span>    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-25">Listing 20-25</a>: Using a long type in many places</figcaption>
+</figure>
+<p>A type alias makes this code more manageable by reducing the repetition. In
+Listing 20-26, we’ve introduced an alias named <code>Thunk</code> for the verbose type and
+can replace all uses of the type with the shorter alias <code>Thunk</code>.</p>
+<figure class="listing" id="listing-20-26">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    type Thunk = Box&lt;dyn Fn() + Send + 'static&gt;;
+
+    let f: Thunk = Box::new(|| println!("hi"));
+
+    fn takes_long_type(f: Thunk) {
+        // --snip--
+    }
+
+    fn returns_long_type() -&gt; Thunk {
+        // --snip--
+<span class="boring">        Box::new(|| ())
+</span>    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-26">Listing 20-26</a>: Introducing a type alias, <code>Thunk</code>, to reduce repetition</figcaption>
+</figure>
+<p>This code is much easier to read and write! Choosing a meaningful name for a
+type alias can help communicate your intent as well (<em>thunk</em> is a word for code
+to be evaluated at a later time, so it’s an appropriate name for a closure that
+gets stored).</p>
+<p>Type aliases are also commonly used with the <code>Result&lt;T, E&gt;</code> type for reducing
+repetition. Consider the <code>std::io</code> module in the standard library. I/O
+operations often return a <code>Result&lt;T, E&gt;</code> to handle situations when operations
+fail to work. This library has a <code>std::io::Error</code> struct that represents all
+possible I/O errors. Many of the functions in <code>std::io</code> will be returning
+<code>Result&lt;T, E&gt;</code> where the <code>E</code> is <code>std::io::Error</code>, such as these functions in
+the <code>Write</code> trait:</p>
+<pre><code class="language-rust noplayground">use std::fmt;
+use std::io::Error;
+
+pub trait Write {
+    fn write(&amp;mut self, buf: &amp;[u8]) -&gt; Result&lt;usize, Error&gt;;
+    fn flush(&amp;mut self) -&gt; Result&lt;(), Error&gt;;
+
+    fn write_all(&amp;mut self, buf: &amp;[u8]) -&gt; Result&lt;(), Error&gt;;
+    fn write_fmt(&amp;mut self, fmt: fmt::Arguments) -&gt; Result&lt;(), Error&gt;;
+}</code></pre>
+<p>The <code>Result&lt;..., Error&gt;</code> is repeated a lot. As such, <code>std::io</code> has this type
+alias declaration:</p>
+<pre><code class="language-rust noplayground"><span class="boring">use std::fmt;
+</span><span class="boring">
+</span>type Result&lt;T&gt; = std::result::Result&lt;T, std::io::Error&gt;;
+<span class="boring">
+</span><span class="boring">pub trait Write {
+</span><span class="boring">    fn write(&amp;mut self, buf: &amp;[u8]) -&gt; Result&lt;usize&gt;;
+</span><span class="boring">    fn flush(&amp;mut self) -&gt; Result&lt;()&gt;;
+</span><span class="boring">
+</span><span class="boring">    fn write_all(&amp;mut self, buf: &amp;[u8]) -&gt; Result&lt;()&gt;;
+</span><span class="boring">    fn write_fmt(&amp;mut self, fmt: fmt::Arguments) -&gt; Result&lt;()&gt;;
+</span><span class="boring">}</span></code></pre>
+<p>Because this declaration is in the <code>std::io</code> module, we can use the fully
+qualified alias <code>std::io::Result&lt;T&gt;</code>; that is, a <code>Result&lt;T, E&gt;</code> with the <code>E</code>
+filled in as <code>std::io::Error</code>. The <code>Write</code> trait function signatures end up
+looking like this:</p>
+<pre><code class="language-rust noplayground"><span class="boring">use std::fmt;
+</span><span class="boring">
+</span><span class="boring">type Result&lt;T&gt; = std::result::Result&lt;T, std::io::Error&gt;;
+</span><span class="boring">
+</span>pub trait Write {
+    fn write(&amp;mut self, buf: &amp;[u8]) -&gt; Result&lt;usize&gt;;
+    fn flush(&amp;mut self) -&gt; Result&lt;()&gt;;
+
+    fn write_all(&amp;mut self, buf: &amp;[u8]) -&gt; Result&lt;()&gt;;
+    fn write_fmt(&amp;mut self, fmt: fmt::Arguments) -&gt; Result&lt;()&gt;;
+}</code></pre>
+<p>The type alias helps in two ways: It makes code easier to write <em>and</em> it gives
+us a consistent interface across all of <code>std::io</code>. Because it’s an alias, it’s
+just another <code>Result&lt;T, E&gt;</code>, which means we can use any methods that work on
+<code>Result&lt;T, E&gt;</code> with it, as well as special syntax like the <code>?</code> operator.</p>
+<h4 id="the-never-type-that-never-returns"><a class="header" href="#the-never-type-that-never-returns">The Never Type That Never Returns</a></h4>
+<p>Rust has a special type named <code>!</code> that’s known in type theory lingo as the
+<em>empty type</em> because it has no values. We prefer to call it the <em>never type</em>
+because it stands in the place of the return type when a function will never
+return. Here is an example:</p>
+<pre><code class="language-rust noplayground">fn bar() -&gt; ! {
+    // --snip--
+<span class="boring">    panic!();
+</span>}</code></pre>
+<p>This code is read as “the function <code>bar</code> returns never.” Functions that return
+never are called <em>diverging functions</em>. We can’t create values of the type <code>!</code>,
+so <code>bar</code> can never possibly return.</p>
+<p>But what use is a type you can never create values for? Recall the code from
+Listing 2-5, part of the number-guessing game; we’ve reproduced a bit of it
+here in Listing 20-27.</p>
+<figure class="listing" id="listing-20-27">
+<pre><code class="language-rust ignore"><span class="boring">use std::cmp::Ordering;
+</span><span class="boring">use std::io;
+</span><span class="boring">
+</span><span class="boring">use rand::prelude::*;
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    println!("Guess the number!");
+</span><span class="boring">
+</span><span class="boring">    let secret_number = rand::rng().random_range(1..=100);
+</span><span class="boring">
+</span><span class="boring">    println!("The secret number is: {secret_number}");
+</span><span class="boring">
+</span><span class="boring">    loop {
+</span><span class="boring">        println!("Please input your guess.");
+</span><span class="boring">
+</span><span class="boring">        let mut guess = String::new();
+</span><span class="boring">
+</span><span class="boring">        // --snip--
+</span><span class="boring">
+</span><span class="boring">        io::stdin()
+</span><span class="boring">            .read_line(&amp;mut guess)
+</span><span class="boring">            .expect("Failed to read line");
+</span><span class="boring">
+</span>        let guess: u32 = match guess.trim().parse() {
+            Ok(num) =&gt; num,
+            Err(_) =&gt; continue,
+        };
+<span class="boring">
+</span><span class="boring">        println!("You guessed: {guess}");
+</span><span class="boring">
+</span><span class="boring">        // --snip--
+</span><span class="boring">
+</span><span class="boring">        match guess.cmp(&amp;secret_number) {
+</span><span class="boring">            Ordering::Less =&gt; println!("Too small!"),
+</span><span class="boring">            Ordering::Greater =&gt; println!("Too big!"),
+</span><span class="boring">            Ordering::Equal =&gt; {
+</span><span class="boring">                println!("You win!");
+</span><span class="boring">                break;
+</span><span class="boring">            }
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-27">Listing 20-27</a>: A <code>match</code> with an arm that ends in <code>continue</code></figcaption>
+</figure>
+<p>At the time, we skipped over some details in this code. In <a href="06%20Enums%20and%20Exhaustiveness.html#the-match-control-flow-construct">“The <code>match</code>
+Control Flow Construct”</a><!-- ignore -->
+section in Chapter 6, we discussed that <code>match</code> arms must all return the same
+type. So, for example, the following code doesn’t work:</p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span><span class="boring">    let guess = "3";
+</span>    let guess = match guess.trim().parse() {
+        Ok(_) =&gt; 5,
+        Err(_) =&gt; "hello",
+    };
+<span class="boring">}</span></code></pre>
+<p>The type of <code>guess</code> in this code would have to be an integer <em>and</em> a string,
+and Rust requires that <code>guess</code> have only one type. So, what does <code>continue</code>
+return? How were we allowed to return a <code>u32</code> from one arm and have another arm
+that ends with <code>continue</code> in Listing 20-27?</p>
+<p>As you might have guessed, <code>continue</code> has a <code>!</code> value. That is, when Rust
+computes the type of <code>guess</code>, it looks at both match arms, the former with a
+value of <code>u32</code> and the latter with a <code>!</code> value. Because <code>!</code> can never have a
+value, Rust decides that the type of <code>guess</code> is <code>u32</code>.</p>
+<p>The formal way of describing this behavior is that expressions of type <code>!</code> can
+be coerced into any other type. We’re allowed to end this <code>match</code> arm with
+<code>continue</code> because <code>continue</code> doesn’t return a value; instead, it moves control
+back to the top of the loop, so in the <code>Err</code> case, we never assign a value to
+<code>guess</code>.</p>
+<p>The never type is useful with the <code>panic!</code> macro as well. Recall the <code>unwrap</code>
+function that we call on <code>Option&lt;T&gt;</code> values to produce a value or panic with
+this definition:</p>
+<pre><code class="language-rust ignore"><span class="boring">enum Option&lt;T&gt; {
+</span><span class="boring">    Some(T),
+</span><span class="boring">    None,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">use crate::Option::*;
+</span><span class="boring">
+</span>impl&lt;T&gt; Option&lt;T&gt; {
+    pub fn unwrap(self) -&gt; T {
+        match self {
+            Some(val) =&gt; val,
+            None =&gt; panic!("called `Option::unwrap()` on a `None` value"),
+        }
+    }
+}</code></pre>
+<p>In this code, the same thing happens as in the <code>match</code> in Listing 20-27: Rust
+sees that <code>val</code> has the type <code>T</code> and <code>panic!</code> has the type <code>!</code>, so the result
+of the overall <code>match</code> expression is <code>T</code>. This code works because <code>panic!</code>
+doesn’t produce a value; it ends the program. In the <code>None</code> case, we won’t be
+returning a value from <code>unwrap</code>, so this code is valid.</p>
+<p>One final expression that has the type <code>!</code> is a loop:</p>
+<pre><code class="language-rust ignore"><span class="boring">fn main() {
+</span>    print!("forever ");
+
+    loop {
+        print!("and ever ");
+    }
+<span class="boring">}</span></code></pre>
+<p>Here, the loop never ends, so <code>!</code> is the value of the expression. However, this
+wouldn’t be true if we included a <code>break</code>, because the loop would terminate
+when it got to the <code>break</code>.</p>
+<h4 id="dynamically-sized-types-and-the-sized-trait"><a class="header" href="#dynamically-sized-types-and-the-sized-trait">Dynamically Sized Types and the <code>Sized</code> Trait</a></h4>
+<p>Rust needs to know certain details about its types, such as how much space to
+allocate for a value of a particular type. This leaves one corner of its type
+system a little confusing at first: the concept of <em>dynamically sized types</em>.
+Sometimes referred to as <em>DSTs</em> or <em>unsized types</em>, these types let us write
+code using values whose size we can know only at runtime.</p>
+<p>Let’s dig into the details of a dynamically sized type called <code>str</code>, which
+we’ve been using throughout the book. That’s right, not <code>&amp;str</code>, but <code>str</code> on
+its own, is a DST. In many cases, such as when storing text entered by a user,
+we can’t know how long the string is until runtime. That means we can’t create
+a variable of type <code>str</code>, nor can we take an argument of type <code>str</code>. Consider
+the following code, which does not work:</p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span>    let s1: str = "Hello there!";
+    let s2: str = "How's it going?";
+<span class="boring">}</span></code></pre>
+<p>Rust needs to know how much memory to allocate for any value of a particular
+type, and all values of a type must use the same amount of memory. If Rust
+allowed us to write this code, these two <code>str</code> values would need to take up the
+same amount of space. But they have different lengths: <code>s1</code> needs 12 bytes of
+storage and <code>s2</code> needs 15. This is why it’s not possible to create a variable
+holding a dynamically sized type.</p>
+<p>So, what do we do? In this case, you already know the answer: We make the type
+of <code>s1</code> and <code>s2</code> string slice (<code>&amp;str</code>) rather than <code>str</code>. Recall from the
+<a href="04%20Ownership%20and%20Borrowing.html#string-slices">“String Slices”</a><!-- ignore --> section in Chapter 4 that the
+slice data structure only stores the starting position and the length of the
+slice. So, although <code>&amp;T</code> is a single value that stores the memory address of
+where the <code>T</code> is located, a string slice is <em>two</em> values: the address of the
+<code>str</code> and its length. As such, we can know the size of a string slice value at
+compile time: It’s twice the length of a <code>usize</code>. That is, we always know the
+size of a string slice, no matter how long the string it refers to is. In
+general, this is the way in which dynamically sized types are used in Rust:
+They have an extra bit of metadata that stores the size of the dynamic
+information. The golden rule of dynamically sized types is that we must always
+put values of dynamically sized types behind a pointer of some kind.</p>
+<p>We can combine <code>str</code> with all kinds of pointers: for example, <code>Box&lt;str&gt;</code> or
+<code>Rc&lt;str&gt;</code>. In fact, you’ve seen this before but with a different dynamically
+sized type: traits. Every trait is a dynamically sized type we can refer to by
+using the name of the trait. In the <a href="18%20State%20and%20Behaviour%20Patterns.html#using-trait-objects-to-abstract-over-shared-behavior">“Using Trait Objects to Abstract over
+Shared Behavior”</a><!--
+ignore --> section in Chapter 18, we mentioned that to use traits as trait
+objects, we must put them behind a pointer, such as <code>&amp;dyn Trait</code> or <code>Box&lt;dyn Trait&gt;</code> (<code>Rc&lt;dyn Trait&gt;</code> would work too).</p>
+<p>To work with DSTs, Rust provides the <code>Sized</code> trait to determine whether or not
+a type’s size is known at compile time. This trait is automatically implemented
+for everything whose size is known at compile time. In addition, Rust
+implicitly adds a bound on <code>Sized</code> to every generic function. That is, a
+generic function definition like this:</p>
+<pre><code class="language-rust ignore">fn generic&lt;T&gt;(t: T) {
+    // --snip--
+}</code></pre>
+<p>is actually treated as though we had written this:</p>
+<pre><code class="language-rust ignore">fn generic&lt;T: Sized&gt;(t: T) {
+    // --snip--
+}</code></pre>
+<p>By default, generic functions will work only on types that have a known size at
+compile time. However, you can use the following special syntax to relax this
+restriction:</p>
+<pre><code class="language-rust ignore">fn generic&lt;T: ?Sized&gt;(t: &amp;T) {
+    // --snip--
+}</code></pre>
+<p>A trait bound on <code>?Sized</code> means “<code>T</code> may or may not be <code>Sized</code>,” and this
+notation overrides the default that generic types must have a known size at
+compile time. The <code>?Trait</code> syntax with this meaning is only available for
+<code>Sized</code>, not any other traits.</p>
+<p>Also note that we switched the type of the <code>t</code> parameter from <code>T</code> to <code>&amp;T</code>.
+Because the type might not be <code>Sized</code>, we need to use it behind some kind of
+pointer. In this case, we’ve chosen a reference.</p>
+<p>Next, we’ll talk about functions and closures!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="advanced-functions-and-closures-1"><a href="#advanced-functions-and-closures-1" class="header">Advanced Functions and Closures</a></h2>
+<h3 id="advanced-functions-and-closures"><a class="header" href="#advanced-functions-and-closures">Advanced Functions and Closures</a></h3>
+<p>This section explores some advanced features related to functions and closures,
+including function pointers and returning closures.</p>
+<h4 id="function-pointers"><a class="header" href="#function-pointers">Function Pointers</a></h4>
+<p>We’ve talked about how to pass closures to functions; you can also pass regular
+functions to functions! This technique is useful when you want to pass a
+function you’ve already defined rather than defining a new closure. Functions
+coerce to the type <code>fn</code> (with a lowercase <em>f</em>), not to be confused with the
+<code>Fn</code> closure trait. The <code>fn</code> type is called a <em>function pointer</em>. Passing
+functions with function pointers will allow you to use functions as arguments
+to other functions.</p>
+<p>The syntax for specifying that a parameter is a function pointer is similar to
+that of closures, as shown in Listing 20-28, where we’ve defined a function
+<code>add_one</code> that adds 1 to its parameter. The function <code>do_twice</code> takes two
+parameters: a function pointer to any function that takes an <code>i32</code> parameter
+and returns an <code>i32</code>, and one <code>i32</code> value. The <code>do_twice</code> function calls the
+function <code>f</code> twice, passing it the <code>arg</code> value, then adds the two function call
+results together. The <code>main</code> function calls <code>do_twice</code> with the arguments
+<code>add_one</code> and <code>5</code>.</p>
+<figure class="listing" id="listing-20-28">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn add_one(x: i32) -&gt; i32 {
+    x + 1
+}
+
+fn do_twice(f: fn(i32) -&gt; i32, arg: i32) -&gt; i32 {
+    f(arg) + f(arg)
+}
+
+fn main() {
+    let answer = do_twice(add_one, 5);
+
+    println!("The answer is: {answer}");
+}</code></pre>
+<figcaption><a href="#listing-20-28">Listing 20-28</a>: Using the <code>fn</code> type to accept a function pointer as an argument</figcaption>
+</figure>
+<p>This code prints <code>The answer is: 12</code>. We specify that the parameter <code>f</code> in
+<code>do_twice</code> is an <code>fn</code> that takes one parameter of type <code>i32</code> and returns an
+<code>i32</code>. We can then call <code>f</code> in the body of <code>do_twice</code>. In <code>main</code>, we can pass
+the function name <code>add_one</code> as the first argument to <code>do_twice</code>.</p>
+<p>Unlike closures, <code>fn</code> is a type rather than a trait, so we specify <code>fn</code> as the
+parameter type directly rather than declaring a generic type parameter with one
+of the <code>Fn</code> traits as a trait bound.</p>
+<p>Function pointers implement all three of the closure traits (<code>Fn</code>, <code>FnMut</code>, and
+<code>FnOnce</code>), meaning you can always pass a function pointer as an argument for a
+function that expects a closure. It’s best to write functions using a generic
+type and one of the closure traits so that your functions can accept either
+functions or closures.</p>
+<p>That said, one example of where you would want to only accept <code>fn</code> and not
+closures is when interfacing with external code that doesn’t have closures: C
+functions can accept functions as arguments, but C doesn’t have closures.</p>
+<p>As an example of where you could use either a closure defined inline or a named
+function, let’s look at a use of the <code>map</code> method provided by the <code>Iterator</code>
+trait in the standard library. To use the <code>map</code> method to turn a vector of
+numbers into a vector of strings, we could use a closure, as in Listing 20-29.</p>
+<figure class="listing" id="listing-20-29">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let list_of_numbers = vec![1, 2, 3];
+    let list_of_strings: Vec&lt;String&gt; =
+        list_of_numbers.iter().map(|i| i.to_string()).collect();
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-29">Listing 20-29</a>: Using a closure with the <code>map</code> method to convert numbers to strings</figcaption>
+</figure>
+<p>Or we could name a function as the argument to <code>map</code> instead of the closure.
+Listing 20-30 shows what this would look like.</p>
+<figure class="listing" id="listing-20-30">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let list_of_numbers = vec![1, 2, 3];
+    let list_of_strings: Vec&lt;String&gt; =
+        list_of_numbers.iter().map(ToString::to_string).collect();
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-30">Listing 20-30</a>: Using the <code>String::to_string</code> function with the <code>map</code> method to convert numbers to strings</figcaption>
+</figure>
+<p>Note that we must use the fully qualified syntax that we talked about in the
+<a href="#advanced-traits">“Advanced Traits”</a><!-- ignore --> section because there are
+multiple functions available named <code>to_string</code>.</p>
+<p>Here, we’re using the <code>to_string</code> function defined in the <code>ToString</code> trait,
+which the standard library has implemented for any type that implements
+<code>Display</code>.</p>
+<p>Recall from the <a href="06%20Enums%20and%20Exhaustiveness.html#enum-values">“Enum Values”</a><!-- ignore --> section in Chapter
+6 that the name of each enum variant that we define also becomes an initializer
+function. We can use these initializer functions as function pointers that
+implement the closure traits, which means we can specify the initializer
+functions as arguments for methods that take closures, as seen in Listing 20-31.</p>
+<figure class="listing" id="listing-20-31">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    enum Status {
+        Value(u32),
+        Stop,
+    }
+
+    let list_of_statuses: Vec&lt;Status&gt; = (0u32..20).map(Status::Value).collect();
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-31">Listing 20-31</a>: Using an enum initializer with the <code>map</code> method to create a <code>Status</code> instance from numbers</figcaption>
+</figure>
+<p>Here, we create <code>Status::Value</code> instances using each <code>u32</code> value in the range
+that <code>map</code> is called on by using the initializer function of <code>Status::Value</code>.
+Some people prefer this style and some people prefer to use closures. They
+compile to the same code, so use whichever style is clearer to you.</p>
+<h4 id="returning-closures"><a class="header" href="#returning-closures">Returning Closures</a></h4>
+<p>Closures are represented by traits, which means you can’t return closures
+directly. In most cases where you might want to return a trait, you can instead
+use the concrete type that implements the trait as the return value of the
+function. However, you can’t usually do that with closures because they don’t
+have a concrete type that is returnable; you’re not allowed to use the function
+pointer <code>fn</code> as a return type if the closure captures any values from its
+scope, for example.</p>
+<p>Instead, you will normally use the <code>impl Trait</code> syntax we learned about in
+Chapter 10. You can return any function type, using <code>Fn</code>, <code>FnOnce</code>, and <code>FnMut</code>.
+For example, the code in Listing 20-32 will compile just fine.</p>
+<figure class="listing" id="listing-20-32">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn returns_closure() -&gt; impl Fn(i32) -&gt; i32 {
+    |x| x + 1
+}
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-20-32">Listing 20-32</a>: Returning a closure from a function using the <code>impl Trait</code> syntax</figcaption>
+</figure>
+<p>However, as we noted in the <a href="13%20Closures%20and%20Iterator%20Pipelines.html#closure-type-inference-and-annotation">“Inferring and Annotating Closure
+Types”</a><!-- ignore --> section in Chapter 13, each closure is
+also its own distinct type. If you need to work with multiple functions that
+have the same signature but different implementations, you will need to use a
+trait object for them. Consider what happens if you write code like that shown
+in Listing 20-33.</p>
+<figure class="listing" id="listing-20-33">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let handlers = vec![returns_closure(), returns_initialized_closure(123)];
+    for handler in handlers {
+        let output = handler(5);
+        println!("{output}");
+    }
+}
+
+fn returns_closure() -&gt; impl Fn(i32) -&gt; i32 {
+    |x| x + 1
+}
+
+fn returns_initialized_closure(init: i32) -&gt; impl Fn(i32) -&gt; i32 {
+    move |x| x + init
+}</code></pre>
+<figcaption><a href="#listing-20-33">Listing 20-33</a>: Creating a <code>Vec&lt;T&gt;</code> of closures defined by functions that return <code>impl Fn</code> types</figcaption>
+</figure>
+<p>Here we have two functions, <code>returns_closure</code> and <code>returns_initialized_closure</code>,
+which both return <code>impl Fn(i32) -&gt; i32</code>. Notice that the closures that they
+return are different, even though they implement the same type. If we try to
+compile this, Rust lets us know that it won’t work:</p>
+<pre><code class="language-text">$ cargo build
+   Compiling functions-example v0.1.0 (file:///projects/functions-example)
+error[E0308]: mismatched types
+  --&gt; src/main.rs:2:44
+   |
+ 2 |     let handlers = vec![returns_closure(), returns_initialized_closure(123)];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected opaque type, found a different opaque type
+...
+ 9 | fn returns_closure() -&gt; impl Fn(i32) -&gt; i32 {
+   |                         ------------------- the expected opaque type
+...
+13 | fn returns_initialized_closure(init: i32) -&gt; impl Fn(i32) -&gt; i32 {
+   |                                              ------------------- the found opaque type
+   |
+   = note: expected opaque type `impl Fn(i32) -&gt; i32`
+              found opaque type `impl Fn(i32) -&gt; i32`
+   = note: distinct uses of `impl Trait` result in different opaque types
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `functions-example` (bin "functions-example") due to 1 previous error
+</code></pre>
+<p>The error message tells us that whenever we return an <code>impl Trait</code>, Rust
+creates a unique <em>opaque type</em>, a type where we cannot see into the details of
+what Rust constructs for us, nor can we guess the type Rust will generate to
+write ourselves. So, even though these functions return closures that implement
+the same trait, <code>Fn(i32) -&gt; i32</code>, the opaque types Rust generates for each are
+distinct. (This is similar to how Rust produces different concrete types for
+distinct async blocks even when they have the same output type, as we saw in
+<a href="17%20Async%20Rust%20and%20Blocking%20Work.html#working-with-any-number-of-futures">“The <code>Pin</code> Type and the <code>Unpin</code> Trait”</a><!-- ignore --> in
+Chapter 17.) We have seen a solution to this problem a few times now: We can
+use a trait object, as in Listing 20-34.</p>
+<figure class="listing" id="listing-20-34">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    let handlers = vec![returns_closure(), returns_initialized_closure(123)];
+</span><span class="boring">    for handler in handlers {
+</span><span class="boring">        let output = handler(5);
+</span><span class="boring">        println!("{output}");
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn returns_closure() -&gt; Box&lt;dyn Fn(i32) -&gt; i32&gt; {
+    Box::new(|x| x + 1)
+}
+
+fn returns_initialized_closure(init: i32) -&gt; Box&lt;dyn Fn(i32) -&gt; i32&gt; {
+    Box::new(move |x| x + init)
+}</code></pre>
+<figcaption><a href="#listing-20-34">Listing 20-34</a>: Creating a <code>Vec&lt;T&gt;</code> of closures defined by functions that return <code>Box&lt;dyn Fn&gt;</code> so that they have the same type</figcaption>
+</figure>
+<p>This code will compile just fine. For more about trait objects, refer to the
+section <a href="18%20State%20and%20Behaviour%20Patterns.html#using-trait-objects-to-abstract-over-shared-behavior-1">“Using Trait Objects To Abstract over Shared
+Behavior”</a><!-- ignore --> in Chapter 18.</p>
+<p>Next, let’s look at macros!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="macros-1"><a href="#macros-1" class="header">Macros</a></h2>
+<h3 id="macros"><a class="header" href="#macros">Macros</a></h3>
+<p>We’ve used macros like <code>println!</code> throughout this book, but we haven’t fully
+explored what a macro is and how it works. The term <em>macro</em> refers to a family
+of features in Rust—declarative macros with <code>macro_rules!</code> and three kinds of
+procedural macros:</p>
+<ul>
+<li>Custom <code>#[derive]</code> macros that specify code added with the <code>derive</code> attribute
+used on structs and enums</li>
+<li>Attribute-like macros that define custom attributes usable on any item</li>
+<li>Function-like macros that look like function calls but operate on the tokens
+specified as their argument</li>
+</ul>
+<p>We’ll talk about each of these in turn, but first, let’s look at why we even
+need macros when we already have functions.</p>
+<h4 id="the-difference-between-macros-and-functions"><a class="header" href="#the-difference-between-macros-and-functions">The Difference Between Macros and Functions</a></h4>
+<p>Fundamentally, macros are a way of writing code that writes other code, which
+is known as <em>metaprogramming</em>. In Appendix C, we discuss the <code>derive</code>
+attribute, which generates an implementation of various traits for you. We’ve
+also used the <code>println!</code> and <code>vec!</code> macros throughout the book. All of these
+macros <em>expand</em> to produce more code than the code you’ve written manually.</p>
+<p>Metaprogramming is useful for reducing the amount of code you have to write and
+maintain, which is also one of the roles of functions. However, macros have
+some additional powers that functions don’t have.</p>
+<p>A function signature must declare the number and type of parameters the
+function has. Macros, on the other hand, can take a variable number of
+parameters: We can call <code>println!("hello")</code> with one argument or
+<code>println!("hello {}", name)</code> with two arguments. Also, macros are expanded
+before the compiler interprets the meaning of the code, so a macro can, for
+example, implement a trait on a given type. A function can’t, because it gets
+called at runtime and a trait needs to be implemented at compile time.</p>
+<p>The downside to implementing a macro instead of a function is that macro
+definitions are more complex than function definitions because you’re writing
+Rust code that writes Rust code. Due to this indirection, macro definitions are
+generally more difficult to read, understand, and maintain than function
+definitions.</p>
+<p>Another important difference between macros and functions is that you must
+define macros or bring them into scope <em>before</em> you call them in a file, as
+opposed to functions you can define anywhere and call anywhere.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="declarative-macros-with-macro_rules-for-general-metaprogramming"></a></p>
+<h4 id="declarative-macros-for-general-metaprogramming"><a class="header" href="#declarative-macros-for-general-metaprogramming">Declarative Macros for General Metaprogramming</a></h4>
+<p>The most widely used form of macros in Rust is the <em>declarative macro</em>. These
+are also sometimes referred to as “macros by example,” “<code>macro_rules!</code> macros,”
+or just plain “macros.” At their core, declarative macros allow you to write
+something similar to a Rust <code>match</code> expression. As discussed in Chapter 6,
+<code>match</code> expressions are control structures that take an expression, compare the
+resultant value of the expression to patterns, and then run the code associated
+with the matching pattern. Macros also compare a value to patterns that are
+associated with particular code: In this situation, the value is the literal
+Rust source code passed to the macro; the patterns are compared with the
+structure of that source code; and the code associated with each pattern, when
+matched, replaces the code passed to the macro. This all happens during
+compilation.</p>
+<p>To define a macro, you use the <code>macro_rules!</code> construct. Let’s explore how to
+use <code>macro_rules!</code> by looking at how the <code>vec!</code> macro is defined. Chapter 8
+covered how we can use the <code>vec!</code> macro to create a new vector with particular
+values. For example, the following macro creates a new vector containing three
+integers:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let v: Vec&lt;u32&gt; = vec![1, 2, 3];
+<span class="boring">}</span></code></pre>
+<p>We could also use the <code>vec!</code> macro to make a vector of two integers or a vector
+of five string slices. We wouldn’t be able to use a function to do the same
+because we wouldn’t know the number or type of values up front.</p>
+<p>Listing 20-35 shows a slightly simplified definition of the <code>vec!</code> macro.</p>
+<figure class="listing" id="listing-20-35">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">#[macro_export]
+macro_rules! vec {
+    ( $( $x:expr ),* ) =&gt; {
+        {
+            let mut temp_vec = Vec::new();
+            $(
+                temp_vec.push($x);
+            )*
+            temp_vec
+        }
+    };
+}</code></pre>
+<figcaption><a href="#listing-20-35">Listing 20-35</a>: A simplified version of the <code>vec!</code> macro definition</figcaption>
+</figure>
+<section class="note" aria-role="note">
+<p>Note: The actual definition of the <code>vec!</code> macro in the standard library
+includes code to pre-allocate the correct amount of memory up front. That code
+is an optimization that we don’t include here, to make the example simpler.</p>
+</section>
+<p>The <code>#[macro_export]</code> annotation indicates that this macro should be made
+available whenever the crate in which the macro is defined is brought into
+scope. Without this annotation, the macro can’t be brought into scope.</p>
+<p>We then start the macro definition with <code>macro_rules!</code> and the name of the
+macro we’re defining <em>without</em> the exclamation mark. The name, in this case
+<code>vec</code>, is followed by curly brackets denoting the body of the macro definition.</p>
+<p>The structure in the <code>vec!</code> body is similar to the structure of a <code>match</code>
+expression. Here we have one arm with the pattern <code>( $( $x:expr ),* )</code>,
+followed by <code>=&gt;</code> and the block of code associated with this pattern. If the
+pattern matches, the associated block of code will be emitted. Given that this
+is the only pattern in this macro, there is only one valid way to match; any
+other pattern will result in an error. More complex macros will have more than
+one arm.</p>
+<p>Valid pattern syntax in macro definitions is different from the pattern syntax
+covered in Chapter 19 because macro patterns are matched against Rust code
+structure rather than values. Let’s walk through what the pattern pieces in
+Listing 20-29 mean; for the full macro pattern syntax, see the <a href="https://doc.rust-lang.org/stable/reference/macros-by-example.html">Rust
+Reference</a>.</p>
+<p>First, we use a set of parentheses to encompass the whole pattern. We use a
+dollar sign (<code>$</code>) to declare a variable in the macro system that will contain
+the Rust code matching the pattern. The dollar sign makes it clear this is a
+macro variable as opposed to a regular Rust variable. Next comes a set of
+parentheses that captures values that match the pattern within the parentheses
+for use in the replacement code. Within <code>$()</code> is <code>$x:expr</code>, which matches any
+Rust expression and gives the expression the name <code>$x</code>.</p>
+<p>The comma following <code>$()</code> indicates that a literal comma separator character
+must appear between each instance of the code that matches the code in <code>$()</code>.
+The <code>*</code> specifies that the pattern matches zero or more of whatever precedes
+the <code>*</code>.</p>
+<p>When we call this macro with <code>vec![1, 2, 3];</code>, the <code>$x</code> pattern matches three
+times with the three expressions <code>1</code>, <code>2</code>, and <code>3</code>.</p>
+<p>Now let’s look at the pattern in the body of the code associated with this arm:
+<code>temp_vec.push()</code> within <code>$()*</code> is generated for each part that matches <code>$()</code>
+in the pattern zero or more times depending on how many times the pattern
+matches. The <code>$x</code> is replaced with each expression matched. When we call this
+macro with <code>vec![1, 2, 3];</code>, the code generated that replaces this macro call
+will be the following:</p>
+<pre><code class="language-rust ignore">{
+    let mut temp_vec = Vec::new();
+    temp_vec.push(1);
+    temp_vec.push(2);
+    temp_vec.push(3);
+    temp_vec
+}</code></pre>
+<p>We’ve defined a macro that can take any number of arguments of any type and can
+generate code to create a vector containing the specified elements.</p>
+<p>To learn more about how to write macros, consult the online documentation or
+other resources, such as <a href="https://veykril.github.io/tlborm/">“The Little Book of Rust Macros”</a> started by
+Daniel Keep and continued by Lukas Wirth.</p>
+<h4 id="procedural-macros-for-generating-code-from-attributes"><a class="header" href="#procedural-macros-for-generating-code-from-attributes">Procedural Macros for Generating Code from Attributes</a></h4>
+<p>The second form of macros is the procedural macro, which acts more like a
+function (and is a type of procedure). <em>Procedural macros</em> accept some code as
+an input, operate on that code, and produce some code as an output rather than
+matching against patterns and replacing the code with other code as declarative
+macros do. The three kinds of procedural macros are custom <code>derive</code>,
+attribute-like, and function-like, and all work in a similar fashion.</p>
+<p>When creating procedural macros, the definitions must reside in their own crate
+with a special crate type. This is for complex technical reasons that we hope
+to eliminate in the future. In Listing 20-36, we show how to define a
+procedural macro, where <code>some_attribute</code> is a placeholder for using a specific
+macro variety.</p>
+<figure class="listing" id="listing-20-36">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust ignore">use proc_macro::TokenStream;
+
+#[some_attribute]
+pub fn some_name(input: TokenStream) -&gt; TokenStream {
+}</code></pre>
+<figcaption><a href="#listing-20-36">Listing 20-36</a>: An example of defining a procedural macro</figcaption>
+</figure>
+<p>The function that defines a procedural macro takes a <code>TokenStream</code> as an input
+and produces a <code>TokenStream</code> as an output. The <code>TokenStream</code> type is defined by
+the <code>proc_macro</code> crate that is included with Rust and represents a sequence of
+tokens. This is the core of the macro: The source code that the macro is
+operating on makes up the input <code>TokenStream</code>, and the code the macro produces
+is the output <code>TokenStream</code>. The function also has an attribute attached to it
+that specifies which kind of procedural macro we’re creating. We can have
+multiple kinds of procedural macros in the same crate.</p>
+<p>Let’s look at the different kinds of procedural macros. We’ll start with a
+custom <code>derive</code> macro and then explain the small dissimilarities that make the
+other forms different.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="how-to-write-a-custom-derive-macro"></a></p>
+<h4 id="custom-derive-macros"><a class="header" href="#custom-derive-macros">Custom <code>derive</code> Macros</a></h4>
+<p>Let’s create a crate named <code>hello_macro</code> that defines a trait named
+<code>HelloMacro</code> with one associated function named <code>hello_macro</code>. Rather than
+making our users implement the <code>HelloMacro</code> trait for each of their types,
+we’ll provide a procedural macro so that users can annotate their type with
+<code>#[derive(HelloMacro)]</code> to get a default implementation of the <code>hello_macro</code>
+function. The default implementation will print <code>Hello, Macro! My name is TypeName!</code> where <code>TypeName</code> is the name of the type on which this trait has
+been defined. In other words, we’ll write a crate that enables another
+programmer to write code like Listing 20-37 using our crate.</p>
+<figure class="listing" id="listing-20-37">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use hello_macro::HelloMacro;
+use hello_macro_derive::HelloMacro;
+
+#[derive(HelloMacro)]
+struct Pancakes;
+
+fn main() {
+    Pancakes::hello_macro();
+}</code></pre>
+<figcaption><a href="#listing-20-37">Listing 20-37</a>: The code a user of our crate will be able to write when using our procedural macro</figcaption>
+</figure>
+<p>This code will print <code>Hello, Macro! My name is Pancakes!</code> when we’re done. The
+first step is to make a new library crate, like this:</p>
+<pre><code class="language-console">$ cargo new hello_macro --lib
+</code></pre>
+<p>Next, in Listing 20-38, we’ll define the <code>HelloMacro</code> trait and its associated
+function.</p>
+<figure class="listing" id="listing-20-38">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">pub trait HelloMacro {
+    fn hello_macro();
+}</code></pre>
+<figcaption><a href="#listing-20-38">Listing 20-38</a>: A simple trait that we will use with the <code>derive</code> macro</figcaption>
+</figure>
+<p>We have a trait and its function. At this point, our crate user could implement
+the trait to achieve the desired functionality, as in Listing 20-39.</p>
+<figure class="listing" id="listing-20-39">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore">use hello_macro::HelloMacro;
+
+struct Pancakes;
+
+impl HelloMacro for Pancakes {
+    fn hello_macro() {
+        println!("Hello, Macro! My name is Pancakes!");
+    }
+}
+
+fn main() {
+    Pancakes::hello_macro();
+}</code></pre>
+<figcaption><a href="#listing-20-39">Listing 20-39</a>: How it would look if users wrote a manual implementation of the <code>HelloMacro</code> trait</figcaption>
+</figure>
+<p>However, they would need to write the implementation block for each type they
+wanted to use with <code>hello_macro</code>; we want to spare them from having to do this
+work.</p>
+<p>Additionally, we can’t yet provide the <code>hello_macro</code> function with default
+implementation that will print the name of the type the trait is implemented
+on: Rust doesn’t have reflection capabilities, so it can’t look up the type’s
+name at runtime. We need a macro to generate code at compile time.</p>
+<p>The next step is to define the procedural macro. At the time of this writing,
+procedural macros need to be in their own crate. Eventually, this restriction
+might be lifted. The convention for structuring crates and macro crates is as
+follows: For a crate named <code>foo</code>, a custom <code>derive</code> procedural macro crate is
+called <code>foo_derive</code>. Let’s start a new crate called <code>hello_macro_derive</code> inside
+our <code>hello_macro</code> project:</p>
+<pre><code class="language-console">$ cargo new hello_macro_derive --lib
+</code></pre>
+<p>Our two crates are tightly related, so we create the procedural macro crate
+within the directory of our <code>hello_macro</code> crate. If we change the trait
+definition in <code>hello_macro</code>, we’ll have to change the implementation of the
+procedural macro in <code>hello_macro_derive</code> as well. The two crates will need to
+be published separately, and programmers using these crates will need to add
+both as dependencies and bring them both into scope. We could instead have the
+<code>hello_macro</code> crate use <code>hello_macro_derive</code> as a dependency and re-export the
+procedural macro code. However, the way we’ve structured the project makes it
+possible for programmers to use <code>hello_macro</code> even if they don’t want the
+<code>derive</code> functionality.</p>
+<p>We need to declare the <code>hello_macro_derive</code> crate as a procedural macro crate.
+We’ll also need functionality from the <code>syn</code> and <code>quote</code> crates, as you’ll see
+in a moment, so we need to add them as dependencies. Add the following to the
+<em>Cargo.toml</em> file for <code>hello_macro_derive</code>:</p>
+<figure class="listing">
+<span class="file-name">Filename: hello_macro_derive/Cargo.toml</span>
+<pre><code class="language-toml">[lib]
+proc-macro = true
+
+[dependencies]
+syn = "2.0"
+quote = "1.0"
+</code></pre>
+</figure>
+<p>To start defining the procedural macro, place the code in Listing 20-40 into
+your <em>src/lib.rs</em> file for the <code>hello_macro_derive</code> crate. Note that this code
+won’t compile until we add a definition for the <code>impl_hello_macro</code> function.</p>
+<figure class="listing" id="listing-20-40">
+<span class="file-name">Filename: hello_macro_derive/src/lib.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use proc_macro::TokenStream;
+use quote::quote;
+
+#[proc_macro_derive(HelloMacro)]
+pub fn hello_macro_derive(input: TokenStream) -&gt; TokenStream {
+    // Construct a representation of Rust code as a syntax tree
+    // that we can manipulate.
+    let ast = syn::parse(input).unwrap();
+
+    // Build the trait implementation.
+    impl_hello_macro(&amp;ast)
+}</code></pre>
+<figcaption><a href="#listing-20-40">Listing 20-40</a>: Code that most procedural macro crates will require in order to process Rust code</figcaption>
+</figure>
+<p>Notice that we’ve split the code into the <code>hello_macro_derive</code> function, which
+is responsible for parsing the <code>TokenStream</code>, and the <code>impl_hello_macro</code>
+function, which is responsible for transforming the syntax tree: This makes
+writing a procedural macro more convenient. The code in the outer function
+(<code>hello_macro_derive</code> in this case) will be the same for almost every
+procedural macro crate you see or create. The code you specify in the body of
+the inner function (<code>impl_hello_macro</code> in this case) will be different
+depending on your procedural macro’s purpose.</p>
+<p>We’ve introduced three new crates: <code>proc_macro</code>, <a href="https://crates.io/crates/syn"><code>syn</code></a><!-- ignore -->,
+and <a href="https://crates.io/crates/quote"><code>quote</code></a><!-- ignore -->. The <code>proc_macro</code> crate comes with Rust,
+so we didn’t need to add that to the dependencies in <em>Cargo.toml</em>. The
+<code>proc_macro</code> crate is the compiler’s API that allows us to read and manipulate
+Rust code from our code.</p>
+<p>The <code>syn</code> crate parses Rust code from a string into a data structure that we
+can perform operations on. The <code>quote</code> crate turns <code>syn</code> data structures back
+into Rust code. These crates make it much simpler to parse any sort of Rust
+code we might want to handle: Writing a full parser for Rust code is no simple
+task.</p>
+<p>The <code>hello_macro_derive</code> function will be called when a user of our library
+specifies <code>#[derive(HelloMacro)]</code> on a type. This is possible because we’ve
+annotated the <code>hello_macro_derive</code> function here with <code>proc_macro_derive</code> and
+specified the name <code>HelloMacro</code>, which matches our trait name; this is the
+convention most procedural macros follow.</p>
+<p>The <code>hello_macro_derive</code> function first converts the <code>input</code> from a
+<code>TokenStream</code> to a data structure that we can then interpret and perform
+operations on. This is where <code>syn</code> comes into play. The <code>parse</code> function in
+<code>syn</code> takes a <code>TokenStream</code> and returns a <code>DeriveInput</code> struct representing the
+parsed Rust code. Listing 20-41 shows the relevant parts of the <code>DeriveInput</code>
+struct we get from parsing the <code>struct Pancakes;</code> string.</p>
+<figure class="listing" id="listing-20-41">
+<pre><code class="language-rust ignore">DeriveInput {
+    // --snip--
+
+    ident: Ident {
+        ident: "Pancakes",
+        span: #0 bytes(95..103)
+    },
+    data: Struct(
+        DataStruct {
+            struct_token: Struct,
+            fields: Unit,
+            semi_token: Some(
+                Semi
+            )
+        }
+    )
+}</code></pre>
+<figcaption><a href="#listing-20-41">Listing 20-41</a>: The <code>DeriveInput</code> instance we get when parsing the code that has the macro’s attribute in Listing 20-37</figcaption>
+</figure>
+<p>The fields of this struct show that the Rust code we’ve parsed is a unit struct
+with the <code>ident</code> (<em>identifier</em>, meaning the name) of <code>Pancakes</code>. There are more
+fields on this struct for describing all sorts of Rust code; check the <a href="https://docs.rs/syn/2.0/syn/struct.DeriveInput.html"><code>syn</code>
+documentation for <code>DeriveInput</code></a> for more information.</p>
+<p>Soon we’ll define the <code>impl_hello_macro</code> function, which is where we’ll build
+the new Rust code we want to include. But before we do, note that the output
+for our <code>derive</code> macro is also a <code>TokenStream</code>. The returned <code>TokenStream</code> is
+added to the code that our crate users write, so when they compile their crate,
+they’ll get the extra functionality that we provide in the modified
+<code>TokenStream</code>.</p>
+<p>You might have noticed that we’re calling <code>unwrap</code> to cause the
+<code>hello_macro_derive</code> function to panic if the call to the <code>syn::parse</code> function
+fails here. It’s necessary for our procedural macro to panic on errors because
+<code>proc_macro_derive</code> functions must return <code>TokenStream</code> rather than <code>Result</code> to
+conform to the procedural macro API. We’ve simplified this example by using
+<code>unwrap</code>; in production code, you should provide more specific error messages
+about what went wrong by using <code>panic!</code> or <code>expect</code>.</p>
+<p>Now that we have the code to turn the annotated Rust code from a <code>TokenStream</code>
+into a <code>DeriveInput</code> instance, let’s generate the code that implements the
+<code>HelloMacro</code> trait on the annotated type, as shown in Listing 20-42.</p>
+<figure class="listing" id="listing-20-42">
+<span class="file-name">Filename: hello_macro_derive/src/lib.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use proc_macro::TokenStream;
+</span><span class="boring">use quote::quote;
+</span><span class="boring">
+</span><span class="boring">#[proc_macro_derive(HelloMacro)]
+</span><span class="boring">pub fn hello_macro_derive(input: TokenStream) -&gt; TokenStream {
+</span><span class="boring">    // Construct a representation of Rust code as a syntax tree
+</span><span class="boring">    // that we can manipulate
+</span><span class="boring">    let ast = syn::parse(input).unwrap();
+</span><span class="boring">
+</span><span class="boring">    // Build the trait implementation
+</span><span class="boring">    impl_hello_macro(&amp;ast)
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn impl_hello_macro(ast: &amp;syn::DeriveInput) -&gt; TokenStream {
+    let name = &amp;ast.ident;
+    let generated = quote! {
+        impl HelloMacro for #name {
+            fn hello_macro() {
+                println!("Hello, Macro! My name is {}!", stringify!(#name));
+            }
+        }
+    };
+    generated.into()
+}</code></pre>
+<figcaption><a href="#listing-20-42">Listing 20-42</a>: Implementing the <code>HelloMacro</code> trait using the parsed Rust code</figcaption>
+</figure>
+<p>We get an <code>Ident</code> struct instance containing the name (identifier) of the
+annotated type using <code>ast.ident</code>. The struct in Listing 20-41 shows that when
+we run the <code>impl_hello_macro</code> function on the code in Listing 20-37, the
+<code>ident</code> we get will have the <code>ident</code> field with a value of <code>"Pancakes"</code>. Thus,
+the <code>name</code> variable in Listing 20-42 will contain an <code>Ident</code> struct instance
+that, when printed, will be the string <code>"Pancakes"</code>, the name of the struct in
+Listing 20-37.</p>
+<p>The <code>quote!</code> macro lets us define the Rust code that we want to return. The
+compiler expects something different from the direct result of the <code>quote!</code>
+macro’s execution, so we need to convert it to a <code>TokenStream</code>. We do this by
+calling the <code>into</code> method, which consumes this intermediate representation and
+returns a value of the required <code>TokenStream</code> type.</p>
+<p>The <code>quote!</code> macro also provides some very cool templating mechanics: We can
+enter <code>#name</code>, and <code>quote!</code> will replace it with the value in the variable
+<code>name</code>. You can even do some repetition similar to the way regular macros work.
+Check out <a href="https://docs.rs/quote">the <code>quote</code> crate’s docs</a> for a thorough introduction.</p>
+<p>We want our procedural macro to generate an implementation of our <code>HelloMacro</code>
+trait for the type the user annotated, which we can get by using <code>#name</code>. The
+trait implementation has the one function <code>hello_macro</code>, whose body contains the
+functionality we want to provide: printing <code>Hello, Macro! My name is</code> and then
+the name of the annotated type.</p>
+<p>The <code>stringify!</code> macro used here is built into Rust. It takes a Rust
+expression, such as <code>1 + 2</code>, and at compile time turns the expression into a
+string literal, such as <code>"1 + 2"</code>. This is different from <code>format!</code> or
+<code>println!</code>, which are macros that evaluate the expression and then turn the
+result into a <code>String</code>. There is a possibility that the <code>#name</code> input might be
+an expression to print literally, so we use <code>stringify!</code>. Using <code>stringify!</code>
+also saves an allocation by converting <code>#name</code> to a string literal at compile
+time.</p>
+<p>At this point, <code>cargo build</code> should complete successfully in both <code>hello_macro</code>
+and <code>hello_macro_derive</code>. Let’s hook up these crates to the code in Listing
+20-37 to see the procedural macro in action! Create a new binary project in
+your <em>projects</em> directory using <code>cargo new pancakes</code>. We need to add
+<code>hello_macro</code> and <code>hello_macro_derive</code> as dependencies in the <code>pancakes</code>
+crate’s <em>Cargo.toml</em>. If you’re publishing your versions of <code>hello_macro</code> and
+<code>hello_macro_derive</code> to <a href="https://crates.io/">crates.io</a><!-- ignore -->, they
+would be regular dependencies; if not, you can specify them as <code>path</code>
+dependencies as follows:</p>
+<pre><code class="language-toml">[dependencies]
+hello_macro = { path = "../hello_macro" }
+hello_macro_derive = { path = "../hello_macro/hello_macro_derive" }
+</code></pre>
+<p>Put the code in Listing 20-37 into <em>src/main.rs</em>, and run <code>cargo run</code>: It
+should print <code>Hello, Macro! My name is Pancakes!</code>. The implementation of the
+<code>HelloMacro</code> trait from the procedural macro was included without the
+<code>pancakes</code> crate needing to implement it; the <code>#[derive(HelloMacro)]</code> added the
+trait implementation.</p>
+<p>Next, let’s explore how the other kinds of procedural macros differ from custom
+<code>derive</code> macros.</p>
+<h4 id="attribute-like-macros"><a class="header" href="#attribute-like-macros">Attribute-Like Macros</a></h4>
+<p>Attribute-like macros are similar to custom <code>derive</code> macros, but instead of
+generating code for the <code>derive</code> attribute, they allow you to create new
+attributes. They’re also more flexible: <code>derive</code> only works for structs and
+enums; attributes can be applied to other items as well, such as functions.
+Here’s an example of using an attribute-like macro. Say you have an attribute
+named <code>route</code> that annotates functions when using a web application framework:</p>
+<pre><code class="language-rust ignore">#[route(GET, "/")]
+fn index() {</code></pre>
+<p>This <code>#[route]</code> attribute would be defined by the framework as a procedural
+macro. The signature of the macro definition function would look like this:</p>
+<pre><code class="language-rust ignore">#[proc_macro_attribute]
+pub fn route(attr: TokenStream, item: TokenStream) -&gt; TokenStream {</code></pre>
+<p>Here, we have two parameters of type <code>TokenStream</code>. The first is for the
+contents of the attribute: the <code>GET, "/"</code> part. The second is the body of the
+item the attribute is attached to: in this case, <code>fn index() {}</code> and the rest
+of the function’s body.</p>
+<p>Other than that, attribute-like macros work the same way as custom <code>derive</code>
+macros: You create a crate with the <code>proc-macro</code> crate type and implement a
+function that generates the code you want!</p>
+<h4 id="function-like-macros"><a class="header" href="#function-like-macros">Function-Like Macros</a></h4>
+<p>Function-like macros define macros that look like function calls. Similarly to
+<code>macro_rules!</code> macros, they’re more flexible than functions; for example, they
+can take an unknown number of arguments. However, <code>macro_rules!</code> macros can
+only be defined using the match-like syntax we discussed in the <a href="#declarative-macros-with-macro_rules-for-general-metaprogramming">“Declarative
+Macros for General Metaprogramming”</a><!-- ignore --> section earlier.
+Function-like macros take a <code>TokenStream</code> parameter, and their definition
+manipulates that <code>TokenStream</code> using Rust code as the other two types of
+procedural macros do. An example of a function-like macro is an <code>sql!</code> macro
+that might be called like so:</p>
+<pre><code class="language-rust ignore">let sql = sql!(SELECT * FROM posts WHERE id=1);</code></pre>
+<p>This macro would parse the SQL statement inside it and check that it’s
+syntactically correct, which is much more complex processing than a
+<code>macro_rules!</code> macro can do. The <code>sql!</code> macro would be defined like this:</p>
+<pre><code class="language-rust ignore">#[proc_macro]
+pub fn sql(input: TokenStream) -&gt; TokenStream {</code></pre>
+<p>This definition is similar to the custom <code>derive</code> macro’s signature: We receive
+the tokens that are inside the parentheses and return the code we wanted to
+generate.</p>
+<h3 id="summary-19"><a class="header" href="#summary-19">Summary</a></h3>
+<p>Whew! Now you have some Rust features in your toolbox that you likely won’t use
+often, but you’ll know they’re available in very particular circumstances.
+We’ve introduced several complex topics so that when you encounter them in
+error message suggestions or in other people’s code, you’ll be able to
+recognize these concepts and syntax. Use this chapter as a reference to guide
+you to solutions.</p>
+<p>Next, we’ll put everything we’ve discussed throughout the book into practice
+and do one more project!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="19%20Patterns%20as%20Decisions.html">← 19 Patterns as Decisions</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="21%20A%20Production%20Service%20from%20End%20to%20End.html">21 A Production Service from End to End →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#advanced-features">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

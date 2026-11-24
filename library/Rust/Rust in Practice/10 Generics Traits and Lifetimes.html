@@ -1,0 +1,2054 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Generics Traits and Lifetimes</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-moka.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 10 / 21</span></div>
+<div class="hero"><div><h1>Generics Traits and Lifetimes</h1><p>Share behaviour without imposing an object hierarchy.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>slice of T</span></div><div class="trace"><b>Observe</b><span>HasQuantity</span></div><div class="trace"><b>Result</b><span>u64</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="09%20Errors%20Across%20Boundaries.html">← 09 Errors Across Boundaries</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="11%20Tests%20That%20Protect%20Contracts.html">11 Tests That Protect Contracts →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#generic-types-traits-and-lifetimes">Generic Types, Traits, and Lifetimes</a><a href="#generic-data-types-1">Generic Data Types</a><a href="#defining-shared-behavior-with-traits-1">Defining Shared Behavior with Traits</a><a href="#validating-references-with-lifetimes-1">Validating References with Lifetimes</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Share behaviour without imposing an object hierarchy</h2><p>The total function needs one fact about an item: it can yield a quantity. The trait says exactly that. A caller can provide different types in separate calls, and Rust can generate a specialised version for each concrete type. A slice of T still contains a single concrete T. If you need a heterogeneous collection at runtime, choose an enum for a known closed set or trait objects for an open set with a compatible interface.</p><figure class="code"><figcaption>examples/replay.rs · excerpt</figcaption><pre><code><span class="k">trait</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">impl</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Order</span><span class="p">::</span><span class="n">quantity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">fn</span><span class="w"> </span><span class="nf">total</span><span class="o">&lt;</span><span class="n">T</span><span class="p">:</span><span class="w"> </span><span class="nc">HasQuantity</span><span class="o">&gt;</span><span class="p">(</span><span class="n">items</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="n">T</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u64</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">items</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">x</span><span class="o">|</span><span class="w"> </span><span class="kt">u64</span><span class="p">::</span><span class="n">from</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">quantity</span><span class="p">())).</span><span class="n">sum</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre></figure><p>Compare this abstraction with the lifetime in unique. A trait bound constrains an operation you can perform on a type. A lifetime relates the validity of references. Neither is a request to retain objects in a garbage collector. If you only ever total Order values, the concrete signature is simpler. If you have both live orders and imported fills with the same quantity semantics, the bound earns its keep. Agree on units before sharing the trait: lots and individual contracts can have the same Rust type.</p><h3>Choose static or dynamic dispatch</h3><p>A generic function is convenient when the set of concrete callers is known during compilation. Each call can retain its concrete type and avoid constructing a trait object. A collection of independent implementations chosen from runtime configuration poses another question. With a trait object, callers can ask each implementation for a quantity through the same dynamic interface. The choice changes how extensible the collection is, where indirection occurs and which methods can be called through the interface. It does not decide ownership by itself. A trait object can be borrowed, boxed or shared depending on the lifetime and sharing requirements of the caller.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/reference/trait-bounds.html">doc.rust-lang.org/reference/trait-bounds.html</a></p></section><div class="book"><h2 id="generic-types-traits-and-lifetimes"><a class="header" href="#generic-types-traits-and-lifetimes">Generic Types, Traits, and Lifetimes</a></h2>
+<p>Every programming language has tools for effectively handling the duplication
+of concepts. In Rust, one such tool is <em>generics</em>: abstract stand-ins for
+concrete types or other properties. We can express the behavior of generics or
+how they relate to other generics without knowing what will be in their place
+when compiling and running the code.</p>
+<p>Functions can take parameters of some generic type, instead of a concrete type
+like <code>i32</code> or <code>String</code>, in the same way they take parameters with unknown
+values to run the same code on multiple concrete values. In fact, we already
+used generics in Chapter 6 with <code>Option&lt;T&gt;</code>, in Chapter 8 with <code>Vec&lt;T&gt;</code> and
+<code>HashMap&lt;K, V&gt;</code>, and in Chapter 9 with <code>Result&lt;T, E&gt;</code>. In this chapter, you’ll
+explore how to define your own types, functions, and methods with generics!</p>
+<p>First, we’ll review how to extract a function to reduce code duplication. We’ll
+then use the same technique to make a generic function from two functions that
+differ only in the types of their parameters. We’ll also explain how to use
+generic types in struct and enum definitions.</p>
+<p>Then, you’ll learn how to use traits to define behavior in a generic way. You
+can combine traits with generic types to constrain a generic type to accept
+only those types that have a particular behavior, as opposed to just any type.</p>
+<p>Finally, we’ll discuss <em>lifetimes</em>: a variety of generics that give the
+compiler information about how references relate to each other. Lifetimes allow
+us to give the compiler enough information about borrowed values so that it can
+ensure that references will be valid in more situations than it could without
+our help.</p>
+<h3 id="removing-duplication-by-extracting-a-function"><a class="header" href="#removing-duplication-by-extracting-a-function">Removing Duplication by Extracting a Function</a></h3>
+<p>Generics allow us to replace specific types with a placeholder that represents
+multiple types to remove code duplication. Before diving into generics syntax,
+let’s first look at how to remove duplication in a way that doesn’t involve
+generic types by extracting a function that replaces specific values with a
+placeholder that represents multiple values. Then, we’ll apply the same
+technique to extract a generic function! By looking at how to recognize
+duplicated code you can extract into a function, you’ll start to recognize
+duplicated code that can use generics.</p>
+<p>We’ll begin with the short program in Listing 10-1 that finds the largest
+number in a list.</p>
+<figure class="listing" id="listing-10-1">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let number_list = vec![34, 50, 25, 100, 65];
+
+    let mut largest = &amp;number_list[0];
+
+    for number in &amp;number_list {
+        if number &gt; largest {
+            largest = number;
+        }
+    }
+
+    println!("The largest number is {largest}");
+<span class="boring">    assert_eq!(*largest, 100);
+</span>}</code></pre>
+<figcaption><a href="#listing-10-1">Listing 10-1</a>: Finding the largest number in a list of numbers</figcaption>
+</figure>
+<p>We store a list of integers in the variable <code>number_list</code> and place a reference
+to the first number in the list in a variable named <code>largest</code>. We then iterate
+through all the numbers in the list, and if the current number is greater than
+the number stored in <code>largest</code>, we replace the reference in that variable.
+However, if the current number is less than or equal to the largest number seen
+so far, the variable doesn’t change, and the code moves on to the next number
+in the list. After considering all the numbers in the list, <code>largest</code> should
+refer to the largest number, which in this case is 100.</p>
+<p>We’ve now been tasked with finding the largest number in two different lists of
+numbers. To do so, we can choose to duplicate the code in Listing 10-1 and use
+the same logic at two different places in the program, as shown in Listing 10-2.</p>
+<figure class="listing" id="listing-10-2">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let number_list = vec![34, 50, 25, 100, 65];
+
+    let mut largest = &amp;number_list[0];
+
+    for number in &amp;number_list {
+        if number &gt; largest {
+            largest = number;
+        }
+    }
+
+    println!("The largest number is {largest}");
+
+    let number_list = vec![102, 34, 6000, 89, 54, 2, 43, 8];
+
+    let mut largest = &amp;number_list[0];
+
+    for number in &amp;number_list {
+        if number &gt; largest {
+            largest = number;
+        }
+    }
+
+    println!("The largest number is {largest}");
+}</code></pre>
+<figcaption><a href="#listing-10-2">Listing 10-2</a>: Code to find the largest number in <em>two</em> lists of numbers</figcaption>
+</figure>
+<p>Although this code works, duplicating code is tedious and error-prone. We also
+have to remember to update the code in multiple places when we want to change
+it.</p>
+<p>To eliminate this duplication, we’ll create an abstraction by defining a
+function that operates on any list of integers passed in as a parameter. This
+solution makes our code clearer and lets us express the concept of finding the
+largest number in a list abstractly.</p>
+<p>In Listing 10-3, we extract the code that finds the largest number into a
+function named <code>largest</code>. Then, we call the function to find the largest number
+in the two lists from Listing 10-2. We could also use the function on any other
+list of <code>i32</code> values we might have in the future.</p>
+<figure class="listing" id="listing-10-3">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn largest(list: &amp;[i32]) -&gt; &amp;i32 {
+    let mut largest = &amp;list[0];
+
+    for item in list {
+        if item &gt; largest {
+            largest = item;
+        }
+    }
+
+    largest
+}
+
+fn main() {
+    let number_list = vec![34, 50, 25, 100, 65];
+
+    let result = largest(&amp;number_list);
+    println!("The largest number is {result}");
+<span class="boring">    assert_eq!(*result, 100);
+</span>
+    let number_list = vec![102, 34, 6000, 89, 54, 2, 43, 8];
+
+    let result = largest(&amp;number_list);
+    println!("The largest number is {result}");
+<span class="boring">    assert_eq!(*result, 6000);
+</span>}</code></pre>
+<figcaption><a href="#listing-10-3">Listing 10-3</a>: Abstracted code to find the largest number in two lists</figcaption>
+</figure>
+<p>The <code>largest</code> function has a parameter called <code>list</code>, which represents any
+concrete slice of <code>i32</code> values we might pass into the function. As a result,
+when we call the function, the code runs on the specific values that we pass
+in.</p>
+<p>In summary, here are the steps we took to change the code from Listing 10-2 to
+Listing 10-3:</p>
+<ol>
+<li>Identify duplicate code.</li>
+<li>Extract the duplicate code into the body of the function, and specify the
+inputs and return values of that code in the function signature.</li>
+<li>Update the two instances of duplicated code to call the function instead.</li>
+</ol>
+<p>Next, we’ll use these same steps with generics to reduce code duplication. In
+the same way that the function body can operate on an abstract <code>list</code> instead
+of specific values, generics allow code to operate on abstract types.</p>
+<p>For example, say we had two functions: one that finds the largest item in a
+slice of <code>i32</code> values and one that finds the largest item in a slice of <code>char</code>
+values. How would we eliminate that duplication? Let’s find out!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="generic-data-types-1"><a href="#generic-data-types-1" class="header">Generic Data Types</a></h2>
+<h3 id="generic-data-types"><a class="header" href="#generic-data-types">Generic Data Types</a></h3>
+<p>We use generics to create definitions for items like function signatures or
+structs, which we can then use with many different concrete data types. Let’s
+first look at how to define functions, structs, enums, and methods using
+generics. Then, we’ll discuss how generics affect code performance.</p>
+<h4 id="in-function-definitions"><a class="header" href="#in-function-definitions">In Function Definitions</a></h4>
+<p>When defining a function that uses generics, we place the generics in the
+signature of the function where we would usually specify the data types of the
+parameters and return value. Doing so makes our code more flexible and provides
+more functionality to callers of our function while preventing code duplication.</p>
+<p>Continuing with our <code>largest</code> function, Listing 10-4 shows two functions that
+both find the largest value in a slice. We’ll then combine these into a single
+function that uses generics.</p>
+<figure class="listing" id="listing-10-4">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn largest_i32(list: &amp;[i32]) -&gt; &amp;i32 {
+    let mut largest = &amp;list[0];
+
+    for item in list {
+        if item &gt; largest {
+            largest = item;
+        }
+    }
+
+    largest
+}
+
+fn largest_char(list: &amp;[char]) -&gt; &amp;char {
+    let mut largest = &amp;list[0];
+
+    for item in list {
+        if item &gt; largest {
+            largest = item;
+        }
+    }
+
+    largest
+}
+
+fn main() {
+    let number_list = vec![34, 50, 25, 100, 65];
+
+    let result = largest_i32(&amp;number_list);
+    println!("The largest number is {result}");
+<span class="boring">    assert_eq!(*result, 100);
+</span>
+    let char_list = vec!['y', 'm', 'a', 'q'];
+
+    let result = largest_char(&amp;char_list);
+    println!("The largest char is {result}");
+<span class="boring">    assert_eq!(*result, 'y');
+</span>}</code></pre>
+<figcaption><a href="#listing-10-4">Listing 10-4</a>: Two functions that differ only in their names and in the types in their signatures</figcaption>
+</figure>
+<p>The <code>largest_i32</code> function is the one we extracted in Listing 10-3 that finds
+the largest <code>i32</code> in a slice. The <code>largest_char</code> function finds the largest
+<code>char</code> in a slice. The function bodies have the same code, so let’s eliminate
+the duplication by introducing a generic type parameter in a single function.</p>
+<p>To parameterize the types in a new single function, we need to name the type
+parameter, just as we do for the value parameters to a function. You can use
+any identifier as a type parameter name. But we’ll use <code>T</code> because, by
+convention, type parameter names in Rust are short, often just one letter, and
+Rust’s type-naming convention is UpperCamelCase. Short for <em>type</em>, <code>T</code> is the
+default choice of most Rust programmers.</p>
+<p>When we use a parameter in the body of the function, we have to declare the
+parameter name in the signature so that the compiler knows what that name
+means. Similarly, when we use a type parameter name in a function signature, we
+have to declare the type parameter name before we use it. To define the generic
+<code>largest</code> function, we place type name declarations inside angle brackets,
+<code>&lt;&gt;</code>, between the name of the function and the parameter list, like this:</p>
+<pre><code class="language-rust ignore">fn largest&lt;T&gt;(list: &amp;[T]) -&gt; &amp;T {</code></pre>
+<p>We read this definition as “The function <code>largest</code> is generic over some type
+<code>T</code>.” This function has one parameter named <code>list</code>, which is a slice of values
+of type <code>T</code>. The <code>largest</code> function will return a reference to a value of the
+same type <code>T</code>.</p>
+<p>Listing 10-5 shows the combined <code>largest</code> function definition using the generic
+data type in its signature. The listing also shows how we can call the function
+with either a slice of <code>i32</code> values or <code>char</code> values. Note that this code won’t
+compile yet.</p>
+<figure class="listing" id="listing-10-5">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn largest&lt;T&gt;(list: &amp;[T]) -&gt; &amp;T {
+    let mut largest = &amp;list[0];
+
+    for item in list {
+        if item &gt; largest {
+            largest = item;
+        }
+    }
+
+    largest
+}
+
+fn main() {
+    let number_list = vec![34, 50, 25, 100, 65];
+
+    let result = largest(&amp;number_list);
+    println!("The largest number is {result}");
+
+    let char_list = vec!['y', 'm', 'a', 'q'];
+
+    let result = largest(&amp;char_list);
+    println!("The largest char is {result}");
+}</code></pre>
+<figcaption><a href="#listing-10-5">Listing 10-5</a>: The <code>largest</code> function using generic type parameters; this doesn’t compile yet</figcaption>
+</figure>
+<p>If we compile this code right now, we’ll get this error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling chapter10 v0.1.0 (file:///projects/chapter10)
+error[E0369]: binary operation `&gt;` cannot be applied to type `&amp;T`
+ --&gt; src/main.rs:5:17
+  |
+5 |         if item &gt; largest {
+  |            ---- ^ ------- &amp;T
+  |            |
+  |            &amp;T
+  |
+help: consider restricting type parameter `T` with trait `PartialOrd`
+  |
+1 | fn largest&lt;T: std::cmp::PartialOrd&gt;(list: &amp;[T]) -&gt; &amp;T {
+  |             ++++++++++++++++++++++
+
+For more information about this error, try `rustc --explain E0369`.
+error: could not compile `chapter10` (bin "chapter10") due to 1 previous error
+</code></pre>
+<p>The help text mentions <code>std::cmp::PartialOrd</code>, which is a trait, and we’re
+going to talk about traits in the next section. For now, know that this error
+states that the body of <code>largest</code> won’t work for all possible types that <code>T</code>
+could be. Because we want to compare values of type <code>T</code> in the body, we can
+only use types whose values can be ordered. To enable comparisons, the standard
+library has the <code>std::cmp::PartialOrd</code> trait that you can implement on types
+(see Appendix C for more on this trait). To fix Listing 10-5, we can follow the
+help text’s suggestion and restrict the types valid for <code>T</code> to only those that
+implement <code>PartialOrd</code>. The listing will then compile, because the standard
+library implements <code>PartialOrd</code> on both <code>i32</code> and <code>char</code>.</p>
+<h4 id="in-struct-definitions"><a class="header" href="#in-struct-definitions">In Struct Definitions</a></h4>
+<p>We can also define structs to use a generic type parameter in one or more
+fields using the <code>&lt;&gt;</code> syntax. Listing 10-6 defines a <code>Point&lt;T&gt;</code> struct to hold
+<code>x</code> and <code>y</code> coordinate values of any type.</p>
+<figure class="listing" id="listing-10-6">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Point&lt;T&gt; {
+    x: T,
+    y: T,
+}
+
+fn main() {
+    let integer = Point { x: 5, y: 10 };
+    let float = Point { x: 1.0, y: 4.0 };
+}</code></pre>
+<figcaption><a href="#listing-10-6">Listing 10-6</a>: A <code>Point&lt;T&gt;</code> struct that holds <code>x</code> and <code>y</code> values of type <code>T</code></figcaption>
+</figure>
+<p>The syntax for using generics in struct definitions is similar to that used in
+function definitions. First, we declare the name of the type parameter inside
+angle brackets just after the name of the struct. Then, we use the generic type
+in the struct definition where we would otherwise specify concrete data types.</p>
+<p>Note that because we’ve used only one generic type to define <code>Point&lt;T&gt;</code>, this
+definition says that the <code>Point&lt;T&gt;</code> struct is generic over some type <code>T</code>, and
+the fields <code>x</code> and <code>y</code> are <em>both</em> that same type, whatever that type may be. If
+we create an instance of a <code>Point&lt;T&gt;</code> that has values of different types, as in
+Listing 10-7, our code won’t compile.</p>
+<figure class="listing" id="listing-10-7">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">struct Point&lt;T&gt; {
+    x: T,
+    y: T,
+}
+
+fn main() {
+    let wont_work = Point { x: 5, y: 4.0 };
+}</code></pre>
+<figcaption><a href="#listing-10-7">Listing 10-7</a>: The fields <code>x</code> and <code>y</code> must be the same type because both have the same generic data type <code>T</code>.</figcaption>
+</figure>
+<p>In this example, when we assign the integer value <code>5</code> to <code>x</code>, we let the
+compiler know that the generic type <code>T</code> will be an integer for this instance of
+<code>Point&lt;T&gt;</code>. Then, when we specify <code>4.0</code> for <code>y</code>, which we’ve defined to have
+the same type as <code>x</code>, we’ll get a type mismatch error like this:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling chapter10 v0.1.0 (file:///projects/chapter10)
+error[E0308]: mismatched types
+ --&gt; src/main.rs:7:38
+  |
+7 |     let wont_work = Point { x: 5, y: 4.0 };
+  |                                      ^^^ expected integer, found floating-point number
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `chapter10` (bin "chapter10") due to 1 previous error
+</code></pre>
+<p>To define a <code>Point</code> struct where <code>x</code> and <code>y</code> are both generics but could have
+different types, we can use multiple generic type parameters. For example, in
+Listing 10-8, we change the definition of <code>Point</code> to be generic over types <code>T</code>
+and <code>U</code> where <code>x</code> is of type <code>T</code> and <code>y</code> is of type <code>U</code>.</p>
+<figure class="listing" id="listing-10-8">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Point&lt;T, U&gt; {
+    x: T,
+    y: U,
+}
+
+fn main() {
+    let both_integer = Point { x: 5, y: 10 };
+    let both_float = Point { x: 1.0, y: 4.0 };
+    let integer_and_float = Point { x: 5, y: 4.0 };
+}</code></pre>
+<figcaption><a href="#listing-10-8">Listing 10-8</a>: A <code>Point&lt;T, U&gt;</code> generic over two types so that <code>x</code> and <code>y</code> can be values of different types</figcaption>
+</figure>
+<p>Now all the instances of <code>Point</code> shown are allowed! You can use as many generic
+type parameters in a definition as you want, but using more than a few makes
+your code hard to read. If you’re finding you need lots of generic types in
+your code, it could indicate that your code needs restructuring into smaller
+pieces.</p>
+<h4 id="in-enum-definitions"><a class="header" href="#in-enum-definitions">In Enum Definitions</a></h4>
+<p>As we did with structs, we can define enums to hold generic data types in their
+variants. Let’s take another look at the <code>Option&lt;T&gt;</code> enum that the standard
+library provides, which we used in Chapter 6:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Option&lt;T&gt; {
+    Some(T),
+    None,
+}
+<span class="boring">}</span></code></pre>
+<p>This definition should now make more sense to you. As you can see, the
+<code>Option&lt;T&gt;</code> enum is generic over type <code>T</code> and has two variants: <code>Some</code>, which
+holds one value of type <code>T</code>, and a <code>None</code> variant that doesn’t hold any value.
+By using the <code>Option&lt;T&gt;</code> enum, we can express the abstract concept of an
+optional value, and because <code>Option&lt;T&gt;</code> is generic, we can use this abstraction
+no matter what the type of the optional value is.</p>
+<p>Enums can use multiple generic types as well. The definition of the <code>Result</code>
+enum that we used in Chapter 9 is one example:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Result&lt;T, E&gt; {
+    Ok(T),
+    Err(E),
+}
+<span class="boring">}</span></code></pre>
+<p>The <code>Result</code> enum is generic over two types, <code>T</code> and <code>E</code>, and has two variants:
+<code>Ok</code>, which holds a value of type <code>T</code>, and <code>Err</code>, which holds a value of type
+<code>E</code>. This definition makes it convenient to use the <code>Result</code> enum anywhere we
+have an operation that might succeed (return a value of some type <code>T</code>) or fail
+(return an error of some type <code>E</code>). In fact, this is what we used to open a
+file in Listing 9-3, where <code>T</code> was filled in with the type <code>std::fs::File</code> when
+the file was opened successfully and <code>E</code> was filled in with the type
+<code>std::io::Error</code> when there were problems opening the file.</p>
+<p>When you recognize situations in your code with multiple struct or enum
+definitions that differ only in the types of the values they hold, you can
+avoid duplication by using generic types instead.</p>
+<h4 id="in-method-definitions"><a class="header" href="#in-method-definitions">In Method Definitions</a></h4>
+<p>We can implement methods on structs and enums (as we did in Chapter 5) and use
+generic types in their definitions too. Listing 10-9 shows the <code>Point&lt;T&gt;</code>
+struct we defined in Listing 10-6 with a method named <code>x</code> implemented on it.</p>
+<figure class="listing" id="listing-10-9">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Point&lt;T&gt; {
+    x: T,
+    y: T,
+}
+
+impl&lt;T&gt; Point&lt;T&gt; {
+    fn x(&amp;self) -&gt; &amp;T {
+        &amp;self.x
+    }
+}
+
+fn main() {
+    let p = Point { x: 5, y: 10 };
+
+    println!("p.x = {}", p.x());
+}</code></pre>
+<figcaption><a href="#listing-10-9">Listing 10-9</a>: Implementing a method named <code>x</code> on the <code>Point&lt;T&gt;</code> struct that will return a reference to the <code>x</code> field of type <code>T</code></figcaption>
+</figure>
+<p>Here, we’ve defined a method named <code>x</code> on <code>Point&lt;T&gt;</code> that returns a reference
+to the data in the field <code>x</code>.</p>
+<p>Note that we have to declare <code>T</code> just after <code>impl</code> so that we can use <code>T</code> to
+specify that we’re implementing methods on the type <code>Point&lt;T&gt;</code>. By declaring
+<code>T</code> as a generic type after <code>impl</code>, Rust can identify that the type in the
+angle brackets in <code>Point</code> is a generic type rather than a concrete type. We
+could have chosen a different name for this generic parameter than the generic
+parameter declared in the struct definition, but using the same name is
+conventional. If you write a method within an <code>impl</code> that declares a generic
+type, that method will be defined on any instance of the type, no matter what
+concrete type ends up substituting for the generic type.</p>
+<p>We can also specify constraints on generic types when defining methods on the
+type. We could, for example, implement methods only on <code>Point&lt;f32&gt;</code> instances
+rather than on <code>Point&lt;T&gt;</code> instances with any generic type. In Listing 10-10, we
+use the concrete type <code>f32</code>, meaning we don’t declare any types after <code>impl</code>.</p>
+<figure class="listing" id="listing-10-10">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct Point&lt;T&gt; {
+</span><span class="boring">    x: T,
+</span><span class="boring">    y: T,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl&lt;T&gt; Point&lt;T&gt; {
+</span><span class="boring">    fn x(&amp;self) -&gt; &amp;T {
+</span><span class="boring">        &amp;self.x
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Point&lt;f32&gt; {
+    fn distance_from_origin(&amp;self) -&gt; f32 {
+        (self.x.powi(2) + self.y.powi(2)).sqrt()
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let p = Point { x: 5, y: 10 };
+</span><span class="boring">
+</span><span class="boring">    println!("p.x = {}", p.x());
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-10-10">Listing 10-10</a>: An <code>impl</code> block that only applies to a struct with a particular concrete type for the generic type parameter <code>T</code></figcaption>
+</figure>
+<p>This code means the type <code>Point&lt;f32&gt;</code> will have a <code>distance_from_origin</code>
+method; other instances of <code>Point&lt;T&gt;</code> where <code>T</code> is not of type <code>f32</code> will not
+have this method defined. The method measures how far our point is from the
+point at coordinates (0.0, 0.0) and uses mathematical operations that are
+available only for floating-point types.</p>
+<p>Generic type parameters in a struct definition aren’t always the same as those
+you use in that same struct’s method signatures. Listing 10-11 uses the generic
+types <code>X1</code> and <code>Y1</code> for the <code>Point</code> struct and <code>X2</code> and <code>Y2</code> for the <code>mixup</code>
+method signature to make the example clearer. The method creates a new <code>Point</code>
+instance with the <code>x</code> value from the <code>self</code> <code>Point</code> (of type <code>X1</code>) and the <code>y</code>
+value from the passed-in <code>Point</code> (of type <code>Y2</code>).</p>
+<figure class="listing" id="listing-10-11">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Point&lt;X1, Y1&gt; {
+    x: X1,
+    y: Y1,
+}
+
+impl&lt;X1, Y1&gt; Point&lt;X1, Y1&gt; {
+    fn mixup&lt;X2, Y2&gt;(self, other: Point&lt;X2, Y2&gt;) -&gt; Point&lt;X1, Y2&gt; {
+        Point {
+            x: self.x,
+            y: other.y,
+        }
+    }
+}
+
+fn main() {
+    let p1 = Point { x: 5, y: 10.4 };
+    let p2 = Point { x: "Hello", y: 'c' };
+
+    let p3 = p1.mixup(p2);
+
+    println!("p3.x = {}, p3.y = {}", p3.x, p3.y);
+}</code></pre>
+<figcaption><a href="#listing-10-11">Listing 10-11</a>: A method that uses generic types that are different from its struct’s definition</figcaption>
+</figure>
+<p>In <code>main</code>, we’ve defined a <code>Point</code> that has an <code>i32</code> for <code>x</code> (with value <code>5</code>)
+and an <code>f64</code> for <code>y</code> (with value <code>10.4</code>). The <code>p2</code> variable is a <code>Point</code> struct
+that has a string slice for <code>x</code> (with value <code>"Hello"</code>) and a <code>char</code> for <code>y</code>
+(with value <code>c</code>). Calling <code>mixup</code> on <code>p1</code> with the argument <code>p2</code> gives us <code>p3</code>,
+which will have an <code>i32</code> for <code>x</code> because <code>x</code> came from <code>p1</code>. The <code>p3</code> variable
+will have a <code>char</code> for <code>y</code> because <code>y</code> came from <code>p2</code>. The <code>println!</code> macro
+call will print <code>p3.x = 5, p3.y = c</code>.</p>
+<p>The purpose of this example is to demonstrate a situation in which some generic
+parameters are declared with <code>impl</code> and some are declared with the method
+definition. Here, the generic parameters <code>X1</code> and <code>Y1</code> are declared after
+<code>impl</code> because they go with the struct definition. The generic parameters <code>X2</code>
+and <code>Y2</code> are declared after <code>fn mixup</code> because they’re only relevant to the
+method.</p>
+<h4 id="performance-of-code-using-generics"><a class="header" href="#performance-of-code-using-generics">Performance of Code Using Generics</a></h4>
+<p>You might be wondering whether there is a runtime cost when using generic type
+parameters. The good news is that using generic types won’t make your program
+run any slower than it would with concrete types.</p>
+<p>Rust accomplishes this by performing monomorphization of the code using
+generics at compile time. <em>Monomorphization</em> is the process of turning generic
+code into specific code by filling in the concrete types that are used when
+compiled. In this process, the compiler does the opposite of the steps we used
+to create the generic function in Listing 10-5: The compiler looks at all the
+places where generic code is called and generates code for the concrete types
+the generic code is called with.</p>
+<p>Let’s look at how this works by using the standard library’s generic
+<code>Option&lt;T&gt;</code> enum:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let integer = Some(5);
+let float = Some(5.0);
+<span class="boring">}</span></code></pre>
+<p>When Rust compiles this code, it performs monomorphization. During that
+process, the compiler reads the values that have been used in <code>Option&lt;T&gt;</code>
+instances and identifies two kinds of <code>Option&lt;T&gt;</code>: One is <code>i32</code> and the other
+is <code>f64</code>. As such, it expands the generic definition of <code>Option&lt;T&gt;</code> into two
+definitions specialized to <code>i32</code> and <code>f64</code>, thereby replacing the generic
+definition with the specific ones.</p>
+<p>The monomorphized version of the code looks similar to the following (the
+compiler uses different names than what we’re using here for illustration):</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">enum Option_i32 {
+    Some(i32),
+    None,
+}
+
+enum Option_f64 {
+    Some(f64),
+    None,
+}
+
+fn main() {
+    let integer = Option_i32::Some(5);
+    let float = Option_f64::Some(5.0);
+}</code></pre>
+</figure>
+<p>The generic <code>Option&lt;T&gt;</code> is replaced with the specific definitions created by
+the compiler. Because Rust compiles generic code into code that specifies the
+type in each instance, we pay no runtime cost for using generics. When the code
+runs, it performs just as it would if we had duplicated each definition by
+hand. The process of monomorphization makes Rust’s generics extremely efficient
+at runtime.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="defining-shared-behavior-with-traits-1"><a href="#defining-shared-behavior-with-traits-1" class="header">Defining Shared Behavior with Traits</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="traits-defining-shared-behavior"></a></p>
+<h3 id="defining-shared-behavior-with-traits"><a class="header" href="#defining-shared-behavior-with-traits">Defining Shared Behavior with Traits</a></h3>
+<p>A <em>trait</em> defines the functionality a particular type has and can share with
+other types. We can use traits to define shared behavior in an abstract way. We
+can use <em>trait bounds</em> to specify that a generic type can be any type that has
+certain behavior.</p>
+<section class="note" aria-role="note">
+<p>Note: Traits are similar to a feature often called <em>interfaces</em> in other
+languages, although with some differences.</p>
+</section>
+<h4 id="defining-a-trait"><a class="header" href="#defining-a-trait">Defining a Trait</a></h4>
+<p>A type’s behavior consists of the methods we can call on that type. Different
+types share the same behavior if we can call the same methods on all of those
+types. Trait definitions are a way to group method signatures together to
+define a set of behaviors necessary to accomplish some purpose.</p>
+<p>For example, let’s say we have multiple structs that hold various kinds and
+amounts of text: a <code>NewsArticle</code> struct that holds a news story filed in a
+particular location and a <code>SocialPost</code> that can have, at most, 280 characters
+along with metadata that indicates whether it was a new post, a repost, or a
+reply to another post.</p>
+<p>We want to make a media aggregator library crate named <code>aggregator</code> that can
+display summaries of data that might be stored in a <code>NewsArticle</code> or
+<code>SocialPost</code> instance. To do this, we need a summary from each type, and we’ll
+request that summary by calling a <code>summarize</code> method on an instance. Listing
+10-12 shows the definition of a public <code>Summary</code> trait that expresses this
+behavior.</p>
+<figure class="listing" id="listing-10-12">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">pub trait Summary {
+    fn summarize(&amp;self) -&gt; String;
+}</code></pre>
+<figcaption><a href="#listing-10-12">Listing 10-12</a>: A <code>Summary</code> trait that consists of the behavior provided by a <code>summarize</code> method</figcaption>
+</figure>
+<p>Here, we declare a trait using the <code>trait</code> keyword and then the trait’s name,
+which is <code>Summary</code> in this case. We also declare the trait as <code>pub</code> so that
+crates depending on this crate can make use of this trait too, as we’ll see in
+a few examples. Inside the curly brackets, we declare the method signatures
+that describe the behaviors of the types that implement this trait, which in
+this case is <code>fn summarize(&amp;self) -&gt; String</code>.</p>
+<p>After the method signature, instead of providing an implementation within curly
+brackets, we use a semicolon. Each type implementing this trait must provide
+its own custom behavior for the body of the method. The compiler will enforce
+that any type that has the <code>Summary</code> trait will have the method <code>summarize</code>
+defined with this signature exactly.</p>
+<p>A trait can have multiple methods in its body: The method signatures are listed
+one per line, and each line ends in a semicolon.</p>
+<h4 id="implementing-a-trait-on-a-type"><a class="header" href="#implementing-a-trait-on-a-type">Implementing a Trait on a Type</a></h4>
+<p>Now that we’ve defined the desired signatures of the <code>Summary</code> trait’s methods,
+we can implement it on the types in our media aggregator. Listing 10-13 shows
+an implementation of the <code>Summary</code> trait on the <code>NewsArticle</code> struct that uses
+the headline, the author, and the location to create the return value of
+<code>summarize</code>. For the <code>SocialPost</code> struct, we define <code>summarize</code> as the username
+followed by the entire text of the post, assuming that the post content is
+already limited to 280 characters.</p>
+<figure class="listing" id="listing-10-13">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground"><span class="boring">pub trait Summary {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String;
+</span><span class="boring">}
+</span><span class="boring">
+</span>pub struct NewsArticle {
+    pub headline: String,
+    pub location: String,
+    pub author: String,
+    pub content: String,
+}
+
+impl Summary for NewsArticle {
+    fn summarize(&amp;self) -&gt; String {
+        format!("{}, by {} ({})", self.headline, self.author, self.location)
+    }
+}
+
+pub struct SocialPost {
+    pub username: String,
+    pub content: String,
+    pub reply: bool,
+    pub repost: bool,
+}
+
+impl Summary for SocialPost {
+    fn summarize(&amp;self) -&gt; String {
+        format!("{}: {}", self.username, self.content)
+    }
+}</code></pre>
+<figcaption><a href="#listing-10-13">Listing 10-13</a>: Implementing the <code>Summary</code> trait on the <code>NewsArticle</code> and <code>SocialPost</code> types</figcaption>
+</figure>
+<p>Implementing a trait on a type is similar to implementing regular methods. The
+difference is that after <code>impl</code>, we put the trait name we want to implement,
+then use the <code>for</code> keyword, and then specify the name of the type we want to
+implement the trait for. Within the <code>impl</code> block, we put the method signatures
+that the trait definition has defined. Instead of adding a semicolon after each
+signature, we use curly brackets and fill in the method body with the specific
+behavior that we want the methods of the trait to have for the particular type.</p>
+<p>Now that the library has implemented the <code>Summary</code> trait on <code>NewsArticle</code> and
+<code>SocialPost</code>, users of the crate can call the trait methods on instances of
+<code>NewsArticle</code> and <code>SocialPost</code> in the same way we call regular methods. The only
+difference is that the user must bring the trait into scope as well as the
+types. Here’s an example of how a binary crate could use our <code>aggregator</code>
+library crate:</p>
+<pre><code class="language-rust ignore">use aggregator::{SocialPost, Summary};
+
+fn main() {
+    let post = SocialPost {
+        username: String::from("horse_ebooks"),
+        content: String::from(
+            "of course, as you probably already know, people",
+        ),
+        reply: false,
+        repost: false,
+    };
+
+    println!("1 new post: {}", post.summarize());
+}</code></pre>
+<p>This code prints <code>1 new post: horse_ebooks: of course, as you probably already know, people</code>.</p>
+<p>Other crates that depend on the <code>aggregator</code> crate can also bring the <code>Summary</code>
+trait into scope to implement <code>Summary</code> on their own types. One restriction to
+note is that we can implement a trait on a type only if either the trait or the
+type, or both, are local to our crate. For example, we can implement standard
+library traits like <code>Display</code> on a custom type like <code>SocialPost</code> as part of our
+<code>aggregator</code> crate functionality because the type <code>SocialPost</code> is local to our
+<code>aggregator</code> crate. We can also implement <code>Summary</code> on <code>Vec&lt;T&gt;</code> in our
+<code>aggregator</code> crate because the trait <code>Summary</code> is local to our <code>aggregator</code>
+crate.</p>
+<p>But we can’t implement external traits on external types. For example, we can’t
+implement the <code>Display</code> trait on <code>Vec&lt;T&gt;</code> within our <code>aggregator</code> crate,
+because <code>Display</code> and <code>Vec&lt;T&gt;</code> are both defined in the standard library and
+aren’t local to our <code>aggregator</code> crate. This restriction is part of a property
+called <em>coherence</em>, and more specifically the <em>orphan rule</em>, so named because
+the parent type is not present. This rule ensures that other people’s code
+can’t break your code and vice versa. Without the rule, two crates could
+implement the same trait for the same type, and Rust wouldn’t know which
+implementation to use.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="default-implementations"></a></p>
+<h4 id="using-default-implementations"><a class="header" href="#using-default-implementations">Using Default Implementations</a></h4>
+<p>Sometimes it’s useful to have default behavior for some or all of the methods
+in a trait instead of requiring implementations for all methods on every type.
+Then, as we implement the trait on a particular type, we can keep or override
+each method’s default behavior.</p>
+<p>In Listing 10-14, we specify a default string for the <code>summarize</code> method of the
+<code>Summary</code> trait instead of only defining the method signature, as we did in
+Listing 10-12.</p>
+<figure class="listing" id="listing-10-14">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">pub trait Summary {
+    fn summarize(&amp;self) -&gt; String {
+        String::from("(Read more...)")
+    }
+}
+<span class="boring">
+</span><span class="boring">pub struct NewsArticle {
+</span><span class="boring">    pub headline: String,
+</span><span class="boring">    pub location: String,
+</span><span class="boring">    pub author: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for NewsArticle {}
+</span><span class="boring">
+</span><span class="boring">pub struct SocialPost {
+</span><span class="boring">    pub username: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">    pub reply: bool,
+</span><span class="boring">    pub repost: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for SocialPost {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("{}: {}", self.username, self.content)
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-10-14">Listing 10-14</a>: Defining a <code>Summary</code> trait with a default implementation of the <code>summarize</code> method</figcaption>
+</figure>
+<p>To use a default implementation to summarize instances of <code>NewsArticle</code>, we
+specify an empty <code>impl</code> block with <code>impl Summary for NewsArticle {}</code>.</p>
+<p>Even though we’re no longer defining the <code>summarize</code> method on <code>NewsArticle</code>
+directly, we’ve provided a default implementation and specified that
+<code>NewsArticle</code> implements the <code>Summary</code> trait. As a result, we can still call
+the <code>summarize</code> method on an instance of <code>NewsArticle</code>, like this:</p>
+<pre><code class="language-rust ignore"><span class="boring">use aggregator::{self, NewsArticle, Summary};
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span>    let article = NewsArticle {
+        headline: String::from("Penguins win the Stanley Cup Championship!"),
+        location: String::from("Pittsburgh, PA, USA"),
+        author: String::from("Iceburgh"),
+        content: String::from(
+            "The Pittsburgh Penguins once again are the best \
+             hockey team in the NHL.",
+        ),
+    };
+
+    println!("New article available! {}", article.summarize());
+<span class="boring">}</span></code></pre>
+<p>This code prints <code>New article available! (Read more...)</code>.</p>
+<p>Creating a default implementation doesn’t require us to change anything about
+the implementation of <code>Summary</code> on <code>SocialPost</code> in Listing 10-13. The reason is
+that the syntax for overriding a default implementation is the same as the
+syntax for implementing a trait method that doesn’t have a default
+implementation.</p>
+<p>Default implementations can call other methods in the same trait, even if those
+other methods don’t have a default implementation. In this way, a trait can
+provide a lot of useful functionality and only require implementors to specify
+a small part of it. For example, we could define the <code>Summary</code> trait to have a
+<code>summarize_author</code> method whose implementation is required, and then define a
+<code>summarize</code> method that has a default implementation that calls the
+<code>summarize_author</code> method:</p>
+<pre><code class="language-rust noplayground">pub trait Summary {
+    fn summarize_author(&amp;self) -&gt; String;
+
+    fn summarize(&amp;self) -&gt; String {
+        format!("(Read more from {}...)", self.summarize_author())
+    }
+}
+<span class="boring">
+</span><span class="boring">pub struct SocialPost {
+</span><span class="boring">    pub username: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">    pub reply: bool,
+</span><span class="boring">    pub repost: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for SocialPost {
+</span><span class="boring">    fn summarize_author(&amp;self) -&gt; String {
+</span><span class="boring">        format!("@{}", self.username)
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<p>To use this version of <code>Summary</code>, we only need to define <code>summarize_author</code>
+when we implement the trait on a type:</p>
+<pre><code class="language-rust ignore"><span class="boring">pub trait Summary {
+</span><span class="boring">    fn summarize_author(&amp;self) -&gt; String;
+</span><span class="boring">
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("(Read more from {}...)", self.summarize_author())
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct SocialPost {
+</span><span class="boring">    pub username: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">    pub reply: bool,
+</span><span class="boring">    pub repost: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Summary for SocialPost {
+    fn summarize_author(&amp;self) -&gt; String {
+        format!("@{}", self.username)
+    }
+}</code></pre>
+<p>After we define <code>summarize_author</code>, we can call <code>summarize</code> on instances of the
+<code>SocialPost</code> struct, and the default implementation of <code>summarize</code> will call the
+definition of <code>summarize_author</code> that we’ve provided. Because we’ve implemented
+<code>summarize_author</code>, the <code>Summary</code> trait has given us the behavior of the
+<code>summarize</code> method without requiring us to write any more code. Here’s what
+that looks like:</p>
+<pre><code class="language-rust ignore"><span class="boring">use aggregator::{self, SocialPost, Summary};
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span>    let post = SocialPost {
+        username: String::from("horse_ebooks"),
+        content: String::from(
+            "of course, as you probably already know, people",
+        ),
+        reply: false,
+        repost: false,
+    };
+
+    println!("1 new post: {}", post.summarize());
+<span class="boring">}</span></code></pre>
+<p>This code prints <code>1 new post: (Read more from @horse_ebooks...)</code>.</p>
+<p>Note that it isn’t possible to call the default implementation from an
+overriding implementation of that same method.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="traits-as-parameters"></a></p>
+<h4 id="using-traits-as-parameters"><a class="header" href="#using-traits-as-parameters">Using Traits as Parameters</a></h4>
+<p>Now that you know how to define and implement traits, we can explore how to use
+traits to define functions that accept many different types. We’ll use the
+<code>Summary</code> trait we implemented on the <code>NewsArticle</code> and <code>SocialPost</code> types in
+Listing 10-13 to define a <code>notify</code> function that calls the <code>summarize</code> method
+on its <code>item</code> parameter, which is of some type that implements the <code>Summary</code>
+trait. To do this, we use the <code>impl Trait</code> syntax, like this:</p>
+<pre><code class="language-rust ignore"><span class="boring">pub trait Summary {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String;
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct NewsArticle {
+</span><span class="boring">    pub headline: String,
+</span><span class="boring">    pub location: String,
+</span><span class="boring">    pub author: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for NewsArticle {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("{}, by {} ({})", self.headline, self.author, self.location)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct SocialPost {
+</span><span class="boring">    pub username: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">    pub reply: bool,
+</span><span class="boring">    pub repost: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for SocialPost {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("{}: {}", self.username, self.content)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>pub fn notify(item: &amp;impl Summary) {
+    println!("Breaking news! {}", item.summarize());
+}</code></pre>
+<p>Instead of a concrete type for the <code>item</code> parameter, we specify the <code>impl</code>
+keyword and the trait name. This parameter accepts any type that implements the
+specified trait. In the body of <code>notify</code>, we can call any methods on <code>item</code>
+that come from the <code>Summary</code> trait, such as <code>summarize</code>. We can call <code>notify</code>
+and pass in any instance of <code>NewsArticle</code> or <code>SocialPost</code>. Code that calls the
+function with any other type, such as a <code>String</code> or an <code>i32</code>, won’t compile,
+because those types don’t implement <code>Summary</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="fixing-the-largest-function-with-trait-bounds"></a></p>
+<h5 id="trait-bound-syntax"><a class="header" href="#trait-bound-syntax">Trait Bound Syntax</a></h5>
+<p>The <code>impl Trait</code> syntax works for straightforward cases but is actually syntax
+sugar for a longer form known as a <em>trait bound</em>; it looks like this:</p>
+<pre><code class="language-rust ignore">pub fn notify&lt;T: Summary&gt;(item: &amp;T) {
+    println!("Breaking news! {}", item.summarize());
+}</code></pre>
+<p>This longer form is equivalent to the example in the previous section but is
+more verbose. We place trait bounds with the declaration of the generic type
+parameter after a colon and inside angle brackets.</p>
+<p>The <code>impl Trait</code> syntax is convenient and makes for more concise code in simple
+cases, while the fuller trait bound syntax can express more complexity in other
+cases. For example, we can have two parameters that implement <code>Summary</code>. Doing
+so with the <code>impl Trait</code> syntax looks like this:</p>
+<pre><code class="language-rust ignore">pub fn notify(item1: &amp;impl Summary, item2: &amp;impl Summary) {</code></pre>
+<p>Using <code>impl Trait</code> is appropriate if we want this function to allow <code>item1</code> and
+<code>item2</code> to have different types (as long as both types implement <code>Summary</code>). If
+we want to force both parameters to have the same type, however, we must use a
+trait bound, like this:</p>
+<pre><code class="language-rust ignore">pub fn notify&lt;T: Summary&gt;(item1: &amp;T, item2: &amp;T) {</code></pre>
+<p>The generic type <code>T</code> specified as the type of the <code>item1</code> and <code>item2</code>
+parameters constrains the function such that the concrete type of the value
+passed as an argument for <code>item1</code> and <code>item2</code> must be the same.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="specifying-multiple-trait-bounds-with-the--syntax"></a></p>
+<h5 id="multiple-trait-bounds-with-the--syntax"><a class="header" href="#multiple-trait-bounds-with-the--syntax">Multiple Trait Bounds with the <code>+</code> Syntax</a></h5>
+<p>We can also specify more than one trait bound. Say we wanted <code>notify</code> to use
+display formatting as well as <code>summarize</code> on <code>item</code>: We specify in the <code>notify</code>
+definition that <code>item</code> must implement both <code>Display</code> and <code>Summary</code>. We can do
+so using the <code>+</code> syntax:</p>
+<pre><code class="language-rust ignore">pub fn notify(item: &amp;(impl Summary + Display)) {</code></pre>
+<p>The <code>+</code> syntax is also valid with trait bounds on generic types:</p>
+<pre><code class="language-rust ignore">pub fn notify&lt;T: Summary + Display&gt;(item: &amp;T) {</code></pre>
+<p>With the two trait bounds specified, the body of <code>notify</code> can call <code>summarize</code>
+and use <code>{}</code> to format <code>item</code>.</p>
+<h5 id="clearer-trait-bounds-with-where-clauses"><a class="header" href="#clearer-trait-bounds-with-where-clauses">Clearer Trait Bounds with <code>where</code> Clauses</a></h5>
+<p>Using too many trait bounds has its downsides. Each generic has its own trait
+bounds, so functions with multiple generic type parameters can contain lots of
+trait bound information between the function’s name and its parameter list,
+making the function signature hard to read. For this reason, Rust has alternate
+syntax for specifying trait bounds inside a <code>where</code> clause after the function
+signature. So, instead of writing this:</p>
+<pre><code class="language-rust ignore">fn some_function&lt;T: Display + Clone, U: Clone + Debug&gt;(t: &amp;T, u: &amp;U) -&gt; i32 {</code></pre>
+<p>we can use a <code>where</code> clause, like this:</p>
+<pre><code class="language-rust ignore">fn some_function&lt;T, U&gt;(t: &amp;T, u: &amp;U) -&gt; i32
+where
+    T: Display + Clone,
+    U: Clone + Debug,
+{
+<span class="boring">    unimplemented!()
+</span><span class="boring">}</span></code></pre>
+<p>This function’s signature is less cluttered: The function name, parameter list,
+and return type are close together, similar to a function without lots of trait
+bounds.</p>
+<h4 id="returning-types-that-implement-traits"><a class="header" href="#returning-types-that-implement-traits">Returning Types That Implement Traits</a></h4>
+<p>We can also use the <code>impl Trait</code> syntax in the return position to return a
+value of some type that implements a trait, as shown here:</p>
+<pre><code class="language-rust ignore"><span class="boring">pub trait Summary {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String;
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct NewsArticle {
+</span><span class="boring">    pub headline: String,
+</span><span class="boring">    pub location: String,
+</span><span class="boring">    pub author: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for NewsArticle {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("{}, by {} ({})", self.headline, self.author, self.location)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct SocialPost {
+</span><span class="boring">    pub username: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">    pub reply: bool,
+</span><span class="boring">    pub repost: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for SocialPost {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("{}: {}", self.username, self.content)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn returns_summarizable() -&gt; impl Summary {
+    SocialPost {
+        username: String::from("horse_ebooks"),
+        content: String::from(
+            "of course, as you probably already know, people",
+        ),
+        reply: false,
+        repost: false,
+    }
+}</code></pre>
+<p>By using <code>impl Summary</code> for the return type, we specify that the
+<code>returns_summarizable</code> function returns some type that implements the <code>Summary</code>
+trait without naming the concrete type. In this case, <code>returns_summarizable</code>
+returns a <code>SocialPost</code>, but the code calling this function doesn’t need to know
+that.</p>
+<p>The ability to specify a return type only by the trait it implements is
+especially useful in the context of closures and iterators, which we cover in
+Chapter 13. Closures and iterators create types that only the compiler knows or
+types that are very long to specify. The <code>impl Trait</code> syntax lets you concisely
+specify that a function returns some type that implements the <code>Iterator</code> trait
+without needing to write out a very long type.</p>
+<p>However, you can only use <code>impl Trait</code> if you’re returning a single type. For
+example, this code that returns either a <code>NewsArticle</code> or a <code>SocialPost</code> with
+the return type specified as <code>impl Summary</code> wouldn’t work:</p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">pub trait Summary {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String;
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct NewsArticle {
+</span><span class="boring">    pub headline: String,
+</span><span class="boring">    pub location: String,
+</span><span class="boring">    pub author: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for NewsArticle {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("{}, by {} ({})", self.headline, self.author, self.location)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct SocialPost {
+</span><span class="boring">    pub username: String,
+</span><span class="boring">    pub content: String,
+</span><span class="boring">    pub reply: bool,
+</span><span class="boring">    pub repost: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Summary for SocialPost {
+</span><span class="boring">    fn summarize(&amp;self) -&gt; String {
+</span><span class="boring">        format!("{}: {}", self.username, self.content)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn returns_summarizable(switch: bool) -&gt; impl Summary {
+    if switch {
+        NewsArticle {
+            headline: String::from(
+                "Penguins win the Stanley Cup Championship!",
+            ),
+            location: String::from("Pittsburgh, PA, USA"),
+            author: String::from("Iceburgh"),
+            content: String::from(
+                "The Pittsburgh Penguins once again are the best \
+                 hockey team in the NHL.",
+            ),
+        }
+    } else {
+        SocialPost {
+            username: String::from("horse_ebooks"),
+            content: String::from(
+                "of course, as you probably already know, people",
+            ),
+            reply: false,
+            repost: false,
+        }
+    }
+}</code></pre>
+<p>Returning either a <code>NewsArticle</code> or a <code>SocialPost</code> isn’t allowed due to
+restrictions around how the <code>impl Trait</code> syntax is implemented in the compiler.
+We’ll cover how to write a function with this behavior in the <a href="18%20State%20and%20Behaviour%20Patterns.html#using-trait-objects-to-abstract-over-shared-behavior">“Using Trait
+Objects to Abstract over Shared Behavior”</a><!-- ignore -->
+section of Chapter 18.</p>
+<h4 id="using-trait-bounds-to-conditionally-implement-methods"><a class="header" href="#using-trait-bounds-to-conditionally-implement-methods">Using Trait Bounds to Conditionally Implement Methods</a></h4>
+<p>By using a trait bound with an <code>impl</code> block that uses generic type parameters,
+we can implement methods conditionally for types that implement the specified
+traits. For example, the type <code>Pair&lt;T&gt;</code> in Listing 10-15 always implements the
+<code>new</code> function to return a new instance of <code>Pair&lt;T&gt;</code> (recall from the <a href="05%20Structs%20and%20Invariants.html#method-syntax">“Method
+Syntax”</a><!-- ignore --> section of Chapter 5 that <code>Self</code> is a type
+alias for the type of the <code>impl</code> block, which in this case is <code>Pair&lt;T&gt;</code>). But
+in the next <code>impl</code> block, <code>Pair&lt;T&gt;</code> only implements the <code>cmp_display</code> method if
+its inner type <code>T</code> implements the <code>PartialOrd</code> trait that enables comparison
+<em>and</em> the <code>Display</code> trait that enables printing.</p>
+<figure class="listing" id="listing-10-15">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">use std::fmt::Display;
+
+struct Pair&lt;T&gt; {
+    x: T,
+    y: T,
+}
+
+impl&lt;T&gt; Pair&lt;T&gt; {
+    fn new(x: T, y: T) -&gt; Self {
+        Self { x, y }
+    }
+}
+
+impl&lt;T: Display + PartialOrd&gt; Pair&lt;T&gt; {
+    fn cmp_display(&amp;self) {
+        if self.x &gt;= self.y {
+            println!("The largest member is x = {}", self.x);
+        } else {
+            println!("The largest member is y = {}", self.y);
+        }
+    }
+}</code></pre>
+<figcaption><a href="#listing-10-15">Listing 10-15</a>: Conditionally implementing methods on a generic type depending on trait bounds</figcaption>
+</figure>
+<p>We can also conditionally implement a trait for any type that implements
+another trait. Implementations of a trait on any type that satisfies the trait
+bounds are called <em>blanket implementations</em> and are used extensively in the
+Rust standard library. For example, the standard library implements the
+<code>ToString</code> trait on any type that implements the <code>Display</code> trait. The <code>impl</code>
+block in the standard library looks similar to this code:</p>
+<pre><code class="language-rust ignore">impl&lt;T: Display&gt; ToString for T {
+    // --snip--
+}</code></pre>
+<p>Because the standard library has this blanket implementation, we can call the
+<code>to_string</code> method defined by the <code>ToString</code> trait on any type that implements
+the <code>Display</code> trait. For example, we can turn integers into their corresponding
+<code>String</code> values like this because integers implement <code>Display</code>:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s = 3.to_string();
+<span class="boring">}</span></code></pre>
+<p>Blanket implementations appear in the documentation for the trait in the
+“Implementors” section.</p>
+<p>Traits and trait bounds let us write code that uses generic type parameters to
+reduce duplication but also specify to the compiler that we want the generic
+type to have particular behavior. The compiler can then use the trait bound
+information to check that all the concrete types used with our code provide the
+correct behavior. In dynamically typed languages, we would get an error at
+runtime if we called a method on a type that didn’t define the method. But Rust
+moves these errors to compile time so that we’re forced to fix the problems
+before our code is even able to run. Additionally, we don’t have to write code
+that checks for behavior at runtime, because we’ve already checked at compile
+time. Doing so improves performance without having to give up the flexibility
+of generics.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="validating-references-with-lifetimes-1"><a href="#validating-references-with-lifetimes-1" class="header">Validating References with Lifetimes</a></h2>
+<h3 id="validating-references-with-lifetimes"><a class="header" href="#validating-references-with-lifetimes">Validating References with Lifetimes</a></h3>
+<p>Lifetimes are another kind of generic that we’ve already been using. Rather
+than ensuring that a type has the behavior we want, lifetimes ensure that
+references are valid as long as we need them to be.</p>
+<p>One detail we didn’t discuss in the <a href="04%20Ownership%20and%20Borrowing.html#references-and-borrowing">“References and
+Borrowing”</a><!-- ignore --> section in Chapter 4 is
+that every reference in Rust has a lifetime, which is the scope for which
+that reference is valid. Most of the time, lifetimes are implicit and inferred,
+just like most of the time, types are inferred. We are only required to
+annotate types when multiple types are possible. In a similar way, we must
+annotate lifetimes when the lifetimes of references could be related in a few
+different ways. Rust requires us to annotate the relationships using generic
+lifetime parameters to ensure that the actual references used at runtime will
+definitely be valid.</p>
+<p>Annotating lifetimes is not even a concept most other programming languages
+have, so this is going to feel unfamiliar. Although we won’t cover lifetimes in
+their entirety in this chapter, we’ll discuss common ways you might encounter
+lifetime syntax so that you can get comfortable with the concept.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="preventing-dangling-references-with-lifetimes"></a></p>
+<h4 id="dangling-references-1"><a class="header" href="#dangling-references-1">Dangling References</a></h4>
+<p>The main aim of lifetimes is to prevent dangling references, which, if they
+were allowed to exist, would cause a program to reference data other than the
+data it’s intended to reference. Consider the program in Listing 10-16, which
+has an outer scope and an inner scope.</p>
+<figure class="listing" id="listing-10-16">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let r;
+
+    {
+        let x = 5;
+        r = &amp;x;
+    }
+
+    println!("r: {r}");
+}</code></pre>
+<figcaption><a href="#listing-10-16">Listing 10-16</a>: An attempt to use a reference whose value has gone out of scope</figcaption>
+</figure>
+<section class="note" aria-role="note">
+<p>Note: The examples in Listings 10-16, 10-17, and 10-23 declare variables
+without giving them an initial value, so the variable name exists in the outer
+scope. At first glance, this might appear to be in conflict with Rust having
+no null values. However, if we try to use a variable before giving it a value,
+we’ll get a compile-time error, which shows that indeed Rust does not allow
+null values.</p>
+</section>
+<p>The outer scope declares a variable named <code>r</code> with no initial value, and the
+inner scope declares a variable named <code>x</code> with the initial value of <code>5</code>. Inside
+the inner scope, we attempt to set the value of <code>r</code> as a reference to <code>x</code>.
+Then, the inner scope ends, and we attempt to print the value in <code>r</code>. This code
+won’t compile, because the value that <code>r</code> is referring to has gone out of scope
+before we try to use it. Here is the error message:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling chapter10 v0.1.0 (file:///projects/chapter10)
+error[E0597]: `x` does not live long enough
+ --&gt; src/main.rs:6:13
+  |
+5 |         let x = 5;
+  |             - binding `x` declared here
+6 |         r = &amp;x;
+  |             ^^ borrowed value does not live long enough
+7 |     }
+  |     - `x` dropped here while still borrowed
+8 |
+9 |     println!("r: {r}");
+  |                   - borrow later used here
+
+For more information about this error, try `rustc --explain E0597`.
+error: could not compile `chapter10` (bin "chapter10") due to 1 previous error
+</code></pre>
+<p>The error message says that the variable <code>x</code> “does not live long enough.” The
+reason is that <code>x</code> will be out of scope when the inner scope ends on line 7.
+But <code>r</code> is still valid for the outer scope; because its scope is larger, we say
+that it “lives longer.” If Rust allowed this code to work, <code>r</code> would be
+referencing memory that was deallocated when <code>x</code> went out of scope, and
+anything we tried to do with <code>r</code> wouldn’t work correctly. So, how does Rust
+determine that this code is invalid? It uses a borrow checker.</p>
+<h4 id="the-borrow-checker"><a class="header" href="#the-borrow-checker">The Borrow Checker</a></h4>
+<p>The Rust compiler has a <em>borrow checker</em> that compares scopes to determine
+whether all borrows are valid. Listing 10-17 shows the same code as Listing
+10-16 but with annotations showing the lifetimes of the variables.</p>
+<figure class="listing" id="listing-10-17">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let r;                // ---------+-- 'a
+                          //          |
+    {                     //          |
+        let x = 5;        // -+-- 'b  |
+        r = &amp;x;           //  |       |
+    }                     // -+       |
+                          //          |
+    println!("r: {r}");   //          |
+}                         // ---------+</code></pre>
+<figcaption><a href="#listing-10-17">Listing 10-17</a>: Annotations of the lifetimes of <code>r</code> and <code>x</code>, named <code>'a</code> and <code>'b</code>, respectively</figcaption>
+</figure>
+<p>Here, we’ve annotated the lifetime of <code>r</code> with <code>'a</code> and the lifetime of <code>x</code>
+with <code>'b</code>. As you can see, the inner <code>'b</code> block is much smaller than the outer
+<code>'a</code> lifetime block. At compile time, Rust compares the size of the two
+lifetimes and sees that <code>r</code> has a lifetime of <code>'a</code> but that it refers to memory
+with a lifetime of <code>'b</code>. The program is rejected because <code>'b</code> is shorter than
+<code>'a</code>: The subject of the reference doesn’t live as long as the reference.</p>
+<p>Listing 10-18 fixes the code so that it doesn’t have a dangling reference and
+it compiles without any errors.</p>
+<figure class="listing" id="listing-10-18">
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x = 5;            // ----------+-- 'b
+                          //           |
+    let r = &amp;x;           // --+-- 'a  |
+                          //   |       |
+    println!("r: {r}");   //   |       |
+                          // --+       |
+}                         // ----------+</code></pre>
+<figcaption><a href="#listing-10-18">Listing 10-18</a>: A valid reference because the data has a longer lifetime than the reference</figcaption>
+</figure>
+<p>Here, <code>x</code> has the lifetime <code>'b</code>, which in this case is larger than <code>'a</code>. This
+means <code>r</code> can reference <code>x</code> because Rust knows that the reference in <code>r</code> will
+always be valid while <code>x</code> is valid.</p>
+<p>Now that you know where the lifetimes of references are and how Rust analyzes
+lifetimes to ensure that references will always be valid, let’s explore generic
+lifetimes in function parameters and return values.</p>
+<h4 id="generic-lifetimes-in-functions"><a class="header" href="#generic-lifetimes-in-functions">Generic Lifetimes in Functions</a></h4>
+<p>We’ll write a function that returns the longer of two string slices. This
+function will take two string slices and return a single string slice. After
+we’ve implemented the <code>longest</code> function, the code in Listing 10-19 should
+print <code>The longest string is abcd</code>.</p>
+<figure class="listing" id="listing-10-19">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore">fn main() {
+    let string1 = String::from("abcd");
+    let string2 = "xyz";
+
+    let result = longest(string1.as_str(), string2);
+    println!("The longest string is {result}");
+}</code></pre>
+<figcaption><a href="#listing-10-19">Listing 10-19</a>: A <code>main</code> function that calls the <code>longest</code> function to find the longer of two string slices</figcaption>
+</figure>
+<p>Note that we want the function to take string slices, which are references,
+rather than strings, because we don’t want the <code>longest</code> function to take
+ownership of its parameters. Refer to <a href="04%20Ownership%20and%20Borrowing.html#string-slices-as-parameters">“String Slices as
+Parameters”</a><!-- ignore --> in Chapter 4 for more
+discussion about why the parameters we use in Listing 10-19 are the ones we
+want.</p>
+<p>If we try to implement the <code>longest</code> function as shown in Listing 10-20, it
+won’t compile.</p>
+<figure class="listing" id="listing-10-20">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span><span class="boring">    let string1 = String::from("abcd");
+</span><span class="boring">    let string2 = "xyz";
+</span><span class="boring">
+</span><span class="boring">    let result = longest(string1.as_str(), string2);
+</span><span class="boring">    println!("The longest string is {result}");
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn longest(x: &amp;str, y: &amp;str) -&gt; &amp;str {
+    if x.len() &gt; y.len() { x } else { y }
+}</code></pre>
+<figcaption><a href="#listing-10-20">Listing 10-20</a>: An implementation of the <code>longest</code> function that returns the longer of two string slices but does not yet compile</figcaption>
+</figure>
+<p>Instead, we get the following error that talks about lifetimes:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling chapter10 v0.1.0 (file:///projects/chapter10)
+error[E0106]: missing lifetime specifier
+ --&gt; src/main.rs:9:33
+  |
+9 | fn longest(x: &amp;str, y: &amp;str) -&gt; &amp;str {
+  |               ----     ----     ^ expected named lifetime parameter
+  |
+  = help: this function's return type contains a borrowed value, but the signature does not say whether it is borrowed from `x` or `y`
+help: consider introducing a named lifetime parameter
+  |
+9 | fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+  |           ++++     ++          ++          ++
+
+For more information about this error, try `rustc --explain E0106`.
+error: could not compile `chapter10` (bin "chapter10") due to 1 previous error
+</code></pre>
+<p>The help text reveals that the return type needs a generic lifetime parameter
+on it because Rust can’t tell whether the reference being returned refers to
+<code>x</code> or <code>y</code>. Actually, we don’t know either, because the <code>if</code> block in the body
+of this function returns a reference to <code>x</code> and the <code>else</code> block returns a
+reference to <code>y</code>!</p>
+<p>When we’re defining this function, we don’t know the concrete values that will
+be passed into this function, so we don’t know whether the <code>if</code> case or the
+<code>else</code> case will execute. We also don’t know the concrete lifetimes of the
+references that will be passed in, so we can’t look at the scopes as we did in
+Listings 10-17 and 10-18 to determine whether the reference we return will
+always be valid. The borrow checker can’t determine this either, because it
+doesn’t know how the lifetimes of <code>x</code> and <code>y</code> relate to the lifetime of the
+return value. To fix this error, we’ll add generic lifetime parameters that
+define the relationship between the references so that the borrow checker can
+perform its analysis.</p>
+<h4 id="lifetime-annotation-syntax"><a class="header" href="#lifetime-annotation-syntax">Lifetime Annotation Syntax</a></h4>
+<p>Lifetime annotations don’t change how long any of the references live. Rather,
+they describe the relationships of the lifetimes of multiple references to each
+other without affecting the lifetimes. Just as functions can accept any type
+when the signature specifies a generic type parameter, functions can accept
+references with any lifetime by specifying a generic lifetime parameter.</p>
+<p>Lifetime annotations have a slightly unusual syntax: The names of lifetime
+parameters must start with an apostrophe (<code>'</code>) and are usually all lowercase
+and very short, like generic types. Most people use the name <code>'a</code> for the first
+lifetime annotation. We place lifetime parameter annotations after the <code>&amp;</code> of a
+reference, using a space to separate the annotation from the reference’s type.</p>
+<p>Here are some examples—a reference to an <code>i32</code> without a lifetime parameter, a
+reference to an <code>i32</code> that has a lifetime parameter named <code>'a</code>, and a mutable
+reference to an <code>i32</code> that also has the lifetime <code>'a</code>:</p>
+<pre><code class="language-rust ignore">&amp;i32        // a reference
+&amp;'a i32     // a reference with an explicit lifetime
+&amp;'a mut i32 // a mutable reference with an explicit lifetime</code></pre>
+<p>One lifetime annotation by itself doesn’t have much meaning, because the
+annotations are meant to tell Rust how generic lifetime parameters of multiple
+references relate to each other. Let’s examine how the lifetime annotations
+relate to each other in the context of the <code>longest</code> function.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="lifetime-annotations-in-function-signatures"></a></p>
+<h4 id="in-function-signatures"><a class="header" href="#in-function-signatures">In Function Signatures</a></h4>
+<p>To use lifetime annotations in function signatures, we need to declare the
+generic lifetime parameters inside angle brackets between the function name and
+the parameter list, just as we did with generic type parameters.</p>
+<p>We want the signature to express the following constraint: The returned
+reference will be valid as long as both of the parameters are valid. This is
+the relationship between lifetimes of the parameters and the return value.
+We’ll name the lifetime <code>'a</code> and then add it to each reference, as shown in
+Listing 10-21.</p>
+<figure class="listing" id="listing-10-21">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    let string1 = String::from("abcd");
+</span><span class="boring">    let string2 = "xyz";
+</span><span class="boring">
+</span><span class="boring">    let result = longest(string1.as_str(), string2);
+</span><span class="boring">    println!("The longest string is {result}");
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+    if x.len() &gt; y.len() { x } else { y }
+}</code></pre>
+<figcaption><a href="#listing-10-21">Listing 10-21</a>: The <code>longest</code> function definition specifying that all the references in the signature must have the same lifetime <code>'a</code></figcaption>
+</figure>
+<p>This code should compile and produce the result we want when we use it with the
+<code>main</code> function in Listing 10-19.</p>
+<p>The function signature now tells Rust that for some lifetime <code>'a</code>, the function
+takes two parameters, both of which are string slices that live at least as
+long as lifetime <code>'a</code>. The function signature also tells Rust that the string
+slice returned from the function will live at least as long as lifetime <code>'a</code>.
+In practice, it means that the lifetime of the reference returned by the
+<code>longest</code> function is the same as the smaller of the lifetimes of the values
+referred to by the function arguments. These relationships are what we want
+Rust to use when analyzing this code.</p>
+<p>Remember, when we specify the lifetime parameters in this function signature,
+we’re not changing the lifetimes of any values passed in or returned. Rather,
+we’re specifying that the borrow checker should reject any values that don’t
+adhere to these constraints. Note that the <code>longest</code> function doesn’t need to
+know exactly how long <code>x</code> and <code>y</code> will live, only that some scope can be
+substituted for <code>'a</code> that will satisfy this signature.</p>
+<p>When annotating lifetimes in functions, the annotations go in the function
+signature, not in the function body. The lifetime annotations become part of
+the contract of the function, much like the types in the signature. Having
+function signatures contain the lifetime contract means the analysis the Rust
+compiler does can be simpler. If there’s a problem with the way a function is
+annotated or the way it is called, the compiler errors can point to the part of
+our code and the constraints more precisely. If, instead, the Rust compiler
+made more inferences about what we intended the relationships of the lifetimes
+to be, the compiler might only be able to point to a use of our code many steps
+away from the cause of the problem.</p>
+<p>When we pass concrete references to <code>longest</code>, the concrete lifetime that is
+substituted for <code>'a</code> is the part of the scope of <code>x</code> that overlaps with the
+scope of <code>y</code>. In other words, the generic lifetime <code>'a</code> will get the concrete
+lifetime that is equal to the smaller of the lifetimes of <code>x</code> and <code>y</code>. Because
+we’ve annotated the returned reference with the same lifetime parameter <code>'a</code>,
+the returned reference will also be valid for the length of the smaller of the
+lifetimes of <code>x</code> and <code>y</code>.</p>
+<p>Let’s look at how the lifetime annotations restrict the <code>longest</code> function by
+passing in references that have different concrete lifetimes. Listing 10-22 is
+a straightforward example.</p>
+<figure class="listing" id="listing-10-22">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let string1 = String::from("long string is long");
+
+    {
+        let string2 = String::from("xyz");
+        let result = longest(string1.as_str(), string2.as_str());
+        println!("The longest string is {result}");
+    }
+}
+<span class="boring">
+</span><span class="boring">fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+</span><span class="boring">    if x.len() &gt; y.len() { x } else { y }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-10-22">Listing 10-22</a>: Using the <code>longest</code> function with references to <code>String</code> values that have different concrete lifetimes</figcaption>
+</figure>
+<p>In this example, <code>string1</code> is valid until the end of the outer scope, <code>string2</code>
+is valid until the end of the inner scope, and <code>result</code> references something
+that is valid until the end of the inner scope. Run this code and you’ll see
+that the borrow checker approves; it will compile and print <code>The longest string is long string is long</code>.</p>
+<p>Next, let’s try an example that shows that the lifetime of the reference in
+<code>result</code> must be the smaller lifetime of the two arguments. We’ll move the
+declaration of the <code>result</code> variable outside the inner scope but leave the
+assignment of the value to the <code>result</code> variable inside the scope with
+<code>string2</code>. Then, we’ll move the <code>println!</code> that uses <code>result</code> to outside the
+inner scope, after the inner scope has ended. The code in Listing 10-23 will
+not compile.</p>
+<figure class="listing" id="listing-10-23">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let string1 = String::from("long string is long");
+    let result;
+    {
+        let string2 = String::from("xyz");
+        result = longest(string1.as_str(), string2.as_str());
+    }
+    println!("The longest string is {result}");
+}
+<span class="boring">
+</span><span class="boring">fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+</span><span class="boring">    if x.len() &gt; y.len() { x } else { y }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-10-23">Listing 10-23</a>: Attempting to use <code>result</code> after <code>string2</code> has gone out of scope</figcaption>
+</figure>
+<p>When we try to compile this code, we get this error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling chapter10 v0.1.0 (file:///projects/chapter10)
+error[E0597]: `string2` does not live long enough
+ --&gt; src/main.rs:6:44
+  |
+5 |         let string2 = String::from("xyz");
+  |             ------- binding `string2` declared here
+6 |         result = longest(string1.as_str(), string2.as_str());
+  |                                            ^^^^^^^ borrowed value does not live long enough
+7 |     }
+  |     - `string2` dropped here while still borrowed
+8 |     println!("The longest string is {result}");
+  |                                      ------ borrow later used here
+
+For more information about this error, try `rustc --explain E0597`.
+error: could not compile `chapter10` (bin "chapter10") due to 1 previous error
+</code></pre>
+<p>The error shows that for <code>result</code> to be valid for the <code>println!</code> statement,
+<code>string2</code> would need to be valid until the end of the outer scope. Rust knows
+this because we annotated the lifetimes of the function parameters and return
+values using the same lifetime parameter <code>'a</code>.</p>
+<p>As humans, we can look at this code and see that <code>string1</code> is longer than
+<code>string2</code>, and therefore, <code>result</code> will contain a reference to <code>string1</code>.
+Because <code>string1</code> has not gone out of scope yet, a reference to <code>string1</code> will
+still be valid for the <code>println!</code> statement. However, the compiler can’t see
+that the reference is valid in this case. We’ve told Rust that the lifetime of
+the reference returned by the <code>longest</code> function is the same as the smaller of
+the lifetimes of the references passed in. Therefore, the borrow checker
+disallows the code in Listing 10-23 as possibly having an invalid reference.</p>
+<p>Try designing more experiments that vary the values and lifetimes of the
+references passed in to the <code>longest</code> function and how the returned reference
+is used. Make hypotheses about whether or not your experiments will pass the
+borrow checker before you compile; then, check to see if you’re right!</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="thinking-in-terms-of-lifetimes"></a></p>
+<h4 id="relationships"><a class="header" href="#relationships">Relationships</a></h4>
+<p>The way in which you need to specify lifetime parameters depends on what your
+function is doing. For example, if we changed the implementation of the
+<code>longest</code> function to always return the first parameter rather than the longest
+string slice, we wouldn’t need to specify a lifetime on the <code>y</code> parameter. The
+following code will compile:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    let string1 = String::from("abcd");
+</span><span class="boring">    let string2 = "efghijklmnopqrstuvwxyz";
+</span><span class="boring">
+</span><span class="boring">    let result = longest(string1.as_str(), string2);
+</span><span class="boring">    println!("The longest string is {result}");
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;str) -&gt; &amp;'a str {
+    x
+}</code></pre>
+</figure>
+<p>We’ve specified a lifetime parameter <code>'a</code> for the parameter <code>x</code> and the return
+type, but not for the parameter <code>y</code>, because the lifetime of <code>y</code> does not have
+any relationship with the lifetime of <code>x</code> or the return value.</p>
+<p>When returning a reference from a function, the lifetime parameter for the
+return type needs to match the lifetime parameter for one of the parameters. If
+the reference returned does <em>not</em> refer to one of the parameters, it must refer
+to a value created within this function. However, this would be a dangling
+reference because the value will go out of scope at the end of the function.
+Consider this attempted implementation of the <code>longest</code> function that won’t
+compile:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span><span class="boring">    let string1 = String::from("abcd");
+</span><span class="boring">    let string2 = "xyz";
+</span><span class="boring">
+</span><span class="boring">    let result = longest(string1.as_str(), string2);
+</span><span class="boring">    println!("The longest string is {result}");
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn longest&lt;'a&gt;(x: &amp;str, y: &amp;str) -&gt; &amp;'a str {
+    let result = String::from("really long string");
+    result.as_str()
+}</code></pre>
+</figure>
+<p>Here, even though we’ve specified a lifetime parameter <code>'a</code> for the return
+type, this implementation will fail to compile because the return value
+lifetime is not related to the lifetime of the parameters at all. Here is the
+error message we get:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling chapter10 v0.1.0 (file:///projects/chapter10)
+error[E0515]: cannot return value referencing local variable `result`
+  --&gt; src/main.rs:11:5
+   |
+11 |     result.as_str()
+   |     ------^^^^^^^^^
+   |     |
+   |     returns a value referencing data owned by the current function
+   |     `result` is borrowed here
+
+For more information about this error, try `rustc --explain E0515`.
+error: could not compile `chapter10` (bin "chapter10") due to 1 previous error
+</code></pre>
+<p>The problem is that <code>result</code> goes out of scope and gets cleaned up at the end
+of the <code>longest</code> function. We’re also trying to return a reference to <code>result</code>
+from the function. There is no way we can specify lifetime parameters that
+would change the dangling reference, and Rust won’t let us create a dangling
+reference. In this case, the best fix would be to return an owned data type
+rather than a reference so that the calling function is then responsible for
+cleaning up the value.</p>
+<p>Ultimately, lifetime syntax is about connecting the lifetimes of various
+parameters and return values of functions. Once they’re connected, Rust has
+enough information to allow memory-safe operations and disallow operations that
+would create dangling pointers or otherwise violate memory safety.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="lifetime-annotations-in-struct-definitions"></a></p>
+<h4 id="in-struct-definitions-1"><a class="header" href="#in-struct-definitions-1">In Struct Definitions</a></h4>
+<p>So far, the structs we’ve defined all hold owned types. We can define structs
+to hold references, but in that case, we would need to add a lifetime
+annotation on every reference in the struct’s definition. Listing 10-24 has a
+struct named <code>ImportantExcerpt</code> that holds a string slice.</p>
+<figure class="listing" id="listing-10-24">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct ImportantExcerpt&lt;'a&gt; {
+    part: &amp;'a str,
+}
+
+fn main() {
+    let novel = String::from("Call me Ishmael. Some years ago...");
+    let first_sentence = novel.split('.').next().unwrap();
+    let i = ImportantExcerpt {
+        part: first_sentence,
+    };
+}</code></pre>
+<figcaption><a href="#listing-10-24">Listing 10-24</a>: A struct that holds a reference, requiring a lifetime annotation</figcaption>
+</figure>
+<p>This struct has the single field <code>part</code> that holds a string slice, which is a
+reference. As with generic data types, we declare the name of the generic
+lifetime parameter inside angle brackets after the name of the struct so that
+we can use the lifetime parameter in the body of the struct definition. This
+annotation means an instance of <code>ImportantExcerpt</code> can’t outlive the reference
+it holds in its <code>part</code> field.</p>
+<p>The <code>main</code> function here creates an instance of the <code>ImportantExcerpt</code> struct
+that holds a reference to the first sentence of the <code>String</code> owned by the
+variable <code>novel</code>. The data in <code>novel</code> exists before the <code>ImportantExcerpt</code>
+instance is created. In addition, <code>novel</code> doesn’t go out of scope until after
+the <code>ImportantExcerpt</code> goes out of scope, so the reference in the
+<code>ImportantExcerpt</code> instance is valid.</p>
+<h4 id="lifetime-elision"><a class="header" href="#lifetime-elision">Lifetime Elision</a></h4>
+<p>You’ve learned that every reference has a lifetime and that you need to specify
+lifetime parameters for functions or structs that use references. However, we
+had a function in Listing 4-9, shown again in Listing 10-25, that compiled
+without lifetime annotations.</p>
+<figure class="listing" id="listing-10-25">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn first_word(s: &amp;str) -&gt; &amp;str {
+    let bytes = s.as_bytes();
+
+    for (i, &amp;item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return &amp;s[0..i];
+        }
+    }
+
+    &amp;s[..]
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let my_string = String::from("hello world");
+</span><span class="boring">
+</span><span class="boring">    // first_word works on slices of `String`s
+</span><span class="boring">    let word = first_word(&amp;my_string[..]);
+</span><span class="boring">
+</span><span class="boring">    let my_string_literal = "hello world";
+</span><span class="boring">
+</span><span class="boring">    // first_word works on slices of string literals
+</span><span class="boring">    let word = first_word(&amp;my_string_literal[..]);
+</span><span class="boring">
+</span><span class="boring">    // Because string literals *are* string slices already,
+</span><span class="boring">    // this works too, without the slice syntax!
+</span><span class="boring">    let word = first_word(my_string_literal);
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-10-25">Listing 10-25</a>: A function we defined in Listing 4-9 that compiled without lifetime annotations, even though the parameter and return type are references</figcaption>
+</figure>
+<p>The reason this function compiles without lifetime annotations is historical:
+In early versions (pre-1.0) of Rust, this code wouldn’t have compiled, because
+every reference needed an explicit lifetime. At that time, the function
+signature would have been written like this:</p>
+<pre><code class="language-rust ignore">fn first_word&lt;'a&gt;(s: &amp;'a str) -&gt; &amp;'a str {</code></pre>
+<p>After writing a lot of Rust code, the Rust team found that Rust programmers
+were entering the same lifetime annotations over and over in particular
+situations. These situations were predictable and followed a few deterministic
+patterns. The developers programmed these patterns into the compiler’s code so
+that the borrow checker could infer the lifetimes in these situations and
+wouldn’t need explicit annotations.</p>
+<p>This piece of Rust history is relevant because it’s possible that more
+deterministic patterns will emerge and be added to the compiler. In the future,
+even fewer lifetime annotations might be required.</p>
+<p>The patterns programmed into Rust’s analysis of references are called the
+<em>lifetime elision rules</em>. These aren’t rules for programmers to follow; they’re
+a set of particular cases that the compiler will consider, and if your code
+fits these cases, you don’t need to write the lifetimes explicitly.</p>
+<p>The elision rules don’t provide full inference. If there is still ambiguity
+about what lifetimes the references have after Rust applies the rules, the
+compiler won’t guess what the lifetime of the remaining references should be.
+Instead of guessing, the compiler will give you an error that you can resolve
+by adding the lifetime annotations.</p>
+<p>Lifetimes on function or method parameters are called <em>input lifetimes</em>, and
+lifetimes on return values are called <em>output lifetimes</em>.</p>
+<p>The compiler uses three rules to figure out the lifetimes of the references
+when there aren’t explicit annotations. The first rule applies to input
+lifetimes, and the second and third rules apply to output lifetimes. If the
+compiler gets to the end of the three rules and there are still references for
+which it can’t figure out lifetimes, the compiler will stop with an error.
+These rules apply to <code>fn</code> definitions as well as <code>impl</code> blocks.</p>
+<p>The first rule is that the compiler assigns a lifetime parameter to each
+parameter that’s a reference. In other words, a function with one parameter
+gets one lifetime parameter: <code>fn foo&lt;'a&gt;(x: &amp;'a i32)</code>; a function with two
+parameters gets two separate lifetime parameters: <code>fn foo&lt;'a, 'b&gt;(x: &amp;'a i32, y: &amp;'b i32)</code>; and so on.</p>
+<p>The second rule is that, if there is exactly one input lifetime parameter, that
+lifetime is assigned to all output lifetime parameters: <code>fn foo&lt;'a&gt;(x: &amp;'a i32) -&gt; &amp;'a i32</code>.</p>
+<p>The third rule is that, if there are multiple input lifetime parameters, but
+one of them is <code>&amp;self</code> or <code>&amp;mut self</code> because this is a method, the lifetime of
+<code>self</code> is assigned to all output lifetime parameters. This third rule makes
+methods much nicer to read and write because fewer symbols are necessary.</p>
+<p>Let’s pretend we’re the compiler. We’ll apply these rules to figure out the
+lifetimes of the references in the signature of the <code>first_word</code> function in
+Listing 10-25. The signature starts without any lifetimes associated with the
+references:</p>
+<pre><code class="language-rust ignore">fn first_word(s: &amp;str) -&gt; &amp;str {</code></pre>
+<p>Then, the compiler applies the first rule, which specifies that each parameter
+gets its own lifetime. We’ll call it <code>'a</code> as usual, so now the signature is
+this:</p>
+<pre><code class="language-rust ignore">fn first_word&lt;'a&gt;(s: &amp;'a str) -&gt; &amp;str {</code></pre>
+<p>The second rule applies because there is exactly one input lifetime. The second
+rule specifies that the lifetime of the one input parameter gets assigned to
+the output lifetime, so the signature is now this:</p>
+<pre><code class="language-rust ignore">fn first_word&lt;'a&gt;(s: &amp;'a str) -&gt; &amp;'a str {</code></pre>
+<p>Now all the references in this function signature have lifetimes, and the
+compiler can continue its analysis without needing the programmer to annotate
+the lifetimes in this function signature.</p>
+<p>Let’s look at another example, this time using the <code>longest</code> function that had
+no lifetime parameters when we started working with it in Listing 10-20:</p>
+<pre><code class="language-rust ignore">fn longest(x: &amp;str, y: &amp;str) -&gt; &amp;str {</code></pre>
+<p>Let’s apply the first rule: Each parameter gets its own lifetime. This time we
+have two parameters instead of one, so we have two lifetimes:</p>
+<pre><code class="language-rust ignore">fn longest&lt;'a, 'b&gt;(x: &amp;'a str, y: &amp;'b str) -&gt; &amp;str {</code></pre>
+<p>You can see that the second rule doesn’t apply, because there is more than one
+input lifetime. The third rule doesn’t apply either, because <code>longest</code> is a
+function rather than a method, so none of the parameters are <code>self</code>. After
+working through all three rules, we still haven’t figured out what the return
+type’s lifetime is. This is why we got an error trying to compile the code in
+Listing 10-20: The compiler worked through the lifetime elision rules but still
+couldn’t figure out all the lifetimes of the references in the signature.</p>
+<p>Because the third rule really only applies in method signatures, we’ll look at
+lifetimes in that context next to see why the third rule means we don’t have to
+annotate lifetimes in method signatures very often.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="lifetime-annotations-in-method-definitions"></a></p>
+<h4 id="in-method-definitions-1"><a class="header" href="#in-method-definitions-1">In Method Definitions</a></h4>
+<p>When we implement methods on a struct with lifetimes, we use the same syntax as
+that of generic type parameters, as shown in Listing 10-11. Where we declare
+and use the lifetime parameters depends on whether they’re related to the
+struct fields or the method parameters and return values.</p>
+<p>Lifetime names for struct fields always need to be declared after the <code>impl</code>
+keyword and then used after the struct’s name because those lifetimes are part
+of the struct’s type.</p>
+<p>In method signatures inside the <code>impl</code> block, references might be tied to the
+lifetime of references in the struct’s fields, or they might be independent. In
+addition, the lifetime elision rules often make it so that lifetime annotations
+aren’t necessary in method signatures. Let’s look at some examples using the
+struct named <code>ImportantExcerpt</code> that we defined in Listing 10-24.</p>
+<p>First, we’ll use a method named <code>level</code> whose only parameter is a reference to
+<code>self</code> and whose return value is an <code>i32</code>, which is not a reference to anything:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct ImportantExcerpt&lt;'a&gt; {
+</span><span class="boring">    part: &amp;'a str,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl&lt;'a&gt; ImportantExcerpt&lt;'a&gt; {
+    fn level(&amp;self) -&gt; i32 {
+        3
+    }
+}
+<span class="boring">
+</span><span class="boring">impl&lt;'a&gt; ImportantExcerpt&lt;'a&gt; {
+</span><span class="boring">    fn announce_and_return_part(&amp;self, announcement: &amp;str) -&gt; &amp;str {
+</span><span class="boring">        println!("Attention please: {announcement}");
+</span><span class="boring">        self.part
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let novel = String::from("Call me Ishmael. Some years ago...");
+</span><span class="boring">    let first_sentence = novel.split('.').next().unwrap();
+</span><span class="boring">    let i = ImportantExcerpt {
+</span><span class="boring">        part: first_sentence,
+</span><span class="boring">    };
+</span><span class="boring">}</span></code></pre>
+<p>The lifetime parameter declaration after <code>impl</code> and its use after the type name
+are required, but because of the first elision rule, we’re not required to
+annotate the lifetime of the reference to <code>self</code>.</p>
+<p>Here is an example where the third lifetime elision rule applies:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct ImportantExcerpt&lt;'a&gt; {
+</span><span class="boring">    part: &amp;'a str,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl&lt;'a&gt; ImportantExcerpt&lt;'a&gt; {
+</span><span class="boring">    fn level(&amp;self) -&gt; i32 {
+</span><span class="boring">        3
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl&lt;'a&gt; ImportantExcerpt&lt;'a&gt; {
+    fn announce_and_return_part(&amp;self, announcement: &amp;str) -&gt; &amp;str {
+        println!("Attention please: {announcement}");
+        self.part
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let novel = String::from("Call me Ishmael. Some years ago...");
+</span><span class="boring">    let first_sentence = novel.split('.').next().unwrap();
+</span><span class="boring">    let i = ImportantExcerpt {
+</span><span class="boring">        part: first_sentence,
+</span><span class="boring">    };
+</span><span class="boring">}</span></code></pre>
+<p>There are two input lifetimes, so Rust applies the first lifetime elision rule
+and gives both <code>&amp;self</code> and <code>announcement</code> their own lifetimes. Then, because
+one of the parameters is <code>&amp;self</code>, the return type gets the lifetime of <code>&amp;self</code>,
+and all lifetimes have been accounted for.</p>
+<h4 id="the-static-lifetime"><a class="header" href="#the-static-lifetime">The Static Lifetime</a></h4>
+<p>One special lifetime we need to discuss is <code>'static</code>, which denotes that the
+affected reference <em>can</em> live for the entire duration of the program. All
+string literals have the <code>'static</code> lifetime, which we can annotate as follows:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s: &amp;'static str = "I have a static lifetime.";
+<span class="boring">}</span></code></pre>
+<p>The text of this string is stored directly in the program’s binary, which is
+always available. Therefore, the lifetime of all string literals is <code>'static</code>.</p>
+<p>You might see suggestions in error messages to use the <code>'static</code> lifetime. But
+before specifying <code>'static</code> as the lifetime for a reference, think about
+whether or not the reference you have actually lives the entire lifetime of
+your program, and whether you want it to. Most of the time, an error message
+suggesting the <code>'static</code> lifetime results from attempting to create a dangling
+reference or a mismatch of the available lifetimes. In such cases, the solution
+is to fix those problems, not to specify the <code>'static</code> lifetime.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="generic-type-parameters-trait-bounds-and-lifetimes-together"></a></p>
+<h3 id="generic-type-parameters-trait-bounds-and-lifetimes"><a class="header" href="#generic-type-parameters-trait-bounds-and-lifetimes">Generic Type Parameters, Trait Bounds, and Lifetimes</a></h3>
+<p>Let’s briefly look at the syntax of specifying generic type parameters, trait
+bounds, and lifetimes all in one function!</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    let string1 = String::from("abcd");
+</span><span class="boring">    let string2 = "xyz";
+</span><span class="boring">
+</span><span class="boring">    let result = longest_with_an_announcement(
+</span><span class="boring">        string1.as_str(),
+</span><span class="boring">        string2,
+</span><span class="boring">        "Today is someone's birthday!",
+</span><span class="boring">    );
+</span><span class="boring">    println!("The longest string is {result}");
+</span><span class="boring">}
+</span><span class="boring">
+</span>use std::fmt::Display;
+
+fn longest_with_an_announcement&lt;'a, T&gt;(
+    x: &amp;'a str,
+    y: &amp;'a str,
+    ann: T,
+) -&gt; &amp;'a str
+where
+    T: Display,
+{
+    println!("Announcement! {ann}");
+    if x.len() &gt; y.len() { x } else { y }
+}</code></pre>
+<p>This is the <code>longest</code> function from Listing 10-21 that returns the longer of
+two string slices. But now it has an extra parameter named <code>ann</code> of the generic
+type <code>T</code>, which can be filled in by any type that implements the <code>Display</code>
+trait as specified by the <code>where</code> clause. This extra parameter will be printed
+using <code>{}</code>, which is why the <code>Display</code> trait bound is necessary. Because
+lifetimes are a type of generic, the declarations of the lifetime parameter
+<code>'a</code> and the generic type parameter <code>T</code> go in the same list inside the angle
+brackets after the function name.</p>
+<h3 id="summary-9"><a class="header" href="#summary-9">Summary</a></h3>
+<p>We covered a lot in this chapter! Now that you know about generic type
+parameters, traits and trait bounds, and generic lifetime parameters, you’re
+ready to write code without repetition that works in many different situations.
+Generic type parameters let you apply the code to different types. Traits and
+trait bounds ensure that even though the types are generic, they’ll have the
+behavior the code needs. You learned how to use lifetime annotations to ensure
+that this flexible code won’t have any dangling references. And all of this
+analysis happens at compile time, which doesn’t affect runtime performance!</p>
+<p>Believe it or not, there is much more to learn on the topics we discussed in
+this chapter: Chapter 18 discusses trait objects, which are another way to use
+traits. There are also more complex scenarios involving lifetime annotations
+that you will only need in very advanced scenarios; for those, you should read
+the <a href="https://doc.rust-lang.org/stable/reference/trait-bounds.html">Rust Reference</a>. But next, you’ll learn how to write tests in
+Rust so that you can make sure your code is working the way it should.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="09%20Errors%20Across%20Boundaries.html">← 09 Errors Across Boundaries</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="11%20Tests%20That%20Protect%20Contracts.html">11 Tests That Protect Contracts →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#generic-types-traits-and-lifetimes">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

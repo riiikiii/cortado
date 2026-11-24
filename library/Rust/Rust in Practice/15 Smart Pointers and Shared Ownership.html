@@ -1,0 +1,2338 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Smart Pointers and Shared Ownership</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-grinder.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 15 / 21</span></div>
+<div class="hero"><div><h1>Smart Pointers and Shared Ownership</h1><p>Choose which parts of application state are actually shared.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>Arc::clone</span></div><div class="trace"><b>Observe</b><span>one semaphore</span></div><div class="trace"><b>Result</b><span>shared admission limit</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="14%20Cargo%20for%20a%20Team.html">← 14 Cargo for a Team</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="16%20Concurrency%20and%20Admission%20Control.html">16 Concurrency and Admission Control →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#smart-pointers">Smart Pointers</a><a href="#using-boxt-to-point-to-data-on-the-heap-1">Using Box&lt;T&gt; to Point to Data on the Heap</a><a href="#treating-smart-pointers-like-regular-references-1">Treating Smart Pointers Like Regular References</a><a href="#running-code-on-cleanup-with-the-drop-trait-1">Running Code on Cleanup with the Drop Trait</a><a href="#rct-the-reference-counted-smart-pointer-1">Rc&lt;T&gt;, the Reference Counted Smart Pointer</a><a href="#refcellt-and-the-interior-mutability-pattern-1">RefCell&lt;T&gt; and the Interior Mutability Pattern</a><a href="#reference-cycles-can-leak-memory-1">Reference Cycles Can Leak Memory</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Choose which parts of application state are actually shared</h2><p>Cloning the router state clones a path and an Arc handle. The path is ordinary independently owned data after the clone. The semaphore is a single shared object. If every request received a new semaphore initialised to four, each request would see four available permits and the process-wide limit would disappear. Arc buys shared lifetime; the semaphore supplies the concurrency semantics.</p><figure class="code"><figcaption>src/api.rs · excerpt</figcaption><pre><code><span class="cp">#[derive(Clone)]</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">App</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">store</span><span class="p">:</span><span class="w"> </span><span class="nc">Store</span><span class="p">,</span>
+<span class="w">    </span><span class="n">slots</span><span class="p">:</span><span class="w"> </span><span class="nc">Arc</span><span class="o">&lt;</span><span class="n">Semaphore</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></figure><p>Follow the owned permit into the blocking closure. Binding it to _slot retains it until the closure exits. The name begins with an underscore to silence an unused-variable warning, but it is a real binding. Writing let _ = slot instead would not provide the same scope-based ownership story. If the HTTP future is abandoned after scheduling, the blocking operation retains its permit until it finishes. A guard held only by the waiting caller would free capacity too early.</p><h3>Follow destruction through an early return</h3><p>Rust drops an owned guard when control leaves its scope through an ordinary return or through the question-mark operator. In the store, an error before commit drops the transaction object; rusqlite&#x27;s default drop behaviour is to roll it back. The code therefore does not need an explicit rollback at every error branch. Commit still needs checking because completing the transaction can itself fail. Separately, dropping the final Arc to the semaphore frees its in-memory allocation. Neither kind of resource cleanup substitutes for application decisions about how long to retain an order in the database. Those are different lifetimes with different owners.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/std/sync/struct.Arc.html">doc.rust-lang.org/std/sync/struct.Arc.html</a> · <a href="https://docs.rs/tokio/1/tokio/sync/struct.OwnedSemaphorePermit.html">docs.rs/tokio/1/tokio/sync/struct.OwnedSemaphorePermit.html</a></p></section><div class="book"><h2 id="smart-pointers"><a class="header" href="#smart-pointers">Smart Pointers</a></h2>
+<p>A pointer is a general concept for a variable that contains an address in
+memory. This address refers to, or “points at,” some other data. The most
+common kind of pointer in Rust is a reference, which you learned about in
+Chapter 4. References are indicated by the <code>&amp;</code> symbol and borrow the value they
+point to. They don’t have any special capabilities other than referring to
+data, and they have no overhead.</p>
+<p><em>Smart pointers</em>, on the other hand, are data structures that act like a
+pointer but also have additional metadata and capabilities. The concept of
+smart pointers isn’t unique to Rust: Smart pointers originated in C++ and exist
+in other languages as well. Rust has a variety of smart pointers defined in the
+standard library that provide functionality beyond that provided by references.
+To explore the general concept, we’ll look at a couple of different examples of
+smart pointers, including a <em>reference counting</em> smart pointer type. This
+pointer enables you to allow data to have multiple owners by keeping track of
+the number of owners and, when no owners remain, cleaning up the data.</p>
+<p>In Rust, with its concept of ownership and borrowing, there is an additional
+difference between references and smart pointers: While references only borrow
+data, in many cases smart pointers <em>own</em> the data they point to.</p>
+<p>Smart pointers are usually implemented using structs. Unlike an ordinary
+struct, smart pointers implement the <code>Deref</code> and <code>Drop</code> traits. The <code>Deref</code>
+trait allows an instance of the smart pointer struct to behave like a reference
+so that you can write your code to work with either references or smart
+pointers. The <code>Drop</code> trait allows you to customize the code that’s run when an
+instance of the smart pointer goes out of scope. In this chapter, we’ll discuss
+both of these traits and demonstrate why they’re important to smart pointers.</p>
+<p>Given that the smart pointer pattern is a general design pattern used
+frequently in Rust, this chapter won’t cover every existing smart pointer. Many
+libraries have their own smart pointers, and you can even write your own. We’ll
+cover the most common smart pointers in the standard library:</p>
+<ul>
+<li><code>Box&lt;T&gt;</code>, for allocating values on the heap</li>
+<li><code>Rc&lt;T&gt;</code>, a reference counting type that enables multiple ownership</li>
+<li><code>Ref&lt;T&gt;</code> and <code>RefMut&lt;T&gt;</code>, accessed through <code>RefCell&lt;T&gt;</code>, a type that enforces
+the borrowing rules at runtime instead of compile time</li>
+</ul>
+<p>In addition, we’ll cover the <em>interior mutability</em> pattern where an immutable
+type exposes an API for mutating an interior value. We’ll also discuss
+reference cycles: how they can leak memory and how to prevent them.</p>
+<p>Let’s dive in!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="using-boxt-to-point-to-data-on-the-heap-1"><a href="#using-boxt-to-point-to-data-on-the-heap-1" class="header">Using Box&lt;T&gt; to Point to Data on the Heap</a></h2>
+<h3 id="using-boxt-to-point-to-data-on-the-heap"><a class="header" href="#using-boxt-to-point-to-data-on-the-heap">Using <code>Box&lt;T&gt;</code> to Point to Data on the Heap</a></h3>
+<p>The most straightforward smart pointer is a box, whose type is written
+<code>Box&lt;T&gt;</code>. <em>Boxes</em> allow you to store data on the heap rather than the stack.
+What remains on the stack is the pointer to the heap data. Refer to Chapter 4
+to review the difference between the stack and the heap.</p>
+<p>Boxes don’t have performance overhead, other than storing their data on the
+heap instead of on the stack. But they don’t have many extra capabilities
+either. You’ll use them most often in these situations:</p>
+<ul>
+<li>When you have a type whose size can’t be known at compile time, and you want
+to use a value of that type in a context that requires an exact size</li>
+<li>When you have a large amount of data, and you want to transfer ownership but
+ensure that the data won’t be copied when you do so</li>
+<li>When you want to own a value, and you care only that it’s a type that
+implements a particular trait rather than being of a specific type</li>
+</ul>
+<p>We’ll demonstrate the first situation in <a href="#enabling-recursive-types-with-boxes">“Enabling Recursive Types with
+Boxes”</a><!-- ignore -->. In the second
+case, transferring ownership of a large amount of data can take a long time
+because the data is copied around on the stack. To improve performance in this
+situation, we can store the large amount of data on the heap in a box. Then,
+only the small amount of pointer data is copied around on the stack, while the
+data it references stays in one place on the heap. The third case is known as a
+<em>trait object</em>, and <a href="18%20State%20and%20Behaviour%20Patterns.html#using-trait-objects-to-abstract-over-shared-behavior">“Using Trait Objects to Abstract over Shared
+Behavior”</a><!-- ignore --> in Chapter 18 is devoted to that
+topic. So, what you learn here you’ll apply again in that section!</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-boxt-to-store-data-on-the-heap"></a></p>
+<h4 id="storing-data-on-the-heap"><a class="header" href="#storing-data-on-the-heap">Storing Data on the Heap</a></h4>
+<p>Before we discuss the heap storage use case for <code>Box&lt;T&gt;</code>, we’ll cover the
+syntax and how to interact with values stored within a <code>Box&lt;T&gt;</code>.</p>
+<p>Listing 15-1 shows how to use a box to store an <code>i32</code> value on the heap.</p>
+<figure class="listing" id="listing-15-1">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let b = Box::new(5);
+    println!("b = {b}");
+}</code></pre>
+<figcaption><a href="#listing-15-1">Listing 15-1</a>: Storing an <code>i32</code> value on the heap using a box</figcaption>
+</figure>
+<p>We define the variable <code>b</code> to have the value of a <code>Box</code> that points to the
+value <code>5</code>, which is allocated on the heap. This program will print <code>b = 5</code>; in
+this case, we can access the data in the box similarly to how we would if this
+data were on the stack. Just like any owned value, when a box goes out of
+scope, as <code>b</code> does at the end of <code>main</code>, it will be deallocated. The
+deallocation happens both for the box (stored on the stack) and the data it
+points to (stored on the heap).</p>
+<p>Putting a single value on the heap isn’t very useful, so you won’t use boxes by
+themselves in this way very often. Having values like a single <code>i32</code> on the
+stack, where they’re stored by default, is more appropriate in the majority of
+situations. Let’s look at a case where boxes allow us to define types that we
+wouldn’t be allowed to define if we didn’t have boxes.</p>
+<h4 id="enabling-recursive-types-with-boxes"><a class="header" href="#enabling-recursive-types-with-boxes">Enabling Recursive Types with Boxes</a></h4>
+<p>A value of a <em>recursive type</em> can have another value of the same type as part of
+itself. Recursive types pose an issue because Rust needs to know at compile time
+how much space a type takes up. However, the nesting of values of recursive
+types could theoretically continue infinitely, so Rust can’t know how much space
+the value needs. Because boxes have a known size, we can enable recursive types
+by inserting a box in the recursive type definition.</p>
+<p>As an example of a recursive type, let’s explore the cons list. This is a data
+type commonly found in functional programming languages. The cons list type
+we’ll define is straightforward except for the recursion; therefore, the
+concepts in the example we’ll work with will be useful anytime you get into
+more complex situations involving recursive types.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="more-information-about-the-cons-list"></a></p>
+<h5 id="understanding-the-cons-list"><a class="header" href="#understanding-the-cons-list">Understanding the Cons List</a></h5>
+<p>A <em>cons list</em> is a data structure that comes from the Lisp programming language
+and its dialects, is made up of nested pairs, and is the Lisp version of a
+linked list. Its name comes from the <code>cons</code> function (short for <em>construct
+function</em>) in Lisp that constructs a new pair from its two arguments. By
+calling <code>cons</code> on a pair consisting of a value and another pair, we can
+construct cons lists made up of recursive pairs.</p>
+<p>For example, here’s a pseudocode representation of a cons list containing the
+list <code>1, 2, 3</code> with each pair in parentheses:</p>
+<pre><code class="language-text">(1, (2, (3, Nil)))
+</code></pre>
+<p>Each item in a cons list contains two elements: the value of the current item
+and of the next item. The last item in the list contains only a value called
+<code>Nil</code> without a next item. A cons list is produced by recursively calling the
+<code>cons</code> function. The canonical name to denote the base case of the recursion is
+<code>Nil</code>. Note that this is not the same as the “null” or “nil” concept discussed
+in Chapter 6, which is an invalid or absent value.</p>
+<p>The cons list isn’t a commonly used data structure in Rust. Most of the time
+when you have a list of items in Rust, <code>Vec&lt;T&gt;</code> is a better choice to use.
+Other, more complex recursive data types <em>are</em> useful in various situations,
+but by starting with the cons list in this chapter, we can explore how boxes
+let us define a recursive data type without much distraction.</p>
+<p>Listing 15-2 contains an enum definition for a cons list. Note that this code
+won’t compile yet, because the <code>List</code> type doesn’t have a known size, which
+we’ll demonstrate.</p>
+<figure class="listing" id="listing-15-2">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">enum List {
+    Cons(i32, List),
+    Nil,
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-15-2">Listing 15-2</a>: The first attempt at defining an enum to represent a cons list data structure of <code>i32</code> values</figcaption>
+</figure>
+<section class="note" aria-role="note">
+<p>Note: We’re implementing a cons list that holds only <code>i32</code> values for the
+purposes of this example. We could have implemented it using generics, as we
+discussed in Chapter 10, to define a cons list type that could store values of
+any type.</p>
+</section>
+<p>Using the <code>List</code> type to store the list <code>1, 2, 3</code> would look like the code in
+Listing 15-3.</p>
+<figure class="listing" id="listing-15-3">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">enum List {
+</span><span class="boring">    Cons(i32, List),
+</span><span class="boring">    Nil,
+</span><span class="boring">}
+</span><span class="boring">
+</span>// --snip--
+
+use crate::List::{Cons, Nil};
+
+fn main() {
+    let list = Cons(1, Cons(2, Cons(3, Nil)));
+}</code></pre>
+<figcaption><a href="#listing-15-3">Listing 15-3</a>: Using the <code>List</code> enum to store the list <code>1, 2, 3</code></figcaption>
+</figure>
+<p>The first <code>Cons</code> value holds <code>1</code> and another <code>List</code> value. This <code>List</code> value is
+another <code>Cons</code> value that holds <code>2</code> and another <code>List</code> value. This <code>List</code> value
+is one more <code>Cons</code> value that holds <code>3</code> and a <code>List</code> value, which is finally
+<code>Nil</code>, the non-recursive variant that signals the end of the list.</p>
+<p>If we try to compile the code in Listing 15-3, we get the error shown in
+Listing 15-4.</p>
+<figure class="listing" id="listing-15-4">
+<pre><code class="language-console">$ cargo run
+   Compiling cons-list v0.1.0 (file:///projects/cons-list)
+error[E0072]: recursive type `List` has infinite size
+ --&gt; src/main.rs:1:1
+  |
+1 | enum List {
+  | ^^^^^^^^^
+2 |     Cons(i32, List),
+  |               ---- recursive without indirection
+  |
+help: insert some indirection (e.g., a `Box`, `Rc`, or `&amp;`) to break the cycle
+  |
+2 |     Cons(i32, Box&lt;List&gt;),
+  |               ++++    +
+
+For more information about this error, try `rustc --explain E0072`.
+error: could not compile `cons-list` (bin "cons-list") due to 1 previous error
+</code></pre>
+<figcaption><a href="#listing-15-4">Listing 15-4</a>: The error we get when attempting to define a recursive enum</figcaption>
+</figure>
+<p>The error shows this type “has infinite size.” The reason is that we’ve defined
+<code>List</code> with a variant that is recursive: It holds another value of itself
+directly. As a result, Rust can’t figure out how much space it needs to store a
+<code>List</code> value. Let’s break down why we get this error. First, we’ll look at how
+Rust decides how much space it needs to store a value of a non-recursive type.</p>
+<h5 id="computing-the-size-of-a-non-recursive-type"><a class="header" href="#computing-the-size-of-a-non-recursive-type">Computing the Size of a Non-Recursive Type</a></h5>
+<p>Recall the <code>Message</code> enum we defined in Listing 6-2 when we discussed enum
+definitions in Chapter 6:</p>
+<pre class="playground"><code class="language-rust edition2024">enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+    ChangeColor(i32, i32, i32),
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<p>To determine how much space to allocate for a <code>Message</code> value, Rust goes
+through each of the variants to see which variant needs the most space. Rust
+sees that <code>Message::Quit</code> doesn’t need any space, <code>Message::Move</code> needs enough
+space to store two <code>i32</code> values, and so forth. Because only one variant will be
+used, the most space a <code>Message</code> value will need is the space it would take to
+store the largest of its variants.</p>
+<p>Contrast this with what happens when Rust tries to determine how much space a
+recursive type like the <code>List</code> enum in Listing 15-2 needs. The compiler starts
+by looking at the <code>Cons</code> variant, which holds a value of type <code>i32</code> and a value
+of type <code>List</code>. Therefore, <code>Cons</code> needs an amount of space equal to the size of
+an <code>i32</code> plus the size of a <code>List</code>. To figure out how much memory the <code>List</code>
+type needs, the compiler looks at the variants, starting with the <code>Cons</code>
+variant. The <code>Cons</code> variant holds a value of type <code>i32</code> and a value of type
+<code>List</code>, and this process continues infinitely, as shown in Figure 15-1.</p>
+<img alt="An infinite Cons list: a rectangle labeled 'Cons' split into two smaller rectangles. The first smaller rectangle holds the label 'i32', and the second smaller rectangle holds the label 'Cons' and a smaller version of the outer 'Cons' rectangle. The 'Cons' rectangles continue to hold smaller and smaller versions of themselves until the smallest comfortably sized rectangle holds an infinity symbol, indicating that this repetition goes on forever." src="assets/trpl15-01.svg" class="center" style="width: 50%;">
+<p><span class="caption">Figure 15-1: An infinite <code>List</code> consisting of infinite
+<code>Cons</code> variants</span></p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-boxt-to-get-a-recursive-type-with-a-known-size"></a></p>
+<h5 id="getting-a-recursive-type-with-a-known-size"><a class="header" href="#getting-a-recursive-type-with-a-known-size">Getting a Recursive Type with a Known Size</a></h5>
+<p>Because Rust can’t figure out how much space to allocate for recursively
+defined types, the compiler gives an error with this helpful suggestion:</p>
+<!-- manual-regeneration
+after doing automatic regeneration, look at listings/ch15-smart-pointers/listing-15-03/output.txt and copy the relevant line
+-->
+<pre><code class="language-text">help: insert some indirection (e.g., a `Box`, `Rc`, or `&amp;`) to break the cycle
+  |
+2 |     Cons(i32, Box&lt;List&gt;),
+  |               ++++    +
+</code></pre>
+<p>In this suggestion, <em>indirection</em> means that instead of storing a value
+directly, we should change the data structure to store the value indirectly by
+storing a pointer to the value instead.</p>
+<p>Because a <code>Box&lt;T&gt;</code> is a pointer, Rust always knows how much space a <code>Box&lt;T&gt;</code>
+needs: A pointer’s size doesn’t change based on the amount of data it’s
+pointing to. This means we can put a <code>Box&lt;T&gt;</code> inside the <code>Cons</code> variant instead
+of another <code>List</code> value directly. The <code>Box&lt;T&gt;</code> will point to the next <code>List</code>
+value that will be on the heap rather than inside the <code>Cons</code> variant.
+Conceptually, we still have a list, created with lists holding other lists, but
+this implementation is now more like placing the items next to one another
+rather than inside one another.</p>
+<p>We can change the definition of the <code>List</code> enum in Listing 15-2 and the usage
+of the <code>List</code> in Listing 15-3 to the code in Listing 15-5, which will compile.</p>
+<figure class="listing" id="listing-15-5">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">enum List {
+    Cons(i32, Box&lt;List&gt;),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+
+fn main() {
+    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));
+}</code></pre>
+<figcaption><a href="#listing-15-5">Listing 15-5</a>: The definition of <code>List</code> that uses <code>Box&lt;T&gt;</code> in order to have a known size</figcaption>
+</figure>
+<p>The <code>Cons</code> variant needs the size of an <code>i32</code> plus the space to store the box’s
+pointer data. The <code>Nil</code> variant stores no values, so it needs less space on the
+stack than the <code>Cons</code> variant. We now know that any <code>List</code> value will take up
+the size of an <code>i32</code> plus the size of a box’s pointer data. By using a box,
+we’ve broken the infinite, recursive chain, so the compiler can figure out the
+size it needs to store a <code>List</code> value. Figure 15-2 shows what the <code>Cons</code>
+variant looks like now.</p>
+<img alt="A rectangle labeled 'Cons' split into two smaller rectangles. The first smaller rectangle holds the label 'i32', and the second smaller rectangle holds the label 'Box' with one inner rectangle that contains the label 'usize', representing the finite size of the box's pointer." src="assets/trpl15-02.svg" class="center">
+<p><span class="caption">Figure 15-2: A <code>List</code> that is not infinitely sized,
+because <code>Cons</code> holds a <code>Box</code></span></p>
+<p>Boxes provide only the indirection and heap allocation; they don’t have any
+other special capabilities, like those we’ll see with the other smart pointer
+types. They also don’t have the performance overhead that these special
+capabilities incur, so they can be useful in cases like the cons list where the
+indirection is the only feature we need. We’ll look at more use cases for boxes
+in Chapter 18.</p>
+<p>The <code>Box&lt;T&gt;</code> type is a smart pointer because it implements the <code>Deref</code> trait,
+which allows <code>Box&lt;T&gt;</code> values to be treated like references. When a <code>Box&lt;T&gt;</code>
+value goes out of scope, the heap data that the box is pointing to is cleaned
+up as well because of the <code>Drop</code> trait implementation. These two traits will be
+even more important to the functionality provided by the other smart pointer
+types we’ll discuss in the rest of this chapter. Let’s explore these two traits
+in more detail.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="treating-smart-pointers-like-regular-references-1"><a href="#treating-smart-pointers-like-regular-references-1" class="header">Treating Smart Pointers Like Regular References</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="treating-smart-pointers-like-regular-references-with-the-deref-trait"></a>
+<a id="treating-smart-pointers-like-regular-references-with-deref"></a></p>
+<h3 id="treating-smart-pointers-like-regular-references"><a class="header" href="#treating-smart-pointers-like-regular-references">Treating Smart Pointers Like Regular References</a></h3>
+<p>Implementing the <code>Deref</code> trait allows you to customize the behavior of the
+<em>dereference operator</em> <code>*</code> (not to be confused with the multiplication or glob
+operator). By implementing <code>Deref</code> in such a way that a smart pointer can be
+treated like a regular reference, you can write code that operates on
+references and use that code with smart pointers too.</p>
+<p>Let’s first look at how the dereference operator works with regular references.
+Then, we’ll try to define a custom type that behaves like <code>Box&lt;T&gt;</code> and see why
+the dereference operator doesn’t work like a reference on our newly defined
+type. We’ll explore how implementing the <code>Deref</code> trait makes it possible for
+smart pointers to work in ways similar to references. Then, we’ll look at
+Rust’s deref coercion feature and how it lets us work with either references or
+smart pointers.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="following-the-pointer-to-the-value-with-the-dereference-operator"></a>
+<a id="following-the-pointer-to-the-value"></a></p>
+<h4 id="following-the-reference-to-the-value"><a class="header" href="#following-the-reference-to-the-value">Following the Reference to the Value</a></h4>
+<p>A regular reference is a type of pointer, and one way to think of a pointer is
+as an arrow to a value stored somewhere else. In Listing 15-6, we create a
+reference to an <code>i32</code> value and then use the dereference operator to follow the
+reference to the value.</p>
+<figure class="listing" id="listing-15-6">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x = 5;
+    let y = &amp;x;
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}</code></pre>
+<figcaption><a href="#listing-15-6">Listing 15-6</a>: Using the dereference operator to follow a reference to an <code>i32</code> value</figcaption>
+</figure>
+<p>The variable <code>x</code> holds an <code>i32</code> value <code>5</code>. We set <code>y</code> equal to a reference to
+<code>x</code>. We can assert that <code>x</code> is equal to <code>5</code>. However, if we want to make an
+assertion about the value in <code>y</code>, we have to use <code>*y</code> to follow the reference
+to the value it’s pointing to (hence, <em>dereference</em>) so that the compiler can
+compare the actual value. Once we dereference <code>y</code>, we have access to the
+integer value <code>y</code> is pointing to that we can compare with <code>5</code>.</p>
+<p>If we tried to write <code>assert_eq!(5, y);</code> instead, we would get this compilation
+error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling deref-example v0.1.0 (file:///projects/deref-example)
+error[E0277]: can't compare `{integer}` with `&amp;{integer}`
+ --&gt; src/main.rs:6:5
+  |
+6 |     assert_eq!(5, y);
+  |     ^^^^^^^^^^^^^^^^ no implementation for `{integer} == &amp;{integer}`
+  |
+  = help: the trait `PartialEq&lt;&amp;{integer}&gt;` is not implemented for `{integer}`
+  = help: the following other types implement trait `PartialEq&lt;Rhs&gt;`:
+            f128
+            f16
+            f32
+            f64
+            i128
+            i16
+            i32
+            i64
+          and 8 others
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deref-example` (bin "deref-example") due to 1 previous error
+</code></pre>
+<p>Comparing a number and a reference to a number isn’t allowed because they’re
+different types. We must use the dereference operator to follow the reference
+to the value it’s pointing to.</p>
+<h4 id="using-boxt-like-a-reference"><a class="header" href="#using-boxt-like-a-reference">Using <code>Box&lt;T&gt;</code> Like a Reference</a></h4>
+<p>We can rewrite the code in Listing 15-6 to use a <code>Box&lt;T&gt;</code> instead of a
+reference; the dereference operator used on the <code>Box&lt;T&gt;</code> in Listing 15-7
+functions in the same way as the dereference operator used on the reference in
+Listing 15-6.</p>
+<figure class="listing" id="listing-15-7">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x = 5;
+    let y = Box::new(x);
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}</code></pre>
+<figcaption><a href="#listing-15-7">Listing 15-7</a>: Using the dereference operator on a <code>Box&lt;i32&gt;</code></figcaption>
+</figure>
+<p>The main difference between Listing 15-7 and Listing 15-6 is that here we set
+<code>y</code> to be an instance of a box pointing to a copied value of <code>x</code> rather than a
+reference pointing to the value of <code>x</code>. In the last assertion, we can use the
+dereference operator to follow the box’s pointer in the same way that we did
+when <code>y</code> was a reference. Next, we’ll explore what is special about <code>Box&lt;T&gt;</code>
+that enables us to use the dereference operator by defining our own box type.</p>
+<h4 id="defining-our-own-smart-pointer"><a class="header" href="#defining-our-own-smart-pointer">Defining Our Own Smart Pointer</a></h4>
+<p>Let’s build a wrapper type similar to the <code>Box&lt;T&gt;</code> type provided by the
+standard library to experience how smart pointer types behave differently from
+references by default. Then, we’ll look at how to add the ability to use the
+dereference operator.</p>
+<section class="note" aria-role="note">
+<p>Note: There’s one big difference between the <code>MyBox&lt;T&gt;</code> type we’re about to
+build and the real <code>Box&lt;T&gt;</code>: Our version will not store its data on the heap.
+We are focusing this example on <code>Deref</code>, so where the data is actually stored
+is less important than the pointer-like behavior.</p>
+</section>
+<p>The <code>Box&lt;T&gt;</code> type is ultimately defined as a tuple struct with one element, so
+Listing 15-8 defines a <code>MyBox&lt;T&gt;</code> type in the same way. We’ll also define a
+<code>new</code> function to match the <code>new</code> function defined on <code>Box&lt;T&gt;</code>.</p>
+<figure class="listing" id="listing-15-8">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct MyBox&lt;T&gt;(T);
+
+impl&lt;T&gt; MyBox&lt;T&gt; {
+    fn new(x: T) -&gt; MyBox&lt;T&gt; {
+        MyBox(x)
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-15-8">Listing 15-8</a>: Defining a <code>MyBox&lt;T&gt;</code> type</figcaption>
+</figure>
+<p>We define a struct named <code>MyBox</code> and declare a generic parameter <code>T</code> because we
+want our type to hold values of any type. The <code>MyBox</code> type is a tuple struct
+with one element of type <code>T</code>. The <code>MyBox::new</code> function takes one parameter of
+type <code>T</code> and returns a <code>MyBox</code> instance that holds the value passed in.</p>
+<p>Let’s try adding the <code>main</code> function in Listing 15-7 to Listing 15-8 and
+changing it to use the <code>MyBox&lt;T&gt;</code> type we’ve defined instead of <code>Box&lt;T&gt;</code>. The
+code in Listing 15-9 won’t compile, because Rust doesn’t know how to
+dereference <code>MyBox</code>.</p>
+<figure class="listing" id="listing-15-9">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">struct MyBox&lt;T&gt;(T);
+</span><span class="boring">
+</span><span class="boring">impl&lt;T&gt; MyBox&lt;T&gt; {
+</span><span class="boring">    fn new(x: T) -&gt; MyBox&lt;T&gt; {
+</span><span class="boring">        MyBox(x)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let x = 5;
+    let y = MyBox::new(x);
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}</code></pre>
+<figcaption><a href="#listing-15-9">Listing 15-9</a>: Attempting to use <code>MyBox&lt;T&gt;</code> in the same way we used references and <code>Box&lt;T&gt;</code></figcaption>
+</figure>
+<p>Here’s the resultant compilation error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling deref-example v0.1.0 (file:///projects/deref-example)
+error[E0614]: type `MyBox&lt;{integer}&gt;` cannot be dereferenced
+  --&gt; src/main.rs:14:19
+   |
+14 |     assert_eq!(5, *y);
+   |                   ^^ can't be dereferenced
+
+For more information about this error, try `rustc --explain E0614`.
+error: could not compile `deref-example` (bin "deref-example") due to 1 previous error
+</code></pre>
+<p>Our <code>MyBox&lt;T&gt;</code> type can’t be dereferenced because we haven’t implemented that
+ability on our type. To enable dereferencing with the <code>*</code> operator, we
+implement the <code>Deref</code> trait.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="treating-a-type-like-a-reference-by-implementing-the-deref-trait"></a></p>
+<h4 id="implementing-the-deref-trait"><a class="header" href="#implementing-the-deref-trait">Implementing the <code>Deref</code> Trait</a></h4>
+<p>As discussed in <a href="10%20Generics%20Traits%20and%20Lifetimes.html#implementing-a-trait-on-a-type">“Implementing a Trait on a Type”</a><!-- ignore --> in
+Chapter 10, to implement a trait we need to provide implementations for the
+trait’s required methods. The <code>Deref</code> trait, provided by the standard library,
+requires us to implement one method named <code>deref</code> that borrows <code>self</code> and
+returns a reference to the inner data. Listing 15-10 contains an implementation
+of <code>Deref</code> to add to the definition of <code>MyBox&lt;T&gt;</code>.</p>
+<figure class="listing" id="listing-15-10">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::ops::Deref;
+
+impl&lt;T&gt; Deref for MyBox&lt;T&gt; {
+    type Target = T;
+
+    fn deref(&amp;self) -&gt; &amp;Self::Target {
+        &amp;self.0
+    }
+}
+<span class="boring">
+</span><span class="boring">struct MyBox&lt;T&gt;(T);
+</span><span class="boring">
+</span><span class="boring">impl&lt;T&gt; MyBox&lt;T&gt; {
+</span><span class="boring">    fn new(x: T) -&gt; MyBox&lt;T&gt; {
+</span><span class="boring">        MyBox(x)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let x = 5;
+</span><span class="boring">    let y = MyBox::new(x);
+</span><span class="boring">
+</span><span class="boring">    assert_eq!(5, x);
+</span><span class="boring">    assert_eq!(5, *y);
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-15-10">Listing 15-10</a>: Implementing <code>Deref</code> on <code>MyBox&lt;T&gt;</code></figcaption>
+</figure>
+<p>The <code>type Target = T;</code> syntax defines an associated type for the <code>Deref</code> trait
+to use. Associated types are a slightly different way of declaring a generic
+parameter, but you don’t need to worry about them for now; we’ll cover them in
+more detail in Chapter 20.</p>
+<p>We fill in the body of the <code>deref</code> method with <code>&amp;self.0</code> so that <code>deref</code>
+returns a reference to the value we want to access with the <code>*</code> operator;
+recall from <a href="05%20Structs%20and%20Invariants.html#creating-different-types-with-tuple-structs">“Creating Different Types with Tuple Structs”</a><!--
+ignore --> in Chapter 5 that <code>.0</code> accesses the first value in a tuple struct.
+The <code>main</code> function in Listing 15-9 that calls <code>*</code> on the <code>MyBox&lt;T&gt;</code> value now
+compiles, and the assertions pass!</p>
+<p>Without the <code>Deref</code> trait, the compiler can only dereference <code>&amp;</code> references.
+The <code>deref</code> method gives the compiler the ability to take a value of any type
+that implements <code>Deref</code> and call the <code>deref</code> method to get a reference that
+it knows how to dereference.</p>
+<p>When we entered <code>*y</code> in Listing 15-9, behind the scenes Rust actually ran this
+code:</p>
+<pre><code class="language-rust ignore">*(y.deref())</code></pre>
+<p>Rust substitutes the <code>*</code> operator with a call to the <code>deref</code> method and then a
+plain dereference so that we don’t have to think about whether or not we need
+to call the <code>deref</code> method. This Rust feature lets us write code that functions
+identically whether we have a regular reference or a type that implements
+<code>Deref</code>.</p>
+<p>The reason the <code>deref</code> method returns a reference to a value, and that the
+plain dereference outside the parentheses in <code>*(y.deref())</code> is still necessary,
+has to do with the ownership system. If the <code>deref</code> method returned the value
+directly instead of a reference to the value, the value would be moved out of
+<code>self</code>. We don’t want to take ownership of the inner value inside <code>MyBox&lt;T&gt;</code> in
+this case or in most cases where we use the dereference operator.</p>
+<p>Note that the <code>*</code> operator is replaced with a call to the <code>deref</code> method and
+then a call to the <code>*</code> operator just once, each time we use a <code>*</code> in our code.
+Because the substitution of the <code>*</code> operator does not recurse infinitely, we
+end up with data of type <code>i32</code>, which matches the <code>5</code> in <code>assert_eq!</code> in
+Listing 15-9.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="implicit-deref-coercions-with-functions-and-methods"></a>
+<a id="using-deref-coercions-in-functions-and-methods"></a></p>
+<h4 id="using-deref-coercion-in-functions-and-methods"><a class="header" href="#using-deref-coercion-in-functions-and-methods">Using Deref Coercion in Functions and Methods</a></h4>
+<p><em>Deref coercion</em> converts a reference to a type that implements the <code>Deref</code>
+trait into a reference to another type. For example, deref coercion can convert
+<code>&amp;String</code> to <code>&amp;str</code> because <code>String</code> implements the <code>Deref</code> trait such that it
+returns <code>&amp;str</code>. Deref coercion is a convenience Rust performs on arguments to
+functions and methods, and it works only on types that implement the <code>Deref</code>
+trait. It happens automatically when we pass a reference to a particular type’s
+value as an argument to a function or method that doesn’t match the parameter
+type in the function or method definition. A sequence of calls to the <code>deref</code>
+method converts the type we provided into the type the parameter needs.</p>
+<p>Deref coercion was added to Rust so that programmers writing function and
+method calls don’t need to add as many explicit references and dereferences
+with <code>&amp;</code> and <code>*</code>. The deref coercion feature also lets us write more code that
+can work for either references or smart pointers.</p>
+<p>To see deref coercion in action, let’s use the <code>MyBox&lt;T&gt;</code> type we defined in
+Listing 15-8 as well as the implementation of <code>Deref</code> that we added in Listing
+15-10. Listing 15-11 shows the definition of a function that has a string slice
+parameter.</p>
+<figure class="listing" id="listing-15-11">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn hello(name: &amp;str) {
+    println!("Hello, {name}!");
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-15-11">Listing 15-11</a>: A <code>hello</code> function that has the parameter <code>name</code> of type <code>&amp;str</code></figcaption>
+</figure>
+<p>We can call the <code>hello</code> function with a string slice as an argument, such as
+<code>hello("Rust");</code>, for example. Deref coercion makes it possible to call <code>hello</code>
+with a reference to a value of type <code>MyBox&lt;String&gt;</code>, as shown in Listing 15-12.</p>
+<figure class="listing" id="listing-15-12">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">use std::ops::Deref;
+</span><span class="boring">
+</span><span class="boring">impl&lt;T&gt; Deref for MyBox&lt;T&gt; {
+</span><span class="boring">    type Target = T;
+</span><span class="boring">
+</span><span class="boring">    fn deref(&amp;self) -&gt; &amp;T {
+</span><span class="boring">        &amp;self.0
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct MyBox&lt;T&gt;(T);
+</span><span class="boring">
+</span><span class="boring">impl&lt;T&gt; MyBox&lt;T&gt; {
+</span><span class="boring">    fn new(x: T) -&gt; MyBox&lt;T&gt; {
+</span><span class="boring">        MyBox(x)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn hello(name: &amp;str) {
+</span><span class="boring">    println!("Hello, {name}!");
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let m = MyBox::new(String::from("Rust"));
+    hello(&amp;m);
+}</code></pre>
+<figcaption><a href="#listing-15-12">Listing 15-12</a>: Calling <code>hello</code> with a reference to a <code>MyBox&lt;String&gt;</code> value, which works because of deref coercion</figcaption>
+</figure>
+<p>Here we’re calling the <code>hello</code> function with the argument <code>&amp;m</code>, which is a
+reference to a <code>MyBox&lt;String&gt;</code> value. Because we implemented the <code>Deref</code> trait
+on <code>MyBox&lt;T&gt;</code> in Listing 15-10, Rust can turn <code>&amp;MyBox&lt;String&gt;</code> into <code>&amp;String</code>
+by calling <code>deref</code>. The standard library provides an implementation of <code>Deref</code>
+on <code>String</code> that returns a string slice, and this is in the API documentation
+for <code>Deref</code>. Rust calls <code>deref</code> again to turn the <code>&amp;String</code> into <code>&amp;str</code>, which
+matches the <code>hello</code> function’s definition.</p>
+<p>If Rust didn’t implement deref coercion, we would have to write the code in
+Listing 15-13 instead of the code in Listing 15-12 to call <code>hello</code> with a value
+of type <code>&amp;MyBox&lt;String&gt;</code>.</p>
+<figure class="listing" id="listing-15-13">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">use std::ops::Deref;
+</span><span class="boring">
+</span><span class="boring">impl&lt;T&gt; Deref for MyBox&lt;T&gt; {
+</span><span class="boring">    type Target = T;
+</span><span class="boring">
+</span><span class="boring">    fn deref(&amp;self) -&gt; &amp;T {
+</span><span class="boring">        &amp;self.0
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct MyBox&lt;T&gt;(T);
+</span><span class="boring">
+</span><span class="boring">impl&lt;T&gt; MyBox&lt;T&gt; {
+</span><span class="boring">    fn new(x: T) -&gt; MyBox&lt;T&gt; {
+</span><span class="boring">        MyBox(x)
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn hello(name: &amp;str) {
+</span><span class="boring">    println!("Hello, {name}!");
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let m = MyBox::new(String::from("Rust"));
+    hello(&amp;(*m)[..]);
+}</code></pre>
+<figcaption><a href="#listing-15-13">Listing 15-13</a>: The code we would have to write if Rust didn’t have deref coercion</figcaption>
+</figure>
+<p>The <code>(*m)</code> dereferences the <code>MyBox&lt;String&gt;</code> into a <code>String</code>. Then, the <code>&amp;</code> and
+<code>[..]</code> take a string slice of the <code>String</code> that is equal to the whole string to
+match the signature of <code>hello</code>. This code without deref coercions is harder to
+read, write, and understand with all of these symbols involved. Deref coercion
+allows Rust to handle these conversions for us automatically.</p>
+<p>When the <code>Deref</code> trait is defined for the types involved, Rust will analyze the
+types and use <code>Deref::deref</code> as many times as necessary to get a reference to
+match the parameter’s type. The number of times that <code>Deref::deref</code> needs to be
+inserted is resolved at compile time, so there is no runtime penalty for taking
+advantage of deref coercion!</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="how-deref-coercion-interacts-with-mutability"></a></p>
+<h4 id="handling-deref-coercion-with-mutable-references"><a class="header" href="#handling-deref-coercion-with-mutable-references">Handling Deref Coercion with Mutable References</a></h4>
+<p>Similar to how you use the <code>Deref</code> trait to override the <code>*</code> operator on
+immutable references, you can use the <code>DerefMut</code> trait to override the <code>*</code>
+operator on mutable references.</p>
+<p>Rust does deref coercion when it finds types and trait implementations in three
+cases:</p>
+<ol>
+<li>From <code>&amp;T</code> to <code>&amp;U</code> when <code>T: Deref&lt;Target=U&gt;</code></li>
+<li>From <code>&amp;mut T</code> to <code>&amp;mut U</code> when <code>T: DerefMut&lt;Target=U&gt;</code></li>
+<li>From <code>&amp;mut T</code> to <code>&amp;U</code> when <code>T: Deref&lt;Target=U&gt;</code></li>
+</ol>
+<p>The first two cases are the same except that the second implements mutability.
+The first case states that if you have a <code>&amp;T</code>, and <code>T</code> implements <code>Deref</code> to
+some type <code>U</code>, you can get a <code>&amp;U</code> transparently. The second case states that
+the same deref coercion happens for mutable references.</p>
+<p>The third case is trickier: Rust will also coerce a mutable reference to an
+immutable one. But the reverse is <em>not</em> possible: Immutable references will
+never coerce to mutable references. Because of the borrowing rules, if you have
+a mutable reference, that mutable reference must be the only reference to that
+data (otherwise, the program wouldn’t compile). Converting one mutable
+reference to one immutable reference will never break the borrowing rules.
+Converting an immutable reference to a mutable reference would require that the
+initial immutable reference is the only immutable reference to that data, but
+the borrowing rules don’t guarantee that. Therefore, Rust can’t make the
+assumption that converting an immutable reference to a mutable reference is
+possible.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="running-code-on-cleanup-with-the-drop-trait-1"><a href="#running-code-on-cleanup-with-the-drop-trait-1" class="header">Running Code on Cleanup with the Drop Trait</a></h2>
+<h3 id="running-code-on-cleanup-with-the-drop-trait"><a class="header" href="#running-code-on-cleanup-with-the-drop-trait">Running Code on Cleanup with the <code>Drop</code> Trait</a></h3>
+<p>The second trait important to the smart pointer pattern is <code>Drop</code>, which lets
+you customize what happens when a value is about to go out of scope. You can
+provide an implementation for the <code>Drop</code> trait on any type, and that code can
+be used to release resources like files or network connections.</p>
+<p>We’re introducing <code>Drop</code> in the context of smart pointers because the
+functionality of the <code>Drop</code> trait is almost always used when implementing a
+smart pointer. For example, when a <code>Box&lt;T&gt;</code> is dropped, it will deallocate the
+space on the heap that the box points to.</p>
+<p>In some languages, for some types, the programmer must call code to free memory
+or resources every time they finish using an instance of those types. Examples
+include file handles, sockets, and locks. If the programmer forgets, the system
+might become overloaded and crash. In Rust, you can specify that a particular
+bit of code be run whenever a value goes out of scope, and the compiler will
+insert this code automatically. As a result, you don’t need to be careful about
+placing cleanup code everywhere in a program that an instance of a particular
+type is finished with—you still won’t leak resources!</p>
+<p>You specify the code to run when a value goes out of scope by implementing the
+<code>Drop</code> trait. The <code>Drop</code> trait requires you to implement one method named
+<code>drop</code> that takes a mutable reference to <code>self</code>. To see when Rust calls <code>drop</code>,
+let’s implement <code>drop</code> with <code>println!</code> statements for now.</p>
+<p>Listing 15-14 shows a <code>CustomSmartPointer</code> struct whose only custom
+functionality is that it will print <code>Dropping CustomSmartPointer!</code> when the
+instance goes out of scope, to show when Rust runs the <code>drop</code> method.</p>
+<figure class="listing" id="listing-15-14">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct CustomSmartPointer {
+    data: String,
+}
+
+impl Drop for CustomSmartPointer {
+    fn drop(&amp;mut self) {
+        println!("Dropping CustomSmartPointer with data `{}`!", self.data);
+    }
+}
+
+fn main() {
+    let c = CustomSmartPointer {
+        data: String::from("my stuff"),
+    };
+    let d = CustomSmartPointer {
+        data: String::from("other stuff"),
+    };
+    println!("CustomSmartPointers created");
+}</code></pre>
+<figcaption><a href="#listing-15-14">Listing 15-14</a>: A <code>CustomSmartPointer</code> struct that implements the <code>Drop</code> trait where we would put our cleanup code</figcaption>
+</figure>
+<p>The <code>Drop</code> trait is included in the prelude, so we don’t need to bring it into
+scope. We implement the <code>Drop</code> trait on <code>CustomSmartPointer</code> and provide an
+implementation for the <code>drop</code> method that calls <code>println!</code>. The body of the
+<code>drop</code> method is where you would place any logic that you wanted to run when an
+instance of your type goes out of scope. We’re printing some text here to
+demonstrate visually when Rust will call <code>drop</code>.</p>
+<p>In <code>main</code>, we create two instances of <code>CustomSmartPointer</code> and then print
+<code>CustomSmartPointers created</code>. At the end of <code>main</code>, our instances of
+<code>CustomSmartPointer</code> will go out of scope, and Rust will call the code we put
+in the <code>drop</code> method, printing our final message. Note that we didn’t need to
+call the <code>drop</code> method explicitly.</p>
+<p>When we run this program, we’ll see the following output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling drop-example v0.1.0 (file:///projects/drop-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.60s
+     Running `target/debug/drop-example`
+CustomSmartPointers created
+Dropping CustomSmartPointer with data `other stuff`!
+Dropping CustomSmartPointer with data `my stuff`!
+</code></pre>
+<p>Rust automatically called <code>drop</code> for us when our instances went out of scope,
+calling the code we specified. Variables are dropped in the reverse order of
+their creation, so <code>d</code> was dropped before <code>c</code>. This example’s purpose is to
+give you a visual guide to how the <code>drop</code> method works; usually you would
+specify the cleanup code that your type needs to run rather than a print
+message.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="dropping-a-value-early-with-std-mem-drop"></a></p>
+<p>Unfortunately, it’s not straightforward to disable the automatic <code>drop</code>
+functionality. Disabling <code>drop</code> isn’t usually necessary; the whole point of the
+<code>Drop</code> trait is that it’s taken care of automatically. Occasionally, however,
+you might want to clean up a value early. One example is when using smart
+pointers that manage locks: You might want to force the <code>drop</code> method that
+releases the lock so that other code in the same scope can acquire the lock.
+Rust doesn’t let you call the <code>Drop</code> trait’s <code>drop</code> method manually; instead,
+you have to call the <code>std::mem::drop</code> function provided by the standard library
+if you want to force a value to be dropped before the end of its scope.</p>
+<p>Trying to call the <code>Drop</code> trait’s <code>drop</code> method manually by modifying the
+<code>main</code> function from Listing 15-14 won’t work, as shown in Listing 15-15.</p>
+<figure class="listing" id="listing-15-15">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">struct CustomSmartPointer {
+</span><span class="boring">    data: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Drop for CustomSmartPointer {
+</span><span class="boring">    fn drop(&amp;mut self) {
+</span><span class="boring">        println!("Dropping CustomSmartPointer with data `{}`!", self.data);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let c = CustomSmartPointer {
+        data: String::from("some data"),
+    };
+    println!("CustomSmartPointer created");
+    c.drop();
+    println!("CustomSmartPointer dropped before the end of main");
+}</code></pre>
+<figcaption><a href="#listing-15-15">Listing 15-15</a>: Attempting to call the <code>drop</code> method from the <code>Drop</code> trait manually to clean up early</figcaption>
+</figure>
+<p>When we try to compile this code, we’ll get this error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling drop-example v0.1.0 (file:///projects/drop-example)
+error[E0040]: explicit use of destructor method
+  --&gt; src/main.rs:16:7
+   |
+16 |     c.drop();
+   |       ^^^^ explicit destructor calls not allowed
+   |
+help: consider using `drop` function
+   |
+16 -     c.drop();
+16 +     drop(c);
+   |
+
+For more information about this error, try `rustc --explain E0040`.
+error: could not compile `drop-example` (bin "drop-example") due to 1 previous error
+</code></pre>
+<p>This error message states that we’re not allowed to explicitly call <code>drop</code>. The
+error message uses the term <em>destructor</em>, which is the general programming term
+for a function that cleans up an instance. A <em>destructor</em> is analogous to a
+<em>constructor</em>, which creates an instance. The <code>drop</code> function in Rust is one
+particular destructor.</p>
+<p>Rust doesn’t let us call <code>drop</code> explicitly, because Rust would still
+automatically call <code>drop</code> on the value at the end of <code>main</code>. This would cause a
+double free error because Rust would be trying to clean up the same value twice.</p>
+<p>We can’t disable the automatic insertion of <code>drop</code> when a value goes out of
+scope, and we can’t call the <code>drop</code> method explicitly. So, if we need to force
+a value to be cleaned up early, we use the <code>std::mem::drop</code> function.</p>
+<p>The <code>std::mem::drop</code> function is different from the <code>drop</code> method in the <code>Drop</code>
+trait. We call it by passing as an argument the value we want to force-drop.
+The function is in the prelude, so we can modify <code>main</code> in Listing 15-15 to
+call the <code>drop</code> function, as shown in Listing 15-16.</p>
+<figure class="listing" id="listing-15-16">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct CustomSmartPointer {
+</span><span class="boring">    data: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Drop for CustomSmartPointer {
+</span><span class="boring">    fn drop(&amp;mut self) {
+</span><span class="boring">        println!("Dropping CustomSmartPointer with data `{}`!", self.data);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let c = CustomSmartPointer {
+        data: String::from("some data"),
+    };
+    println!("CustomSmartPointer created");
+    drop(c);
+    println!("CustomSmartPointer dropped before the end of main");
+}</code></pre>
+<figcaption><a href="#listing-15-16">Listing 15-16</a>: Calling <code>std::mem::drop</code> to explicitly drop a value before it goes out of scope</figcaption>
+</figure>
+<p>Running this code will print the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling drop-example v0.1.0 (file:///projects/drop-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.73s
+     Running `target/debug/drop-example`
+CustomSmartPointer created
+Dropping CustomSmartPointer with data `some data`!
+CustomSmartPointer dropped before the end of main
+</code></pre>
+<p>The text <code>Dropping CustomSmartPointer with data `some data`!</code> is printed
+between the <code>CustomSmartPointer created</code> and <code>CustomSmartPointer dropped before the end of main</code> text, showing that the <code>drop</code> method code is called to drop
+<code>c</code> at that point.</p>
+<p>You can use code specified in a <code>Drop</code> trait implementation in many ways to
+make cleanup convenient and safe: For instance, you could use it to create your
+own memory allocator! With the <code>Drop</code> trait and Rust’s ownership system, you
+don’t have to remember to clean up, because Rust does it automatically.</p>
+<p>You also don’t have to worry about problems resulting from accidentally
+cleaning up values still in use: The ownership system that makes sure
+references are always valid also ensures that <code>drop</code> gets called only once when
+the value is no longer being used.</p>
+<p>Now that we’ve examined <code>Box&lt;T&gt;</code> and some of the characteristics of smart
+pointers, let’s look at a few other smart pointers defined in the standard
+library.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="rct-the-reference-counted-smart-pointer-1"><a href="#rct-the-reference-counted-smart-pointer-1" class="header">Rc&lt;T&gt;, the Reference Counted Smart Pointer</a></h2>
+<h3 id="rct-the-reference-counted-smart-pointer"><a class="header" href="#rct-the-reference-counted-smart-pointer"><code>Rc&lt;T&gt;</code>, the Reference-Counted Smart Pointer</a></h3>
+<p>In the majority of cases, ownership is clear: You know exactly which variable
+owns a given value. However, there are cases when a single value might have
+multiple owners. For example, in graph data structures, multiple edges might
+point to the same node, and that node is conceptually owned by all of the edges
+that point to it. A node shouldn’t be cleaned up unless it doesn’t have any
+edges pointing to it and so has no owners.</p>
+<p>You have to enable multiple ownership explicitly by using the Rust type
+<code>Rc&lt;T&gt;</code>, which is an abbreviation for <em>reference counting</em>. The <code>Rc&lt;T&gt;</code> type
+keeps track of the number of references to a value to determine whether or not
+the value is still in use. If there are zero references to a value, the value
+can be cleaned up without any references becoming invalid.</p>
+<p>Imagine <code>Rc&lt;T&gt;</code> as a TV in a family room. When one person enters to watch TV,
+they turn it on. Others can come into the room and watch the TV. When the last
+person leaves the room, they turn off the TV because it’s no longer being used.
+If someone turns off the TV while others are still watching it, there would be
+an uproar from the remaining TV watchers!</p>
+<p>We use the <code>Rc&lt;T&gt;</code> type when we want to allocate some data on the heap for
+multiple parts of our program to read and we can’t determine at compile time
+which part will finish using the data last. If we knew which part would finish
+last, we could just make that part the data’s owner, and the normal ownership
+rules enforced at compile time would take effect.</p>
+<p>Note that <code>Rc&lt;T&gt;</code> is only for use in single-threaded scenarios. When we discuss
+concurrency in Chapter 16, we’ll cover how to do reference counting in
+multithreaded programs.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-rct-to-share-data"></a></p>
+<h4 id="sharing-data"><a class="header" href="#sharing-data">Sharing Data</a></h4>
+<p>Let’s return to our cons list example in Listing 15-5. Recall that we defined
+it using <code>Box&lt;T&gt;</code>. This time, we’ll create two lists that both share ownership
+of a third list. Conceptually, this looks similar to Figure 15-3.</p>
+<p><img alt="A linked list with the label 'a' pointing to three elements. The first element contains the integer 5 and points to the second element. Th
+e second element contains the integer 10 and points to the third element. The third element contains the value 'Nil' that signifies the end of the l
+ist; it does not point anywhere. A linked list with the label 'b' points to an element that contains the integer 3 and points to the first element o
+f list 'a'. A linked list with the label 'c' points to an element that contains the integer 4 and also points to the first element of list 'a' so th
+at the tails of lists 'b' and 'c' are both list 'a'." src="assets/trpl15-03.svg" class="center"></p>
+<p><span class="caption">Figure 15-3: Two lists, <code>b</code> and <code>c</code>, sharing ownership of
+a third list, <code>a</code></span></p>
+<p>We’ll create list <code>a</code> that contains <code>5</code> and then <code>10</code>. Then, we’ll make two
+more lists: <code>b</code> that starts with <code>3</code> and <code>c</code> that starts with <code>4</code>. Both the <code>b</code>
+and <code>c</code> lists will then continue on to the first <code>a</code> list containing <code>5</code> and
+<code>10</code>. In other words, both lists will share the first list containing <code>5</code> and
+<code>10</code>.</p>
+<p>Trying to implement this scenario using our definition of <code>List</code> with <code>Box&lt;T&gt;</code>
+won’t work, as shown in Listing 15-17.</p>
+<figure class="listing" id="listing-15-17">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">enum List {
+    Cons(i32, Box&lt;List&gt;),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+
+fn main() {
+    let a = Cons(5, Box::new(Cons(10, Box::new(Nil))));
+    let b = Cons(3, Box::new(a));
+    let c = Cons(4, Box::new(a));
+}</code></pre>
+<figcaption><a href="#listing-15-17">Listing 15-17</a>: Demonstrating that we’re not allowed to have two lists using <code>Box&lt;T&gt;</code> that try to share ownership of a third list</figcaption>
+</figure>
+<p>When we compile this code, we get this error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling cons-list v0.1.0 (file:///projects/cons-list)
+error[E0382]: use of moved value: `a`
+  --&gt; src/main.rs:11:30
+   |
+ 9 |     let a = Cons(5, Box::new(Cons(10, Box::new(Nil))));
+   |         - move occurs because `a` has type `List`, which does not implement the `Copy` trait
+10 |     let b = Cons(3, Box::new(a));
+   |                              - value moved here
+11 |     let c = Cons(4, Box::new(a));
+   |                              ^ value used here after move
+   |
+note: if `List` implemented `Clone`, you could clone the value
+  --&gt; src/main.rs:1:1
+   |
+ 1 | enum List {
+   | ^^^^^^^^^ consider implementing `Clone` for this type
+...
+10 |     let b = Cons(3, Box::new(a));
+   |                              - you could clone this value
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `cons-list` (bin "cons-list") due to 1 previous error
+</code></pre>
+<p>The <code>Cons</code> variants own the data they hold, so when we create the <code>b</code> list, <code>a</code>
+is moved into <code>b</code> and <code>b</code> owns <code>a</code>. Then, when we try to use <code>a</code> again when
+creating <code>c</code>, we’re not allowed to because <code>a</code> has been moved.</p>
+<p>We could change the definition of <code>Cons</code> to hold references instead, but then
+we would have to specify lifetime parameters. By specifying lifetime
+parameters, we would be specifying that every element in the list will live at
+least as long as the entire list. This is the case for the elements and lists
+in Listing 15-17, but not in every scenario.</p>
+<p>Instead, we’ll change our definition of <code>List</code> to use <code>Rc&lt;T&gt;</code> in place of
+<code>Box&lt;T&gt;</code>, as shown in Listing 15-18. Each <code>Cons</code> variant will now hold a value
+and an <code>Rc&lt;T&gt;</code> pointing to a <code>List</code>. When we create <code>b</code>, instead of taking
+ownership of <code>a</code>, we’ll clone the <code>Rc&lt;List&gt;</code> that <code>a</code> is holding, thereby
+increasing the number of references from one to two and letting <code>a</code> and <code>b</code>
+share ownership of the data in that <code>Rc&lt;List&gt;</code>. We’ll also clone <code>a</code> when
+creating <code>c</code>, increasing the number of references from two to three. Every time
+we call <code>Rc::clone</code>, the reference count to the data within the <code>Rc&lt;List&gt;</code> will
+increase, and the data won’t be cleaned up unless there are zero references to
+it.</p>
+<figure class="listing" id="listing-15-18">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">enum List {
+    Cons(i32, Rc&lt;List&gt;),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+use std::rc::Rc;
+
+fn main() {
+    let a = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
+    let b = Cons(3, Rc::clone(&amp;a));
+    let c = Cons(4, Rc::clone(&amp;a));
+}</code></pre>
+<figcaption><a href="#listing-15-18">Listing 15-18</a>: A definition of <code>List</code> that uses <code>Rc&lt;T&gt;</code></figcaption>
+</figure>
+<p>We need to add a <code>use</code> statement to bring <code>Rc&lt;T&gt;</code> into scope because it’s not
+in the prelude. In <code>main</code>, we create the list holding <code>5</code> and <code>10</code> and store it
+in a new <code>Rc&lt;List&gt;</code> in <code>a</code>. Then, when we create <code>b</code> and <code>c</code>, we call the
+<code>Rc::clone</code> function and pass a reference to the <code>Rc&lt;List&gt;</code> in <code>a</code> as an
+argument.</p>
+<p>We could have called <code>a.clone()</code> rather than <code>Rc::clone(&amp;a)</code>, but Rust’s
+convention is to use <code>Rc::clone</code> in this case. The implementation of
+<code>Rc::clone</code> doesn’t make a deep copy of all the data like most types’
+implementations of <code>clone</code> do. The call to <code>Rc::clone</code> only increments the
+reference count, which doesn’t take much time. Deep copies of data can take a
+lot of time. By using <code>Rc::clone</code> for reference counting, we can visually
+distinguish between the deep-copy kinds of clones and the kinds of clones that
+increase the reference count. When looking for performance problems in the
+code, we only need to consider the deep-copy clones and can disregard calls to
+<code>Rc::clone</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="cloning-an-rct-increases-the-reference-count"></a></p>
+<h4 id="cloning-to-increase-the-reference-count"><a class="header" href="#cloning-to-increase-the-reference-count">Cloning to Increase the Reference Count</a></h4>
+<p>Let’s change our working example in Listing 15-18 so that we can see the
+reference counts changing as we create and drop references to the <code>Rc&lt;List&gt;</code> in
+<code>a</code>.</p>
+<p>In Listing 15-19, we’ll change <code>main</code> so that it has an inner scope around list
+<code>c</code>; then, we can see how the reference count changes when <code>c</code> goes out of
+scope.</p>
+<figure class="listing" id="listing-15-19">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">enum List {
+</span><span class="boring">    Cons(i32, Rc&lt;List&gt;),
+</span><span class="boring">    Nil,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">use crate::List::{Cons, Nil};
+</span><span class="boring">use std::rc::Rc;
+</span><span class="boring">
+</span>// --snip--
+
+fn main() {
+    let a = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
+    println!("count after creating a = {}", Rc::strong_count(&amp;a));
+    let b = Cons(3, Rc::clone(&amp;a));
+    println!("count after creating b = {}", Rc::strong_count(&amp;a));
+    {
+        let c = Cons(4, Rc::clone(&amp;a));
+        println!("count after creating c = {}", Rc::strong_count(&amp;a));
+    }
+    println!("count after c goes out of scope = {}", Rc::strong_count(&amp;a));
+}</code></pre>
+<figcaption><a href="#listing-15-19">Listing 15-19</a>: Printing the reference count</figcaption>
+</figure>
+<p>At each point in the program where the reference count changes, we print the
+reference count, which we get by calling the <code>Rc::strong_count</code> function. This
+function is named <code>strong_count</code> rather than <code>count</code> because the <code>Rc&lt;T&gt;</code> type
+also has a <code>weak_count</code>; we’ll see what <code>weak_count</code> is used for in <a href="#preventing-reference-cycles-turning-an-rct-into-a-weakt">“Preventing
+Reference Cycles Using <code>Weak&lt;T&gt;</code>”</a><!-- ignore -->.</p>
+<p>This code prints the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling cons-list v0.1.0 (file:///projects/cons-list)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running `target/debug/cons-list`
+count after creating a = 1
+count after creating b = 2
+count after creating c = 3
+count after c goes out of scope = 2
+</code></pre>
+<p>We can see that the <code>Rc&lt;List&gt;</code> in <code>a</code> has an initial reference count of 1;
+then, each time we call <code>clone</code>, the count goes up by 1. When <code>c</code> goes out of
+scope, the count goes down by 1. We don’t have to call a function to decrease
+the reference count like we have to call <code>Rc::clone</code> to increase the reference
+count: The implementation of the <code>Drop</code> trait decreases the reference count
+automatically when an <code>Rc&lt;T&gt;</code> value goes out of scope.</p>
+<p>What we can’t see in this example is that when <code>b</code> and then <code>a</code> go out of scope
+at the end of <code>main</code>, the count is 0, and the <code>Rc&lt;List&gt;</code> is cleaned up
+completely. Using <code>Rc&lt;T&gt;</code> allows a single value to have multiple owners, and
+the count ensures that the value remains valid as long as any of the owners
+still exist.</p>
+<p>Via immutable references, <code>Rc&lt;T&gt;</code> allows you to share data between multiple
+parts of your program for reading only. If <code>Rc&lt;T&gt;</code> allowed you to have multiple
+mutable references too, you might violate one of the borrowing rules discussed
+in Chapter 4: Multiple mutable borrows to the same place can cause data races
+and inconsistencies. But being able to mutate data is very useful! In the next
+section, we’ll discuss the interior mutability pattern and the <code>RefCell&lt;T&gt;</code>
+type that you can use in conjunction with an <code>Rc&lt;T&gt;</code> to work with this
+immutability restriction.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="refcellt-and-the-interior-mutability-pattern-1"><a href="#refcellt-and-the-interior-mutability-pattern-1" class="header">RefCell&lt;T&gt; and the Interior Mutability Pattern</a></h2>
+<h3 id="refcellt-and-the-interior-mutability-pattern"><a class="header" href="#refcellt-and-the-interior-mutability-pattern"><code>RefCell&lt;T&gt;</code> and the Interior Mutability Pattern</a></h3>
+<p><em>Interior mutability</em> is a design pattern in Rust that allows you to mutate
+data even when there are immutable references to that data; normally, this
+action is disallowed by the borrowing rules. To mutate data, the pattern uses
+<code>unsafe</code> code inside a data structure to bend Rust’s usual rules that govern
+mutation and borrowing. Unsafe code indicates to the compiler that we’re
+checking the rules manually instead of relying on the compiler to check them
+for us; we will discuss unsafe code more in Chapter 20.</p>
+<p>We can use types that use the interior mutability pattern only when we can
+ensure that the borrowing rules will be followed at runtime, even though the
+compiler can’t guarantee that. The <code>unsafe</code> code involved is then wrapped in a
+safe API, and the outer type is still immutable.</p>
+<p>Let’s explore this concept by looking at the <code>RefCell&lt;T&gt;</code> type that follows the
+interior mutability pattern.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="enforcing-borrowing-rules-at-runtime-with-refcellt"></a></p>
+<h4 id="enforcing-borrowing-rules-at-runtime"><a class="header" href="#enforcing-borrowing-rules-at-runtime">Enforcing Borrowing Rules at Runtime</a></h4>
+<p>Unlike <code>Rc&lt;T&gt;</code>, the <code>RefCell&lt;T&gt;</code> type represents single ownership over the data
+it holds. So, what makes <code>RefCell&lt;T&gt;</code> different from a type like <code>Box&lt;T&gt;</code>?
+Recall the borrowing rules you learned in Chapter 4:</p>
+<ul>
+<li>At any given time, you can have <em>either</em> one mutable reference or any number
+of immutable references (but not both).</li>
+<li>References must always be valid.</li>
+</ul>
+<p>With references and <code>Box&lt;T&gt;</code>, the borrowing rules’ invariants are enforced at
+compile time. With <code>RefCell&lt;T&gt;</code>, these invariants are enforced <em>at runtime</em>.
+With references, if you break these rules, you’ll get a compiler error. With
+<code>RefCell&lt;T&gt;</code>, if you break these rules, your program will panic and exit.</p>
+<p>The advantages of checking the borrowing rules at compile time are that errors
+will be caught sooner in the development process, and there is no impact on
+runtime performance because all the analysis is completed beforehand. For those
+reasons, checking the borrowing rules at compile time is the best choice in the
+majority of cases, which is why this is Rust’s default.</p>
+<p>The advantage of checking the borrowing rules at runtime instead is that
+certain memory-safe scenarios are then allowed, where they would’ve been
+disallowed by the compile-time checks. Static analysis, like the Rust compiler,
+is inherently conservative. Some properties of code are impossible to detect by
+analyzing the code: The most famous example is the Halting Problem, which is
+beyond the scope of this book but is an interesting topic to research.</p>
+<p>Because some analysis is impossible, if the Rust compiler can’t be sure the
+code complies with the ownership rules, it might reject a correct program; in
+this way, it’s conservative. If Rust accepted an incorrect program, users
+wouldn’t be able to trust the guarantees Rust makes. However, if Rust rejects a
+correct program, the programmer will be inconvenienced, but nothing
+catastrophic can occur. The <code>RefCell&lt;T&gt;</code> type is useful when you’re sure your
+code follows the borrowing rules but the compiler is unable to understand and
+guarantee that.</p>
+<p>Similar to <code>Rc&lt;T&gt;</code>, <code>RefCell&lt;T&gt;</code> is only for use in single-threaded scenarios
+and will give you a compile-time error if you try using it in a multithreaded
+context. We’ll talk about how to get the functionality of <code>RefCell&lt;T&gt;</code> in a
+multithreaded program in Chapter 16.</p>
+<p>Here is a recap of the reasons to choose <code>Box&lt;T&gt;</code>, <code>Rc&lt;T&gt;</code>, or <code>RefCell&lt;T&gt;</code>:</p>
+<ul>
+<li><code>Rc&lt;T&gt;</code> enables multiple owners of the same data; <code>Box&lt;T&gt;</code> and <code>RefCell&lt;T&gt;</code>
+have single owners.</li>
+<li><code>Box&lt;T&gt;</code> allows immutable or mutable borrows checked at compile time; <code>Rc&lt;T&gt;</code>
+allows only immutable borrows checked at compile time; <code>RefCell&lt;T&gt;</code> allows
+immutable or mutable borrows checked at runtime.</li>
+<li>Because <code>RefCell&lt;T&gt;</code> allows mutable borrows checked at runtime, you can
+mutate the value inside the <code>RefCell&lt;T&gt;</code> even when the <code>RefCell&lt;T&gt;</code> is
+immutable.</li>
+</ul>
+<p>Mutating the value inside an immutable value is the interior mutability
+pattern. Let’s look at a situation in which interior mutability is useful and
+examine how it’s possible.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="interior-mutability-a-mutable-borrow-to-an-immutable-value"></a></p>
+<h4 id="using-interior-mutability"><a class="header" href="#using-interior-mutability">Using Interior Mutability</a></h4>
+<p>A consequence of the borrowing rules is that when you have an immutable value,
+you can’t borrow it mutably. For example, this code won’t compile:</p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let x = 5;
+    let y = &amp;mut x;
+}</code></pre>
+<p>If you tried to compile this code, you’d get the following error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling borrowing v0.1.0 (file:///projects/borrowing)
+error[E0596]: cannot borrow `x` as mutable, as it is not declared as mutable
+ --&gt; src/main.rs:3:13
+  |
+3 |     let y = &amp;mut x;
+  |             ^^^^^^ cannot borrow as mutable
+  |
+help: consider changing this to be mutable
+  |
+2 |     let mut x = 5;
+  |         +++
+
+For more information about this error, try `rustc --explain E0596`.
+error: could not compile `borrowing` (bin "borrowing") due to 1 previous error
+</code></pre>
+<p>However, there are situations in which it would be useful for a value to mutate
+itself in its methods but appear immutable to other code. Code outside the
+value’s methods would not be able to mutate the value. Using <code>RefCell&lt;T&gt;</code> is
+one way to get the ability to have interior mutability, but <code>RefCell&lt;T&gt;</code>
+doesn’t get around the borrowing rules completely: The borrow checker in the
+compiler allows this interior mutability, and the borrowing rules are checked
+at runtime instead. If you violate the rules, you’ll get a <code>panic!</code> instead of
+a compiler error.</p>
+<p>Let’s work through a practical example where we can use <code>RefCell&lt;T&gt;</code> to mutate
+an immutable value and see why that is useful.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="a-use-case-for-interior-mutability-mock-objects"></a></p>
+<h5 id="testing-with-mock-objects"><a class="header" href="#testing-with-mock-objects">Testing with Mock Objects</a></h5>
+<p>Sometimes during testing a programmer will use a type in place of another type,
+in order to observe particular behavior and assert that it’s implemented
+correctly. This placeholder type is called a <em>test double</em>. Think of it in the
+sense of a stunt double in filmmaking, where a person steps in and substitutes
+for an actor to do a particularly tricky scene. Test doubles stand in for other
+types when we’re running tests. <em>Mock objects</em> are specific types of test
+doubles that record what happens during a test so that you can assert that the
+correct actions took place.</p>
+<p>Rust doesn’t have objects in the same sense as other languages have objects,
+and Rust doesn’t have mock object functionality built into the standard library
+as some other languages do. However, you can definitely create a struct that
+will serve the same purposes as a mock object.</p>
+<p>Here’s the scenario we’ll test: We’ll create a library that tracks a value
+against a maximum value and sends messages based on how close to the maximum
+value the current value is. This library could be used to keep track of a
+user’s quota for the number of API calls they’re allowed to make, for example.</p>
+<p>Our library will only provide the functionality of tracking how close to the
+maximum a value is and what the messages should be at what times. Applications
+that use our library will be expected to provide the mechanism for sending the
+messages: The application could show the message to the user directly, send an
+email, send a text message, or do something else. The library doesn’t need to
+know that detail. All it needs is something that implements a trait we’ll
+provide, called <code>Messenger</code>. Listing 15-20 shows the library code.</p>
+<figure class="listing" id="listing-15-20">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">pub trait Messenger {
+    fn send(&amp;self, msg: &amp;str);
+}
+
+pub struct LimitTracker&lt;'a, T: Messenger&gt; {
+    messenger: &amp;'a T,
+    value: usize,
+    max: usize,
+}
+
+impl&lt;'a, T&gt; LimitTracker&lt;'a, T&gt;
+where
+    T: Messenger,
+{
+    pub fn new(messenger: &amp;'a T, max: usize) -&gt; LimitTracker&lt;'a, T&gt; {
+        LimitTracker {
+            messenger,
+            value: 0,
+            max,
+        }
+    }
+
+    pub fn set_value(&amp;mut self, value: usize) {
+        self.value = value;
+
+        let percentage_of_max = self.value as f64 / self.max as f64;
+
+        if percentage_of_max &gt;= 1.0 {
+            self.messenger.send("Error: You are over your quota!");
+        } else if percentage_of_max &gt;= 0.9 {
+            self.messenger
+                .send("Urgent warning: You've used up over 90% of your quota!");
+        } else if percentage_of_max &gt;= 0.75 {
+            self.messenger
+                .send("Warning: You've used up over 75% of your quota!");
+        }
+    }
+}</code></pre>
+<figcaption><a href="#listing-15-20">Listing 15-20</a>: A library to keep track of how close a value is to a maximum value and warn when the value is at certain levels</figcaption>
+</figure>
+<p>One important part of this code is that the <code>Messenger</code> trait has one method
+called <code>send</code> that takes an immutable reference to <code>self</code> and the text of the
+message. This trait is the interface our mock object needs to implement so that
+the mock can be used in the same way a real object is. The other important part
+is that we want to test the behavior of the <code>set_value</code> method on the
+<code>LimitTracker</code>. We can change what we pass in for the <code>value</code> parameter, but
+<code>set_value</code> doesn’t return anything for us to make assertions on. We want to be
+able to say that if we create a <code>LimitTracker</code> with something that implements
+the <code>Messenger</code> trait and a particular value for <code>max</code>, the messenger is told
+to send the appropriate messages when we pass different numbers for <code>value</code>.</p>
+<p>We need a mock object that, instead of sending an email or text message when we
+call <code>send</code>, will only keep track of the messages it’s told to send. We can
+create a new instance of the mock object, create a <code>LimitTracker</code> that uses the
+mock object, call the <code>set_value</code> method on <code>LimitTracker</code>, and then check that
+the mock object has the messages we expect. Listing 15-21 shows an attempt to
+implement a mock object to do just that, but the borrow checker won’t allow it.</p>
+<figure class="listing" id="listing-15-21">
+<span class="file-name">Filename: src/lib.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">pub trait Messenger {
+</span><span class="boring">    fn send(&amp;self, msg: &amp;str);
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct LimitTracker&lt;'a, T: Messenger&gt; {
+</span><span class="boring">    messenger: &amp;'a T,
+</span><span class="boring">    value: usize,
+</span><span class="boring">    max: usize,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl&lt;'a, T&gt; LimitTracker&lt;'a, T&gt;
+</span><span class="boring">where
+</span><span class="boring">    T: Messenger,
+</span><span class="boring">{
+</span><span class="boring">    pub fn new(messenger: &amp;'a T, max: usize) -&gt; LimitTracker&lt;'a, T&gt; {
+</span><span class="boring">        LimitTracker {
+</span><span class="boring">            messenger,
+</span><span class="boring">            value: 0,
+</span><span class="boring">            max,
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    pub fn set_value(&amp;mut self, value: usize) {
+</span><span class="boring">        self.value = value;
+</span><span class="boring">
+</span><span class="boring">        let percentage_of_max = self.value as f64 / self.max as f64;
+</span><span class="boring">
+</span><span class="boring">        if percentage_of_max &gt;= 1.0 {
+</span><span class="boring">            self.messenger.send("Error: You are over your quota!");
+</span><span class="boring">        } else if percentage_of_max &gt;= 0.9 {
+</span><span class="boring">            self.messenger
+</span><span class="boring">                .send("Urgent warning: You've used up over 90% of your quota!");
+</span><span class="boring">        } else if percentage_of_max &gt;= 0.75 {
+</span><span class="boring">            self.messenger
+</span><span class="boring">                .send("Warning: You've used up over 75% of your quota!");
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct MockMessenger {
+        sent_messages: Vec&lt;String&gt;,
+    }
+
+    impl MockMessenger {
+        fn new() -&gt; MockMessenger {
+            MockMessenger {
+                sent_messages: vec![],
+            }
+        }
+    }
+
+    impl Messenger for MockMessenger {
+        fn send(&amp;self, message: &amp;str) {
+            self.sent_messages.push(String::from(message));
+        }
+    }
+
+    #[test]
+    fn it_sends_an_over_75_percent_warning_message() {
+        let mock_messenger = MockMessenger::new();
+        let mut limit_tracker = LimitTracker::new(&amp;mock_messenger, 100);
+
+        limit_tracker.set_value(80);
+
+        assert_eq!(mock_messenger.sent_messages.len(), 1);
+    }
+}</code></pre>
+<figcaption><a href="#listing-15-21">Listing 15-21</a>: An attempt to implement a <code>MockMessenger</code> that isn’t allowed by the borrow checker</figcaption>
+</figure>
+<p>This test code defines a <code>MockMessenger</code> struct that has a <code>sent_messages</code>
+field with a <code>Vec</code> of <code>String</code> values to keep track of the messages it’s told
+to send. We also define an associated function <code>new</code> to make it convenient to
+create new <code>MockMessenger</code> values that start with an empty list of messages. We
+then implement the <code>Messenger</code> trait for <code>MockMessenger</code> so that we can give a
+<code>MockMessenger</code> to a <code>LimitTracker</code>. In the definition of the <code>send</code> method, we
+take the message passed in as a parameter and store it in the <code>MockMessenger</code>
+list of <code>sent_messages</code>.</p>
+<p>In the test, we’re testing what happens when the <code>LimitTracker</code> is told to set
+<code>value</code> to something that is more than 75 percent of the <code>max</code> value. First, we
+create a new <code>MockMessenger</code>, which will start with an empty list of messages.
+Then, we create a new <code>LimitTracker</code> and give it a reference to the new
+<code>MockMessenger</code> and a <code>max</code> value of <code>100</code>. We call the <code>set_value</code> method on
+the <code>LimitTracker</code> with a value of <code>80</code>, which is more than 75 percent of 100.
+Then, we assert that the list of messages that the <code>MockMessenger</code> is keeping
+track of should now have one message in it.</p>
+<p>However, there’s one problem with this test, as shown here:</p>
+<pre><code class="language-console">$ cargo test
+   Compiling limit-tracker v0.1.0 (file:///projects/limit-tracker)
+error[E0596]: cannot borrow `self.sent_messages` as mutable, as it is behind a `&amp;` reference
+  --&gt; src/lib.rs:58:13
+   |
+58 |             self.sent_messages.push(String::from(message));
+   |             ^^^^^^^^^^^^^^^^^^ `self` is a `&amp;` reference, so it cannot be borrowed as mutable
+   |
+help: consider changing this to be a mutable reference in the `impl` method and the `trait` definition
+   |
+ 2 ~     fn send(&amp;mut self, msg: &amp;str);
+ 3 | }
+...
+56 |     impl Messenger for MockMessenger {
+57 ~         fn send(&amp;mut self, message: &amp;str) {
+   |
+
+For more information about this error, try `rustc --explain E0596`.
+error: could not compile `limit-tracker` (lib test) due to 1 previous error
+</code></pre>
+<p>We can’t modify the <code>MockMessenger</code> to keep track of the messages, because the
+<code>send</code> method takes an immutable reference to <code>self</code>. We also can’t take the
+suggestion from the error text to use <code>&amp;mut self</code> in both the <code>impl</code> method and
+the trait definition. We do not want to change the <code>Messenger</code> trait solely for
+the sake of testing. Instead, we need to find a way to make our test code work
+correctly with our existing design.</p>
+<p>This is a situation in which interior mutability can help! We’ll store the
+<code>sent_messages</code> within a <code>RefCell&lt;T&gt;</code>, and then the <code>send</code> method will be able
+to modify <code>sent_messages</code> to store the messages we’ve seen. Listing 15-22 shows
+what that looks like.</p>
+<figure class="listing" id="listing-15-22">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground"><span class="boring">pub trait Messenger {
+</span><span class="boring">    fn send(&amp;self, msg: &amp;str);
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct LimitTracker&lt;'a, T: Messenger&gt; {
+</span><span class="boring">    messenger: &amp;'a T,
+</span><span class="boring">    value: usize,
+</span><span class="boring">    max: usize,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl&lt;'a, T&gt; LimitTracker&lt;'a, T&gt;
+</span><span class="boring">where
+</span><span class="boring">    T: Messenger,
+</span><span class="boring">{
+</span><span class="boring">    pub fn new(messenger: &amp;'a T, max: usize) -&gt; LimitTracker&lt;'a, T&gt; {
+</span><span class="boring">        LimitTracker {
+</span><span class="boring">            messenger,
+</span><span class="boring">            value: 0,
+</span><span class="boring">            max,
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    pub fn set_value(&amp;mut self, value: usize) {
+</span><span class="boring">        self.value = value;
+</span><span class="boring">
+</span><span class="boring">        let percentage_of_max = self.value as f64 / self.max as f64;
+</span><span class="boring">
+</span><span class="boring">        if percentage_of_max &gt;= 1.0 {
+</span><span class="boring">            self.messenger.send("Error: You are over your quota!");
+</span><span class="boring">        } else if percentage_of_max &gt;= 0.9 {
+</span><span class="boring">            self.messenger
+</span><span class="boring">                .send("Urgent warning: You've used up over 90% of your quota!");
+</span><span class="boring">        } else if percentage_of_max &gt;= 0.75 {
+</span><span class="boring">            self.messenger
+</span><span class="boring">                .send("Warning: You've used up over 75% of your quota!");
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+
+    struct MockMessenger {
+        sent_messages: RefCell&lt;Vec&lt;String&gt;&gt;,
+    }
+
+    impl MockMessenger {
+        fn new() -&gt; MockMessenger {
+            MockMessenger {
+                sent_messages: RefCell::new(vec![]),
+            }
+        }
+    }
+
+    impl Messenger for MockMessenger {
+        fn send(&amp;self, message: &amp;str) {
+            self.sent_messages.borrow_mut().push(String::from(message));
+        }
+    }
+
+    #[test]
+    fn it_sends_an_over_75_percent_warning_message() {
+        // --snip--
+<span class="boring">        let mock_messenger = MockMessenger::new();
+</span><span class="boring">        let mut limit_tracker = LimitTracker::new(&amp;mock_messenger, 100);
+</span><span class="boring">
+</span><span class="boring">        limit_tracker.set_value(80);
+</span>
+        assert_eq!(mock_messenger.sent_messages.borrow().len(), 1);
+    }
+}</code></pre>
+<figcaption><a href="#listing-15-22">Listing 15-22</a>: Using <code>RefCell&lt;T&gt;</code> to mutate an inner value while the outer value is considered immutable</figcaption>
+</figure>
+<p>The <code>sent_messages</code> field is now of type <code>RefCell&lt;Vec&lt;String&gt;&gt;</code> instead of
+<code>Vec&lt;String&gt;</code>. In the <code>new</code> function, we create a new <code>RefCell&lt;Vec&lt;String&gt;&gt;</code>
+instance around the empty vector.</p>
+<p>For the implementation of the <code>send</code> method, the first parameter is still an
+immutable borrow of <code>self</code>, which matches the trait definition. We call
+<code>borrow_mut</code> on the <code>RefCell&lt;Vec&lt;String&gt;&gt;</code> in <code>self.sent_messages</code> to get a
+mutable reference to the value inside the <code>RefCell&lt;Vec&lt;String&gt;&gt;</code>, which is the
+vector. Then, we can call <code>push</code> on the mutable reference to the vector to keep
+track of the messages sent during the test.</p>
+<p>The last change we have to make is in the assertion: To see how many items are
+in the inner vector, we call <code>borrow</code> on the <code>RefCell&lt;Vec&lt;String&gt;&gt;</code> to get an
+immutable reference to the vector.</p>
+<p>Now that you’ve seen how to use <code>RefCell&lt;T&gt;</code>, let’s dig into how it works!</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="keeping-track-of-borrows-at-runtime-with-refcellt"></a></p>
+<h5 id="tracking-borrows-at-runtime"><a class="header" href="#tracking-borrows-at-runtime">Tracking Borrows at Runtime</a></h5>
+<p>When creating immutable and mutable references, we use the <code>&amp;</code> and <code>&amp;mut</code>
+syntax, respectively. With <code>RefCell&lt;T&gt;</code>, we use the <code>borrow</code> and <code>borrow_mut</code>
+methods, which are part of the safe API that belongs to <code>RefCell&lt;T&gt;</code>. The
+<code>borrow</code> method returns the smart pointer type <code>Ref&lt;T&gt;</code>, and <code>borrow_mut</code>
+returns the smart pointer type <code>RefMut&lt;T&gt;</code>. Both types implement <code>Deref</code>, so we
+can treat them like regular references.</p>
+<p>The <code>RefCell&lt;T&gt;</code> keeps track of how many <code>Ref&lt;T&gt;</code> and <code>RefMut&lt;T&gt;</code> smart
+pointers are currently active. Every time we call <code>borrow</code>, the <code>RefCell&lt;T&gt;</code>
+increases its count of how many immutable borrows are active. When a <code>Ref&lt;T&gt;</code>
+value goes out of scope, the count of immutable borrows goes down by 1. Just
+like the compile-time borrowing rules, <code>RefCell&lt;T&gt;</code> lets us have many immutable
+borrows or one mutable borrow at any point in time.</p>
+<p>If we try to violate these rules, rather than getting a compiler error as we
+would with references, the implementation of <code>RefCell&lt;T&gt;</code> will panic at
+runtime. Listing 15-23 shows a modification of the implementation of <code>send</code> in
+Listing 15-22. We’re deliberately trying to create two mutable borrows active
+for the same scope to illustrate that <code>RefCell&lt;T&gt;</code> prevents us from doing this
+at runtime.</p>
+<figure class="listing" id="listing-15-23">
+<span class="file-name">Filename: src/lib.rs</span>
+<span class="sample-flag">Runtime panic example</span><pre><code class="language-rust ignore panics"><span class="boring">pub trait Messenger {
+</span><span class="boring">    fn send(&amp;self, msg: &amp;str);
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct LimitTracker&lt;'a, T: Messenger&gt; {
+</span><span class="boring">    messenger: &amp;'a T,
+</span><span class="boring">    value: usize,
+</span><span class="boring">    max: usize,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl&lt;'a, T&gt; LimitTracker&lt;'a, T&gt;
+</span><span class="boring">where
+</span><span class="boring">    T: Messenger,
+</span><span class="boring">{
+</span><span class="boring">    pub fn new(messenger: &amp;'a T, max: usize) -&gt; LimitTracker&lt;'a, T&gt; {
+</span><span class="boring">        LimitTracker {
+</span><span class="boring">            messenger,
+</span><span class="boring">            value: 0,
+</span><span class="boring">            max,
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    pub fn set_value(&amp;mut self, value: usize) {
+</span><span class="boring">        self.value = value;
+</span><span class="boring">
+</span><span class="boring">        let percentage_of_max = self.value as f64 / self.max as f64;
+</span><span class="boring">
+</span><span class="boring">        if percentage_of_max &gt;= 1.0 {
+</span><span class="boring">            self.messenger.send("Error: You are over your quota!");
+</span><span class="boring">        } else if percentage_of_max &gt;= 0.9 {
+</span><span class="boring">            self.messenger
+</span><span class="boring">                .send("Urgent warning: You've used up over 90% of your quota!");
+</span><span class="boring">        } else if percentage_of_max &gt;= 0.75 {
+</span><span class="boring">            self.messenger
+</span><span class="boring">                .send("Warning: You've used up over 75% of your quota!");
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">    use std::cell::RefCell;
+</span><span class="boring">
+</span><span class="boring">    struct MockMessenger {
+</span><span class="boring">        sent_messages: RefCell&lt;Vec&lt;String&gt;&gt;,
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    impl MockMessenger {
+</span><span class="boring">        fn new() -&gt; MockMessenger {
+</span><span class="boring">            MockMessenger {
+</span><span class="boring">                sent_messages: RefCell::new(vec![]),
+</span><span class="boring">            }
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">
+</span>    impl Messenger for MockMessenger {
+        fn send(&amp;self, message: &amp;str) {
+            let mut one_borrow = self.sent_messages.borrow_mut();
+            let mut two_borrow = self.sent_messages.borrow_mut();
+
+            one_borrow.push(String::from(message));
+            two_borrow.push(String::from(message));
+        }
+    }
+<span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn it_sends_an_over_75_percent_warning_message() {
+</span><span class="boring">        let mock_messenger = MockMessenger::new();
+</span><span class="boring">        let mut limit_tracker = LimitTracker::new(&amp;mock_messenger, 100);
+</span><span class="boring">
+</span><span class="boring">        limit_tracker.set_value(80);
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(mock_messenger.sent_messages.borrow().len(), 1);
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-15-23">Listing 15-23</a>: Creating two mutable references in the same scope to see that <code>RefCell&lt;T&gt;</code> will panic</figcaption>
+</figure>
+<p>We create a variable <code>one_borrow</code> for the <code>RefMut&lt;T&gt;</code> smart pointer returned
+from <code>borrow_mut</code>. Then, we create another mutable borrow in the same way in
+the variable <code>two_borrow</code>. This makes two mutable references in the same scope,
+which isn’t allowed. When we run the tests for our library, the code in Listing
+15-23 will compile without any errors, but the test will fail:</p>
+<pre><code class="language-console">$ cargo test
+   Compiling limit-tracker v0.1.0 (file:///projects/limit-tracker)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.91s
+     Running unittests src/lib.rs (target/debug/deps/limit_tracker-e599811fa246dbde)
+
+running 1 test
+test tests::it_sends_an_over_75_percent_warning_message ... FAILED
+
+failures:
+
+---- tests::it_sends_an_over_75_percent_warning_message stdout ----
+
+thread 'tests::it_sends_an_over_75_percent_warning_message' (6028024) panicked at src/lib.rs:60:53:
+RefCell already borrowed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::it_sends_an_over_75_percent_warning_message
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+</code></pre>
+<p>Notice that the code panicked with the message <code>already borrowed: BorrowMutError</code>. This is how <code>RefCell&lt;T&gt;</code> handles violations of the borrowing
+rules at runtime.</p>
+<p>Choosing to catch borrowing errors at runtime rather than compile time, as
+we’ve done here, means you’d potentially be finding mistakes in your code later
+in the development process: possibly not until your code was deployed to
+production. Also, your code would incur a small runtime performance penalty as
+a result of keeping track of the borrows at runtime rather than compile time.
+However, using <code>RefCell&lt;T&gt;</code> makes it possible to write a mock object that can
+modify itself to keep track of the messages it has seen while you’re using it
+in a context where only immutable values are allowed. You can use <code>RefCell&lt;T&gt;</code>
+despite its trade-offs to get more functionality than regular references
+provide.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="having-multiple-owners-of-mutable-data-by-combining-rc-t-and-ref-cell-t"></a>
+<a id="allowing-multiple-owners-of-mutable-data-with-rct-and-refcellt"></a></p>
+<h4 id="allowing-multiple-owners-of-mutable-data"><a class="header" href="#allowing-multiple-owners-of-mutable-data">Allowing Multiple Owners of Mutable Data</a></h4>
+<p>A common way to use <code>RefCell&lt;T&gt;</code> is in combination with <code>Rc&lt;T&gt;</code>. Recall that
+<code>Rc&lt;T&gt;</code> lets you have multiple owners of some data, but it only gives immutable
+access to that data. If you have an <code>Rc&lt;T&gt;</code> that holds a <code>RefCell&lt;T&gt;</code>, you can
+get a value that can have multiple owners <em>and</em> that you can mutate!</p>
+<p>For example, recall the cons list example in Listing 15-18 where we used
+<code>Rc&lt;T&gt;</code> to allow multiple lists to share ownership of another list. Because
+<code>Rc&lt;T&gt;</code> holds only immutable values, we can’t change any of the values in the
+list once we’ve created them. Let’s add in <code>RefCell&lt;T&gt;</code> for its ability to
+change the values in the lists. Listing 15-24 shows that by using a
+<code>RefCell&lt;T&gt;</code> in the <code>Cons</code> definition, we can modify the value stored in all
+the lists.</p>
+<figure class="listing" id="listing-15-24">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
+enum List {
+    Cons(Rc&lt;RefCell&lt;i32&gt;&gt;, Rc&lt;List&gt;),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+fn main() {
+    let value = Rc::new(RefCell::new(5));
+
+    let a = Rc::new(Cons(Rc::clone(&amp;value), Rc::new(Nil)));
+
+    let b = Cons(Rc::new(RefCell::new(3)), Rc::clone(&amp;a));
+    let c = Cons(Rc::new(RefCell::new(4)), Rc::clone(&amp;a));
+
+    *value.borrow_mut() += 10;
+
+    println!("a after = {a:?}");
+    println!("b after = {b:?}");
+    println!("c after = {c:?}");
+}</code></pre>
+<figcaption><a href="#listing-15-24">Listing 15-24</a>: Using <code>Rc&lt;RefCell&lt;i32&gt;&gt;</code> to create a <code>List</code> that we can mutate</figcaption>
+</figure>
+<p>We create a value that is an instance of <code>Rc&lt;RefCell&lt;i32&gt;&gt;</code> and store it in a
+variable named <code>value</code> so that we can access it directly later. Then, we create
+a <code>List</code> in <code>a</code> with a <code>Cons</code> variant that holds <code>value</code>. We need to clone
+<code>value</code> so that both <code>a</code> and <code>value</code> have ownership of the inner <code>5</code> value
+rather than transferring ownership from <code>value</code> to <code>a</code> or having <code>a</code> borrow
+from <code>value</code>.</p>
+<p>We wrap the list <code>a</code> in an <code>Rc&lt;T&gt;</code> so that when we create lists <code>b</code> and <code>c</code>,
+they can both refer to <code>a</code>, which is what we did in Listing 15-18.</p>
+<p>After we’ve created the lists in <code>a</code>, <code>b</code>, and <code>c</code>, we want to add 10 to the
+value in <code>value</code>. We do this by calling <code>borrow_mut</code> on <code>value</code>, which uses the
+automatic dereferencing feature we discussed in <a href="05%20Structs%20and%20Invariants.html#wheres-the---operator">“Where’s the <code>-&gt;</code>
+Operator?”</a><!-- ignore --> in Chapter 5 to dereference
+the <code>Rc&lt;T&gt;</code> to the inner <code>RefCell&lt;T&gt;</code> value. The <code>borrow_mut</code> method returns a
+<code>RefMut&lt;T&gt;</code> smart pointer, and we use the dereference operator on it and change
+the inner value.</p>
+<p>When we print <code>a</code>, <code>b</code>, and <code>c</code>, we can see that they all have the modified
+value of <code>15</code> rather than <code>5</code>:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling cons-list v0.1.0 (file:///projects/cons-list)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.63s
+     Running `target/debug/cons-list`
+a after = Cons(RefCell { value: 15 }, Nil)
+b after = Cons(RefCell { value: 3 }, Cons(RefCell { value: 15 }, Nil))
+c after = Cons(RefCell { value: 4 }, Cons(RefCell { value: 15 }, Nil))
+</code></pre>
+<p>This technique is pretty neat! By using <code>RefCell&lt;T&gt;</code>, we have an outwardly
+immutable <code>List</code> value. But we can use the methods on <code>RefCell&lt;T&gt;</code> that provide
+access to its interior mutability so that we can modify our data when we need
+to. The runtime checks of the borrowing rules protect us from data races, and
+it’s sometimes worth trading a bit of speed for this flexibility in our data
+structures. Note that <code>RefCell&lt;T&gt;</code> does not work for multithreaded code!
+<code>Mutex&lt;T&gt;</code> is the thread-safe version of <code>RefCell&lt;T&gt;</code>, and we’ll discuss
+<code>Mutex&lt;T&gt;</code> in Chapter 16.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="reference-cycles-can-leak-memory-1"><a href="#reference-cycles-can-leak-memory-1" class="header">Reference Cycles Can Leak Memory</a></h2>
+<h3 id="reference-cycles-can-leak-memory"><a class="header" href="#reference-cycles-can-leak-memory">Reference Cycles Can Leak Memory</a></h3>
+<p>Rust’s memory safety guarantees make it difficult, but not impossible, to
+accidentally create memory that is never cleaned up (known as a <em>memory leak</em>).
+Preventing memory leaks entirely is not one of Rust’s guarantees, meaning
+memory leaks are memory safe in Rust. We can see that Rust allows memory leaks
+by using <code>Rc&lt;T&gt;</code> and <code>RefCell&lt;T&gt;</code>: It’s possible to create references where
+items refer to each other in a cycle. This creates memory leaks because the
+reference count of each item in the cycle will never reach 0, and the values
+will never be dropped.</p>
+<h4 id="creating-a-reference-cycle"><a class="header" href="#creating-a-reference-cycle">Creating a Reference Cycle</a></h4>
+<p>Let’s look at how a reference cycle might happen and how to prevent it,
+starting with the definition of the <code>List</code> enum and a <code>tail</code> method in Listing
+15-25.</p>
+<figure class="listing" id="listing-15-25">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use crate::List::{Cons, Nil};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+#[derive(Debug)]
+enum List {
+    Cons(i32, RefCell&lt;Rc&lt;List&gt;&gt;),
+    Nil,
+}
+
+impl List {
+    fn tail(&amp;self) -&gt; Option&lt;&amp;RefCell&lt;Rc&lt;List&gt;&gt;&gt; {
+        match self {
+            Cons(_, item) =&gt; Some(item),
+            Nil =&gt; None,
+        }
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-15-25">Listing 15-25</a>: A cons list definition that holds a <code>RefCell&lt;T&gt;</code> so that we can modify what a <code>Cons</code> variant is referring to</figcaption>
+</figure>
+<p>We’re using another variation of the <code>List</code> definition from Listing 15-5. The
+second element in the <code>Cons</code> variant is now <code>RefCell&lt;Rc&lt;List&gt;&gt;</code>, meaning that
+instead of having the ability to modify the <code>i32</code> value as we did in Listing
+15-24, we want to modify the <code>List</code> value a <code>Cons</code> variant is pointing to.
+We’re also adding a <code>tail</code> method to make it convenient for us to access the
+second item if we have a <code>Cons</code> variant.</p>
+<p>In Listing 15-26, we’re adding a <code>main</code> function that uses the definitions in
+Listing 15-25. This code creates a list in <code>a</code> and a list in <code>b</code> that points to
+the list in <code>a</code>. Then, it modifies the list in <code>a</code> to point to <code>b</code>, creating a
+reference cycle. There are <code>println!</code> statements along the way to show what the
+reference counts are at various points in this process.</p>
+<figure class="listing" id="listing-15-26">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">use crate::List::{Cons, Nil};
+</span><span class="boring">use std::cell::RefCell;
+</span><span class="boring">use std::rc::Rc;
+</span><span class="boring">
+</span><span class="boring">#[derive(Debug)]
+</span><span class="boring">enum List {
+</span><span class="boring">    Cons(i32, RefCell&lt;Rc&lt;List&gt;&gt;),
+</span><span class="boring">    Nil,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl List {
+</span><span class="boring">    fn tail(&amp;self) -&gt; Option&lt;&amp;RefCell&lt;Rc&lt;List&gt;&gt;&gt; {
+</span><span class="boring">        match self {
+</span><span class="boring">            Cons(_, item) =&gt; Some(item),
+</span><span class="boring">            Nil =&gt; None,
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let a = Rc::new(Cons(5, RefCell::new(Rc::new(Nil))));
+
+    println!("a initial rc count = {}", Rc::strong_count(&amp;a));
+    println!("a next item = {:?}", a.tail());
+
+    let b = Rc::new(Cons(10, RefCell::new(Rc::clone(&amp;a))));
+
+    println!("a rc count after b creation = {}", Rc::strong_count(&amp;a));
+    println!("b initial rc count = {}", Rc::strong_count(&amp;b));
+    println!("b next item = {:?}", b.tail());
+
+    if let Some(link) = a.tail() {
+        *link.borrow_mut() = Rc::clone(&amp;b);
+    }
+
+    println!("b rc count after changing a = {}", Rc::strong_count(&amp;b));
+    println!("a rc count after changing a = {}", Rc::strong_count(&amp;a));
+
+    // Uncomment the next line to see that we have a cycle;
+    // it will overflow the stack.
+    // println!("a next item = {:?}", a.tail());
+}</code></pre>
+<figcaption><a href="#listing-15-26">Listing 15-26</a>: Creating a reference cycle of two <code>List</code> values pointing to each other</figcaption>
+</figure>
+<p>We create an <code>Rc&lt;List&gt;</code> instance holding a <code>List</code> value in the variable <code>a</code>
+with an initial list of <code>5, Nil</code>. We then create an <code>Rc&lt;List&gt;</code> instance holding
+another <code>List</code> value in the variable <code>b</code> that contains the value <code>10</code> and
+points to the list in <code>a</code>.</p>
+<p>We modify <code>a</code> so that it points to <code>b</code> instead of <code>Nil</code>, creating a cycle. We
+do that by using the <code>tail</code> method to get a reference to the
+<code>RefCell&lt;Rc&lt;List&gt;&gt;</code> in <code>a</code>, which we put in the variable <code>link</code>. Then, we use
+the <code>borrow_mut</code> method on the <code>RefCell&lt;Rc&lt;List&gt;&gt;</code> to change the value inside
+from an <code>Rc&lt;List&gt;</code> that holds a <code>Nil</code> value to the <code>Rc&lt;List&gt;</code> in <code>b</code>.</p>
+<p>When we run this code, keeping the last <code>println!</code> commented out for the
+moment, we’ll get this output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling cons-list v0.1.0 (file:///projects/cons-list)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.53s
+     Running `target/debug/cons-list`
+a initial rc count = 1
+a next item = Some(RefCell { value: Nil })
+a rc count after b creation = 2
+b initial rc count = 1
+b next item = Some(RefCell { value: Cons(5, RefCell { value: Nil }) })
+b rc count after changing a = 2
+a rc count after changing a = 2
+</code></pre>
+<p>The reference count of the <code>Rc&lt;List&gt;</code> instances in both <code>a</code> and <code>b</code> is 2 after
+we change the list in <code>a</code> to point to <code>b</code>. At the end of <code>main</code>, Rust drops the
+variable <code>b</code>, which decreases the reference count of the <code>b</code> <code>Rc&lt;List&gt;</code>
+instance from 2 to 1. The memory that <code>Rc&lt;List&gt;</code> has on the heap won’t be
+dropped at this point because its reference count is 1, not 0. Then, Rust drops
+<code>a</code>, which decreases the reference count of the <code>a</code> <code>Rc&lt;List&gt;</code> instance from 2
+to 1 as well. This instance’s memory can’t be dropped either, because the other
+<code>Rc&lt;List&gt;</code> instance still refers to it. The memory allocated to the list will
+remain uncollected forever. To visualize this reference cycle, we’ve created
+the diagram in Figure 15-4.</p>
+<img alt="A rectangle labeled 'a' that points to a rectangle containing the integer 5. A rectangle labeled 'b' that points to a rectangle containing the integer 10. The rectangle containing 5 points to the rectangle containing 10, and the rectangle containing 10 points back to the rectangle containing 5, creating a cycle." src="assets/trpl15-04.svg" class="center">
+<p><span class="caption">Figure 15-4: A reference cycle of lists <code>a</code> and <code>b</code>
+pointing to each other</span></p>
+<p>If you uncomment the last <code>println!</code> and run the program, Rust will try to
+print this cycle with <code>a</code> pointing to <code>b</code> pointing to <code>a</code> and so forth until it
+overflows the stack.</p>
+<p>Compared to a real-world program, the consequences of creating a reference
+cycle in this example aren’t very dire: Right after we create the reference
+cycle, the program ends. However, if a more complex program allocated lots of
+memory in a cycle and held onto it for a long time, the program would use more
+memory than it needed and might overwhelm the system, causing it to run out of
+available memory.</p>
+<p>Creating reference cycles is not easily done, but it’s not impossible either.
+If you have <code>RefCell&lt;T&gt;</code> values that contain <code>Rc&lt;T&gt;</code> values or similar nested
+combinations of types with interior mutability and reference counting, you must
+ensure that you don’t create cycles; you can’t rely on Rust to catch them.
+Creating a reference cycle would be a logic bug in your program that you should
+use automated tests, code reviews, and other software development practices to
+minimize.</p>
+<p>Another solution for avoiding reference cycles is reorganizing your data
+structures so that some references express ownership and some references don’t.
+As a result, you can have cycles made up of some ownership relationships and
+some non-ownership relationships, and only the ownership relationships affect
+whether or not a value can be dropped. In Listing 15-25, we always want <code>Cons</code>
+variants to own their list, so reorganizing the data structure isn’t possible.
+Let’s look at an example using graphs made up of parent nodes and child nodes
+to see when non-ownership relationships are an appropriate way to prevent
+reference cycles.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="preventing-reference-cycles-turning-an-rct-into-a-weakt"></a></p>
+<h4 id="preventing-reference-cycles-using-weakt"><a class="header" href="#preventing-reference-cycles-using-weakt">Preventing Reference Cycles Using <code>Weak&lt;T&gt;</code></a></h4>
+<p>So far, we’ve demonstrated that calling <code>Rc::clone</code> increases the
+<code>strong_count</code> of an <code>Rc&lt;T&gt;</code> instance, and an <code>Rc&lt;T&gt;</code> instance is only cleaned
+up if its <code>strong_count</code> is 0. You can also create a weak reference to the
+value within an <code>Rc&lt;T&gt;</code> instance by calling <code>Rc::downgrade</code> and passing a
+reference to the <code>Rc&lt;T&gt;</code>. <em>Strong references</em> are how you can share ownership
+of an <code>Rc&lt;T&gt;</code> instance. <em>Weak references</em> don’t express an ownership
+relationship, and their count doesn’t affect when an <code>Rc&lt;T&gt;</code> instance is
+cleaned up. They won’t cause a reference cycle, because any cycle involving
+some weak references will be broken once the strong reference count of values
+involved is 0.</p>
+<p>When you call <code>Rc::downgrade</code>, you get a smart pointer of type <code>Weak&lt;T&gt;</code>.
+Instead of increasing the <code>strong_count</code> in the <code>Rc&lt;T&gt;</code> instance by 1, calling
+<code>Rc::downgrade</code> increases the <code>weak_count</code> by 1. The <code>Rc&lt;T&gt;</code> type uses
+<code>weak_count</code> to keep track of how many <code>Weak&lt;T&gt;</code> references exist, similar to
+<code>strong_count</code>. The difference is the <code>weak_count</code> doesn’t need to be 0 for the
+<code>Rc&lt;T&gt;</code> instance to be cleaned up.</p>
+<p>Because the value that <code>Weak&lt;T&gt;</code> references might have been dropped, to do
+anything with the value that a <code>Weak&lt;T&gt;</code> is pointing to you must make sure the
+value still exists. Do this by calling the <code>upgrade</code> method on a <code>Weak&lt;T&gt;</code>
+instance, which will return an <code>Option&lt;Rc&lt;T&gt;&gt;</code>. You’ll get a result of <code>Some</code>
+if the <code>Rc&lt;T&gt;</code> value has not been dropped yet and a result of <code>None</code> if the
+<code>Rc&lt;T&gt;</code> value has been dropped. Because <code>upgrade</code> returns an <code>Option&lt;Rc&lt;T&gt;&gt;</code>,
+Rust will ensure that the <code>Some</code> case and the <code>None</code> case are handled, and
+there won’t be an invalid pointer.</p>
+<p>As an example, rather than using a list whose items know only about the next
+item, we’ll create a tree whose items know about their child items <em>and</em> their
+parent items.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="creating-a-tree-data-structure-a-node-with-child-nodes"></a></p>
+<h5 id="creating-a-tree-data-structure"><a class="header" href="#creating-a-tree-data-structure">Creating a Tree Data Structure</a></h5>
+<p>To start, we’ll build a tree with nodes that know about their child nodes.
+We’ll create a struct named <code>Node</code> that holds its own <code>i32</code> value as well as
+references to its child <code>Node</code> values:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">use std::cell::RefCell;
+use std::rc::Rc;
+
+#[derive(Debug)]
+struct Node {
+    value: i32,
+    children: RefCell&lt;Vec&lt;Rc&lt;Node&gt;&gt;&gt;,
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let leaf = Rc::new(Node {
+</span><span class="boring">        value: 3,
+</span><span class="boring">        children: RefCell::new(vec![]),
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    let branch = Rc::new(Node {
+</span><span class="boring">        value: 5,
+</span><span class="boring">        children: RefCell::new(vec![Rc::clone(&amp;leaf)]),
+</span><span class="boring">    });
+</span><span class="boring">}</span></code></pre>
+<p>We want a <code>Node</code> to own its children, and we want to share that ownership with
+variables so that we can access each <code>Node</code> in the tree directly. To do this,
+we define the <code>Vec&lt;T&gt;</code> items to be values of type <code>Rc&lt;Node&gt;</code>. We also want to
+modify which nodes are children of another node, so we have a <code>RefCell&lt;T&gt;</code> in
+<code>children</code> around the <code>Vec&lt;Rc&lt;Node&gt;&gt;</code>.</p>
+<p>Next, we’ll use our struct definition and create one <code>Node</code> instance named
+<code>leaf</code> with the value <code>3</code> and no children, and another instance named <code>branch</code>
+with the value <code>5</code> and <code>leaf</code> as one of its children, as shown in Listing 15-27.</p>
+<figure class="listing" id="listing-15-27">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">use std::cell::RefCell;
+</span><span class="boring">use std::rc::Rc;
+</span><span class="boring">
+</span><span class="boring">#[derive(Debug)]
+</span><span class="boring">struct Node {
+</span><span class="boring">    value: i32,
+</span><span class="boring">    children: RefCell&lt;Vec&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let leaf = Rc::new(Node {
+        value: 3,
+        children: RefCell::new(vec![]),
+    });
+
+    let branch = Rc::new(Node {
+        value: 5,
+        children: RefCell::new(vec![Rc::clone(&amp;leaf)]),
+    });
+}</code></pre>
+<figcaption><a href="#listing-15-27">Listing 15-27</a>: Creating a <code>leaf</code> node with no children and a <code>branch</code> node with <code>leaf</code> as one of its children</figcaption>
+</figure>
+<p>We clone the <code>Rc&lt;Node&gt;</code> in <code>leaf</code> and store that in <code>branch</code>, meaning the
+<code>Node</code> in <code>leaf</code> now has two owners: <code>leaf</code> and <code>branch</code>. We can get from
+<code>branch</code> to <code>leaf</code> through <code>branch.children</code>, but there’s no way to get from
+<code>leaf</code> to <code>branch</code>. The reason is that <code>leaf</code> has no reference to <code>branch</code> and
+doesn’t know they’re related. We want <code>leaf</code> to know that <code>branch</code> is its
+parent. We’ll do that next.</p>
+<h5 id="adding-a-reference-from-a-child-to-its-parent"><a class="header" href="#adding-a-reference-from-a-child-to-its-parent">Adding a Reference from a Child to Its Parent</a></h5>
+<p>To make the child node aware of its parent, we need to add a <code>parent</code> field to
+our <code>Node</code> struct definition. The trouble is in deciding what the type of
+<code>parent</code> should be. We know it can’t contain an <code>Rc&lt;T&gt;</code>, because that would
+create a reference cycle with <code>leaf.parent</code> pointing to <code>branch</code> and
+<code>branch.children</code> pointing to <code>leaf</code>, which would cause their <code>strong_count</code>
+values to never be 0.</p>
+<p>Thinking about the relationships another way, a parent node should own its
+children: If a parent node is dropped, its child nodes should be dropped as
+well. However, a child should not own its parent: If we drop a child node, the
+parent should still exist. This is a case for weak references!</p>
+<p>So, instead of <code>Rc&lt;T&gt;</code>, we’ll make the type of <code>parent</code> use <code>Weak&lt;T&gt;</code>,
+specifically a <code>RefCell&lt;Weak&lt;Node&gt;&gt;</code>. Now our <code>Node</code> struct definition looks
+like this:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">use std::cell::RefCell;
+use std::rc::{Rc, Weak};
+
+#[derive(Debug)]
+struct Node {
+    value: i32,
+    parent: RefCell&lt;Weak&lt;Node&gt;&gt;,
+    children: RefCell&lt;Vec&lt;Rc&lt;Node&gt;&gt;&gt;,
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let leaf = Rc::new(Node {
+</span><span class="boring">        value: 3,
+</span><span class="boring">        parent: RefCell::new(Weak::new()),
+</span><span class="boring">        children: RefCell::new(vec![]),
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+</span><span class="boring">
+</span><span class="boring">    let branch = Rc::new(Node {
+</span><span class="boring">        value: 5,
+</span><span class="boring">        parent: RefCell::new(Weak::new()),
+</span><span class="boring">        children: RefCell::new(vec![Rc::clone(&amp;leaf)]),
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    *leaf.parent.borrow_mut() = Rc::downgrade(&amp;branch);
+</span><span class="boring">
+</span><span class="boring">    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+</span><span class="boring">}</span></code></pre>
+<p>A node will be able to refer to its parent node but doesn’t own its parent. In
+Listing 15-28, we update <code>main</code> to use this new definition so that the <code>leaf</code>
+node will have a way to refer to its parent, <code>branch</code>.</p>
+<figure class="listing" id="listing-15-28">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">use std::cell::RefCell;
+</span><span class="boring">use std::rc::{Rc, Weak};
+</span><span class="boring">
+</span><span class="boring">#[derive(Debug)]
+</span><span class="boring">struct Node {
+</span><span class="boring">    value: i32,
+</span><span class="boring">    parent: RefCell&lt;Weak&lt;Node&gt;&gt;,
+</span><span class="boring">    children: RefCell&lt;Vec&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let leaf = Rc::new(Node {
+        value: 3,
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![]),
+    });
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+
+    let branch = Rc::new(Node {
+        value: 5,
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![Rc::clone(&amp;leaf)]),
+    });
+
+    *leaf.parent.borrow_mut() = Rc::downgrade(&amp;branch);
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+}</code></pre>
+<figcaption><a href="#listing-15-28">Listing 15-28</a>: A <code>leaf</code> node with a weak reference to its parent node, <code>branch</code></figcaption>
+</figure>
+<p>Creating the <code>leaf</code> node looks similar to Listing 15-27 with the exception of
+the <code>parent</code> field: <code>leaf</code> starts out without a parent, so we create a new,
+empty <code>Weak&lt;Node&gt;</code> reference instance.</p>
+<p>At this point, when we try to get a reference to the parent of <code>leaf</code> by using
+the <code>upgrade</code> method, we get a <code>None</code> value. We see this in the output from the
+first <code>println!</code> statement:</p>
+<pre><code class="language-text">leaf parent = None
+</code></pre>
+<p>When we create the <code>branch</code> node, it will also have a new <code>Weak&lt;Node&gt;</code>
+reference in the <code>parent</code> field because <code>branch</code> doesn’t have a parent node. We
+still have <code>leaf</code> as one of the children of <code>branch</code>. Once we have the <code>Node</code>
+instance in <code>branch</code>, we can modify <code>leaf</code> to give it a <code>Weak&lt;Node&gt;</code> reference
+to its parent. We use the <code>borrow_mut</code> method on the <code>RefCell&lt;Weak&lt;Node&gt;&gt;</code> in
+the <code>parent</code> field of <code>leaf</code>, and then we use the <code>Rc::downgrade</code> function to
+create a <code>Weak&lt;Node&gt;</code> reference to <code>branch</code> from the <code>Rc&lt;Node&gt;</code> in <code>branch</code>.</p>
+<p>When we print the parent of <code>leaf</code> again, this time we’ll get a <code>Some</code> variant
+holding <code>branch</code>: Now <code>leaf</code> can access its parent! When we print <code>leaf</code>, we
+also avoid the cycle that eventually ended in a stack overflow like we had in
+Listing 15-26; the <code>Weak&lt;Node&gt;</code> references are printed as <code>(Weak)</code>:</p>
+<pre><code class="language-text">leaf parent = Some(Node { value: 5, parent: RefCell { value: (Weak) },
+children: RefCell { value: [Node { value: 3, parent: RefCell { value: (Weak) },
+children: RefCell { value: [] } }] } })
+</code></pre>
+<p>The lack of infinite output indicates that this code didn’t create a reference
+cycle. We can also tell this by looking at the values we get from calling
+<code>Rc::strong_count</code> and <code>Rc::weak_count</code>.</p>
+<h5 id="visualizing-changes-to-strong_count-and-weak_count"><a class="header" href="#visualizing-changes-to-strong_count-and-weak_count">Visualizing Changes to <code>strong_count</code> and <code>weak_count</code></a></h5>
+<p>Let’s look at how the <code>strong_count</code> and <code>weak_count</code> values of the <code>Rc&lt;Node&gt;</code>
+instances change by creating a new inner scope and moving the creation of
+<code>branch</code> into that scope. By doing so, we can see what happens when <code>branch</code> is
+created and then dropped when it goes out of scope. The modifications are shown
+in Listing 15-29.</p>
+<figure class="listing" id="listing-15-29">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">use std::cell::RefCell;
+</span><span class="boring">use std::rc::{Rc, Weak};
+</span><span class="boring">
+</span><span class="boring">#[derive(Debug)]
+</span><span class="boring">struct Node {
+</span><span class="boring">    value: i32,
+</span><span class="boring">    parent: RefCell&lt;Weak&lt;Node&gt;&gt;,
+</span><span class="boring">    children: RefCell&lt;Vec&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let leaf = Rc::new(Node {
+        value: 3,
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![]),
+    });
+
+    println!(
+        "leaf strong = {}, weak = {}",
+        Rc::strong_count(&amp;leaf),
+        Rc::weak_count(&amp;leaf),
+    );
+
+    {
+        let branch = Rc::new(Node {
+            value: 5,
+            parent: RefCell::new(Weak::new()),
+            children: RefCell::new(vec![Rc::clone(&amp;leaf)]),
+        });
+
+        *leaf.parent.borrow_mut() = Rc::downgrade(&amp;branch);
+
+        println!(
+            "branch strong = {}, weak = {}",
+            Rc::strong_count(&amp;branch),
+            Rc::weak_count(&amp;branch),
+        );
+
+        println!(
+            "leaf strong = {}, weak = {}",
+            Rc::strong_count(&amp;leaf),
+            Rc::weak_count(&amp;leaf),
+        );
+    }
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+    println!(
+        "leaf strong = {}, weak = {}",
+        Rc::strong_count(&amp;leaf),
+        Rc::weak_count(&amp;leaf),
+    );
+}</code></pre>
+<figcaption><a href="#listing-15-29">Listing 15-29</a>: Creating <code>branch</code> in an inner scope and examining strong and weak reference counts</figcaption>
+</figure>
+<p>After <code>leaf</code> is created, its <code>Rc&lt;Node&gt;</code> has a strong count of 1 and a weak
+count of 0. In the inner scope, we create <code>branch</code> and associate it with
+<code>leaf</code>, at which point when we print the counts, the <code>Rc&lt;Node&gt;</code> in <code>branch</code>
+will have a strong count of 1 and a weak count of 1 (for <code>leaf.parent</code> pointing
+to <code>branch</code> with a <code>Weak&lt;Node&gt;</code>). When we print the counts in <code>leaf</code>, we’ll see
+it will have a strong count of 2 because <code>branch</code> now has a clone of the
+<code>Rc&lt;Node&gt;</code> of <code>leaf</code> stored in <code>branch.children</code> but will still have a weak
+count of 0.</p>
+<p>When the inner scope ends, <code>branch</code> goes out of scope and the strong count of
+the <code>Rc&lt;Node&gt;</code> decreases to 0, so its <code>Node</code> is dropped. The weak count of 1
+from <code>leaf.parent</code> has no bearing on whether or not <code>Node</code> is dropped, so we
+don’t get any memory leaks!</p>
+<p>If we try to access the parent of <code>leaf</code> after the end of the scope, we’ll get
+<code>None</code> again. At the end of the program, the <code>Rc&lt;Node&gt;</code> in <code>leaf</code> has a strong
+count of 1 and a weak count of 0 because the variable <code>leaf</code> is now the only
+reference to the <code>Rc&lt;Node&gt;</code> again.</p>
+<p>All of the logic that manages the counts and value dropping is built into
+<code>Rc&lt;T&gt;</code> and <code>Weak&lt;T&gt;</code> and their implementations of the <code>Drop</code> trait. By
+specifying that the relationship from a child to its parent should be a
+<code>Weak&lt;T&gt;</code> reference in the definition of <code>Node</code>, you’re able to have parent
+nodes point to child nodes and vice versa without creating a reference cycle
+and memory leaks.</p>
+<h3 id="summary-14"><a class="header" href="#summary-14">Summary</a></h3>
+<p>This chapter covered how to use smart pointers to make different guarantees and
+trade-offs from those Rust makes by default with regular references. The
+<code>Box&lt;T&gt;</code> type has a known size and points to data allocated on the heap. The
+<code>Rc&lt;T&gt;</code> type keeps track of the number of references to data on the heap so
+that the data can have multiple owners. The <code>RefCell&lt;T&gt;</code> type with its interior
+mutability gives us a type that we can use when we need an immutable type but
+need to change an inner value of that type; it also enforces the borrowing
+rules at runtime instead of at compile time.</p>
+<p>Also discussed were the <code>Deref</code> and <code>Drop</code> traits, which enable a lot of the
+functionality of smart pointers. We explored reference cycles that can cause
+memory leaks and how to prevent them using <code>Weak&lt;T&gt;</code>.</p>
+<p>If this chapter has piqued your interest and you want to implement your own
+smart pointers, check out <a href="https://doc.rust-lang.org/stable/nomicon/index.html">“The Rustonomicon”</a> for more useful
+information.</p>
+<p>Next, we’ll talk about concurrency in Rust. You’ll even learn about a few new
+smart pointers.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="14%20Cargo%20for%20a%20Team.html">← 14 Cargo for a Team</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="16%20Concurrency%20and%20Admission%20Control.html">16 Concurrency and Admission Control →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#smart-pointers">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

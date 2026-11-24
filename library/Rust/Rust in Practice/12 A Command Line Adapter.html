@@ -1,0 +1,2184 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>A Command Line Adapter</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-beans.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 12 / 21</span></div>
+<div class="hero"><div><h1>A Command Line Adapter</h1><p>Make operational choices explicit at process startup.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>--db orders.sqlite</span></div><div class="trace"><b>Observe</b><span>--listen 127.0.0.1:8080</span></div><div class="trace"><b>Result</b><span>bound listener</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="11%20Tests%20That%20Protect%20Contracts.html">← 11 Tests That Protect Contracts</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="13%20Closures%20and%20Iterator%20Pipelines.html">13 Closures and Iterator Pipelines →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#an-io-project-building-a-command-line-program">An I/O Project: Building a Command Line Program</a><a href="#accepting-command-line-arguments-1">Accepting Command Line Arguments</a><a href="#reading-a-file-1">Reading a File</a><a href="#refactoring-to-improve-modularity-and-error-handling-1">Refactoring to Improve Modularity and Error Handling</a><a href="#adding-functionality-with-test-driven-development-1">Adding Functionality with Test Driven Development</a><a href="#working-with-environment-variables-1">Working with Environment Variables</a><a href="#redirecting-errors-to-standard-error-1">Redirecting Errors to Standard Error</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Make operational choices explicit at process startup</h2><p>Clap derives a command-line interface from Args. SocketAddr parsing happens before the bind call. A malformed address is a usage error; an address already occupied by another process is an operating-system error reported while binding. These superficially similar failures belong at different boundaries. PathBuf keeps a native filesystem path intact and defers its existence and permission checks to the filesystem.</p><figure class="code"><figcaption>src/main.rs · excerpt</figcaption><pre><code><span class="cp">#[derive(Parser)]</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Args</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cp">#[arg(long, default_value = </span><span class="s">"127.0.0.1:8080"</span><span class="cp">)]</span>
+<span class="w">    </span><span class="n">listen</span><span class="p">:</span><span class="w"> </span><span class="nc">SocketAddr</span><span class="p">,</span>
+<span class="w">    </span><span class="cp">#[arg(long, default_value = </span><span class="s">"orders.sqlite"</span><span class="cp">)]</span>
+<span class="w">    </span><span class="n">db</span><span class="p">:</span><span class="w"> </span><span class="nc">PathBuf</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></figure><p>Start cargo run --locked -- --help. The first separator sends subsequent arguments to the compiled application. Run with two different database filenames and the same order id can be created once in each. Then restart the first process against its original file and the same payload is replayed. The distinction between a path and the persistent state behind it is an operational contract. In a container, choose a mounted path if retaining the idempotency history matters.</p><h3>Handle filenames and streams deliberately</h3><p>The example accepts a database path as a native path and the service writes structured diagnostic events to standard error. That is the same separation a batch tool needs when its standard output is piped into another program. Putting a helpful startup banner into a JSON-lines output stream would corrupt the stream for the downstream parser. Useful command-line contracts include exit status, data format, error destination and interaction with files. Test those explicitly when they matter. For example, invoking the service with an unavailable port should fail at startup and identify the bind operation; a successful parse of the address cannot guarantee the port is free.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://docs.rs/clap/4/clap/">docs.rs/clap/4/clap</a> · <a href="https://doc.rust-lang.org/std/path/struct.PathBuf.html">doc.rust-lang.org/std/path/struct.PathBuf.html</a></p></section><div class="book"><h2 id="an-io-project-building-a-command-line-program"><a class="header" href="#an-io-project-building-a-command-line-program">An I/O Project: Building a Command Line Program</a></h2>
+<p>This chapter is a recap of the many skills you’ve learned so far and an
+exploration of a few more standard library features. We’ll build a command line
+tool that interacts with file and command line input/output to practice some of
+the Rust concepts you now have under your belt.</p>
+<p>Rust’s speed, safety, single binary output, and cross-platform support make it
+an ideal language for creating command line tools, so for our project, we’ll
+make our own version of the classic command line search tool <code>grep</code>
+(<strong>g</strong>lobally search a <strong>r</strong>egular <strong>e</strong>xpression and <strong>p</strong>rint). In the
+simplest use case, <code>grep</code> searches a specified file for a specified string. To
+do so, <code>grep</code> takes as its arguments a file path and a string. Then, it reads
+the file, finds lines in that file that contain the string argument, and prints
+those lines.</p>
+<p>Along the way, we’ll show how to make our command line tool use the terminal
+features that many other command line tools use. We’ll read the value of an
+environment variable to allow the user to configure the behavior of our tool.
+We’ll also print error messages to the standard error console stream (<code>stderr</code>)
+instead of standard output (<code>stdout</code>) so that, for example, the user can
+redirect successful output to a file while still seeing error messages onscreen.</p>
+<p>One Rust community member, Andrew Gallant, has already created a fully
+featured, very fast version of <code>grep</code>, called <code>ripgrep</code>. By comparison, our
+version will be fairly simple, but this chapter will give you some of the
+background knowledge you need to understand a real-world project such as
+<code>ripgrep</code>.</p>
+<p>Our <code>grep</code> project will combine a number of concepts you’ve learned so far:</p>
+<ul>
+<li>Organizing code (<a href="07%20Modules%20and%20Boundaries.html#packages-crates-and-modules">Chapter 7</a><!-- ignore -->)</li>
+<li>Using vectors and strings (<a href="08%20Collections%20and%20Replay.html#common-collections">Chapter 8</a><!-- ignore -->)</li>
+<li>Handling errors (<a href="09%20Errors%20Across%20Boundaries.html#error-handling">Chapter 9</a><!-- ignore -->)</li>
+<li>Using traits and lifetimes where appropriate (<a href="10%20Generics%20Traits%20and%20Lifetimes.html#generic-types-traits-and-lifetimes">Chapter 10</a><!-- ignore -->)</li>
+<li>Writing tests (<a href="11%20Tests%20That%20Protect%20Contracts.html#writing-automated-tests">Chapter 11</a><!-- ignore -->)</li>
+</ul>
+<p>We’ll also briefly introduce closures, iterators, and trait objects, which
+<a href="13%20Closures%20and%20Iterator%20Pipelines.html#functional-language-features-iterators-and-closures">Chapter 13</a><!-- ignore --> and <a href="18%20State%20and%20Behaviour%20Patterns.html#object-oriented-programming-features">Chapter 18</a><!-- ignore --> will
+cover in detail.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="accepting-command-line-arguments-1"><a href="#accepting-command-line-arguments-1" class="header">Accepting Command Line Arguments</a></h2>
+<h3 id="accepting-command-line-arguments"><a class="header" href="#accepting-command-line-arguments">Accepting Command Line Arguments</a></h3>
+<p>Let’s create a new project with, as always, <code>cargo new</code>. We’ll call our project
+<code>minigrep</code> to distinguish it from the <code>grep</code> tool that you might already have
+on your system:</p>
+<pre><code class="language-console">$ cargo new minigrep
+     Created binary (application) `minigrep` project
+$ cd minigrep
+</code></pre>
+<p>The first task is to make <code>minigrep</code> accept its two command line arguments: the
+file path and a string to search for. That is, we want to be able to run our
+program with <code>cargo run</code>, two hyphens to indicate the following arguments are
+for our program rather than for <code>cargo</code>, a string to search for, and a path to
+a file to search in, like so:</p>
+<pre><code class="language-console">$ cargo run -- searchstring example-filename.txt
+</code></pre>
+<p>Right now, the program generated by <code>cargo new</code> cannot process arguments we
+give it. Some existing libraries on <a href="https://crates.io/">crates.io</a> can help
+with writing a program that accepts command line arguments, but because you’re
+just learning this concept, let’s implement this capability ourselves.</p>
+<h4 id="reading-the-argument-values"><a class="header" href="#reading-the-argument-values">Reading the Argument Values</a></h4>
+<p>To enable <code>minigrep</code> to read the values of command line arguments we pass to
+it, we’ll need the <code>std::env::args</code> function provided in Rust’s standard
+library. This function returns an iterator of the command line arguments passed
+to <code>minigrep</code>. We’ll cover iterators fully in <a href="13%20Closures%20and%20Iterator%20Pipelines.html#functional-language-features-iterators-and-closures">Chapter 13</a><!-- ignore
+-->. For now, you only need to know two details about iterators: Iterators
+produce a series of values, and we can call the <code>collect</code> method on an iterator
+to turn it into a collection, such as a vector, which contains all the elements
+the iterator produces.</p>
+<p>The code in Listing 12-1 allows your <code>minigrep</code> program to read any command
+line arguments passed to it and then collect the values into a vector.</p>
+<figure class="listing" id="listing-12-1">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::env;
+
+fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+    dbg!(args);
+}</code></pre>
+<figcaption><a href="#listing-12-1">Listing 12-1</a>: Collecting the command line arguments into a vector and printing them</figcaption>
+</figure>
+<p>First, we bring the <code>std::env</code> module into scope with a <code>use</code> statement so that
+we can use its <code>args</code> function. Notice that the <code>std::env::args</code> function is
+nested in two levels of modules. As we discussed in <a href="07%20Modules%20and%20Boundaries.html#creating-idiomatic-use-paths">Chapter
+7</a><!-- ignore -->, in cases where the desired function is
+nested in more than one module, we’ve chosen to bring the parent module into
+scope rather than the function. By doing so, we can easily use other functions
+from <code>std::env</code>. It’s also less ambiguous than adding <code>use std::env::args</code> and
+then calling the function with just <code>args</code>, because <code>args</code> might easily be
+mistaken for a function that’s defined in the current module.</p>
+<section class="note" aria-role="note">
+<h4 id="the-args-function-and-invalid-unicode"><a class="header" href="#the-args-function-and-invalid-unicode">The <code>args</code> Function and Invalid Unicode</a></h4>
+<p>Note that <code>std::env::args</code> will panic if any argument contains invalid
+Unicode. If your program needs to accept arguments containing invalid
+Unicode, use <code>std::env::args_os</code> instead. That function returns an iterator
+that produces <code>OsString</code> values instead of <code>String</code> values. We’ve chosen to
+use <code>std::env::args</code> here for simplicity because <code>OsString</code> values differ per
+platform and are more complex to work with than <code>String</code> values.</p>
+</section>
+<p>On the first line of <code>main</code>, we call <code>env::args</code>, and we immediately use
+<code>collect</code> to turn the iterator into a vector containing all the values produced
+by the iterator. We can use the <code>collect</code> function to create many kinds of
+collections, so we explicitly annotate the type of <code>args</code> to specify that we
+want a vector of strings. Although you very rarely need to annotate types in
+Rust, <code>collect</code> is one function you do often need to annotate because Rust
+isn’t able to infer the kind of collection you want.</p>
+<p>Finally, we print the vector using the debug macro. Let’s try running the code
+first with no arguments and then with two arguments:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.61s
+     Running `target/debug/minigrep`
+[src/main.rs:5:5] args = [
+    "target/debug/minigrep",
+]
+</code></pre>
+<pre><code class="language-console">$ cargo run -- needle haystack
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.57s
+     Running `target/debug/minigrep needle haystack`
+[src/main.rs:5:5] args = [
+    "target/debug/minigrep",
+    "needle",
+    "haystack",
+]
+</code></pre>
+<p>Notice that the first value in the vector is <code>"target/debug/minigrep"</code>, which
+is the name of our binary. This matches the behavior of the arguments list in
+C, letting programs use the name by which they were invoked in their execution.
+It’s often convenient to have access to the program name in case you want to
+print it in messages or change the behavior of the program based on what
+command line alias was used to invoke the program. But for the purposes of this
+chapter, we’ll ignore it and save only the two arguments we need.</p>
+<h4 id="saving-the-argument-values-in-variables"><a class="header" href="#saving-the-argument-values-in-variables">Saving the Argument Values in Variables</a></h4>
+<p>The program is currently able to access the values specified as command line
+arguments. Now we need to save the values of the two arguments in variables so
+that we can use the values throughout the rest of the program. We do that in
+Listing 12-2.</p>
+<figure class="listing" id="listing-12-2">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust should_panic noplayground">use std::env;
+
+fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+
+    let query = &amp;args[1];
+    let file_path = &amp;args[2];
+
+    println!("Searching for {query}");
+    println!("In file {file_path}");
+}</code></pre>
+<figcaption><a href="#listing-12-2">Listing 12-2</a>: Creating variables to hold the query argument and file path argument</figcaption>
+</figure>
+<p>As we saw when we printed the vector, the program’s name takes up the first
+value in the vector at <code>args[0]</code>, so we’re starting arguments at index 1. The
+first argument <code>minigrep</code> takes is the string we’re searching for, so we put a
+reference to the first argument in the variable <code>query</code>. The second argument
+will be the file path, so we put a reference to the second argument in the
+variable <code>file_path</code>.</p>
+<p>We temporarily print the values of these variables to prove that the code is
+working as we intend. Let’s run this program again with the arguments <code>test</code>
+and <code>sample.txt</code>:</p>
+<pre><code class="language-console">$ cargo run -- test sample.txt
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.0s
+     Running `target/debug/minigrep test sample.txt`
+Searching for test
+In file sample.txt
+</code></pre>
+<p>Great, the program is working! The values of the arguments we need are being
+saved into the right variables. Later we’ll add some error handling to deal
+with certain potential erroneous situations, such as when the user provides no
+arguments; for now, we’ll ignore that situation and work on adding file-reading
+capabilities instead.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="reading-a-file-1"><a href="#reading-a-file-1" class="header">Reading a File</a></h2>
+<h3 id="reading-a-file"><a class="header" href="#reading-a-file">Reading a File</a></h3>
+<p>Now we’ll add functionality to read the file specified in the <code>file_path</code>
+argument. First, we need a sample file to test it with: We’ll use a file with a
+small amount of text over multiple lines with some repeated words. Listing 12-3
+has an Emily Dickinson poem that will work well! Create a file called
+<em>poem.txt</em> at the root level of your project, and enter the poem “I’m Nobody!
+Who are you?”</p>
+<figure class="listing" id="listing-12-3">
+<span class="file-name">Filename: poem.txt</span>
+<pre><code class="language-text">I'm nobody! Who are you?
+Are you nobody, too?
+Then there's a pair of us - don't tell!
+They'd banish us, you know.
+
+How dreary to be somebody!
+How public, like a frog
+To tell your name the livelong day
+To an admiring bog!
+</code></pre>
+<figcaption><a href="#listing-12-3">Listing 12-3</a>: A poem by Emily Dickinson makes a good test case.</figcaption>
+</figure>
+<p>With the text in place, edit <em>src/main.rs</em> and add code to read the file, as
+shown in Listing 12-4.</p>
+<figure class="listing" id="listing-12-4">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust should_panic noplayground">use std::env;
+use std::fs;
+
+fn main() {
+    // --snip--
+<span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let query = &amp;args[1];
+</span><span class="boring">    let file_path = &amp;args[2];
+</span><span class="boring">
+</span><span class="boring">    println!("Searching for {query}");
+</span>    println!("In file {file_path}");
+
+    let contents = fs::read_to_string(file_path)
+        .expect("Should have been able to read the file");
+
+    println!("With text:\n{contents}");
+}</code></pre>
+<figcaption><a href="#listing-12-4">Listing 12-4</a>: Reading the contents of the file specified by the second argument</figcaption>
+</figure>
+<p>First, we bring in a relevant part of the standard library with a <code>use</code>
+statement: We need <code>std::fs</code> to handle files.</p>
+<p>In <code>main</code>, the new statement <code>fs::read_to_string</code> takes the <code>file_path</code>, opens
+that file, and returns a value of type <code>std::io::Result&lt;String&gt;</code> that contains
+the file’s contents.</p>
+<p>After that, we again add a temporary <code>println!</code> statement that prints the value
+of <code>contents</code> after the file is read so that we can check that the program is
+working so far.</p>
+<p>Let’s run this code with any string as the first command line argument (because
+we haven’t implemented the searching part yet) and the <em>poem.txt</em> file as the
+second argument:</p>
+<pre><code class="language-console">$ cargo run -- the poem.txt
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.0s
+     Running `target/debug/minigrep the poem.txt`
+Searching for the
+In file poem.txt
+With text:
+I'm nobody! Who are you?
+Are you nobody, too?
+Then there's a pair of us - don't tell!
+They'd banish us, you know.
+
+How dreary to be somebody!
+How public, like a frog
+To tell your name the livelong day
+To an admiring bog!
+
+</code></pre>
+<p>Great! The code read and then printed the contents of the file. But the code
+has a few flaws. At the moment, the <code>main</code> function has multiple
+responsibilities: Generally, functions are clearer and easier to maintain if
+each function is responsible for only one idea. The other problem is that we’re
+not handling errors as well as we could. The program is still small, so these
+flaws aren’t a big problem, but as the program grows, it will be harder to fix
+them cleanly. It’s a good practice to begin refactoring early on when
+developing a program because it’s much easier to refactor smaller amounts of
+code. We’ll do that next.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="refactoring-to-improve-modularity-and-error-handling-1"><a href="#refactoring-to-improve-modularity-and-error-handling-1" class="header">Refactoring to Improve Modularity and Error Handling</a></h2>
+<h3 id="refactoring-to-improve-modularity-and-error-handling"><a class="header" href="#refactoring-to-improve-modularity-and-error-handling">Refactoring to Improve Modularity and Error Handling</a></h3>
+<p>To improve our program, we’ll fix four problems that have to do with the
+program’s structure and how it’s handling potential errors. First, our <code>main</code>
+function now performs two tasks: It parses arguments and reads files. As our
+program grows, the number of separate tasks the <code>main</code> function handles will
+increase. As a function gains responsibilities, it becomes more difficult to
+reason about, harder to test, and harder to change without breaking one of its
+parts. It’s best to separate functionality so that each function is responsible
+for one task.</p>
+<p>This issue also ties into the second problem: Although <code>query</code> and <code>file_path</code>
+are configuration variables to our program, variables like <code>contents</code> are used
+to perform the program’s logic. The longer <code>main</code> becomes, the more variables
+we’ll need to bring into scope; the more variables we have in scope, the harder
+it will be to keep track of the purpose of each. It’s best to group the
+configuration variables into one structure to make their purpose clear.</p>
+<p>The third problem is that we’ve used <code>expect</code> to print an error message when
+reading the file fails, but the error message just prints <code>Should have been able to read the file</code>. Reading a file can fail in a number of ways: For
+example, the file could be missing, or we might not have permission to open it.
+Right now, regardless of the situation, we’d print the same error message for
+everything, which wouldn’t give the user any information!</p>
+<p>Fourth, we use <code>expect</code> to handle an error, and if the user runs our program
+without specifying enough arguments, they’ll get an <code>index out of bounds</code> error
+from Rust that doesn’t clearly explain the problem. It would be best if all the
+error-handling code were in one place so that future maintainers had only one
+place to consult the code if the error-handling logic needed to change. Having
+all the error-handling code in one place will also ensure that we’re printing
+messages that will be meaningful to our end users.</p>
+<p>Let’s address these four problems by refactoring our project.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="separation-of-concerns-for-binary-projects"></a></p>
+<h4 id="separating-concerns-in-binary-projects"><a class="header" href="#separating-concerns-in-binary-projects">Separating Concerns in Binary Projects</a></h4>
+<p>The organizational problem of allocating responsibility for multiple tasks to
+the <code>main</code> function is common to many binary projects. As a result, many Rust
+programmers find it useful to split up the separate concerns of a binary
+program when the <code>main</code> function starts getting large. This process has the
+following steps:</p>
+<ul>
+<li>Split your program into a <em>main.rs</em> file and a <em>lib.rs</em> file and move your
+program’s logic to <em>lib.rs</em>.</li>
+<li>As long as your command line parsing logic is small, it can remain in
+the <code>main</code> function.</li>
+<li>When the command line parsing logic starts getting complicated, extract it
+from the <code>main</code> function into other functions or types.</li>
+</ul>
+<p>The responsibilities that remain in the <code>main</code> function after this process
+should be limited to the following:</p>
+<ul>
+<li>Calling the command line parsing logic with the argument values</li>
+<li>Setting up any other configuration</li>
+<li>Calling a <code>run</code> function in <em>lib.rs</em></li>
+<li>Handling the error if <code>run</code> returns an error</li>
+</ul>
+<p>This pattern is about separating concerns: <em>main.rs</em> handles running the
+program and <em>lib.rs</em> handles all the logic of the task at hand. Because you
+can’t test the <code>main</code> function directly, this structure lets you test all of
+your program’s logic by moving it out of the <code>main</code> function. The code that
+remains in the <code>main</code> function will be small enough to verify its correctness
+by reading it. Let’s rework our program by following this process.</p>
+<h5 id="extracting-the-argument-parser"><a class="header" href="#extracting-the-argument-parser">Extracting the Argument Parser</a></h5>
+<p>We’ll extract the functionality for parsing arguments into a function that
+<code>main</code> will call. Listing 12-5 shows the new start of the <code>main</code> function that
+calls a new function <code>parse_config</code>, which we’ll define in <em>src/main.rs</em>.</p>
+<figure class="listing" id="listing-12-5">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span><span class="boring">
+</span>fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+
+    let (query, file_path) = parse_config(&amp;args);
+
+    // --snip--
+<span class="boring">
+</span><span class="boring">    println!("Searching for {query}");
+</span><span class="boring">    println!("In file {file_path}");
+</span><span class="boring">
+</span><span class="boring">    let contents = fs::read_to_string(file_path)
+</span><span class="boring">        .expect("Should have been able to read the file");
+</span><span class="boring">
+</span><span class="boring">    println!("With text:\n{contents}");
+</span>}
+
+fn parse_config(args: &amp;[String]) -&gt; (&amp;str, &amp;str) {
+    let query = &amp;args[1];
+    let file_path = &amp;args[2];
+
+    (query, file_path)
+}</code></pre>
+<figcaption><a href="#listing-12-5">Listing 12-5</a>: Extracting a <code>parse_config</code> function from <code>main</code></figcaption>
+</figure>
+<p>We’re still collecting the command line arguments into a vector, but instead of
+assigning the argument value at index 1 to the variable <code>query</code> and the
+argument value at index 2 to the variable <code>file_path</code> within the <code>main</code>
+function, we pass the whole vector to the <code>parse_config</code> function. The
+<code>parse_config</code> function then holds the logic that determines which argument
+goes in which variable and passes the values back to <code>main</code>. We still create
+the <code>query</code> and <code>file_path</code> variables in <code>main</code>, but <code>main</code> no longer has the
+responsibility of determining how the command line arguments and variables
+correspond.</p>
+<p>This rework may seem like overkill for our small program, but we’re refactoring
+in small, incremental steps. After making this change, run the program again to
+verify that the argument parsing still works. It’s good to check your progress
+often, to help identify the cause of problems when they occur.</p>
+<h5 id="grouping-configuration-values"><a class="header" href="#grouping-configuration-values">Grouping Configuration Values</a></h5>
+<p>We can take another small step to improve the <code>parse_config</code> function further.
+At the moment, we’re returning a tuple, but then we immediately break that
+tuple into individual parts again. This is a sign that perhaps we don’t have
+the right abstraction yet.</p>
+<p>Another indicator that shows there’s room for improvement is the <code>config</code> part
+of <code>parse_config</code>, which implies that the two values we return are related and
+are both part of one configuration value. We’re not currently conveying this
+meaning in the structure of the data other than by grouping the two values into
+a tuple; we’ll instead put the two values into one struct and give each of the
+struct fields a meaningful name. Doing so will make it easier for future
+maintainers of this code to understand how the different values relate to each
+other and what their purpose is.</p>
+<p>Listing 12-6 shows the improvements to the <code>parse_config</code> function.</p>
+<figure class="listing" id="listing-12-6">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust should_panic noplayground"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span><span class="boring">
+</span>fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+
+    let config = parse_config(&amp;args);
+
+    println!("Searching for {}", config.query);
+    println!("In file {}", config.file_path);
+
+    let contents = fs::read_to_string(config.file_path)
+        .expect("Should have been able to read the file");
+
+    // --snip--
+<span class="boring">
+</span><span class="boring">    println!("With text:\n{contents}");
+</span>}
+
+struct Config {
+    query: String,
+    file_path: String,
+}
+
+fn parse_config(args: &amp;[String]) -&gt; Config {
+    let query = args[1].clone();
+    let file_path = args[2].clone();
+
+    Config { query, file_path }
+}</code></pre>
+<figcaption><a href="#listing-12-6">Listing 12-6</a>: Refactoring <code>parse_config</code> to return an instance of a <code>Config</code> struct</figcaption>
+</figure>
+<p>We’ve added a struct named <code>Config</code> defined to have fields named <code>query</code> and
+<code>file_path</code>. The signature of <code>parse_config</code> now indicates that it returns a
+<code>Config</code> value. In the body of <code>parse_config</code>, where we used to return
+string slices that reference <code>String</code> values in <code>args</code>, we now define <code>Config</code>
+to contain owned <code>String</code> values. The <code>args</code> variable in <code>main</code> is the owner of
+the argument values and is only letting the <code>parse_config</code> function borrow
+them, which means we’d violate Rust’s borrowing rules if <code>Config</code> tried to take
+ownership of the values in <code>args</code>.</p>
+<p>There are a number of ways we could manage the <code>String</code> data; the easiest,
+though somewhat inefficient, route is to call the <code>clone</code> method on the values.
+This will make a full copy of the data for the <code>Config</code> instance to own, which
+takes more time and memory than storing a reference to the string data.
+However, cloning the data also makes our code very straightforward because we
+don’t have to manage the lifetimes of the references; in this circumstance,
+giving up a little performance to gain simplicity is a worthwhile trade-off.</p>
+<section class="note" aria-role="note">
+<h4 id="the-trade-offs-of-using-clone"><a class="header" href="#the-trade-offs-of-using-clone">The Trade-Offs of Using <code>clone</code></a></h4>
+<p>There’s a tendency among many Rustaceans to avoid using <code>clone</code> to fix
+ownership problems because of its runtime cost. In
+<a href="13%20Closures%20and%20Iterator%20Pipelines.html#functional-language-features-iterators-and-closures">Chapter 13</a><!-- ignore -->, you’ll learn how to use more efficient
+methods in this type of situation. But for now, it’s okay to copy a few
+strings to continue making progress because you’ll make these copies only
+once and your file path and query string are very small. It’s better to have
+a working program that’s a bit inefficient than to try to hyperoptimize code
+on your first pass. As you become more experienced with Rust, it’ll be
+easier to start with the most efficient solution, but for now, it’s
+perfectly acceptable to call <code>clone</code>.</p>
+</section>
+<p>We’ve updated <code>main</code> so that it places the instance of <code>Config</code> returned by
+<code>parse_config</code> into a variable named <code>config</code>, and we updated the code that
+previously used the separate <code>query</code> and <code>file_path</code> variables so that it now
+uses the fields on the <code>Config</code> struct instead.</p>
+<p>Now our code more clearly conveys that <code>query</code> and <code>file_path</code> are related and
+that their purpose is to configure how the program will work. Any code that
+uses these values knows to find them in the <code>config</code> instance in the fields
+named for their purpose.</p>
+<h5 id="creating-a-constructor-for-config"><a class="header" href="#creating-a-constructor-for-config">Creating a Constructor for <code>Config</code></a></h5>
+<p>So far, we’ve extracted the logic responsible for parsing the command line
+arguments from <code>main</code> and placed it in the <code>parse_config</code> function. Doing so
+helped us see that the <code>query</code> and <code>file_path</code> values were related, and that
+relationship should be conveyed in our code. We then added a <code>Config</code> struct to
+name the related purpose of <code>query</code> and <code>file_path</code> and to be able to return the
+values’ names as struct field names from the <code>parse_config</code> function.</p>
+<p>So, now that the purpose of the <code>parse_config</code> function is to create a <code>Config</code>
+instance, we can change <code>parse_config</code> from a plain function to a function
+named <code>new</code> that is associated with the <code>Config</code> struct. Making this change
+will make the code more idiomatic. We can create instances of types in the
+standard library, such as <code>String</code>, by calling <code>String::new</code>. Similarly, by
+changing <code>parse_config</code> into a <code>new</code> function associated with <code>Config</code>, we’ll
+be able to create instances of <code>Config</code> by calling <code>Config::new</code>. Listing 12-7
+shows the changes we need to make.</p>
+<figure class="listing" id="listing-12-7">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust should_panic noplayground"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span><span class="boring">
+</span>fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+
+    let config = Config::new(&amp;args);
+<span class="boring">
+</span><span class="boring">    println!("Searching for {}", config.query);
+</span><span class="boring">    println!("In file {}", config.file_path);
+</span><span class="boring">
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)
+</span><span class="boring">        .expect("Should have been able to read the file");
+</span><span class="boring">
+</span><span class="boring">    println!("With text:\n{contents}");
+</span>
+    // --snip--
+}
+
+// --snip--
+
+<span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Config {
+    fn new(args: &amp;[String]) -&gt; Config {
+        let query = args[1].clone();
+        let file_path = args[2].clone();
+
+        Config { query, file_path }
+    }
+}</code></pre>
+<figcaption><a href="#listing-12-7">Listing 12-7</a>: Changing <code>parse_config</code> into <code>Config::new</code></figcaption>
+</figure>
+<p>We’ve updated <code>main</code> where we were calling <code>parse_config</code> to instead call
+<code>Config::new</code>. We’ve changed the name of <code>parse_config</code> to <code>new</code> and moved it
+within an <code>impl</code> block, which associates the <code>new</code> function with <code>Config</code>. Try
+compiling this code again to make sure it works.</p>
+<h4 id="fixing-the-error-handling"><a class="header" href="#fixing-the-error-handling">Fixing the Error Handling</a></h4>
+<p>Now we’ll work on fixing our error handling. Recall that attempting to access
+the values in the <code>args</code> vector at index 1 or index 2 will cause the program to
+panic if the vector contains fewer than three items. Try running the program
+without any arguments; it will look like this:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.0s
+     Running `target/debug/minigrep`
+
+thread 'main' (6023615) panicked at src/main.rs:27:21:
+index out of bounds: the len is 1 but the index is 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>The line <code>index out of bounds: the len is 1 but the index is 1</code> is an error
+message intended for programmers. It won’t help our end users understand what
+they should do instead. Let’s fix that now.</p>
+<h5 id="improving-the-error-message"><a class="header" href="#improving-the-error-message">Improving the Error Message</a></h5>
+<p>In Listing 12-8, we add a check in the <code>new</code> function that will verify that the
+slice is long enough before accessing index 1 and index 2. If the slice isn’t
+long enough, the program panics and displays a better error message.</p>
+<figure class="listing" id="listing-12-8">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::new(&amp;args);
+</span><span class="boring">
+</span><span class="boring">    println!("Searching for {}", config.query);
+</span><span class="boring">    println!("In file {}", config.file_path);
+</span><span class="boring">
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)
+</span><span class="boring">        .expect("Should have been able to read the file");
+</span><span class="boring">
+</span><span class="boring">    println!("With text:\n{contents}");
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span>    // --snip--
+    fn new(args: &amp;[String]) -&gt; Config {
+        if args.len() &lt; 3 {
+            panic!("not enough arguments");
+        }
+        // --snip--
+<span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Config { query, file_path }
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-8">Listing 12-8</a>: Adding a check for the number of arguments</figcaption>
+</figure>
+<p>This code is similar to <a href="09%20Errors%20Across%20Boundaries.html#creating-custom-types-for-validation">the <code>Guess::new</code> function we wrote in Listing
+9-13</a><!-- ignore -->, where we called <code>panic!</code> when the
+<code>value</code> argument was out of the range of valid values. Instead of checking for
+a range of values here, we’re checking that the length of <code>args</code> is at least
+<code>3</code> and the rest of the function can operate under the assumption that this
+condition has been met. If <code>args</code> has fewer than three items, this condition
+will be <code>true</code>, and we call the <code>panic!</code> macro to end the program immediately.</p>
+<p>With these extra few lines of code in <code>new</code>, let’s run the program without any
+arguments again to see what the error looks like now:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.0s
+     Running `target/debug/minigrep`
+
+thread 'main' (6023776) panicked at src/main.rs:26:13:
+not enough arguments
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>This output is better: We now have a reasonable error message. However, we also
+have extraneous information we don’t want to give to our users. Perhaps the
+technique we used in Listing 9-13 isn’t the best one to use here: A call to
+<code>panic!</code> is more appropriate for a programming problem than a usage problem,
+<a href="09%20Errors%20Across%20Boundaries.html#guidelines-for-error-handling">as discussed in Chapter 9</a><!-- ignore -->. Instead,
+we’ll use the other technique you learned about in Chapter 9—<a href="09%20Errors%20Across%20Boundaries.html#recoverable-errors-with-result-1">returning a
+<code>Result</code></a><!-- ignore --> that indicates either success or an error.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="returning-a-result-from-new-instead-of-calling-panic"></a></p>
+<h5 id="returning-a-result-instead-of-calling-panic"><a class="header" href="#returning-a-result-instead-of-calling-panic">Returning a <code>Result</code> Instead of Calling <code>panic!</code></a></h5>
+<p>We can instead return a <code>Result</code> value that will contain a <code>Config</code> instance in
+the successful case and will describe the problem in the error case. We’re also
+going to change the function name from <code>new</code> to <code>build</code> because many
+programmers expect <code>new</code> functions to never fail. When <code>Config::build</code> is
+communicating to <code>main</code>, we can use the <code>Result</code> type to signal there was a
+problem. Then, we can change <code>main</code> to convert an <code>Err</code> variant into a more
+practical error for our users without the surrounding text about <code>thread 'main'</code> and <code>RUST_BACKTRACE</code> that a call to <code>panic!</code> causes.</p>
+<p>Listing 12-9 shows the changes we need to make to the return value of the
+function we’re now calling <code>Config::build</code> and the body of the function needed
+to return a <code>Result</code>. Note that this won’t compile until we update <code>main</code> as
+well, which we’ll do in the next listing.</p>
+<figure class="listing" id="listing-12-9">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::new(&amp;args);
+</span><span class="boring">
+</span><span class="boring">    println!("Searching for {}", config.query);
+</span><span class="boring">    println!("In file {}", config.file_path);
+</span><span class="boring">
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)
+</span><span class="boring">        .expect("Should have been able to read the file");
+</span><span class="boring">
+</span><span class="boring">    println!("With text:\n{contents}");
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Config {
+    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+        if args.len() &lt; 3 {
+            return Err("not enough arguments");
+        }
+
+        let query = args[1].clone();
+        let file_path = args[2].clone();
+
+        Ok(Config { query, file_path })
+    }
+}</code></pre>
+<figcaption><a href="#listing-12-9">Listing 12-9</a>: Returning a <code>Result</code> from <code>Config::build</code></figcaption>
+</figure>
+<p>Our <code>build</code> function returns a <code>Result</code> with a <code>Config</code> instance in the success
+case and a string literal in the error case. Our error values will always be
+string literals that have the <code>'static</code> lifetime.</p>
+<p>We’ve made two changes in the body of the function: Instead of calling <code>panic!</code>
+when the user doesn’t pass enough arguments, we now return an <code>Err</code> value, and
+we’ve wrapped the <code>Config</code> return value in an <code>Ok</code>. These changes make the
+function conform to its new type signature.</p>
+<p>Returning an <code>Err</code> value from <code>Config::build</code> allows the <code>main</code> function to
+handle the <code>Result</code> value returned from the <code>build</code> function and exit the
+process more cleanly in the error case.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="calling-confignew-and-handling-errors"></a></p>
+<h5 id="calling-configbuild-and-handling-errors"><a class="header" href="#calling-configbuild-and-handling-errors">Calling <code>Config::build</code> and Handling Errors</a></h5>
+<p>To handle the error case and print a user-friendly message, we need to update
+<code>main</code> to handle the <code>Result</code> being returned by <code>Config::build</code>, as shown in
+Listing 12-10. We’ll also take the responsibility of exiting the command line
+tool with a nonzero error code away from <code>panic!</code> and instead implement it by
+hand. A nonzero exit status is a convention to signal to the process that
+called our program that the program exited with an error state.</p>
+<figure class="listing" id="listing-12-10">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span>use std::process;
+
+fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+
+    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+        println!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
+
+    // --snip--
+<span class="boring">
+</span><span class="boring">    println!("Searching for {}", config.query);
+</span><span class="boring">    println!("In file {}", config.file_path);
+</span><span class="boring">
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)
+</span><span class="boring">        .expect("Should have been able to read the file");
+</span><span class="boring">
+</span><span class="boring">    println!("With text:\n{contents}");
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config { query, file_path })
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-10">Listing 12-10</a>: Exiting with an error code if building a <code>Config</code> fails</figcaption>
+</figure>
+<p>In this listing, we’ve used a method we haven’t covered in detail yet:
+<code>unwrap_or_else</code>, which is defined on <code>Result&lt;T, E&gt;</code> by the standard library.
+Using <code>unwrap_or_else</code> allows us to define some custom, non-<code>panic!</code> error
+handling. If the <code>Result</code> is an <code>Ok</code> value, this method’s behavior is similar
+to <code>unwrap</code>: It returns the inner value that <code>Ok</code> is wrapping. However, if the
+value is an <code>Err</code> value, this method calls the code in the closure, which is
+an anonymous function we define and pass as an argument to <code>unwrap_or_else</code>.
+We’ll cover closures in more detail in <a href="13%20Closures%20and%20Iterator%20Pipelines.html#functional-language-features-iterators-and-closures">Chapter 13</a><!-- ignore -->. For
+now, you just need to know that <code>unwrap_or_else</code> will pass the inner value of
+the <code>Err</code>, which in this case is the static string <code>"not enough arguments"</code>
+that we added in Listing 12-9, to our closure in the argument <code>err</code> that
+appears between the vertical pipes. The code in the closure can then use the
+<code>err</code> value when it runs.</p>
+<p>We’ve added a new <code>use</code> line to bring <code>process</code> from the standard library into
+scope. The code in the closure that will be run in the error case is only two
+lines: We print the <code>err</code> value and then call <code>process::exit</code>. The
+<code>process::exit</code> function will stop the program immediately and return the
+number that was passed as the exit status code. This is similar to the
+<code>panic!</code>-based handling we used in Listing 12-8, but we no longer get all the
+extra output. Let’s try it:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
+     Running `target/debug/minigrep`
+Problem parsing arguments: not enough arguments
+</code></pre>
+<p>Great! This output is much friendlier for our users.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="extracting-logic-from-the-main-function"></a></p>
+<h4 id="extracting-logic-from-main"><a class="header" href="#extracting-logic-from-main">Extracting Logic from <code>main</code></a></h4>
+<p>Now that we’ve finished refactoring the configuration parsing, let’s turn to
+the program’s logic. As we stated in <a href="#separation-of-concerns-for-binary-projects">“Separating Concerns in Binary
+Projects”</a><!-- ignore -->, we’ll
+extract a function named <code>run</code> that will hold all the logic currently in the
+<code>main</code> function that isn’t involved with setting up configuration or handling
+errors. When we’re done, the <code>main</code> function will be concise and easy to verify
+by inspection, and we’ll be able to write tests for all the other logic.</p>
+<p>Listing 12-11 shows the small, incremental improvement of extracting a <code>run</code>
+function.</p>
+<figure class="listing" id="listing-12-11">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span>fn main() {
+    // --snip--
+
+<span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span>    println!("Searching for {}", config.query);
+    println!("In file {}", config.file_path);
+
+    run(config);
+}
+
+fn run(config: Config) {
+    let contents = fs::read_to_string(config.file_path)
+        .expect("Should have been able to read the file");
+
+    println!("With text:\n{contents}");
+}
+
+// --snip--
+<span class="boring">
+</span><span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config { query, file_path })
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-11">Listing 12-11</a>: Extracting a <code>run</code> function containing the rest of the program logic</figcaption>
+</figure>
+<p>The <code>run</code> function now contains all the remaining logic from <code>main</code>, starting
+from reading the file. The <code>run</code> function takes the <code>Config</code> instance as an
+argument.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="returning-errors-from-the-run-function"></a></p>
+<h5 id="returning-errors-from-run"><a class="header" href="#returning-errors-from-run">Returning Errors from <code>run</code></a></h5>
+<p>With the remaining program logic separated into the <code>run</code> function, we can
+improve the error handling, as we did with <code>Config::build</code> in Listing 12-9.
+Instead of allowing the program to panic by calling <code>expect</code>, the <code>run</code>
+function will return a <code>Result&lt;T, E&gt;</code> when something goes wrong. This will let
+us further consolidate the logic around handling errors into <code>main</code> in a
+user-friendly way. Listing 12-12 shows the changes we need to make to the
+signature and body of <code>run</code>.</p>
+<figure class="listing" id="listing-12-12">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span>use std::error::Error;
+
+// --snip--
+
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    println!("Searching for {}", config.query);
+</span><span class="boring">    println!("In file {}", config.file_path);
+</span><span class="boring">
+</span><span class="boring">    run(config);
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+    let contents = fs::read_to_string(config.file_path)?;
+
+    println!("With text:\n{contents}");
+
+    Ok(())
+}
+<span class="boring">
+</span><span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config { query, file_path })
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-12">Listing 12-12</a>: Changing the <code>run</code> function to return <code>Result</code></figcaption>
+</figure>
+<p>We’ve made three significant changes here. First, we changed the return type of
+the <code>run</code> function to <code>Result&lt;(), Box&lt;dyn Error&gt;&gt;</code>. This function previously
+returned the unit type, <code>()</code>, and we keep that as the value returned in the
+<code>Ok</code> case.</p>
+<p>For the error type, we used the trait object <code>Box&lt;dyn Error&gt;</code> (and we brought
+<code>std::error::Error</code> into scope with a <code>use</code> statement at the top). We’ll cover
+trait objects in <a href="18%20State%20and%20Behaviour%20Patterns.html#object-oriented-programming-features">Chapter 18</a><!-- ignore -->. For now, just know that
+<code>Box&lt;dyn Error&gt;</code> means the function will return a type that implements the
+<code>Error</code> trait, but we don’t have to specify what particular type the return
+value will be. This gives us flexibility to return error values that may be of
+different types in different error cases. The <code>dyn</code> keyword is short for
+<em>dynamic</em>.</p>
+<p>Second, we’ve removed the call to <code>expect</code> in favor of the <code>?</code> operator, as we
+talked about in <a href="09%20Errors%20Across%20Boundaries.html#a-shortcut-for-propagating-errors-the--operator">Chapter 9</a><!-- ignore -->. Rather than
+<code>panic!</code> on an error, <code>?</code> will return the error value from the current function
+for the caller to handle.</p>
+<p>Third, the <code>run</code> function now returns an <code>Ok</code> value in the success case.
+We’ve declared the <code>run</code> function’s success type as <code>()</code> in the signature,
+which means we need to wrap the unit type value in the <code>Ok</code> value. This
+<code>Ok(())</code> syntax might look a bit strange at first. But using <code>()</code> like this is
+the idiomatic way to indicate that we’re calling <code>run</code> for its side effects
+only; it doesn’t return a value we need.</p>
+<p>When you run this code, it will compile but will display a warning:</p>
+<pre><code class="language-console">$ cargo run -- the poem.txt
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+warning: unused `Result` that must be used
+  --&gt; src/main.rs:19:5
+   |
+19 |     run(config);
+   |     ^^^^^^^^^^^
+   |
+   = note: this `Result` may be an `Err` variant, which should be handled
+   = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+   |
+19 |     let _ = run(config);
+   |     +++++++
+
+warning: `minigrep` (bin "minigrep") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.71s
+     Running `target/debug/minigrep the poem.txt`
+Searching for the
+In file poem.txt
+With text:
+I'm nobody! Who are you?
+Are you nobody, too?
+Then there's a pair of us - don't tell!
+They'd banish us, you know.
+
+How dreary to be somebody!
+How public, like a frog
+To tell your name the livelong day
+To an admiring bog!
+
+</code></pre>
+<p>Rust tells us that our code ignored the <code>Result</code> value and the <code>Result</code> value
+might indicate that an error occurred. But we’re not checking to see whether or
+not there was an error, and the compiler reminds us that we probably meant to
+have some error-handling code here! Let’s rectify that problem now.</p>
+<h5 id="handling-errors-returned-from-run-in-main"><a class="header" href="#handling-errors-returned-from-run-in-main">Handling Errors Returned from <code>run</code> in <code>main</code></a></h5>
+<p>We’ll check for errors and handle them using a technique similar to one we used
+with <code>Config::build</code> in Listing 12-10, but with a slight difference:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span>fn main() {
+    // --snip--
+
+<span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span>    println!("Searching for {}", config.query);
+    println!("In file {}", config.file_path);
+
+    if let Err(e) = run(config) {
+        println!("Application error: {e}");
+        process::exit(1);
+    }
+}
+<span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    println!("With text:\n{contents}");
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config { query, file_path })
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<p>We use <code>if let</code> rather than <code>unwrap_or_else</code> to check whether <code>run</code> returns an
+<code>Err</code> value and to call <code>process::exit(1)</code> if it does. The <code>run</code> function
+doesn’t return a value that we want to <code>unwrap</code> in the same way that
+<code>Config::build</code> returns the <code>Config</code> instance. Because <code>run</code> returns <code>()</code> in
+the success case, we only care about detecting an error, so we don’t need
+<code>unwrap_or_else</code> to return the unwrapped value, which would only be <code>()</code>.</p>
+<p>The bodies of the <code>if let</code> and the <code>unwrap_or_else</code> functions are the same in
+both cases: We print the error and exit.</p>
+<h4 id="splitting-code-into-a-library-crate"><a class="header" href="#splitting-code-into-a-library-crate">Splitting Code into a Library Crate</a></h4>
+<p>Our <code>minigrep</code> project is looking good so far! Now we’ll split the
+<em>src/main.rs</em> file and put some code into the <em>src/lib.rs</em> file. That way, we
+can test the code and have a <em>src/main.rs</em> file with fewer responsibilities.</p>
+<p>Let’s define the code responsible for searching text in <em>src/lib.rs</em> rather
+than in <em>src/main.rs</em>, which will let us (or anyone else using our
+<code>minigrep</code> library) call the searching function from more contexts than our
+<code>minigrep</code> binary.</p>
+<p>First, let’s define the <code>search</code> function signature in <em>src/lib.rs</em> as shown in
+Listing 12-13, with a body that calls the <code>unimplemented!</code> macro. We’ll explain
+the signature in more detail when we fill in the implementation.</p>
+<figure class="listing" id="listing-12-13">
+<span class="file-name">Filename: src/lib.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+    unimplemented!();
+}</code></pre>
+<figcaption><a href="#listing-12-13">Listing 12-13</a>: Defining the <code>search</code> function in <em>src/lib.rs</em></figcaption>
+</figure>
+<p>We’ve used the <code>pub</code> keyword on the function definition to designate <code>search</code>
+as part of our library crate’s public API. We now have a library crate that we
+can use from our binary crate and that we can test!</p>
+<p>Now we need to bring the code defined in <em>src/lib.rs</em> into the scope of the
+binary crate in <em>src/main.rs</em> and call it, as shown in Listing 12-14.</p>
+<figure class="listing" id="listing-12-14">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span>// --snip--
+use minigrep::search;
+
+fn main() {
+    // --snip--
+<span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        println!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span>}
+
+// --snip--
+
+<span class="boring">
+</span><span class="boring">struct Config {
+</span><span class="boring">    query: String,
+</span><span class="boring">    file_path: String,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config { query, file_path })
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+    let contents = fs::read_to_string(config.file_path)?;
+
+    for line in search(&amp;config.query, &amp;contents) {
+        println!("{line}");
+    }
+
+    Ok(())
+}</code></pre>
+<figcaption><a href="#listing-12-14">Listing 12-14</a>: Using the <code>minigrep</code> library crate’s <code>search</code> function in <em>src/main.rs</em></figcaption>
+</figure>
+<p>We add a <code>use minigrep::search</code> line to bring the <code>search</code> function from
+the library crate into the binary crate’s scope. Then, in the <code>run</code> function,
+rather than printing out the contents of the file, we call the <code>search</code>
+function and pass the <code>config.query</code> value and <code>contents</code> as arguments. Then,
+<code>run</code> will use a <code>for</code> loop to print each line returned from <code>search</code> that
+matched the query. This is also a good time to remove the <code>println!</code> calls in
+the <code>main</code> function that displayed the query and the file path so that our
+program only prints the search results (if no errors occur).</p>
+<p>Note that the search function will be collecting all the results into a vector
+it returns before any printing happens. This implementation could be slow to
+display results when searching large files, because results aren’t printed as
+they’re found; we’ll discuss a possible way to fix this using iterators in
+Chapter 13.</p>
+<p>Whew! That was a lot of work, but we’ve set ourselves up for success in the
+future. Now it’s much easier to handle errors, and we’ve made the code more
+modular. Almost all of our work will be done in <em>src/lib.rs</em> from here on out.</p>
+<p>Let’s take advantage of this newfound modularity by doing something that would
+have been difficult with the old code but is easy with the new code: We’ll
+write some tests!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="adding-functionality-with-test-driven-development-1"><a href="#adding-functionality-with-test-driven-development-1" class="header">Adding Functionality with Test Driven Development</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="developing-the-librarys-functionality-with-test-driven-development"></a></p>
+<h3 id="adding-functionality-with-test-driven-development"><a class="header" href="#adding-functionality-with-test-driven-development">Adding Functionality with Test-Driven Development</a></h3>
+<p>Now that we have the search logic in <em>src/lib.rs</em> separate from the <code>main</code>
+function, it’s much easier to write tests for the core functionality of our
+code. We can call functions directly with various arguments and check return
+values without having to call our binary from the command line.</p>
+<p>In this section, we’ll add the searching logic to the <code>minigrep</code> program using
+the test-driven development (TDD) process with the following steps:</p>
+<ol>
+<li>Write a test that fails and run it to make sure it fails for the reason you
+expect.</li>
+<li>Write or modify just enough code to make the new test pass.</li>
+<li>Refactor the code you just added or changed and make sure the tests continue
+to pass.</li>
+<li>Repeat from step 1!</li>
+</ol>
+<p>Though it’s just one of many ways to write software, TDD can help drive code
+design. Writing the test before you write the code that makes the test pass
+helps maintain high test coverage throughout the process.</p>
+<p>We’ll test-drive the implementation of the functionality that will actually do
+the searching for the query string in the file contents and produce a list of
+lines that match the query. We’ll add this functionality in a function called
+<code>search</code>.</p>
+<h4 id="writing-a-failing-test"><a class="header" href="#writing-a-failing-test">Writing a Failing Test</a></h4>
+<p>In <em>src/lib.rs</em>, we’ll add a <code>tests</code> module with a test function, as we did in
+<a href="11%20Tests%20That%20Protect%20Contracts.html#the-anatomy-of-a-test-function">Chapter 11</a><!-- ignore -->. The test function specifies the
+behavior we want the <code>search</code> function to have: It will take a query and the
+text to search, and it will return only the lines from the text that contain
+the query. Listing 12-15 shows this test.</p>
+<figure class="listing" id="listing-12-15">
+<span class="file-name">Filename: src/lib.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+</span><span class="boring">    unimplemented!();
+</span><span class="boring">}
+</span><span class="boring">
+</span>// --snip--
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn one_result() {
+        let query = "duct";
+        let contents = "\
+Rust:
+safe, fast, productive.
+Pick three.";
+
+        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+    }
+}</code></pre>
+<figcaption><a href="#listing-12-15">Listing 12-15</a>: Creating a failing test for the <code>search</code> function for the functionality we wish we had</figcaption>
+</figure>
+<p>This test searches for the string <code>"duct"</code>. The text we’re searching is three
+lines, only one of which contains <code>"duct"</code> (note that the backslash after the
+opening double quote tells Rust not to put a newline character at the beginning
+of the contents of this string literal). We assert that the value returned from
+the <code>search</code> function contains only the line we expect.</p>
+<p>If we run this test, it will currently fail because the <code>unimplemented!</code> macro
+panics with the message “not implemented”. In accordance with TDD principles,
+we’ll take a small step of adding just enough code to get the test to not panic
+when calling the function by defining the <code>search</code> function to always return an
+empty vector, as shown in Listing 12-16. Then, the test should compile and fail
+because an empty vector doesn’t match a vector containing the line <code>"safe, fast, productive."</code>.</p>
+<figure class="listing" id="listing-12-16">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+    vec![]
+}
+<span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn one_result() {
+</span><span class="boring">        let query = "duct";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-16">Listing 12-16</a>: Defining just enough of the <code>search</code> function so that calling it won’t panic</figcaption>
+</figure>
+<p>Now let’s discuss why we need to define an explicit lifetime <code>'a</code> in the
+signature of <code>search</code> and use that lifetime with the <code>contents</code> argument and
+the return value. Recall in <a href="10%20Generics%20Traits%20and%20Lifetimes.html#validating-references-with-lifetimes-1">Chapter 10</a><!-- ignore --> that
+the lifetime parameters specify which argument lifetime is connected to the
+lifetime of the return value. In this case, we indicate that the returned
+vector should contain string slices that reference slices of the argument
+<code>contents</code> (rather than the argument <code>query</code>).</p>
+<p>In other words, we tell Rust that the data returned by the <code>search</code> function
+will live as long as the data passed into the <code>search</code> function in the
+<code>contents</code> argument. This is important! The data referenced <em>by</em> a slice needs
+to be valid for the reference to be valid; if the compiler assumes we’re making
+string slices of <code>query</code> rather than <code>contents</code>, it will do its safety checking
+incorrectly.</p>
+<p>If we forget the lifetime annotations and try to compile this function, we’ll
+get this error:</p>
+<pre><code class="language-console">$ cargo build
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+error[E0106]: missing lifetime specifier
+ --&gt; src/lib.rs:1:51
+  |
+1 | pub fn search(query: &amp;str, contents: &amp;str) -&gt; Vec&lt;&amp;str&gt; {
+  |                      ----            ----         ^ expected named lifetime parameter
+  |
+  = help: this function's return type contains a borrowed value, but the signature does not say whether it is borrowed from `query` or `contents`
+help: consider introducing a named lifetime parameter
+  |
+1 | pub fn search&lt;'a&gt;(query: &amp;'a str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+  |              ++++         ++                 ++              ++
+
+For more information about this error, try `rustc --explain E0106`.
+error: could not compile `minigrep` (lib) due to 1 previous error
+</code></pre>
+<p>Rust can’t know which of the two parameters we need for the output, so we need
+to tell it explicitly. Note that the help text suggests specifying the same
+lifetime parameter for all the parameters and the output type, which is
+incorrect! Because <code>contents</code> is the parameter that contains all of our text
+and we want to return the parts of that text that match, we know <code>contents</code> is
+the only parameter that should be connected to the return value using the
+lifetime syntax.</p>
+<p>Other programming languages don’t require you to connect arguments to return
+values in the signature, but this practice will get easier over time. You might
+want to compare this example with the examples in the <a href="10%20Generics%20Traits%20and%20Lifetimes.html#validating-references-with-lifetimes">“Validating References
+with Lifetimes”</a><!-- ignore --> section
+in Chapter 10.</p>
+<h4 id="writing-code-to-pass-the-test"><a class="header" href="#writing-code-to-pass-the-test">Writing Code to Pass the Test</a></h4>
+<p>Currently, our test is failing because we always return an empty vector. To fix
+that and implement <code>search</code>, our program needs to follow these steps:</p>
+<ol>
+<li>Iterate through each line of the contents.</li>
+<li>Check whether the line contains our query string.</li>
+<li>If it does, add it to the list of values we’re returning.</li>
+<li>If it doesn’t, do nothing.</li>
+<li>Return the list of results that match.</li>
+</ol>
+<p>Let’s work through each step, starting with iterating through lines.</p>
+<h5 id="iterating-through-lines-with-the-lines-method"><a class="header" href="#iterating-through-lines-with-the-lines-method">Iterating Through Lines with the <code>lines</code> Method</a></h5>
+<p>Rust has a helpful method to handle line-by-line iteration of strings,
+conveniently named <code>lines</code>, that works as shown in Listing 12-17. Note that
+this won’t compile yet.</p>
+<figure class="listing" id="listing-12-17">
+<span class="file-name">Filename: src/lib.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+    for line in contents.lines() {
+        // do something with line
+    }
+}
+<span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn one_result() {
+</span><span class="boring">        let query = "duct";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-17">Listing 12-17</a>: Iterating through each line in <code>contents</code></figcaption>
+</figure>
+<p>The <code>lines</code> method returns an iterator. We’ll talk about iterators in depth in
+<a href="13%20Closures%20and%20Iterator%20Pipelines.html#processing-a-series-of-items-with-iterators-1">Chapter 13</a><!-- ignore -->. But recall that you saw this way
+of using an iterator in <a href="03%20Values%20and%20Control%20Flow.html#looping-through-a-collection-with-for">Listing 3-5</a><!-- ignore -->, where we used a
+<code>for</code> loop with an iterator to run some code on each item in a collection.</p>
+<h5 id="searching-each-line-for-the-query"><a class="header" href="#searching-each-line-for-the-query">Searching Each Line for the Query</a></h5>
+<p>Next, we’ll check whether the current line contains our query string.
+Fortunately, strings have a helpful method named <code>contains</code> that does this for
+us! Add a call to the <code>contains</code> method in the <code>search</code> function, as shown in
+Listing 12-18. Note that this still won’t compile yet.</p>
+<figure class="listing" id="listing-12-18">
+<span class="file-name">Filename: src/lib.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+    for line in contents.lines() {
+        if line.contains(query) {
+            // do something with line
+        }
+    }
+}
+<span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn one_result() {
+</span><span class="boring">        let query = "duct";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-18">Listing 12-18</a>: Adding functionality to see whether the line contains the string in <code>query</code></figcaption>
+</figure>
+<p>At the moment, we’re building up functionality. To get the code to compile, we
+need to return a value from the body as we indicated we would in the function
+signature.</p>
+<h5 id="storing-matching-lines"><a class="header" href="#storing-matching-lines">Storing Matching Lines</a></h5>
+<p>To finish this function, we need a way to store the matching lines that we want
+to return. For that, we can make a mutable vector before the <code>for</code> loop and
+call the <code>push</code> method to store a <code>line</code> in the vector. After the <code>for</code> loop,
+we return the vector, as shown in Listing 12-19.</p>
+<figure class="listing" id="listing-12-19">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust ignore">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+    let mut results = Vec::new();
+
+    for line in contents.lines() {
+        if line.contains(query) {
+            results.push(line);
+        }
+    }
+
+    results
+}
+<span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn one_result() {
+</span><span class="boring">        let query = "duct";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-19">Listing 12-19</a>: Storing the lines that match so that we can return them</figcaption>
+</figure>
+<p>Now the <code>search</code> function should return only the lines that contain <code>query</code>,
+and our test should pass. Let’s run the test:</p>
+<pre><code class="language-console">$ cargo test
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.22s
+     Running unittests src/lib.rs (target/debug/deps/minigrep-9cd200e5fac0fc94)
+
+running 1 test
+test tests::one_result ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/minigrep-9cd200e5fac0fc94)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests minigrep
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+</code></pre>
+<p>Our test passed, so we know it works!</p>
+<p>At this point, we could consider opportunities for refactoring the
+implementation of the search function while keeping the tests passing to
+maintain the same functionality. The code in the search function isn’t too bad,
+but it doesn’t take advantage of some useful features of iterators. We’ll
+return to this example in <a href="13%20Closures%20and%20Iterator%20Pipelines.html#processing-a-series-of-items-with-iterators-1">Chapter 13</a><!-- ignore -->, where
+we’ll explore iterators in detail, and look at how to improve it.</p>
+<p>Now the entire program should work! Let’s try it out, first with a word that
+should return exactly one line from the Emily Dickinson poem: <em>frog</em>.</p>
+<pre><code class="language-console">$ cargo run -- frog poem.txt
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.38s
+     Running `target/debug/minigrep frog poem.txt`
+How public, like a frog
+</code></pre>
+<p>Cool! Now let’s try a word that will match multiple lines, like <em>body</em>:</p>
+<pre><code class="language-console">$ cargo run -- body poem.txt
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.0s
+     Running `target/debug/minigrep body poem.txt`
+I'm nobody! Who are you?
+Are you nobody, too?
+How dreary to be somebody!
+</code></pre>
+<p>And finally, let’s make sure that we don’t get any lines when we search for a
+word that isn’t anywhere in the poem, such as <em>monomorphization</em>:</p>
+<pre><code class="language-console">$ cargo run -- monomorphization poem.txt
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.0s
+     Running `target/debug/minigrep monomorphization poem.txt`
+</code></pre>
+<p>Excellent! We’ve built our own mini version of a classic tool and learned a lot
+about how to structure applications. We’ve also learned a bit about file input
+and output, lifetimes, testing, and command line parsing.</p>
+<p>To round out this project, we’ll briefly demonstrate how to work with
+environment variables and how to print to standard error, both of which are
+useful when you’re writing command line programs.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="working-with-environment-variables-1"><a href="#working-with-environment-variables-1" class="header">Working with Environment Variables</a></h2>
+<h3 id="working-with-environment-variables"><a class="header" href="#working-with-environment-variables">Working with Environment Variables</a></h3>
+<p>We’ll improve the <code>minigrep</code> binary by adding an extra feature: an option for
+case-insensitive searching that the user can turn on via an environment
+variable. We could make this feature a command line option and require that
+users enter it each time they want it to apply, but by instead making it an
+environment variable, we allow our users to set the environment variable once
+and have all their searches be case insensitive in that terminal session.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="writing-a-failing-test-for-the-case-insensitive-search-function"></a></p>
+<h4 id="writing-a-failing-test-for-case-insensitive-search"><a class="header" href="#writing-a-failing-test-for-case-insensitive-search">Writing a Failing Test for Case-Insensitive Search</a></h4>
+<p>We first add a new <code>search_case_insensitive</code> function to the <code>minigrep</code> library
+that will be called when the environment variable has a value. We’ll continue
+to follow the TDD process, so the first step is again to write a failing test.
+We’ll add a new test for the new <code>search_case_insensitive</code> function and rename
+our old test from <code>one_result</code> to <code>case_sensitive</code> to clarify the differences
+between the two tests, as shown in Listing 12-20.</p>
+<figure class="listing" id="listing-12-20">
+<span class="file-name">Filename: src/lib.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+</span><span class="boring">    let mut results = Vec::new();
+</span><span class="boring">
+</span><span class="boring">    for line in contents.lines() {
+</span><span class="boring">        if line.contains(query) {
+</span><span class="boring">            results.push(line);
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    results
+</span><span class="boring">}
+</span><span class="boring">
+</span>#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn case_sensitive() {
+        let query = "duct";
+        let contents = "\
+Rust:
+safe, fast, productive.
+Pick three.
+Duct tape.";
+
+        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+    }
+
+    #[test]
+    fn case_insensitive() {
+        let query = "rUsT";
+        let contents = "\
+Rust:
+safe, fast, productive.
+Pick three.
+Trust me.";
+
+        assert_eq!(
+            vec!["Rust:", "Trust me."],
+            search_case_insensitive(query, contents)
+        );
+    }
+}</code></pre>
+<figcaption><a href="#listing-12-20">Listing 12-20</a>: Adding a new failing test for the case-insensitive function we’re about to add</figcaption>
+</figure>
+<p>Note that we’ve edited the old test’s <code>contents</code> too. We’ve added a new line
+with the text <code>"Duct tape."</code> using a capital <em>D</em> that shouldn’t match the query
+<code>"duct"</code> when we’re searching in a case-sensitive manner. Changing the old test
+in this way helps ensure that we don’t accidentally break the case-sensitive
+search functionality that we’ve already implemented. This test should pass now
+and should continue to pass as we work on the case-insensitive search.</p>
+<p>The new test for the case-<em>insensitive</em> search uses <code>"rUsT"</code> as its query. In
+the <code>search_case_insensitive</code> function we’re about to add, the query <code>"rUsT"</code>
+should match the line containing <code>"Rust:"</code> with a capital <em>R</em> and match the
+line <code>"Trust me."</code> even though both have different casing from the query. This
+is our failing test, and it will fail to compile because we haven’t yet defined
+the <code>search_case_insensitive</code> function. Feel free to add a skeleton
+implementation that always returns an empty vector, similar to the way we did
+for the <code>search</code> function in Listing 12-16 to see the test compile and fail.</p>
+<h4 id="implementing-the-search_case_insensitive-function"><a class="header" href="#implementing-the-search_case_insensitive-function">Implementing the <code>search_case_insensitive</code> Function</a></h4>
+<p>The <code>search_case_insensitive</code> function, shown in Listing 12-21, will be almost
+the same as the <code>search</code> function. The only difference is that we’ll lowercase
+the <code>query</code> and each <code>line</code> so that whatever the case of the input arguments,
+they’ll be the same case when we check whether the line contains the query.</p>
+<figure class="listing" id="listing-12-21">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground"><span class="boring">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+</span><span class="boring">    let mut results = Vec::new();
+</span><span class="boring">
+</span><span class="boring">    for line in contents.lines() {
+</span><span class="boring">        if line.contains(query) {
+</span><span class="boring">            results.push(line);
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    results
+</span><span class="boring">}
+</span><span class="boring">
+</span>pub fn search_case_insensitive&lt;'a&gt;(
+    query: &amp;str,
+    contents: &amp;'a str,
+) -&gt; Vec&lt;&amp;'a str&gt; {
+    let query = query.to_lowercase();
+    let mut results = Vec::new();
+
+    for line in contents.lines() {
+        if line.to_lowercase().contains(&amp;query) {
+            results.push(line);
+        }
+    }
+
+    results
+}
+<span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn case_sensitive() {
+</span><span class="boring">        let query = "duct";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.
+</span><span class="boring">Duct tape.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn case_insensitive() {
+</span><span class="boring">        let query = "rUsT";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.
+</span><span class="boring">Trust me.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(
+</span><span class="boring">            vec!["Rust:", "Trust me."],
+</span><span class="boring">            search_case_insensitive(query, contents)
+</span><span class="boring">        );
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-21">Listing 12-21</a>: Defining the <code>search_case_insensitive</code> function to lowercase the query and the line before comparing them</figcaption>
+</figure>
+<p>First, we lowercase the <code>query</code> string and store it in a new variable with the
+same name, shadowing the original <code>query</code>. Calling <code>to_lowercase</code> on the query
+is necessary so that no matter whether the user’s query is <code>"rust"</code>, <code>"RUST"</code>,
+<code>"Rust"</code>, or <code>"rUsT"</code>, we’ll treat the query as if it were <code>"rust"</code> and be
+insensitive to the case. While <code>to_lowercase</code> will handle basic Unicode, it
+won’t be 100 percent accurate. If we were writing a real application, we’d want
+to do a bit more work here, but this section is about environment variables,
+not Unicode, so we’ll leave it at that here.</p>
+<p>Note that <code>query</code> is now a <code>String</code> rather than a string slice because calling
+<code>to_lowercase</code> creates new data rather than referencing existing data. Say the
+query is <code>"rUsT"</code>, as an example: That string slice doesn’t contain a lowercase
+<code>u</code> or <code>t</code> for us to use, so we have to allocate a new <code>String</code> containing
+<code>"rust"</code>. When we pass <code>query</code> as an argument to the <code>contains</code> method now, we
+need to add an ampersand because the signature of <code>contains</code> is defined to take
+a string slice.</p>
+<p>Next, we add a call to <code>to_lowercase</code> on each <code>line</code> to lowercase all
+characters. Now that we’ve converted <code>line</code> and <code>query</code> to lowercase, we’ll
+find matches no matter what the case of the query is.</p>
+<p>Let’s see if this implementation passes the tests:</p>
+<pre><code class="language-console">$ cargo test
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.33s
+     Running unittests src/lib.rs (target/debug/deps/minigrep-9cd200e5fac0fc94)
+
+running 2 tests
+test tests::case_insensitive ... ok
+test tests::case_sensitive ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/minigrep-9cd200e5fac0fc94)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests minigrep
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+</code></pre>
+<p>Great! They passed. Now let’s call the new <code>search_case_insensitive</code> function
+from the <code>run</code> function. First, we’ll add a configuration option to the <code>Config</code>
+struct to switch between case-sensitive and case-insensitive search. Adding
+this field will cause compiler errors because we aren’t initializing this field
+anywhere yet:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span><span class="boring">// --snip--
+</span><span class="boring">
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        println!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>pub struct Config {
+    pub query: String,
+    pub file_path: String,
+    pub ignore_case: bool,
+}
+<span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config { query, file_path })
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<p>We added the <code>ignore_case</code> field that holds a Boolean. Next, we need the <code>run</code>
+function to check the <code>ignore_case</code> field’s value and use that to decide
+whether to call the <code>search</code> function or the <code>search_case_insensitive</code>
+function, as shown in Listing 12-22. This still won’t compile yet.</p>
+<figure class="listing" id="listing-12-22">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span>use minigrep::{search, search_case_insensitive};
+
+// --snip--
+
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        println!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config { query, file_path })
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+    let contents = fs::read_to_string(config.file_path)?;
+
+    let results = if config.ignore_case {
+        search_case_insensitive(&amp;config.query, &amp;contents)
+    } else {
+        search(&amp;config.query, &amp;contents)
+    };
+
+    for line in results {
+        println!("{line}");
+    }
+
+    Ok(())
+}</code></pre>
+<figcaption><a href="#listing-12-22">Listing 12-22</a>: Calling either <code>search</code> or <code>search_case_insensitive</code> based on the value in <code>config.ignore_case</code></figcaption>
+</figure>
+<p>Finally, we need to check for the environment variable. The functions for
+working with environment variables are in the <code>env</code> module in the standard
+library, which is already in scope at the top of <em>src/main.rs</em>. We’ll use the
+<code>var</code> function from the <code>env</code> module to check to see if any value has been set
+for an environment variable named <code>IGNORE_CASE</code>, as shown in Listing 12-23.</p>
+<figure class="listing" id="listing-12-23">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore noplayground"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        println!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Config {
+    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+        if args.len() &lt; 3 {
+            return Err("not enough arguments");
+        }
+
+        let query = args[1].clone();
+        let file_path = args[2].clone();
+
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
+
+        Ok(Config {
+            query,
+            file_path,
+            ignore_case,
+        })
+    }
+}
+<span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-23">Listing 12-23</a>: Checking for any value in an environment variable named <code>IGNORE_CASE</code></figcaption>
+</figure>
+<p>Here, we create a new variable, <code>ignore_case</code>. To set its value, we call the
+<code>env::var</code> function and pass it the name of the <code>IGNORE_CASE</code> environment
+variable. The <code>env::var</code> function returns a <code>Result</code> that will be the
+successful <code>Ok</code> variant that contains the value of the environment variable if
+the environment variable is set to any value. It will return the <code>Err</code> variant
+if the environment variable is not set.</p>
+<p>We’re using the <code>is_ok</code> method on the <code>Result</code> to check whether the environment
+variable is set, which means the program should do a case-insensitive search.
+If the <code>IGNORE_CASE</code> environment variable isn’t set to anything, <code>is_ok</code> will
+return <code>false</code> and the program will perform a case-sensitive search. We don’t
+care about the <em>value</em> of the environment variable, just whether it’s set or
+unset, so we’re checking <code>is_ok</code> rather than using <code>unwrap</code>, <code>expect</code>, or any
+of the other methods we’ve seen on <code>Result</code>.</p>
+<p>We pass the value in the <code>ignore_case</code> variable to the <code>Config</code> instance so
+that the <code>run</code> function can read that value and decide whether to call
+<code>search_case_insensitive</code> or <code>search</code>, as we implemented in Listing 12-22.</p>
+<p>Let’s give it a try! First, we’ll run our program without the environment
+variable set and with the query <code>to</code>, which should match any line that contains
+the word <em>to</em> in all lowercase:</p>
+<pre><code class="language-console">$ cargo run -- to poem.txt
+   Compiling minigrep v0.1.0 (file:///projects/minigrep)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.0s
+     Running `target/debug/minigrep to poem.txt`
+Are you nobody, too?
+How dreary to be somebody!
+</code></pre>
+<p>Looks like that still works! Now let’s run the program with <code>IGNORE_CASE</code> set
+to <code>1</code> but with the same query <code>to</code>:</p>
+<pre><code class="language-console">$ IGNORE_CASE=1 cargo run -- to poem.txt
+</code></pre>
+<p>If you’re using PowerShell, you will need to set the environment variable and
+run the program as separate commands:</p>
+<pre><code class="language-console">PS&gt; $Env:IGNORE_CASE=1; cargo run -- to poem.txt
+</code></pre>
+<p>This will make <code>IGNORE_CASE</code> persist for the remainder of your shell session.
+It can be unset with the <code>Remove-Item</code> cmdlet:</p>
+<pre><code class="language-console">PS&gt; Remove-Item Env:IGNORE_CASE
+</code></pre>
+<p>We should get lines that contain <em>to</em> that might have uppercase letters:</p>
+<!-- manual-regeneration
+cd listings/ch12-an-io-project/listing-12-23
+IGNORE_CASE=1 cargo run -- to poem.txt
+can't extract because of the environment variable
+-->
+<pre><code class="language-console">Are you nobody, too?
+How dreary to be somebody!
+To tell your name the livelong day
+To an admiring bog!
+</code></pre>
+<p>Excellent, we also got lines containing <em>To</em>! Our <code>minigrep</code> program can now do
+case-insensitive searching controlled by an environment variable. Now you know
+how to manage options set using either command line arguments or environment
+variables.</p>
+<p>Some programs allow arguments <em>and</em> environment variables for the same
+configuration. In those cases, the programs decide that one or the other takes
+precedence. For another exercise on your own, try controlling case sensitivity
+through either a command line argument or an environment variable. Decide
+whether the command line argument or the environment variable should take
+precedence if the program is run with one set to case sensitive and one set to
+ignore case.</p>
+<p>The <code>std::env</code> module contains many more useful features for dealing with
+environment variables: Check out its documentation to see what is available.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="redirecting-errors-to-standard-error-1"><a href="#redirecting-errors-to-standard-error-1" class="header">Redirecting Errors to Standard Error</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="writing-error-messages-to-standard-error-instead-of-standard-output"></a></p>
+<h3 id="redirecting-errors-to-standard-error"><a class="header" href="#redirecting-errors-to-standard-error">Redirecting Errors to Standard Error</a></h3>
+<p>At the moment, we’re writing all of our output to the terminal using the
+<code>println!</code> macro. In most terminals, there are two kinds of output: <em>standard
+output</em> (<code>stdout</code>) for general information and <em>standard error</em> (<code>stderr</code>) for
+error messages. This distinction enables users to choose to direct the
+successful output of a program to a file but still print error messages to the
+screen.</p>
+<p>The <code>println!</code> macro is only capable of printing to standard output, so we have
+to use something else to print to standard error.</p>
+<h4 id="checking-where-errors-are-written"><a class="header" href="#checking-where-errors-are-written">Checking Where Errors Are Written</a></h4>
+<p>First, let’s observe how the content printed by <code>minigrep</code> is currently being
+written to standard output, including any error messages we want to write to
+standard error instead. We’ll do that by redirecting the standard output stream
+to a file while intentionally causing an error. We won’t redirect the standard
+error stream, so any content sent to standard error will continue to display on
+the screen.</p>
+<p>Command line programs are expected to send error messages to the standard error
+stream so that we can still see error messages on the screen even if we
+redirect the standard output stream to a file. Our program is not currently
+well behaved: We’re about to see that it saves the error message output to a
+file instead!</p>
+<p>To demonstrate this behavior, we’ll run the program with <code>&gt;</code> and the file path,
+<em>output.txt</em>, that we want to redirect the standard output stream to. We won’t
+pass any arguments, which should cause an error:</p>
+<pre><code class="language-console">$ cargo run &gt; output.txt
+</code></pre>
+<p>The <code>&gt;</code> syntax tells the shell to write the contents of standard output to
+<em>output.txt</em> instead of the screen. We didn’t see the error message we were
+expecting printed to the screen, so that means it must have ended up in the
+file. This is what <em>output.txt</em> contains:</p>
+<pre><code class="language-text">Problem parsing arguments: not enough arguments
+</code></pre>
+<p>Yup, our error message is being printed to standard output. It’s much more
+useful for error messages like this to be printed to standard error so that
+only data from a successful run ends up in the file. We’ll change that.</p>
+<h4 id="printing-errors-to-standard-error"><a class="header" href="#printing-errors-to-standard-error">Printing Errors to Standard Error</a></h4>
+<p>We’ll use the code in Listing 12-24 to change how error messages are printed.
+Because of the refactoring we did earlier in this chapter, all the code that
+prints error messages is in one function, <code>main</code>. The standard library provides
+the <code>eprintln!</code> macro that prints to the standard error stream, so let’s change
+the two places we were calling <code>println!</code> to print errors to use <code>eprintln!</code>
+instead.</p>
+<figure class="listing" id="listing-12-24">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span>fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+
+    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+        eprintln!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
+
+    if let Err(e) = run(config) {
+        eprintln!("Application error: {e}");
+        process::exit(1);
+    }
+}
+<span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        let ignore_case = env::var("IGNORE_CASE").is_ok();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config {
+</span><span class="boring">            query,
+</span><span class="boring">            file_path,
+</span><span class="boring">            ignore_case,
+</span><span class="boring">        })
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-12-24">Listing 12-24</a>: Writing error messages to standard error instead of standard output using <code>eprintln!</code></figcaption>
+</figure>
+<p>Let’s now run the program again in the same way, without any arguments and
+redirecting standard output with <code>&gt;</code>:</p>
+<pre><code class="language-console">$ cargo run &gt; output.txt
+Problem parsing arguments: not enough arguments
+</code></pre>
+<p>Now we see the error onscreen and <em>output.txt</em> contains nothing, which is the
+behavior we expect of command line programs.</p>
+<p>Let’s run the program again with arguments that don’t cause an error but still
+redirect standard output to a file, like so:</p>
+<pre><code class="language-console">$ cargo run -- to poem.txt &gt; output.txt
+</code></pre>
+<p>We won’t see any output to the terminal, and <em>output.txt</em> will contain our
+results:</p>
+<p><span class="filename">Filename: output.txt</span></p>
+<pre><code class="language-text">Are you nobody, too?
+How dreary to be somebody!
+</code></pre>
+<p>This demonstrates that we’re now using standard output for successful output
+and standard error for error output as appropriate.</p>
+<h3 id="summary-11"><a class="header" href="#summary-11">Summary</a></h3>
+<p>This chapter recapped some of the major concepts you’ve learned so far and
+covered how to perform common I/O operations in Rust. By using command line
+arguments, files, environment variables, and the <code>eprintln!</code> macro for printing
+errors, you’re now prepared to write command line applications. Combined with
+the concepts in previous chapters, your code will be well organized, store data
+effectively in the appropriate data structures, handle errors nicely, and be
+well tested.</p>
+<p>Next, we’ll explore some Rust features that were influenced by functional
+languages: closures and iterators.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="11%20Tests%20That%20Protect%20Contracts.html">← 11 Tests That Protect Contracts</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="13%20Closures%20and%20Iterator%20Pipelines.html">13 Closures and Iterator Pipelines →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#an-io-project-building-a-command-line-program">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

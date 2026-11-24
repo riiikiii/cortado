@@ -1,0 +1,1305 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Patterns as Decisions</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-chemex.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 19 / 21</span></div>
+<div class="hero"><div><h1>Patterns as Decisions</h1><p>Use guards to separate equivalent and conflicting duplicates.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>Occupied(30) and 30</span></div><div class="trace"><b>Observe</b><span>Replay</span></div><div class="trace"><b>Result</b><span>different value fails</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="18%20State%20and%20Behaviour%20Patterns.html">← 18 State and Behaviour Patterns</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="20%20Advanced%20Rust%20and%20Crate%20Boundaries.html">20 Advanced Rust and Crate Boundaries →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#patterns-and-matching">Patterns and Matching</a><a href="#all-the-places-patterns-can-be-used-1">All the Places Patterns Can Be Used</a><a href="#refutability-whether-a-pattern-might-fail-to-match-1">Refutability: Whether a Pattern Might Fail to Match</a><a href="#pattern-syntax-1">Pattern Syntax</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Use guards to separate equivalent and conflicting duplicates</h2><p>A pattern narrows the shape of a value. A guard applies a predicate after that structural match. In unique, Entry::Occupied tells us an id exists and gives us the stored quantity. The guard compares that quantity with the incoming record. If the comparison fails Rust tries the remaining arm. This expresses a short decision table without performing another map lookup.</p><figure class="code"><figcaption>examples/replay.rs · excerpt</figcaption><pre><code><span class="k">fn</span><span class="w"> </span><span class="nf">unique</span><span class="o">&lt;'</span><span class="na">a</span><span class="o">&gt;</span><span class="p">(</span><span class="n">orders</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="o">'</span><span class="na">a</span><span class="w"> </span><span class="p">[</span><span class="n">Order</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;&amp;'</span><span class="na">a</span><span class="w"> </span><span class="n">Order</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;'</span><span class="na">a</span><span class="w"> </span><span class="kt">str</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">collections</span><span class="p">::</span><span class="n">hash_map</span><span class="p">::</span><span class="n">Entry</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">seen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HashMap</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">accepted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Vec</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">orders</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">match</span><span class="w"> </span><span class="n">seen</span><span class="p">.</span><span class="n">entry</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">Entry</span><span class="p">::</span><span class="n">Vacant</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">key</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">());</span>
+<span class="w">                </span><span class="n">accepted</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">Entry</span><span class="p">::</span><span class="n">Occupied</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="o">*</span><span class="n">key</span><span class="p">.</span><span class="n">get</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">            </span><span class="n">Entry</span><span class="p">::</span><span class="n">Occupied</span><span class="p">(</span><span class="n">_</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">()),</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(</span><span class="n">accepted</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></figure><p>Change only the third record, first to B-2:12 and then to A-1:12. The first is a new id, the second is an incompatible reuse. A guard that checked only whether the new quantity was positive would accept both duplicates incorrectly: they are all positive after construction. The argument to the guard must carry information from both sides of the boundary. In the HTTP adapter the matches! guard has a different purpose: identify SQLite busy or locked errors so that contention has a distinct status.</p><h3>Order the match arms intentionally</h3><p>Read a match from top to bottom and ask which observations each arm consumes. A catch-all arm near the beginning can make later distinctions unreachable. The compiler can detect simple unreachable patterns, but it cannot tell whether a business predicate encodes the intended policy. In the duplicate classifier, a guard comparing quantities is meaningful because the entry pattern has already established that the identifiers match. If the primary key becomes a pair of account and client id, both the map key and database constraint must change together. The shape of the match alone will not reveal an omitted account boundary.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/reference/expressions/match-expr.html">doc.rust-lang.org/reference/expressions/match-expr.html</a></p></section><div class="book"><h2 id="patterns-and-matching"><a class="header" href="#patterns-and-matching">Patterns and Matching</a></h2>
+<p>Patterns are a special syntax in Rust for matching against the structure of
+types, both complex and simple. Using patterns in conjunction with <code>match</code>
+expressions and other constructs gives you more control over a program’s
+control flow. A pattern consists of some combination of the following:</p>
+<ul>
+<li>Literals</li>
+<li>Destructured arrays, enums, structs, or tuples</li>
+<li>Variables</li>
+<li>Wildcards</li>
+<li>Placeholders</li>
+</ul>
+<p>Some example patterns include <code>x</code>, <code>(a, 3)</code>, and <code>Some(Color::Red)</code>. In the
+contexts in which patterns are valid, these components describe the shape of
+data. Our program then matches values against the patterns to determine whether
+it has the correct shape of data to continue running a particular piece of code.</p>
+<p>To use a pattern, we compare it to some value. If the pattern matches the
+value, we use the value parts in our code. Recall the <code>match</code> expressions in
+Chapter 6 that used patterns, such as the coin-sorting machine example. If the
+value fits the shape of the pattern, we can use the named pieces. If it
+doesn’t, the code associated with the pattern won’t run.</p>
+<p>This chapter is a reference on all things related to patterns. We’ll cover the
+valid places to use patterns, the difference between refutable and irrefutable
+patterns, and the different kinds of pattern syntax that you might see. By the
+end of the chapter, you’ll know how to use patterns to express many concepts in
+a clear way.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="all-the-places-patterns-can-be-used-1"><a href="#all-the-places-patterns-can-be-used-1" class="header">All the Places Patterns Can Be Used</a></h2>
+<h3 id="all-the-places-patterns-can-be-used"><a class="header" href="#all-the-places-patterns-can-be-used">All the Places Patterns Can Be Used</a></h3>
+<p>Patterns pop up in a number of places in Rust, and you’ve been using them a lot
+without realizing it! This section discusses all the places where patterns are
+valid.</p>
+<h4 id="match-arms"><a class="header" href="#match-arms"><code>match</code> Arms</a></h4>
+<p>As discussed in Chapter 6, we use patterns in the arms of <code>match</code> expressions.
+Formally, <code>match</code> expressions are defined as the keyword <code>match</code>, a value to
+match on, and one or more match arms that consist of a pattern and an
+expression to run if the value matches that arm’s pattern, like this:</p>
+<!--
+  Manually formatted rather than using Markdown intentionally: Markdown does not
+  support italicizing code in the body of a block like this!
+-->
+<pre><code>match <em>VALUE</em> {
+    <em>PATTERN</em> =&gt; <em>EXPRESSION</em>,
+    <em>PATTERN</em> =&gt; <em>EXPRESSION</em>,
+    <em>PATTERN</em> =&gt; <em>EXPRESSION</em>,
+}</code></pre>
+
+<p>For example, here’s the <code>match</code> expression from Listing 6-5 that matches on an
+<code>Option&lt;i32&gt;</code> value in the variable <code>x</code>:</p>
+<pre><code class="language-rust ignore">match x {
+    None =&gt; None,
+    Some(i) =&gt; Some(i + 1),
+}</code></pre>
+<p>The patterns in this <code>match</code> expression are the <code>None</code> and <code>Some(i)</code> to the
+left of each arrow.</p>
+<p>One requirement for <code>match</code> expressions is that they need to be exhaustive in
+the sense that all possibilities for the value in the <code>match</code> expression must
+be accounted for. One way to ensure that you’ve covered every possibility is to
+have a catch-all pattern for the last arm: For example, a variable name
+matching any value can never fail and thus covers every remaining case.</p>
+<p>The particular pattern <code>_</code> will match anything, but it never binds to a
+variable, so it’s often used in the last match arm. The <code>_</code> pattern can be
+useful when you want to ignore any value not specified, for example. We’ll
+cover the <code>_</code> pattern in more detail in <a href="#ignoring-values-in-a-pattern">“Ignoring Values in a
+Pattern”</a><!-- ignore --> later in this chapter.</p>
+<h4 id="let-statements"><a class="header" href="#let-statements"><code>let</code> Statements</a></h4>
+<p>Prior to this chapter, we had only explicitly discussed using patterns with
+<code>match</code> and <code>if let</code>, but in fact, we’ve used patterns in other places as well,
+including in <code>let</code> statements. For example, consider this straightforward
+variable assignment with <code>let</code>:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x = 5;
+<span class="boring">}</span></code></pre>
+<p>Every time you’ve used a <code>let</code> statement like this you’ve been using patterns,
+although you might not have realized it! More formally, a <code>let</code> statement looks
+like this:</p>
+<!--
+  Manually formatted rather than using Markdown intentionally: Markdown does not
+  support italicizing code in the body of a block like this!
+-->
+<pre>
+<code>let <em>PATTERN</em> = <em>EXPRESSION</em>;</code>
+</pre>
+
+<p>In statements like <code>let x = 5;</code> with a variable name in the PATTERN slot, the
+variable name is just a particularly simple form of a pattern. Rust compares
+the expression against the pattern and assigns any names it finds. So, in the
+<code>let x = 5;</code> example, <code>x</code> is a pattern that means “bind what matches here to
+the variable <code>x</code>.” Because the name <code>x</code> is the whole pattern, this pattern
+effectively means “bind everything to the variable <code>x</code>, whatever the value is.”</p>
+<p>To see the pattern-matching aspect of <code>let</code> more clearly, consider Listing
+19-1, which uses a pattern with <code>let</code> to destructure a tuple.</p>
+<figure class="listing" id="listing-19-1">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let (x, y, z) = (1, 2, 3);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-1">Listing 19-1</a>: Using a pattern to destructure a tuple and create three variables at once</figcaption>
+</figure>
+<p>Here, we match a tuple against a pattern. Rust compares the value <code>(1, 2, 3)</code>
+to the pattern <code>(x, y, z)</code> and sees that the value matches the pattern—that is,
+it sees that the number of elements is the same in both—so Rust binds <code>1</code> to
+<code>x</code>, <code>2</code> to <code>y</code>, and <code>3</code> to <code>z</code>. You can think of this tuple pattern as nesting
+three individual variable patterns inside it.</p>
+<p>If the number of elements in the pattern doesn’t match the number of elements
+in the tuple, the overall type won’t match and we’ll get a compiler error. For
+example, Listing 19-2 shows an attempt to destructure a tuple with three
+elements into two variables, which won’t work.</p>
+<figure class="listing" id="listing-19-2">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span>    let (x, y) = (1, 2, 3);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-2">Listing 19-2</a>: Incorrectly constructing a pattern whose variables don’t match the number of elements in the tuple</figcaption>
+</figure>
+<p>Attempting to compile this code results in this type error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling patterns v0.1.0 (file:///projects/patterns)
+error[E0308]: mismatched types
+ --&gt; src/main.rs:2:9
+  |
+2 |     let (x, y) = (1, 2, 3);
+  |         ^^^^^^   --------- this expression has type `({integer}, {integer}, {integer})`
+  |         |
+  |         expected a tuple with 3 elements, found one with 2 elements
+  |
+  = note: expected tuple `({integer}, {integer}, {integer})`
+             found tuple `(_, _)`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `patterns` (bin "patterns") due to 1 previous error
+</code></pre>
+<p>To fix the error, we could ignore one or more of the values in the tuple using
+<code>_</code> or <code>..</code>, as you’ll see in the <a href="#ignoring-values-in-a-pattern">“Ignoring Values in a
+Pattern”</a><!-- ignore --> section. If the problem
+is that we have too many variables in the pattern, the solution is to make the
+types match by removing variables so that the number of variables equals the
+number of elements in the tuple.</p>
+<h4 id="conditional-if-let-expressions"><a class="header" href="#conditional-if-let-expressions">Conditional <code>if let</code> Expressions</a></h4>
+<p>In Chapter 6, we discussed how to use <code>if let</code> expressions mainly as a shorter
+way to write the equivalent of a <code>match</code> that only matches one case.
+Optionally, <code>if let</code> can have a corresponding <code>else</code> containing code to run if
+the pattern in the <code>if let</code> doesn’t match.</p>
+<p>Listing 19-3 shows that it’s also possible to mix and match <code>if let</code>, <code>else if</code>, and <code>else if let</code> expressions. Doing so gives us more flexibility than a
+<code>match</code> expression in which we can express only one value to compare with the
+patterns. Also, Rust doesn’t require that the conditions in a series of <code>if let</code>, <code>else if</code>, and <code>else if let</code> arms relate to each other.</p>
+<p>The code in Listing 19-3 determines what color to make your background based on
+a series of checks for several conditions. For this example, we’ve created
+variables with hardcoded values that a real program might receive from user
+input.</p>
+<figure class="listing" id="listing-19-3">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let favorite_color: Option&lt;&amp;str&gt; = None;
+    let is_tuesday = false;
+    let age: Result&lt;u8, _&gt; = "34".parse();
+
+    if let Some(color) = favorite_color {
+        println!("Using your favorite color, {color}, as the background");
+    } else if is_tuesday {
+        println!("Tuesday is green day!");
+    } else if let Ok(age) = age {
+        if age &gt; 30 {
+            println!("Using purple as the background color");
+        } else {
+            println!("Using orange as the background color");
+        }
+    } else {
+        println!("Using blue as the background color");
+    }
+}</code></pre>
+<figcaption><a href="#listing-19-3">Listing 19-3</a>: Mixing <code>if let</code>, <code>else if</code>, <code>else if let</code>, and <code>else</code></figcaption>
+</figure>
+<p>If the user specifies a favorite color, that color is used as the background.
+If no favorite color is specified and today is Tuesday, the background color is
+green. Otherwise, if the user specifies their age as a string and we can parse
+it as a number successfully, the color is either purple or orange depending on
+the value of the number. If none of these conditions apply, the background
+color is blue.</p>
+<p>This conditional structure lets us support complex requirements. With the
+hardcoded values we have here, this example will print <code>Using purple as the background color</code>.</p>
+<p>You can see that <code>if let</code> can also introduce new variables that shadow existing
+variables in the same way that <code>match</code> arms can: The line <code>if let Ok(age) = age</code>
+introduces a new <code>age</code> variable that contains the value inside the <code>Ok</code> variant,
+shadowing the existing <code>age</code> variable. This means we need to place the <code>if age &gt; 30</code> condition within that block: We can’t combine these two conditions into <code>if let Ok(age) = age &amp;&amp; age &gt; 30</code>. The new <code>age</code> we want to compare to 30 isn’t
+valid until the new scope starts with the curly bracket.</p>
+<p>The downside of using <code>if let</code> expressions is that the compiler doesn’t check
+for exhaustiveness, whereas with <code>match</code> expressions it does. If we omitted the
+last <code>else</code> block and therefore missed handling some cases, the compiler would
+not alert us to the possible logic bug.</p>
+<h4 id="while-let-conditional-loops"><a class="header" href="#while-let-conditional-loops"><code>while let</code> Conditional Loops</a></h4>
+<p>Similar in construction to <code>if let</code>, the <code>while let</code> conditional loop allows a
+<code>while</code> loop to run for as long as a pattern continues to match. In Listing
+19-4, we show a <code>while let</code> loop that waits on messages sent between threads,
+but in this case checking a <code>Result</code> instead of an <code>Option</code>.</p>
+<figure class="listing" id="listing-19-4">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        for val in [1, 2, 3] {
+            tx.send(val).unwrap();
+        }
+    });
+
+    while let Ok(value) = rx.recv() {
+        println!("{value}");
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-4">Listing 19-4</a>: Using a <code>while let</code> loop to print values for as long as <code>rx.recv()</code> returns <code>Ok</code></figcaption>
+</figure>
+<p>This example prints <code>1</code>, <code>2</code>, and then <code>3</code>. The <code>recv</code> method takes the first
+message out of the receiver side of the channel and returns an <code>Ok(value)</code>. When
+we first saw <code>recv</code> back in Chapter 16, we unwrapped the error directly, or
+we interacted with it as an iterator using a <code>for</code> loop. As Listing 19-4 shows,
+though, we can also use <code>while let</code>, because the <code>recv</code> method returns an <code>Ok</code>
+each time a message arrives, as long as the sender exists, and then produces an
+<code>Err</code> once the sender side disconnects.</p>
+<h4 id="for-loops"><a class="header" href="#for-loops"><code>for</code> Loops</a></h4>
+<p>In a <code>for</code> loop, the value that directly follows the keyword <code>for</code> is a
+pattern. For example, in <code>for x in y</code>, the <code>x</code> is the pattern. Listing 19-5
+demonstrates how to use a pattern in a <code>for</code> loop to destructure, or break
+apart, a tuple as part of the <code>for</code> loop.</p>
+<figure class="listing" id="listing-19-5">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v = vec!['a', 'b', 'c'];
+
+    for (index, value) in v.iter().enumerate() {
+        println!("{value} is at index {index}");
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-5">Listing 19-5</a>: Using a pattern in a <code>for</code> loop to destructure a tuple</figcaption>
+</figure>
+<p>The code in Listing 19-5 will print the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling patterns v0.1.0 (file:///projects/patterns)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.52s
+     Running `target/debug/patterns`
+a is at index 0
+b is at index 1
+c is at index 2
+</code></pre>
+<p>We adapt an iterator using the <code>enumerate</code> method so that it produces a value
+and the index for that value, placed into a tuple. The first value produced is
+the tuple <code>(0, 'a')</code>. When this value is matched to the pattern <code>(index, value)</code>, index will be <code>0</code> and value will be <code>'a'</code>, printing the first line of
+the output.</p>
+<h4 id="function-parameters"><a class="header" href="#function-parameters">Function Parameters</a></h4>
+<p>Function parameters can also be patterns. The code in Listing 19-6, which
+declares a function named <code>foo</code> that takes one parameter named <code>x</code> of type
+<code>i32</code>, should by now look familiar.</p>
+<figure class="listing" id="listing-19-6">
+<pre class="playground"><code class="language-rust edition2024">fn foo(x: i32) {
+    // code goes here
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-19-6">Listing 19-6</a>: A function signature using patterns in the parameters</figcaption>
+</figure>
+<p>The <code>x</code> part is a pattern! As we did with <code>let</code>, we could match a tuple in a
+function’s arguments to the pattern. Listing 19-7 splits the values in a tuple
+as we pass it to a function.</p>
+<figure class="listing" id="listing-19-7">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn print_coordinates(&amp;(x, y): &amp;(i32, i32)) {
+    println!("Current location: ({x}, {y})");
+}
+
+fn main() {
+    let point = (3, 5);
+    print_coordinates(&amp;point);
+}</code></pre>
+<figcaption><a href="#listing-19-7">Listing 19-7</a>: A function with parameters that destructure a tuple</figcaption>
+</figure>
+<p>This code prints <code>Current location: (3, 5)</code>. The values <code>&amp;(3, 5)</code> match the
+pattern <code>&amp;(x, y)</code>, so <code>x</code> is the value <code>3</code> and <code>y</code> is the value <code>5</code>.</p>
+<p>We can also use patterns in closure parameter lists in the same way as in
+function parameter lists because closures are similar to functions, as
+discussed in Chapter 13.</p>
+<p>At this point, you’ve seen several ways to use patterns, but patterns don’t
+work the same in every place we can use them. In some places, the patterns must
+be irrefutable; in other circumstances, they can be refutable. We’ll discuss
+these two concepts next.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="refutability-whether-a-pattern-might-fail-to-match-1"><a href="#refutability-whether-a-pattern-might-fail-to-match-1" class="header">Refutability: Whether a Pattern Might Fail to Match</a></h2>
+<h3 id="refutability-whether-a-pattern-might-fail-to-match"><a class="header" href="#refutability-whether-a-pattern-might-fail-to-match">Refutability: Whether a Pattern Might Fail to Match</a></h3>
+<p>Patterns come in two forms: refutable and irrefutable. Patterns that will match
+for any possible value passed are <em>irrefutable</em>. An example would be <code>x</code> in the
+statement <code>let x = 5;</code> because <code>x</code> matches anything and therefore cannot fail
+to match. Patterns that can fail to match for some possible value are
+<em>refutable</em>. An example would be <code>Some(x)</code> in the expression <code>if let Some(x) = a_value</code> because if the value in the <code>a_value</code> variable is <code>None</code> rather than
+<code>Some</code>, the <code>Some(x)</code> pattern will not match.</p>
+<p>Function parameters, <code>let</code> statements, and <code>for</code> loops can only accept
+irrefutable patterns because the program cannot do anything meaningful when
+values don’t match. The <code>if let</code> and <code>while let</code> expressions and the
+<code>let...else</code> statement accept refutable and irrefutable patterns, but the
+compiler warns against irrefutable patterns because, by definition, they’re
+intended to handle possible failure: The functionality of a conditional is in
+its ability to perform differently depending on success or failure.</p>
+<p>In general, you shouldn’t have to worry about the distinction between refutable
+and irrefutable patterns; however, you do need to be familiar with the concept
+of refutability so that you can respond when you see it in an error message. In
+those cases, you’ll need to change either the pattern or the construct you’re
+using the pattern with, depending on the intended behavior of the code.</p>
+<p>Let’s look at an example of what happens when we try to use a refutable pattern
+where Rust requires an irrefutable pattern and vice versa. Listing 19-8 shows a
+<code>let</code> statement, but for the pattern, we’ve specified <code>Some(x)</code>, a refutable
+pattern. As you might expect, this code will not compile.</p>
+<figure class="listing" id="listing-19-8">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span><span class="boring">    let some_option_value: Option&lt;i32&gt; = None;
+</span>    let Some(x) = some_option_value;
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-8">Listing 19-8</a>: Attempting to use a refutable pattern with <code>let</code></figcaption>
+</figure>
+<p>If <code>some_option_value</code> were a <code>None</code> value, it would fail to match the pattern
+<code>Some(x)</code>, meaning the pattern is refutable. However, the <code>let</code> statement can
+only accept an irrefutable pattern because there is nothing valid the code can
+do with a <code>None</code> value. At compile time, Rust will complain that we’ve tried to
+use a refutable pattern where an irrefutable pattern is required:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling patterns v0.1.0 (file:///projects/patterns)
+error[E0005]: refutable pattern in local binding
+ --&gt; src/main.rs:3:9
+  |
+3 |     let Some(x) = some_option_value;
+  |         ^^^^^^^ pattern `None` not covered
+  |
+  = note: `let` bindings require an "irrefutable pattern", like a `struct` or an `enum` with only one variant
+  = note: for more information, visit https://doc.rust-lang.org/book/ch19-02-refutability.html
+  = note: the matched value is of type `Option&lt;i32&gt;`
+help: you might want to use `let...else` to handle the variant that isn't matched
+  |
+3 |     let Some(x) = some_option_value else { todo!() };
+  |                                     ++++++++++++++++
+
+For more information about this error, try `rustc --explain E0005`.
+error: could not compile `patterns` (bin "patterns") due to 1 previous error
+</code></pre>
+<p>Because we didn’t cover (and couldn’t cover!) every valid value with the
+pattern <code>Some(x)</code>, Rust rightfully produces a compiler error.</p>
+<p>If we have a refutable pattern where an irrefutable pattern is needed, we can
+fix it by changing the code that uses the pattern: Instead of using <code>let</code>, we
+can use <code>let...else</code>. Then, if the pattern doesn’t match, the code in the curly
+brackets will handle the value. Listing 19-9 shows how to fix the code in
+Listing 19-8.</p>
+<figure class="listing" id="listing-19-9">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    let some_option_value: Option&lt;i32&gt; = None;
+</span>    let Some(x) = some_option_value else {
+        return;
+    };
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-9">Listing 19-9</a>: Using <code>let...else</code> and a block with refutable patterns instead of <code>let</code></figcaption>
+</figure>
+<p>We’ve given the code an out! This code is perfectly valid, although it means we
+cannot use an irrefutable pattern without receiving a warning. If we give
+<code>let...else</code> a pattern that will always match, such as <code>x</code>, as shown in Listing
+19-10, the compiler will give a warning.</p>
+<figure class="listing" id="listing-19-10">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let x = 5 else {
+        return;
+    };
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-10">Listing 19-10</a>: Attempting to use an irrefutable pattern with <code>let...else</code></figcaption>
+</figure>
+<p>Rust complains that it doesn’t make sense to use <code>let...else</code> with an
+irrefutable pattern because the <code>else</code> will never be reached:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling patterns v0.1.0 (file:///projects/patterns)
+warning: unreachable `else` clause
+ --&gt; src/main.rs:2:15
+  |
+2 |     let x = 5 else {
+  |     --------- ^^^^
+  |     |
+  |     assigning to binding pattern will always succeed
+  |
+  = note: this pattern always matches, so the else clause is unreachable
+  = note: `#[warn(irrefutable_let_patterns)]` on by default
+
+warning: `patterns` (bin "patterns") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.39s
+     Running `target/debug/patterns`
+</code></pre>
+<p>For this reason, match arms must use refutable patterns, except for the last
+arm, which should match any remaining values with an irrefutable pattern. Rust
+allows us to use an irrefutable pattern in a <code>match</code> with only one arm, but
+this syntax isn’t particularly useful and could be replaced with a simpler
+<code>let</code> statement.</p>
+<p>Now that you know where to use patterns and the difference between refutable
+and irrefutable patterns, let’s cover all the syntax we can use to create
+patterns.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="pattern-syntax-1"><a href="#pattern-syntax-1" class="header">Pattern Syntax</a></h2>
+<h3 id="pattern-syntax"><a class="header" href="#pattern-syntax">Pattern Syntax</a></h3>
+<p>In this section, we gather all the syntax that is valid in patterns and discuss
+why and when you might want to use each one.</p>
+<h4 id="matching-literals"><a class="header" href="#matching-literals">Matching Literals</a></h4>
+<p>As you saw in Chapter 6, you can match patterns against literals directly. The
+following code gives some examples:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let x = 1;
+
+    match x {
+        1 =&gt; println!("one"),
+        2 =&gt; println!("two"),
+        3 =&gt; println!("three"),
+        _ =&gt; println!("anything"),
+    }
+<span class="boring">}</span></code></pre>
+<p>This code prints <code>one</code> because the value in <code>x</code> is <code>1</code>. This syntax is useful
+when you want your code to take an action if it gets a particular concrete
+value.</p>
+<h4 id="matching-named-variables"><a class="header" href="#matching-named-variables">Matching Named Variables</a></h4>
+<p>Named variables are irrefutable patterns that match any value, and we’ve used
+them many times in this book. However, there is a complication when you use
+named variables in <code>match</code>, <code>if let</code>, or <code>while let</code> expressions. Because each
+of these kinds of expressions starts a new scope, variables declared as part of
+a pattern inside these expressions will shadow those with the same name outside
+the constructs, as is the case with all variables. In Listing 19-11, we declare
+a variable named <code>x</code> with the value <code>Some(5)</code> and a variable <code>y</code> with the value
+<code>10</code>. We then create a <code>match</code> expression on the value <code>x</code>. Look at the
+patterns in the match arms and <code>println!</code> at the end, and try to figure out
+what the code will print before running this code or reading further.</p>
+<figure class="listing" id="listing-19-11">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let x = Some(5);
+    let y = 10;
+
+    match x {
+        Some(50) =&gt; println!("Got 50"),
+        Some(y) =&gt; println!("Matched, y = {y}"),
+        _ =&gt; println!("Default case, x = {x:?}"),
+    }
+
+    println!("at the end: x = {x:?}, y = {y}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-11">Listing 19-11</a>: A <code>match</code> expression with an arm that introduces a new variable which shadows an existing variable <code>y</code></figcaption>
+</figure>
+<p>Let’s walk through what happens when the <code>match</code> expression runs. The pattern
+in the first match arm doesn’t match the defined value of <code>x</code>, so the code
+continues.</p>
+<p>The pattern in the second match arm introduces a new variable named <code>y</code> that
+will match any value inside a <code>Some</code> value. Because we’re in a new scope inside
+the <code>match</code> expression, this is a new <code>y</code> variable, not the <code>y</code> we declared at
+the beginning with the value <code>10</code>. This new <code>y</code> binding will match any value
+inside a <code>Some</code>, which is what we have in <code>x</code>. Therefore, this new <code>y</code> binds to
+the inner value of the <code>Some</code> in <code>x</code>. That value is <code>5</code>, so the expression for
+that arm executes and prints <code>Matched, y = 5</code>.</p>
+<p>If <code>x</code> had been a <code>None</code> value instead of <code>Some(5)</code>, the patterns in the first
+two arms wouldn’t have matched, so the value would have matched to the
+underscore. We didn’t introduce the <code>x</code> variable in the pattern of the
+underscore arm, so the <code>x</code> in the expression is still the outer <code>x</code> that hasn’t
+been shadowed. In this hypothetical case, the <code>match</code> would print <code>Default case, x = None</code>.</p>
+<p>When the <code>match</code> expression is done, its scope ends, and so does the scope of
+the inner <code>y</code>. The last <code>println!</code> produces <code>at the end: x = Some(5), y = 10</code>.</p>
+<p>To create a <code>match</code> expression that compares the values of the outer <code>x</code> and
+<code>y</code>, rather than introducing a new variable that shadows the existing <code>y</code>
+variable, we would need to use a match guard conditional instead. We’ll talk
+about match guards later in the <a href="#adding-conditionals-with-match-guards">“Adding Conditionals with Match
+Guards”</a><!-- ignore --> section.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="multiple-patterns"></a></p>
+<h4 id="matching-multiple-patterns"><a class="header" href="#matching-multiple-patterns">Matching Multiple Patterns</a></h4>
+<p>In <code>match</code> expressions, you can match multiple patterns using the <code>|</code> syntax,
+which is the pattern <em>or</em> operator. For example, in the following code, we match
+the value of <code>x</code> against the match arms, the first of which has an <em>or</em> option,
+meaning if the value of <code>x</code> matches either of the values in that arm, that
+arm’s code will run:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let x = 1;
+
+    match x {
+        1 | 2 =&gt; println!("one or two"),
+        3 =&gt; println!("three"),
+        _ =&gt; println!("anything"),
+    }
+<span class="boring">}</span></code></pre>
+<p>This code prints <code>one or two</code>.</p>
+<h4 id="matching-ranges-of-values-with-"><a class="header" href="#matching-ranges-of-values-with-">Matching Ranges of Values with <code>..=</code></a></h4>
+<p>The <code>..=</code> syntax allows us to match to an inclusive range of values. In the
+following code, when a pattern matches any of the values within the given
+range, that arm will execute:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let x = 5;
+
+    match x {
+        1..=5 =&gt; println!("one through five"),
+        _ =&gt; println!("something else"),
+    }
+<span class="boring">}</span></code></pre>
+<p>If <code>x</code> is <code>1</code>, <code>2</code>, <code>3</code>, <code>4</code>, or <code>5</code>, the first arm will match. This syntax is
+more convenient for multiple match values than using the <code>|</code> operator to
+express the same idea; if we were to use <code>|</code>, we would have to specify <code>1 | 2 | 3 | 4 | 5</code>. Specifying a range is much shorter, especially if we want to match,
+say, any number between 1 and 1,000!</p>
+<p>The compiler checks that the range isn’t empty at compile time, and because the
+only types for which Rust can tell if a range is empty or not are <code>char</code> and
+numeric values, ranges are only allowed with numeric or <code>char</code> values.</p>
+<p>Here is an example using ranges of <code>char</code> values:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let x = 'c';
+
+    match x {
+        'a'..='j' =&gt; println!("early ASCII letter"),
+        'k'..='z' =&gt; println!("late ASCII letter"),
+        _ =&gt; println!("something else"),
+    }
+<span class="boring">}</span></code></pre>
+<p>Rust can tell that <code>'c'</code> is within the first pattern’s range and prints <code>early ASCII letter</code>.</p>
+<h4 id="destructuring-to-break-apart-values"><a class="header" href="#destructuring-to-break-apart-values">Destructuring to Break Apart Values</a></h4>
+<p>We can also use patterns to destructure structs, enums, and tuples to use
+different parts of these values. Let’s walk through each value.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="destructuring-structs"></a></p>
+<h5 id="structs"><a class="header" href="#structs">Structs</a></h5>
+<p>Listing 19-12 shows a <code>Point</code> struct with two fields, <code>x</code> and <code>y</code>, that we can
+break apart using a pattern with a <code>let</code> statement.</p>
+<figure class="listing" id="listing-19-12">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Point {
+    x: i32,
+    y: i32,
+}
+
+fn main() {
+    let p = Point { x: 0, y: 7 };
+
+    let Point { x: a, y: b } = p;
+    assert_eq!(0, a);
+    assert_eq!(7, b);
+}</code></pre>
+<figcaption><a href="#listing-19-12">Listing 19-12</a>: Destructuring a struct’s fields into separate variables</figcaption>
+</figure>
+<p>This code creates the variables <code>a</code> and <code>b</code> that match the values of the <code>x</code>
+and <code>y</code> fields of the <code>p</code> struct. This example shows that the names of the
+variables in the pattern don’t have to match the field names of the struct.
+However, it’s common to match the variable names to the field names to make it
+easier to remember which variables came from which fields. Because of this
+common usage, and because writing <code>let Point { x: x, y: y } = p;</code> contains a
+lot of duplication, Rust has a shorthand for patterns that match struct fields:
+You only need to list the name of the struct field, and the variables created
+from the pattern will have the same names. Listing 19-13 behaves in the same
+way as the code in Listing 19-12, but the variables created in the <code>let</code>
+pattern are <code>x</code> and <code>y</code> instead of <code>a</code> and <code>b</code>.</p>
+<figure class="listing" id="listing-19-13">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Point {
+    x: i32,
+    y: i32,
+}
+
+fn main() {
+    let p = Point { x: 0, y: 7 };
+
+    let Point { x, y } = p;
+    assert_eq!(0, x);
+    assert_eq!(7, y);
+}</code></pre>
+<figcaption><a href="#listing-19-13">Listing 19-13</a>: Destructuring struct fields using struct field shorthand</figcaption>
+</figure>
+<p>This code creates the variables <code>x</code> and <code>y</code> that match the <code>x</code> and <code>y</code> fields
+of the <code>p</code> variable. The outcome is that the variables <code>x</code> and <code>y</code> contain the
+values from the <code>p</code> struct.</p>
+<p>We can also destructure with literal values as part of the struct pattern
+rather than creating variables for all the fields. Doing so allows us to test
+some of the fields for particular values while creating variables to
+destructure the other fields.</p>
+<p>In Listing 19-14, we have a <code>match</code> expression that separates <code>Point</code> values
+into three cases: points that lie directly on the <code>x</code> axis (which is true when
+<code>y = 0</code>), on the <code>y</code> axis (<code>x = 0</code>), or on neither axis.</p>
+<figure class="listing" id="listing-19-14">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct Point {
+</span><span class="boring">    x: i32,
+</span><span class="boring">    y: i32,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let p = Point { x: 0, y: 7 };
+
+    match p {
+        Point { x, y: 0 } =&gt; println!("On the x axis at {x}"),
+        Point { x: 0, y } =&gt; println!("On the y axis at {y}"),
+        Point { x, y } =&gt; {
+            println!("On neither axis: ({x}, {y})");
+        }
+    }
+}</code></pre>
+<figcaption><a href="#listing-19-14">Listing 19-14</a>: Destructuring and matching literal values in one pattern</figcaption>
+</figure>
+<p>The first arm will match any point that lies on the <code>x</code> axis by specifying that
+the <code>y</code> field matches if its value matches the literal <code>0</code>. The pattern still
+creates an <code>x</code> variable that we can use in the code for this arm.</p>
+<p>Similarly, the second arm matches any point on the <code>y</code> axis by specifying that
+the <code>x</code> field matches if its value is <code>0</code> and creates a variable <code>y</code> for the
+value of the <code>y</code> field. The third arm doesn’t specify any literals, so it
+matches any other <code>Point</code> and creates variables for both the <code>x</code> and <code>y</code> fields.</p>
+<p>In this example, the value <code>p</code> matches the second arm by virtue of <code>x</code>
+containing a <code>0</code>, so this code will print <code>On the y axis at 7</code>.</p>
+<p>Remember that a <code>match</code> expression stops checking arms once it has found the
+first matching pattern, so even though <code>Point { x: 0, y: 0 }</code> is on the <code>x</code> axis
+and the <code>y</code> axis, this code would only print <code>On the x axis at 0</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="destructuring-enums"></a></p>
+<h5 id="enums"><a class="header" href="#enums">Enums</a></h5>
+<p>We’ve destructured enums in this book (for example, Listing 6-5 in Chapter 6),
+but we haven’t yet explicitly discussed that the pattern to destructure an enum
+corresponds to the way the data stored within the enum is defined. As an
+example, in Listing 19-15, we use the <code>Message</code> enum from Listing 6-2 and write
+a <code>match</code> with patterns that will destructure each inner value.</p>
+<figure class="listing" id="listing-19-15">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+    ChangeColor(i32, i32, i32),
+}
+
+fn main() {
+    let msg = Message::ChangeColor(0, 160, 255);
+
+    match msg {
+        Message::Quit =&gt; {
+            println!("The Quit variant has no data to destructure.");
+        }
+        Message::Move { x, y } =&gt; {
+            println!("Move in the x direction {x} and in the y direction {y}");
+        }
+        Message::Write(text) =&gt; {
+            println!("Text message: {text}");
+        }
+        Message::ChangeColor(r, g, b) =&gt; {
+            println!("Change color to red {r}, green {g}, and blue {b}");
+        }
+    }
+}</code></pre>
+<figcaption><a href="#listing-19-15">Listing 19-15</a>: Destructuring enum variants that hold different kinds of values</figcaption>
+</figure>
+<p>This code will print <code>Change color to red 0, green 160, and blue 255</code>. Try
+changing the value of <code>msg</code> to see the code from the other arms run.</p>
+<p>For enum variants without any data, like <code>Message::Quit</code>, we can’t destructure
+the value any further. We can only match on the literal <code>Message::Quit</code> value,
+and no variables are in that pattern.</p>
+<p>For struct-like enum variants, such as <code>Message::Move</code>, we can use a pattern
+similar to the pattern we specify to match structs. After the variant name, we
+place curly brackets and then list the fields with variables so that we break
+apart the pieces to use in the code for this arm. Here we use the shorthand
+form as we did in Listing 19-13.</p>
+<p>For tuple-like enum variants, like <code>Message::Write</code> that holds a tuple with one
+element and <code>Message::ChangeColor</code> that holds a tuple with three elements, the
+pattern is similar to the pattern we specify to match tuples. The number of
+variables in the pattern must match the number of elements in the variant we’re
+matching.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="destructuring-nested-structs-and-enums"></a></p>
+<h5 id="nested-structs-and-enums"><a class="header" href="#nested-structs-and-enums">Nested Structs and Enums</a></h5>
+<p>So far, our examples have all been matching structs or enums one level deep,
+but matching can work on nested items too! For example, we can refactor the
+code in Listing 19-15 to support RGB and HSV colors in the <code>ChangeColor</code>
+message, as shown in Listing 19-16.</p>
+<figure class="listing" id="listing-19-16">
+<pre class="playground"><code class="language-rust edition2024">enum Color {
+    Rgb(i32, i32, i32),
+    Hsv(i32, i32, i32),
+}
+
+enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+    ChangeColor(Color),
+}
+
+fn main() {
+    let msg = Message::ChangeColor(Color::Hsv(0, 160, 255));
+
+    match msg {
+        Message::ChangeColor(Color::Rgb(r, g, b)) =&gt; {
+            println!("Change color to red {r}, green {g}, and blue {b}");
+        }
+        Message::ChangeColor(Color::Hsv(h, s, v)) =&gt; {
+            println!("Change color to hue {h}, saturation {s}, value {v}");
+        }
+        _ =&gt; (),
+    }
+}</code></pre>
+<figcaption><a href="#listing-19-16">Listing 19-16</a>: Matching on nested enums</figcaption>
+</figure>
+<p>The pattern of the first arm in the <code>match</code> expression matches a
+<code>Message::ChangeColor</code> enum variant that contains a <code>Color::Rgb</code> variant; then,
+the pattern binds to the three inner <code>i32</code> values. The pattern of the second
+arm also matches a <code>Message::ChangeColor</code> enum variant, but the inner enum
+matches <code>Color::Hsv</code> instead. We can specify these complex conditions in one
+<code>match</code> expression, even though two enums are involved.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="destructuring-structs-and-tuples"></a></p>
+<h5 id="structs-and-tuples"><a class="header" href="#structs-and-tuples">Structs and Tuples</a></h5>
+<p>We can mix, match, and nest destructuring patterns in even more complex ways.
+The following example shows a complicated destructure where we nest structs and
+tuples inside a tuple and destructure all the primitive values out:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span><span class="boring">    struct Point {
+</span><span class="boring">        x: i32,
+</span><span class="boring">        y: i32,
+</span><span class="boring">    }
+</span><span class="boring">
+</span>    let ((feet, inches), Point { x, y }) = ((3, 10), Point { x: 3, y: -10 });
+<span class="boring">}</span></code></pre>
+<p>This code lets us break complex types into their component parts so that we can
+use the values we’re interested in separately.</p>
+<p>Destructuring with patterns is a convenient way to use pieces of values, such
+as the value from each field in a struct, separately from each other.</p>
+<h4 id="ignoring-values-in-a-pattern"><a class="header" href="#ignoring-values-in-a-pattern">Ignoring Values in a Pattern</a></h4>
+<p>You’ve seen that it’s sometimes useful to ignore values in a pattern, such as
+in the last arm of a <code>match</code>, to get a catch-all that doesn’t actually do
+anything but does account for all remaining possible values. There are a few
+ways to ignore entire values or parts of values in a pattern: using the <code>_</code>
+pattern (which you’ve seen), using the <code>_</code> pattern within another pattern,
+using a name that starts with an underscore, or using <code>..</code> to ignore remaining
+parts of a value. Let’s explore how and why to use each of these patterns.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="ignoring-an-entire-value-with-_"></a></p>
+<h5 id="an-entire-value-with-_"><a class="header" href="#an-entire-value-with-_">An Entire Value with <code>_</code></a></h5>
+<p>We’ve used the underscore as a wildcard pattern that will match any value but
+not bind to the value. This is especially useful as the last arm in a <code>match</code>
+expression, but we can also use it in any pattern, including function
+parameters, as shown in Listing 19-17.</p>
+<figure class="listing" id="listing-19-17">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn foo(_: i32, y: i32) {
+    println!("This code only uses the y parameter: {y}");
+}
+
+fn main() {
+    foo(3, 4);
+}</code></pre>
+<figcaption><a href="#listing-19-17">Listing 19-17</a>: Using <code>_</code> in a function signature</figcaption>
+</figure>
+<p>This code will completely ignore the value <code>3</code> passed as the first argument,
+and will print <code>This code only uses the y parameter: 4</code>.</p>
+<p>In most cases when you no longer need a particular function parameter, you
+would change the signature so that it doesn’t include the unused parameter.
+Ignoring a function parameter can be especially useful in cases when, for
+example, you’re implementing a trait when you need a certain type signature but
+the function body in your implementation doesn’t need one of the parameters.
+You then avoid getting a compiler warning about unused function parameters, as
+you would if you used a name instead.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="ignoring-parts-of-a-value-with-a-nested-_"></a></p>
+<h5 id="parts-of-a-value-with-a-nested-_"><a class="header" href="#parts-of-a-value-with-a-nested-_">Parts of a Value with a Nested <code>_</code></a></h5>
+<p>We can also use <code>_</code> inside another pattern to ignore just part of a value, for
+example, when we want to test for only part of a value but have no use for the
+other parts in the corresponding code we want to run. Listing 19-18 shows code
+responsible for managing a setting’s value. The business requirements are that
+the user should not be allowed to overwrite an existing customization of a
+setting but can unset the setting and give it a value if it is currently unset.</p>
+<figure class="listing" id="listing-19-18">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let mut setting_value = Some(5);
+    let new_setting_value = Some(10);
+
+    match (setting_value, new_setting_value) {
+        (Some(_), Some(_)) =&gt; {
+            println!("Can't overwrite an existing customized value");
+        }
+        _ =&gt; {
+            setting_value = new_setting_value;
+        }
+    }
+
+    println!("setting is {setting_value:?}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-18">Listing 19-18</a>: Using an underscore within patterns that match <code>Some</code> variants when we don’t need to use the value inside the <code>Some</code></figcaption>
+</figure>
+<p>This code will print <code>Can't overwrite an existing customized value</code> and then
+<code>setting is Some(5)</code>. In the first match arm, we don’t need to match on or use
+the values inside either <code>Some</code> variant, but we do need to test for the case
+when <code>setting_value</code> and <code>new_setting_value</code> are the <code>Some</code> variant. In that
+case, we print the reason for not changing <code>setting_value</code>, and it doesn’t get
+changed.</p>
+<p>In all other cases (if either <code>setting_value</code> or <code>new_setting_value</code> is <code>None</code>)
+expressed by the <code>_</code> pattern in the second arm, we want to allow
+<code>new_setting_value</code> to become <code>setting_value</code>.</p>
+<p>We can also use underscores in multiple places within one pattern to ignore
+particular values. Listing 19-19 shows an example of ignoring the second and
+fourth values in a tuple of five items.</p>
+<figure class="listing" id="listing-19-19">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let numbers = (2, 4, 8, 16, 32);
+
+    match numbers {
+        (first, _, third, _, fifth) =&gt; {
+            println!("Some numbers: {first}, {third}, {fifth}");
+        }
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-19">Listing 19-19</a>: Ignoring multiple parts of a tuple</figcaption>
+</figure>
+<p>This code will print <code>Some numbers: 2, 8, 32</code>, and the values <code>4</code> and <code>16</code> will
+be ignored.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="ignoring-an-unused-variable-by-starting-its-name-with-_"></a></p>
+<h5 id="an-unused-variable-by-starting-its-name-with-_"><a class="header" href="#an-unused-variable-by-starting-its-name-with-_">An Unused Variable by Starting Its Name with <code>_</code></a></h5>
+<p>If you create a variable but don’t use it anywhere, Rust will usually issue a
+warning because an unused variable could be a bug. However, sometimes it’s
+useful to be able to create a variable you won’t use yet, such as when you’re
+prototyping or just starting a project. In this situation, you can tell Rust
+not to warn you about the unused variable by starting the name of the variable
+with an underscore. In Listing 19-20, we create two unused variables, but when
+we compile this code, we should only get a warning about one of them.</p>
+<figure class="listing" id="listing-19-20">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let _x = 5;
+    let y = 10;
+}</code></pre>
+<figcaption><a href="#listing-19-20">Listing 19-20</a>: Starting a variable name with an underscore to avoid getting unused variable warnings</figcaption>
+</figure>
+<p>Here, we get a warning about not using the variable <code>y</code>, but we don’t get a
+warning about not using <code>_x</code>.</p>
+<p>Note that there is a subtle difference between using only <code>_</code> and using a name
+that starts with an underscore. The syntax <code>_x</code> still binds the value to the
+variable, whereas <code>_</code> doesn’t bind at all. To show a case where this
+distinction matters, Listing 19-21 will provide us with an error.</p>
+<figure class="listing" id="listing-19-21">
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span>    let s = Some(String::from("Hello!"));
+
+    if let Some(_s) = s {
+        println!("found a string");
+    }
+
+    println!("{s:?}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-21">Listing 19-21</a>: An unused variable starting with an underscore still binds the value, which might take ownership of the value.</figcaption>
+</figure>
+<p>We’ll receive an error because the <code>s</code> value will still be moved into <code>_s</code>,
+which prevents us from using <code>s</code> again. However, using the underscore by itself
+doesn’t ever bind to the value. Listing 19-22 will compile without any errors
+because <code>s</code> doesn’t get moved into <code>_</code>.</p>
+<figure class="listing" id="listing-19-22">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let s = Some(String::from("Hello!"));
+
+    if let Some(_) = s {
+        println!("found a string");
+    }
+
+    println!("{s:?}");
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-22">Listing 19-22</a>: Using an underscore does not bind the value.</figcaption>
+</figure>
+<p>This code works just fine because we never bind <code>s</code> to anything; it isn’t moved.</p>
+<p><a id="ignoring-remaining-parts-of-a-value-with-"></a></p>
+<h5 id="remaining-parts-of-a-value-with-"><a class="header" href="#remaining-parts-of-a-value-with-">Remaining Parts of a Value with <code>..</code></a></h5>
+<p>With values that have many parts, we can use the <code>..</code> syntax to use specific
+parts and ignore the rest, avoiding the need to list underscores for each
+ignored value. The <code>..</code> pattern ignores any parts of a value that we haven’t
+explicitly matched in the rest of the pattern. In Listing 19-23, we have a
+<code>Point</code> struct that holds a coordinate in three-dimensional space. In the
+<code>match</code> expression, we want to operate only on the <code>x</code> coordinate and ignore
+the values in the <code>y</code> and <code>z</code> fields.</p>
+<figure class="listing" id="listing-19-23">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    struct Point {
+        x: i32,
+        y: i32,
+        z: i32,
+    }
+
+    let origin = Point { x: 0, y: 0, z: 0 };
+
+    match origin {
+        Point { x, .. } =&gt; println!("x is {x}"),
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-23">Listing 19-23</a>: Ignoring all fields of a <code>Point</code> except for <code>x</code> by using <code>..</code></figcaption>
+</figure>
+<p>We list the <code>x</code> value and then just include the <code>..</code> pattern. This is quicker
+than having to list <code>y: _</code> and <code>z: _</code>, particularly when we’re working with
+structs that have lots of fields in situations where only one or two fields are
+relevant.</p>
+<p>The syntax <code>..</code> will expand to as many values as it needs to be. Listing 19-24
+shows how to use <code>..</code> with a tuple.</p>
+<figure class="listing" id="listing-19-24">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let numbers = (2, 4, 8, 16, 32);
+
+    match numbers {
+        (first, .., last) =&gt; {
+            println!("Some numbers: {first}, {last}");
+        }
+    }
+}</code></pre>
+<figcaption><a href="#listing-19-24">Listing 19-24</a>: Matching only the first and last values in a tuple and ignoring all other values</figcaption>
+</figure>
+<p>In this code, the first and last values are matched with <code>first</code> and <code>last</code>.
+The <code>..</code> will match and ignore everything in the middle.</p>
+<p>However, using <code>..</code> must be unambiguous. If it is unclear which values are
+intended for matching and which should be ignored, Rust will give us an error.
+Listing 19-25 shows an example of using <code>..</code> ambiguously, so it will not
+compile.</p>
+<figure class="listing" id="listing-19-25">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let numbers = (2, 4, 8, 16, 32);
+
+    match numbers {
+        (.., second, ..) =&gt; {
+            println!("Some numbers: {second}")
+        },
+    }
+}</code></pre>
+<figcaption><a href="#listing-19-25">Listing 19-25</a>: An attempt to use <code>..</code> in an ambiguous way</figcaption>
+</figure>
+<p>When we compile this example, we get this error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling patterns v0.1.0 (file:///projects/patterns)
+error: `..` can only be used once per tuple pattern
+ --&gt; src/main.rs:5:22
+  |
+5 |         (.., second, ..) =&gt; {
+  |          --          ^^ can only be used once per tuple pattern
+  |          |
+  |          previously used here
+
+error: could not compile `patterns` (bin "patterns") due to 1 previous error
+</code></pre>
+<p>It’s impossible for Rust to determine how many values in the tuple to ignore
+before matching a value with <code>second</code> and then how many further values to
+ignore thereafter. This code could mean that we want to ignore <code>2</code>, bind
+<code>second</code> to <code>4</code>, and then ignore <code>8</code>, <code>16</code>, and <code>32</code>; or that we want to ignore
+<code>2</code> and <code>4</code>, bind <code>second</code> to <code>8</code>, and then ignore <code>16</code> and <code>32</code>; and so forth.
+The variable name <code>second</code> doesn’t mean anything special to Rust, so we get a
+compiler error because using <code>..</code> in two places like this is ambiguous.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="extra-conditionals-with-match-guards"></a></p>
+<h4 id="adding-conditionals-with-match-guards"><a class="header" href="#adding-conditionals-with-match-guards">Adding Conditionals with Match Guards</a></h4>
+<p>A <em>match guard</em> is an additional <code>if</code> condition, specified after the pattern in
+a <code>match</code> arm, that must also match for that arm to be chosen. Match guards are
+useful for expressing more complex ideas than a pattern alone allows. Note,
+however, that they are only available in <code>match</code> expressions, not <code>if let</code> or
+<code>while let</code> expressions.</p>
+<p>The condition can use variables created in the pattern. Listing 19-26 shows a
+<code>match</code> where the first arm has the pattern <code>Some(x)</code> and also has a match
+guard of <code>if x % 2 == 0</code> (which will be <code>true</code> if the number is even).</p>
+<figure class="listing" id="listing-19-26">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let num = Some(4);
+
+    match num {
+        Some(x) if x % 2 == 0 =&gt; println!("The number {x} is even"),
+        Some(x) =&gt; println!("The number {x} is odd"),
+        None =&gt; (),
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-26">Listing 19-26</a>: Adding a match guard to a pattern</figcaption>
+</figure>
+<p>This example will print <code>The number 4 is even</code>. When <code>num</code> is compared to the
+pattern in the first arm, it matches because <code>Some(4)</code> matches <code>Some(x)</code>. Then,
+the match guard checks whether the remainder of dividing <code>x</code> by 2 is equal to
+0, and because it is, the first arm is selected.</p>
+<p>If <code>num</code> had been <code>Some(5)</code> instead, the match guard in the first arm would
+have been <code>false</code> because the remainder of 5 divided by 2 is 1, which is not
+equal to 0. Rust would then go to the second arm, which would match because the
+second arm doesn’t have a match guard and therefore matches any <code>Some</code> variant.</p>
+<p>There is no way to express the <code>if x % 2 == 0</code> condition within a pattern, so
+the match guard gives us the ability to express this logic. The downside of
+this additional expressiveness is that the compiler doesn’t try to check for
+exhaustiveness when match guard expressions are involved.</p>
+<p>When discussing Listing 19-11, we mentioned that we could use match guards to
+solve our pattern-shadowing problem. Recall that we created a new variable
+inside the pattern in the <code>match</code> expression instead of using the variable
+outside the <code>match</code>. That new variable meant we couldn’t test against the value
+of the outer variable. Listing 19-27 shows how we can use a match guard to fix
+this problem.</p>
+<figure class="listing" id="listing-19-27">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x = Some(5);
+    let y = 10;
+
+    match x {
+        Some(50) =&gt; println!("Got 50"),
+        Some(n) if n == y =&gt; println!("Matched, n = {n}"),
+        _ =&gt; println!("Default case, x = {x:?}"),
+    }
+
+    println!("at the end: x = {x:?}, y = {y}");
+}</code></pre>
+<figcaption><a href="#listing-19-27">Listing 19-27</a>: Using a match guard to test for equality with an outer variable</figcaption>
+</figure>
+<p>This code will now print <code>Default case, x = Some(5)</code>. The pattern in the second
+match arm doesn’t introduce a new variable <code>y</code> that would shadow the outer <code>y</code>,
+meaning we can use the outer <code>y</code> in the match guard. Instead of specifying the
+pattern as <code>Some(y)</code>, which would have shadowed the outer <code>y</code>, we specify
+<code>Some(n)</code>. This creates a new variable <code>n</code> that doesn’t shadow anything because
+there is no <code>n</code> variable outside the <code>match</code>.</p>
+<p>The match guard <code>if n == y</code> is not a pattern and therefore doesn’t introduce new
+variables. This <code>y</code> <em>is</em> the outer <code>y</code> rather than a new <code>y</code> shadowing it, and
+we can look for a value that has the same value as the outer <code>y</code> by comparing
+<code>n</code> to <code>y</code>.</p>
+<p>You can also use the <em>or</em> operator <code>|</code> in a match guard to specify multiple
+patterns; the match guard condition will apply to all the patterns. Listing
+19-28 shows the precedence when combining a pattern that uses <code>|</code> with a match
+guard. The important part of this example is that the <code>if y</code> match guard
+applies to <code>4</code>, <code>5</code>, <em>and</em> <code>6</code>, even though it might look like <code>if y</code> only
+applies to <code>6</code>.</p>
+<figure class="listing" id="listing-19-28">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let x = 4;
+    let y = false;
+
+    match x {
+        4 | 5 | 6 if y =&gt; println!("yes"),
+        _ =&gt; println!("no"),
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-28">Listing 19-28</a>: Combining multiple patterns with a match guard</figcaption>
+</figure>
+<p>The match condition states that the arm only matches if the value of <code>x</code> is
+equal to <code>4</code>, <code>5</code>, or <code>6</code> <em>and</em> if <code>y</code> is <code>true</code>. When this code runs, the
+pattern of the first arm matches because <code>x</code> is <code>4</code>, but the match guard <code>if y</code>
+is <code>false</code>, so the first arm is not chosen. The code moves on to the second
+arm, which does match, and this program prints <code>no</code>. The reason is that the
+<code>if</code> condition applies to the whole pattern <code>4 | 5 | 6</code>, not just to the last
+value <code>6</code>. In other words, the precedence of a match guard in relation to a
+pattern behaves like this:</p>
+<pre><code class="language-text">(4 | 5 | 6) if y =&gt; ...
+</code></pre>
+<p>rather than this:</p>
+<pre><code class="language-text">4 | 5 | (6 if y) =&gt; ...
+</code></pre>
+<p>After running the code, the precedence behavior is evident: If the match guard
+were applied only to the final value in the list of values specified using the
+<code>|</code> operator, the arm would have matched, and the program would have printed
+<code>yes</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="-bindings"></a></p>
+<h4 id="using--bindings"><a class="header" href="#using--bindings">Using <code>@</code> Bindings</a></h4>
+<p>The <em>at</em> operator <code>@</code> lets us create a variable that holds a value at the same
+time we’re testing that value for a pattern match. In Listing 19-29, we want to
+test that a <code>Message::Hello</code> <code>id</code> field is within the range <code>3..=7</code>. We also
+want to bind the value to the variable <code>id</code> so that we can use it in the code
+associated with the arm.</p>
+<figure class="listing" id="listing-19-29">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    enum Message {
+        Hello { id: i32 },
+    }
+
+    let msg = Message::Hello { id: 5 };
+
+    match msg {
+        Message::Hello { id: id @ 3..=7 } =&gt; {
+            println!("Found an id in range: {id}")
+        }
+        Message::Hello { id: 10..=12 } =&gt; {
+            println!("Found an id in another range")
+        }
+        Message::Hello { id } =&gt; println!("Found some other id: {id}"),
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-19-29">Listing 19-29</a>: Using <code>@</code> to bind to a value in a pattern while also testing it</figcaption>
+</figure>
+<p>This example will print <code>Found an id in range: 5</code>. By specifying <code>id @</code> before
+the range <code>3..=7</code>, we’re capturing whatever value matched the range in a
+variable named <code>id</code> while also testing that the value matched the range pattern.</p>
+<p>In the second arm, where we only have a range specified in the pattern, the code
+associated with the arm doesn’t have a variable that contains the actual value
+of the <code>id</code> field. The <code>id</code> field’s value could have been 10, 11, or 12, but
+the code that goes with that pattern doesn’t know which it is. The pattern code
+isn’t able to use the value from the <code>id</code> field because we haven’t saved the
+<code>id</code> value in a variable.</p>
+<p>In the last arm, where we’ve specified a variable without a range, we do have
+the value available to use in the arm’s code in a variable named <code>id</code>. The
+reason is that we’ve used the struct field shorthand syntax. But we haven’t
+applied any test to the value in the <code>id</code> field in this arm, as we did with the
+first two arms: Any value would match this pattern.</p>
+<p>Using <code>@</code> lets us test a value and save it in a variable within one pattern.</p>
+<h3 id="summary-18"><a class="header" href="#summary-18">Summary</a></h3>
+<p>Rust’s patterns are very useful in distinguishing between different kinds of
+data. When used in <code>match</code> expressions, Rust ensures that your patterns cover
+every possible value, or your program won’t compile. Patterns in <code>let</code>
+statements and function parameters make those constructs more useful, enabling
+the destructuring of values into smaller parts and assigning those parts to
+variables. We can create simple or complex patterns to suit our needs.</p>
+<p>Next, for the penultimate chapter of the book, we’ll look at some advanced
+aspects of a variety of Rust’s features.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="18%20State%20and%20Behaviour%20Patterns.html">← 18 State and Behaviour Patterns</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="20%20Advanced%20Rust%20and%20Crate%20Boundaries.html">20 Advanced Rust and Crate Boundaries →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#patterns-and-matching">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

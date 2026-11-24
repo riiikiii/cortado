@@ -1,0 +1,1558 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Values and Control Flow</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-grinder.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 03 / 21</span></div>
+<div class="hero"><div><h1>Values and Control Flow</h1><p>Choose numeric representations and make invalid states explicit.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>30 and 12</span></div><div class="trace"><b>Observe</b><span>widen before adding</span></div><div class="trace"><b>Result</b><span>total 42</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="02%20An%20Input%20to%20a%20Decision.html">← 02 An Input to a Decision</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="04%20Ownership%20and%20Borrowing.html">04 Ownership and Borrowing →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#common-programming-concepts">Common Programming Concepts</a><a href="#variables-and-mutability-1">Variables and Mutability</a><a href="#data-types-1">Data Types</a><a href="#functions-1">Functions</a><a href="#comments-1">Comments</a><a href="#control-flow-1">Control Flow</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Choose numeric representations and make invalid states explicit</h2><p>An order quantity fits u32 in this model. A batch total has a different unit and a different range. Two perfectly valid quantities can exceed u32 when added together. In the example pipeline the conversion happens inside map, so every addition operates on u64. Casting a u32 sum after adding would occur too late. Widening still has a limit. For an unbounded stream use checked accumulation or define a finite window with an upper bound.</p><figure class="code"><figcaption>examples/replay.rs · excerpt</figcaption><pre><code><span class="k">trait</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">impl</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Order</span><span class="p">::</span><span class="n">quantity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">fn</span><span class="w"> </span><span class="nf">total</span><span class="o">&lt;</span><span class="n">T</span><span class="p">:</span><span class="w"> </span><span class="nc">HasQuantity</span><span class="o">&gt;</span><span class="p">(</span><span class="n">items</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="n">T</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u64</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">items</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">x</span><span class="o">|</span><span class="w"> </span><span class="kt">u64</span><span class="p">::</span><span class="n">from</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">quantity</span><span class="p">())).</span><span class="n">sum</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre></figure><p>Track one call on paper using quantities 30 and 12. The slice is borrowed, the closure receives one reference at a time, and u64::from converts each value without losing information. The final expression returns 42. For prices, the design question changes: decimal scale, rounding and currency become part of the contract. Using f64 just because it accepts a decimal literal leaves those decisions implicit. A price in integer ticks needs an explicit tick size just as a quantity needs a range.</p><h3>Observe overflow at the boundary</h3><p>Imagine importing a file with one u32::MAX record and another of quantity one. Each input is representable on its own. Their mathematical sum is 4,294,967,296. Widening each addend makes this a short regression example that can run without a database. In contrast, trying to demonstrate overflow by running billions of ordinary messages makes the test costly and obscures the reason for the failure. Choose test data near the representation boundary even when production examples normally use small round numbers. If the product later introduces signed adjustments, revisit the model: a reversal is an operation with its own identity and may deserve its own type.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/std/primitive.u64.html">doc.rust-lang.org/std/primitive.u64.html</a></p></section><div class="book"><h2 id="common-programming-concepts"><a class="header" href="#common-programming-concepts">Common Programming Concepts</a></h2>
+<p>This chapter covers concepts that appear in almost every programming language
+and how they work in Rust. Many programming languages have much in common at
+their core. None of the concepts presented in this chapter are unique to Rust,
+but we’ll discuss them in the context of Rust and explain the conventions
+around using them.</p>
+<p>Specifically, you’ll learn about variables, basic types, functions, comments,
+and control flow. These foundations will be in every Rust program, and learning
+them early will give you a strong core to start from.</p>
+<section class="note" aria-role="note">
+<h5 id="keywords"><a class="header" href="#keywords">Keywords</a></h5>
+<p>The Rust language has a set of <em>keywords</em> that are reserved for use by the
+language only, much as in other languages. Keep in mind that you cannot use
+these words as names of variables or functions. Most of the keywords have
+special meanings, and you’ll be using them to do various tasks in your Rust
+programs; a few have no current functionality associated with them but have
+been reserved for functionality that might be added to Rust in the future. You
+can find the list of the keywords in <a href="https://doc.rust-lang.org/stable/book/print.html#a---keywords">Appendix A</a><!-- ignore -->.</p>
+</section>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="variables-and-mutability-1"><a href="#variables-and-mutability-1" class="header">Variables and Mutability</a></h2>
+<h3 id="variables-and-mutability"><a class="header" href="#variables-and-mutability">Variables and Mutability</a></h3>
+<p>As mentioned in the <a href="02%20An%20Input%20to%20a%20Decision.html#storing-values-with-variables">“Storing Values with
+Variables”</a><!-- ignore --> section, by default,
+variables are immutable. This is one of many nudges Rust gives you to write
+your code in a way that takes advantage of the safety and easy concurrency that
+Rust offers. However, you still have the option to make your variables mutable.
+Let’s explore how and why Rust encourages you to favor immutability and why
+sometimes you might want to opt out.</p>
+<p>When a variable is immutable, once a value is bound to a name, you can’t change
+that value. To illustrate this, generate a new project called <em>variables</em> in
+your <em>projects</em> directory by using <code>cargo new variables</code>.</p>
+<p>Then, in your new <em>variables</em> directory, open <em>src/main.rs</em> and replace its
+code with the following code, which won’t compile just yet:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let x = 5;
+    println!("The value of x is: {x}");
+    x = 6;
+    println!("The value of x is: {x}");
+}</code></pre>
+<p>Save and run the program using <code>cargo run</code>. You should receive an error message
+regarding an immutability error, as shown in this output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling variables v0.1.0 (file:///projects/variables)
+error[E0384]: cannot assign twice to immutable variable `x`
+ --&gt; src/main.rs:4:5
+  |
+2 |     let x = 5;
+  |         - first assignment to `x`
+3 |     println!("The value of x is: {x}");
+4 |     x = 6;
+  |     ^^^^^ cannot assign twice to immutable variable
+  |
+help: consider making this binding mutable
+  |
+2 |     let mut x = 5;
+  |         +++
+
+For more information about this error, try `rustc --explain E0384`.
+error: could not compile `variables` (bin "variables") due to 1 previous error
+</code></pre>
+<p>This example shows how the compiler helps you find errors in your programs.
+Compiler errors can be frustrating, but really they only mean your program
+isn’t safely doing what you want it to do yet; they do <em>not</em> mean that you’re
+not a good programmer! Experienced Rustaceans still get compiler errors.</p>
+<p>You received the error message <code>cannot assign twice to immutable variable `x`</code> because you tried to assign a second value to the immutable <code>x</code> variable.</p>
+<p>It’s important that we get compile-time errors when we attempt to change a
+value that’s designated as immutable, because this very situation can lead to
+bugs. If one part of our code operates on the assumption that a value will
+never change and another part of our code changes that value, it’s possible
+that the first part of the code won’t do what it was designed to do. The cause
+of this kind of bug can be difficult to track down after the fact, especially
+when the second piece of code changes the value only <em>sometimes</em>. The Rust
+compiler guarantees that when you state that a value won’t change, it really
+won’t change, so you don’t have to keep track of it yourself. Your code is thus
+easier to reason through.</p>
+<p>But mutability can be very useful and can make code more convenient to write.
+Although variables are immutable by default, you can make them mutable by
+adding <code>mut</code> in front of the variable name as you did in <a href="02%20An%20Input%20to%20a%20Decision.html#storing-values-with-variables">Chapter
+2</a><!-- ignore -->. Adding <code>mut</code> also conveys
+intent to future readers of the code by indicating that other parts of the code
+will be changing this variable’s value.</p>
+<p>For example, let’s change <em>src/main.rs</em> to the following:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let mut x = 5;
+    println!("The value of x is: {x}");
+    x = 6;
+    println!("The value of x is: {x}");
+}</code></pre>
+<p>When we run the program now, we get this:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling variables v0.1.0 (file:///projects/variables)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
+     Running `target/debug/variables`
+The value of x is: 5
+The value of x is: 6
+</code></pre>
+<p>We’re allowed to change the value bound to <code>x</code> from <code>5</code> to <code>6</code> when <code>mut</code> is
+used. Ultimately, deciding whether to use mutability or not is up to you and
+depends on what you think is clearest in that particular situation.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="constants"></a></p>
+<h4 id="declaring-constants"><a class="header" href="#declaring-constants">Declaring Constants</a></h4>
+<p>Like immutable variables, <em>constants</em> are values that are bound to a name and
+are not allowed to change, but there are a few differences between constants
+and variables.</p>
+<p>First, you aren’t allowed to use <code>mut</code> with constants. Constants aren’t just
+immutable by default—they’re always immutable. You declare constants using the
+<code>const</code> keyword instead of the <code>let</code> keyword, and the type of the value <em>must</em>
+be annotated. We’ll cover types and type annotations in the next section,
+<a href="#data-types">“Data Types”</a><!-- ignore -->, so don’t worry about the details
+right now. Just know that you must always annotate the type.</p>
+<p>Constants can be declared in any scope, including the global scope, which makes
+them useful for values that many parts of code need to know about.</p>
+<p>The last difference is that constants may be set only to a constant expression,
+not the result of a value that could only be computed at runtime.</p>
+<p>Here’s an example of a constant declaration:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>const THREE_HOURS_IN_SECONDS: u32 = 60 * 60 * 3;
+<span class="boring">}</span></code></pre>
+<p>The constant’s name is <code>THREE_HOURS_IN_SECONDS</code>, and its value is set to the
+result of multiplying 60 (the number of seconds in a minute) by 60 (the number
+of minutes in an hour) by 3 (the number of hours we want to count in this
+program). Rust’s naming convention for constants is to use all uppercase with
+underscores between words. The compiler is able to evaluate a limited set of
+operations at compile time, which lets us choose to write out this value in a
+way that’s easier to understand and verify, rather than setting this constant
+to the value 10,800. See the <a href="https://doc.rust-lang.org/stable/reference/const_eval.html">Rust Reference’s section on constant
+evaluation</a> for more information on what operations can be used
+when declaring constants.</p>
+<p>Constants are valid for the entire time a program runs, within the scope in
+which they were declared. This property makes constants useful for values in
+your application domain that multiple parts of the program might need to know
+about, such as the maximum number of points any player of a game is allowed to
+earn, or the speed of light.</p>
+<p>Naming hardcoded values used throughout your program as constants is useful in
+conveying the meaning of that value to future maintainers of the code. It also
+helps to have only one place in your code that you would need to change if the
+hardcoded value needed to be updated in the future.</p>
+<h4 id="shadowing"><a class="header" href="#shadowing">Shadowing</a></h4>
+<p>As you saw in the guessing game tutorial in <a href="02%20An%20Input%20to%20a%20Decision.html#comparing-the-guess-to-the-secret-number">Chapter
+2</a><!-- ignore -->, you can declare a
+new variable with the same name as a previous variable. Rustaceans say that the
+first variable is <em>shadowed</em> by the second, which means that the second
+variable is what the compiler will see when you use the name of the variable.
+In effect, the second variable overshadows the first, taking any uses of the
+variable name to itself until either it itself is shadowed or the scope ends.
+We can shadow a variable by using the same variable’s name and repeating the
+use of the <code>let</code> keyword as follows:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x = 5;
+
+    let x = x + 1;
+
+    {
+        let x = x * 2;
+        println!("The value of x in the inner scope is: {x}");
+    }
+
+    println!("The value of x is: {x}");
+}</code></pre>
+<p>This program first binds <code>x</code> to a value of <code>5</code>. Then, it creates a new variable
+<code>x</code> by repeating <code>let x =</code>, taking the original value and adding <code>1</code> so that
+the value of <code>x</code> is <code>6</code>. Then, within an inner scope created with the curly
+brackets, the third <code>let</code> statement also shadows <code>x</code> and creates a new
+variable, multiplying the previous value by <code>2</code> to give <code>x</code> a value of <code>12</code>.
+When that scope is over, the inner shadowing ends and <code>x</code> returns to being <code>6</code>.
+When we run this program, it will output the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling variables v0.1.0 (file:///projects/variables)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running `target/debug/variables`
+The value of x in the inner scope is: 12
+The value of x is: 6
+</code></pre>
+<p>Shadowing is different from marking a variable as <code>mut</code> because we’ll get a
+compile-time error if we accidentally try to reassign to this variable without
+using the <code>let</code> keyword. By using <code>let</code>, we can perform a few transformations
+on a value but have the variable be immutable after those transformations have
+completed.</p>
+<p>The other difference between <code>mut</code> and shadowing is that because we’re
+effectively creating a new variable when we use the <code>let</code> keyword again, we can
+change the type of the value but reuse the same name. For example, say our
+program asks a user to show how many spaces they want between some text by
+inputting space characters, and then we want to store that input as a number:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let spaces = "   ";
+    let spaces = spaces.len();
+<span class="boring">}</span></code></pre>
+<p>The first <code>spaces</code> variable is a string type, and the second <code>spaces</code> variable
+is a number type. Shadowing thus spares us from having to come up with
+different names, such as <code>spaces_str</code> and <code>spaces_num</code>; instead, we can reuse
+the simpler <code>spaces</code> name. However, if we try to use <code>mut</code> for this, as shown
+here, we’ll get a compile-time error:</p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span>    let mut spaces = "   ";
+    spaces = spaces.len();
+<span class="boring">}</span></code></pre>
+<p>The error says we’re not allowed to mutate a variable’s type:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling variables v0.1.0 (file:///projects/variables)
+error[E0308]: mismatched types
+ --&gt; src/main.rs:3:14
+  |
+2 |     let mut spaces = "   ";
+  |                      ----- expected due to this value
+3 |     spaces = spaces.len();
+  |              ^^^^^^^^^^^^ expected `&amp;str`, found `usize`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `variables` (bin "variables") due to 1 previous error
+</code></pre>
+<p>Now that we’ve explored how variables work, let’s look at more data types they
+can have.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="data-types-1"><a href="#data-types-1" class="header">Data Types</a></h2>
+<h3 id="data-types"><a class="header" href="#data-types">Data Types</a></h3>
+<p>Every value in Rust is of a certain <em>data type</em>, which tells Rust what kind of
+data is being specified so that it knows how to work with that data. We’ll look
+at two data type subsets: scalar and compound.</p>
+<p>Keep in mind that Rust is a <em>statically typed</em> language, which means that it
+must know the types of all variables at compile time. The compiler can usually
+infer what type we want to use based on the value and how we use it. In cases
+when many types are possible, such as when we converted a <code>String</code> to a numeric
+type using <code>parse</code> in the <a href="02%20An%20Input%20to%20a%20Decision.html#comparing-the-guess-to-the-secret-number">“Comparing the Guess to the Secret
+Number”</a><!-- ignore --> section in
+Chapter 2, we must add a type annotation, like this:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let guess: u32 = "42".parse().expect("Not a number!");
+<span class="boring">}</span></code></pre>
+<p>If we don’t add the <code>: u32</code> type annotation shown in the preceding code, Rust
+will display the following error, which means the compiler needs more
+information from us to know which type we want to use:</p>
+<pre><code class="language-console">$ cargo build
+   Compiling no_type_annotations v0.1.0 (file:///projects/no_type_annotations)
+error[E0284]: type annotations needed
+ --&gt; src/main.rs:2:9
+  |
+2 |     let guess = "42".parse().expect("Not a number!");
+  |         ^^^^^        ----- type must be known at this point
+  |
+  = note: cannot satisfy `&lt;_ as FromStr&gt;::Err == _`
+help: consider giving `guess` an explicit type
+  |
+2 |     let guess: /* Type */ = "42".parse().expect("Not a number!");
+  |              ++++++++++++
+
+For more information about this error, try `rustc --explain E0284`.
+error: could not compile `no_type_annotations` (bin "no_type_annotations") due to 1 previous error
+</code></pre>
+<p>You’ll see different type annotations for other data types.</p>
+<h4 id="scalar-types"><a class="header" href="#scalar-types">Scalar Types</a></h4>
+<p>A <em>scalar</em> type represents a single value. Rust has four primary scalar types:
+integers, floating-point numbers, Booleans, and characters. You may recognize
+these from other programming languages. Let’s jump into how they work in Rust.</p>
+<h5 id="integer-types"><a class="header" href="#integer-types">Integer Types</a></h5>
+<p>An <em>integer</em> is a number without a fractional component. We used one integer
+type in Chapter 2, the <code>u32</code> type. This type declaration indicates that the
+value it’s associated with should be an unsigned integer (signed integer types
+start with <code>i</code> instead of <code>u</code>) that takes up 32 bits of space. Table 3-1 shows
+the built-in integer types in Rust. We can use any of these variants to declare
+the type of an integer value.</p>
+<p><span class="caption">Table 3-1: Integer Types in Rust</span></p>
+<div class="table-wrapper">
+<div class="scroll"><table>
+<thead>
+<tr><th>Length</th><th>Signed</th><th>Unsigned</th></tr>
+</thead>
+<tbody>
+<tr><td>8-bit</td><td><code>i8</code></td><td><code>u8</code></td></tr>
+<tr><td>16-bit</td><td><code>i16</code></td><td><code>u16</code></td></tr>
+<tr><td>32-bit</td><td><code>i32</code></td><td><code>u32</code></td></tr>
+<tr><td>64-bit</td><td><code>i64</code></td><td><code>u64</code></td></tr>
+<tr><td>128-bit</td><td><code>i128</code></td><td><code>u128</code></td></tr>
+<tr><td>Architecture-dependent</td><td><code>isize</code></td><td><code>usize</code></td></tr>
+</tbody>
+</table>
+</div></div>
+<p>Each variant can be either signed or unsigned and has an explicit size.
+<em>Signed</em> and <em>unsigned</em> refer to whether it’s possible for the number to be
+negative—in other words, whether the number needs to have a sign with it
+(signed) or whether it will only ever be positive and can therefore be
+represented without a sign (unsigned). It’s like writing numbers on paper: When
+the sign matters, a number is shown with a plus sign or a minus sign; however,
+when it’s safe to assume the number is positive, it’s shown with no sign.
+Signed numbers are stored using <a href="https://en.wikipedia.org/wiki/Two%27s_complement">two’s complement</a><!-- ignore
+--> representation.</p>
+<p>Each signed variant can store numbers from −(2<sup>n − 1</sup>) to 2<sup>n −
+1</sup> − 1 inclusive, where <em>n</em> is the number of bits that variant uses. So, an
+<code>i8</code> can store numbers from −(2<sup>7</sup>) to 2<sup>7</sup> − 1, which equals
+−128 to 127. Unsigned variants can store numbers from 0 to 2<sup>n</sup> − 1,
+so a <code>u8</code> can store numbers from 0 to 2<sup>8</sup> − 1, which equals 0 to 255.</p>
+<p>Additionally, the <code>isize</code> and <code>usize</code> types depend on the architecture of the
+computer your program is running on: 64 bits if you’re on a 64-bit architecture
+and 32 bits if you’re on a 32-bit architecture.</p>
+<p>You can write integer literals in any of the forms shown in Table 3-2. Note
+that number literals that can be multiple numeric types allow a type suffix,
+such as <code>57u8</code>, to designate the type. Number literals can also use <code>_</code> as a
+visual separator to make the number easier to read, such as <code>1_000</code>, which will
+have the same value as if you had specified <code>1000</code>.</p>
+<p><span class="caption">Table 3-2: Integer Literals in Rust</span></p>
+<div class="table-wrapper">
+<div class="scroll"><table>
+<thead>
+<tr><th>Number literals</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td>Decimal</td><td><code>98_222</code></td></tr>
+<tr><td>Hex</td><td><code>0xff</code></td></tr>
+<tr><td>Octal</td><td><code>0o77</code></td></tr>
+<tr><td>Binary</td><td><code>0b1111_0000</code></td></tr>
+<tr><td>Byte (<code>u8</code> only)</td><td><code>b'A'</code></td></tr>
+</tbody>
+</table>
+</div></div>
+<p>So how do you know which type of integer to use? If you’re unsure, Rust’s
+defaults are generally good places to start: Integer types default to <code>i32</code>.
+The primary situation in which you’d use <code>isize</code> or <code>usize</code> is when indexing
+some sort of collection.</p>
+<section class="note" aria-role="note">
+<h5 id="integer-overflow"><a class="header" href="#integer-overflow">Integer Overflow</a></h5>
+<p>Let’s say you have a variable of type <code>u8</code> that can hold values between 0 and
+255. If you try to change the variable to a value outside that range, such as
+256, <em>integer overflow</em> will occur, which can result in one of two behaviors.
+When you’re compiling in debug mode, Rust includes checks for integer overflow
+that cause your program to <em>panic</em> at runtime if this behavior occurs. Rust
+uses the term <em>panicking</em> when a program exits with an error; we’ll discuss
+panics in more depth in the <a href="09%20Errors%20Across%20Boundaries.html#unrecoverable-errors-with-panic-1">“Unrecoverable Errors with
+<code>panic!</code>”</a><!-- ignore --> section in Chapter
+9.</p>
+<p>When you’re compiling in release mode with the <code>--release</code> flag, Rust does
+<em>not</em> include checks for integer overflow that cause panics. Instead, if
+overflow occurs, Rust performs <em>two’s complement wrapping</em>. In short, values
+greater than the maximum value the type can hold “wrap around” to the minimum
+of the values the type can hold. In the case of a <code>u8</code>, the value 256 becomes
+0, the value 257 becomes 1, and so on. The program won’t panic, but the
+variable will have a value that probably isn’t what you were expecting it to
+have. Relying on integer overflow’s wrapping behavior is considered an error.</p>
+<p>To explicitly handle the possibility of overflow, you can use these families
+of methods provided by the standard library for primitive numeric types:</p>
+<ul>
+<li>Wrap in all compilation modes with the <code>wrapping_*</code> methods, such as
+<code>wrapping_add</code>.</li>
+<li>Return the <code>None</code> value if there is overflow with the <code>checked_*</code> methods.</li>
+<li>Return the value and a Boolean indicating whether there was overflow with
+the <code>overflowing_*</code> methods.</li>
+<li>Saturate at the value’s minimum or maximum values with the <code>saturating_*</code>
+methods.</li>
+</ul>
+</section>
+<h5 id="floating-point-types"><a class="header" href="#floating-point-types">Floating-Point Types</a></h5>
+<p>Rust also has two primitive types for <em>floating-point numbers</em>, which are
+numbers with decimal points. Rust’s floating-point types are <code>f32</code> and <code>f64</code>,
+which are 32 bits and 64 bits in size, respectively. The default type is <code>f64</code>
+because on modern CPUs, it’s roughly the same speed as <code>f32</code> but is capable of
+more precision. All floating-point types are signed.</p>
+<p>Here’s an example that shows floating-point numbers in action:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x = 2.0; // f64
+
+    let y: f32 = 3.0; // f32
+}</code></pre>
+<p>Floating-point numbers are represented according to the IEEE-754 standard.</p>
+<h5 id="numeric-operations"><a class="header" href="#numeric-operations">Numeric Operations</a></h5>
+<p>Rust supports the basic mathematical operations you’d expect for all the number
+types: addition, subtraction, multiplication, division, and remainder. Integer
+division truncates toward zero to the nearest integer. The following code shows
+how you’d use each numeric operation in a <code>let</code> statement:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    // addition
+    let sum = 5 + 10;
+
+    // subtraction
+    let difference = 95.5 - 4.3;
+
+    // multiplication
+    let product = 4 * 30;
+
+    // division
+    let quotient = 56.7 / 32.2;
+    let truncated = -5 / 3; // Results in -1
+
+    // remainder
+    let remainder = 43 % 5;
+}</code></pre>
+<p>Each expression in these statements uses a mathematical operator and evaluates
+to a single value, which is then bound to a variable. <a href="https://doc.rust-lang.org/stable/book/print.html#b---operators-and-symbols">Appendix
+B</a><!-- ignore --> contains a list of all operators that Rust
+provides.</p>
+<h5 id="the-boolean-type"><a class="header" href="#the-boolean-type">The Boolean Type</a></h5>
+<p>As in most other programming languages, a Boolean type in Rust has two possible
+values: <code>true</code> and <code>false</code>. Booleans are one byte in size. The Boolean type in
+Rust is specified using <code>bool</code>. For example:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let t = true;
+
+    let f: bool = false; // with explicit type annotation
+}</code></pre>
+<p>The main way to use Boolean values is through conditionals, such as an <code>if</code>
+expression. We’ll cover how <code>if</code> expressions work in Rust in the <a href="#control-flow">“Control
+Flow”</a><!-- ignore --> section.</p>
+<h5 id="the-character-type"><a class="header" href="#the-character-type">The Character Type</a></h5>
+<p>Rust’s <code>char</code> type is the language’s most primitive alphabetic type. Here are
+some examples of declaring <code>char</code> values:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let c = 'z';
+    let z: char = 'ℤ'; // with explicit type annotation
+    let heart_eyed_cat = '😻';
+}</code></pre>
+<p>Note that we specify <code>char</code> literals with single quotation marks, as opposed to
+string literals, which use double quotation marks. Rust’s <code>char</code> type is 4
+bytes in size and represents a Unicode scalar value, which means it can
+represent a lot more than just ASCII. Accented letters; Chinese, Japanese, and
+Korean characters; emojis; and zero-width spaces are all valid <code>char</code> values in
+Rust. Unicode scalar values range from <code>U+0000</code> to <code>U+D7FF</code> and <code>U+E000</code> to
+<code>U+10FFFF</code> inclusive. However, a “character” isn’t really a concept in Unicode,
+so your human intuition for what a “character” is may not match up with what a
+<code>char</code> is in Rust. We’ll discuss this topic in detail in <a href="08%20Collections%20and%20Replay.html#storing-utf-8-encoded-text-with-strings">“Storing UTF-8
+Encoded Text with Strings”</a><!-- ignore --> in Chapter 8.</p>
+<h4 id="compound-types"><a class="header" href="#compound-types">Compound Types</a></h4>
+<p><em>Compound types</em> can group multiple values into one type. Rust has two
+primitive compound types: tuples and arrays.</p>
+<h5 id="the-tuple-type"><a class="header" href="#the-tuple-type">The Tuple Type</a></h5>
+<p>A <em>tuple</em> is a general way of grouping together a number of values with a
+variety of types into one compound type. Tuples have a fixed length: Once
+declared, they cannot grow or shrink in size.</p>
+<p>We create a tuple by writing a comma-separated list of values inside
+parentheses. Each position in the tuple has a type, and the types of the
+different values in the tuple don’t have to be the same. We’ve added optional
+type annotations in this example:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let tup: (i32, f64, u8) = (500, 6.4, 1);
+}</code></pre>
+<p>The variable <code>tup</code> binds to the entire tuple because a tuple is considered a
+single compound element. To get the individual values out of a tuple, we can
+use pattern matching to destructure a tuple value, like this:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let tup = (500, 6.4, 1);
+
+    let (x, y, z) = tup;
+
+    println!("The value of y is: {y}");
+}</code></pre>
+<p>This program first creates a tuple and binds it to the variable <code>tup</code>. It then
+uses a pattern with <code>let</code> to take <code>tup</code> and turn it into three separate
+variables, <code>x</code>, <code>y</code>, and <code>z</code>. This is called <em>destructuring</em> because it breaks
+the single tuple into three parts. Finally, the program prints the value of
+<code>y</code>, which is <code>6.4</code>.</p>
+<p>We can also access a tuple element directly by using a period (<code>.</code>) followed by
+the index of the value we want to access. For example:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x: (i32, f64, u8) = (500, 6.4, 1);
+
+    let five_hundred = x.0;
+
+    let six_point_four = x.1;
+
+    let one = x.2;
+}</code></pre>
+<p>This program creates the tuple <code>x</code> and then accesses each element of the tuple
+using their respective indices. As with most programming languages, the first
+index in a tuple is 0.</p>
+<p>The tuple without any values has a special name, <em>unit</em>. This value and its
+corresponding type are both written <code>()</code> and represent an empty value or an
+empty return type. Expressions implicitly return the unit value if they don’t
+return any other value.</p>
+<h5 id="the-array-type"><a class="header" href="#the-array-type">The Array Type</a></h5>
+<p>Another way to have a collection of multiple values is with an <em>array</em>. Unlike
+a tuple, every element of an array must have the same type. Unlike arrays in
+some other languages, arrays in Rust have a fixed length.</p>
+<p>We write the values in an array as a comma-separated list inside square
+brackets:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let a = [1, 2, 3, 4, 5];
+}</code></pre>
+<p>Arrays are useful when you want your data allocated on the stack, the same as
+the other types we have seen so far, rather than the heap (we will discuss the
+stack and the heap more in <a href="04%20Ownership%20and%20Borrowing.html#the-stack-and-the-heap">Chapter 4</a><!-- ignore -->) or when
+you want to ensure that you always have a fixed number of elements. An array
+isn’t as flexible as the vector type, though. A vector is a similar collection
+type provided by the standard library that <em>is</em> allowed to grow or shrink in
+size because its contents live on the heap. If you’re unsure whether to use an
+array or a vector, chances are you should use a vector. <a href="08%20Collections%20and%20Replay.html#storing-lists-of-values-with-vectors-1">Chapter
+8</a><!-- ignore --> discusses vectors in more detail.</p>
+<p>However, arrays are more useful when you know the number of elements will not
+need to change. For example, if you were using the names of the month in a
+program, you would probably use an array rather than a vector because you know
+it will always contain 12 elements:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let months = ["January", "February", "March", "April", "May", "June", "July",
+              "August", "September", "October", "November", "December"];
+<span class="boring">}</span></code></pre>
+<p>You write an array’s type using square brackets with the type of each element,
+a semicolon, and then the number of elements in the array, like so:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let a: [i32; 5] = [1, 2, 3, 4, 5];
+<span class="boring">}</span></code></pre>
+<p>Here, <code>i32</code> is the type of each element. After the semicolon, the number <code>5</code>
+indicates the array contains five elements.</p>
+<p>You can also initialize an array to contain the same value for each element by
+specifying the initial value, followed by a semicolon, and then the length of
+the array in square brackets, as shown here:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let a = [3; 5];
+<span class="boring">}</span></code></pre>
+<p>The array named <code>a</code> will contain <code>5</code> elements that will all be set to the value
+<code>3</code> initially. This is the same as writing <code>let a = [3, 3, 3, 3, 3];</code> but in a
+more concise way.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="accessing-array-elements"></a></p>
+<h5 id="array-element-access"><a class="header" href="#array-element-access">Array Element Access</a></h5>
+<p>An array is a single chunk of memory of a known, fixed size that can be
+allocated on the stack. You can access elements of an array using indexing,
+like this:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let a = [1, 2, 3, 4, 5];
+
+    let first = a[0];
+    let second = a[1];
+}</code></pre>
+<p>In this example, the variable named <code>first</code> will get the value <code>1</code> because that
+is the value at index <code>[0]</code> in the array. The variable named <code>second</code> will get
+the value <code>2</code> from index <code>[1]</code> in the array.</p>
+<h5 id="invalid-array-element-access"><a class="header" href="#invalid-array-element-access">Invalid Array Element Access</a></h5>
+<p>Let’s see what happens if you try to access an element of an array that is past
+the end of the array. Say you run this code, similar to the guessing game in
+Chapter 2, to get an array index from the user:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<span class="sample-flag">Runtime panic example</span><pre><code class="language-rust ignore panics">use std::io;
+
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+
+    println!("Please enter an array index.");
+
+    let mut index = String::new();
+
+    io::stdin()
+        .read_line(&amp;mut index)
+        .expect("Failed to read line");
+
+    let index: usize = index
+        .trim()
+        .parse()
+        .expect("Index entered was not a number");
+
+    let element = a[index];
+
+    println!("The value of the element at index {index} is: {element}");
+}</code></pre>
+<p>This code compiles successfully. If you run this code using <code>cargo run</code> and
+enter <code>0</code>, <code>1</code>, <code>2</code>, <code>3</code>, or <code>4</code>, the program will print out the corresponding
+value at that index in the array. If you instead enter a number past the end of
+the array, such as <code>10</code>, you’ll see output like this:</p>
+<!-- manual-regeneration
+cd listings/ch03-common-programming-concepts/no-listing-15-invalid-array-access
+cargo run
+10
+-->
+<pre><code class="language-console">thread 'main' panicked at src/main.rs:19:19:
+index out of bounds: the len is 5 but the index is 10
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>The program resulted in a runtime error at the point of using an invalid
+value in the indexing operation. The program exited with an error message and
+didn’t execute the final <code>println!</code> statement. When you attempt to access an
+element using indexing, Rust will check that the index you’ve specified is less
+than the array length. If the index is greater than or equal to the length,
+Rust will panic. This check has to happen at runtime, especially in this case,
+because the compiler can’t possibly know what value a user will enter when they
+run the code later.</p>
+<p>This is an example of Rust’s memory safety principles in action. In many
+low-level languages, this kind of check is not done, and when you provide an
+incorrect index, invalid memory can be accessed. Rust protects you against this
+kind of error by immediately exiting instead of allowing the memory access and
+continuing. Chapter 9 discusses more of Rust’s error handling and how you can
+write readable, safe code that neither panics nor allows invalid memory access.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="functions-1"><a href="#functions-1" class="header">Functions</a></h2>
+<h3 id="functions"><a class="header" href="#functions">Functions</a></h3>
+<p>Functions are prevalent in Rust code. You’ve already seen one of the most
+important functions in the language: the <code>main</code> function, which is the entry
+point of many programs. You’ve also seen the <code>fn</code> keyword, which allows you to
+declare new functions.</p>
+<p>Rust code uses <em>snake case</em> as the conventional style for function and variable
+names, in which all letters are lowercase and underscores separate words.
+Here’s a program that contains an example function definition:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    println!("Hello, world!");
+
+    another_function();
+}
+
+fn another_function() {
+    println!("Another function.");
+}</code></pre>
+<p>We define a function in Rust by entering <code>fn</code> followed by a function name and a
+set of parentheses. The curly brackets tell the compiler where the function
+body begins and ends.</p>
+<p>We can call any function we’ve defined by entering its name followed by a set
+of parentheses. Because <code>another_function</code> is defined in the program, it can be
+called from inside the <code>main</code> function. Note that we defined <code>another_function</code>
+<em>after</em> the <code>main</code> function in the source code; we could have defined it before
+as well. Rust doesn’t care where you define your functions, only that they’re
+defined somewhere in a scope that can be seen by the caller.</p>
+<p>Let’s start a new binary project named <em>functions</em> to explore functions
+further. Place the <code>another_function</code> example in <em>src/main.rs</em> and run it. You
+should see the following output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling functions v0.1.0 (file:///projects/functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s
+     Running `target/debug/functions`
+Hello, world!
+Another function.
+</code></pre>
+<p>The lines execute in the order in which they appear in the <code>main</code> function.
+First the “Hello, world!” message prints, and then <code>another_function</code> is called
+and its message is printed.</p>
+<h4 id="parameters"><a class="header" href="#parameters">Parameters</a></h4>
+<p>We can define functions to have <em>parameters</em>, which are special variables that
+are part of a function’s signature. When a function has parameters, you can
+provide it with concrete values for those parameters. Technically, the concrete
+values are called <em>arguments</em>, but in casual conversation, people tend to use
+the words <em>parameter</em> and <em>argument</em> interchangeably for either the variables
+in a function’s definition or the concrete values passed in when you call a
+function.</p>
+<p>In this version of <code>another_function</code> we add a parameter:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    another_function(5);
+}
+
+fn another_function(x: i32) {
+    println!("The value of x is: {x}");
+}</code></pre>
+<p>Try running this program; you should get the following output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling functions v0.1.0 (file:///projects/functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.21s
+     Running `target/debug/functions`
+The value of x is: 5
+</code></pre>
+<p>The declaration of <code>another_function</code> has one parameter named <code>x</code>. The type of
+<code>x</code> is specified as <code>i32</code>. When we pass <code>5</code> in to <code>another_function</code>, the
+<code>println!</code> macro puts <code>5</code> where the pair of curly brackets containing <code>x</code> was
+in the format string.</p>
+<p>In function signatures, you <em>must</em> declare the type of each parameter. This is
+a deliberate decision in Rust’s design: Requiring type annotations in function
+definitions means the compiler almost never needs you to use them elsewhere in
+the code to figure out what type you mean. The compiler is also able to give
+more-helpful error messages if it knows what types the function expects.</p>
+<p>When defining multiple parameters, separate the parameter declarations with
+commas, like this:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    print_labeled_measurement(5, 'h');
+}
+
+fn print_labeled_measurement(value: i32, unit_label: char) {
+    println!("The measurement is: {value}{unit_label}");
+}</code></pre>
+<p>This example creates a function named <code>print_labeled_measurement</code> with two
+parameters. The first parameter is named <code>value</code> and is an <code>i32</code>. The second is
+named <code>unit_label</code> and is type <code>char</code>. The function then prints text containing
+both the <code>value</code> and the <code>unit_label</code>.</p>
+<p>Let’s try running this code. Replace the program currently in your <em>functions</em>
+project’s <em>src/main.rs</em> file with the preceding example and run it using <code>cargo run</code>:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling functions v0.1.0 (file:///projects/functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running `target/debug/functions`
+The measurement is: 5h
+</code></pre>
+<p>Because we called the function with <code>5</code> as the value for <code>value</code> and <code>'h'</code> as
+the value for <code>unit_label</code>, the program output contains those values.</p>
+<h4 id="statements-and-expressions"><a class="header" href="#statements-and-expressions">Statements and Expressions</a></h4>
+<p>Function bodies are made up of a series of statements optionally ending in an
+expression. So far, the functions we’ve covered haven’t included an ending
+expression, but you have seen an expression as part of a statement. Because
+Rust is an expression-based language, this is an important distinction to
+understand. Other languages don’t have the same distinctions, so let’s look at
+what statements and expressions are and how their differences affect the bodies
+of functions.</p>
+<ul>
+<li><em>Statements</em> are instructions that perform some action and do not return
+a value.</li>
+<li><em>Expressions</em> evaluate to a resultant value.</li>
+</ul>
+<p>Let’s look at some examples.</p>
+<p>We’ve actually already used statements and expressions. Creating a variable and
+assigning a value to it with the <code>let</code> keyword is a statement. In Listing 3-1,
+<code>let y = 6;</code> is a statement.</p>
+<figure class="listing" id="listing-3-1">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let y = 6;
+}</code></pre>
+<figcaption><a href="#listing-3-1">Listing 3-1</a>: A <code>main</code> function declaration containing one statement</figcaption>
+</figure>
+<p>Function definitions are also statements; the entire preceding example is a
+statement in itself. (As we’ll see shortly, calling a function is not a
+statement, though.)</p>
+<p>Statements do not return values. Therefore, you can’t assign a <code>let</code> statement
+to another variable, as the following code tries to do; you’ll get an error:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let x = (let y = 6);
+}</code></pre>
+<p>When you run this program, the error you’ll get looks like this:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling functions v0.1.0 (file:///projects/functions)
+error: expected expression, found `let` statement
+ --&gt; src/main.rs:2:14
+  |
+2 |     let x = (let y = 6);
+  |              ^^^
+  |
+  = note: only supported directly in conditions of `if` and `while` expressions
+
+warning: unnecessary parentheses around assigned value
+ --&gt; src/main.rs:2:13
+  |
+2 |     let x = (let y = 6);
+  |             ^         ^
+  |
+  = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+  |
+2 -     let x = (let y = 6);
+2 +     let x = let y = 6;
+  |
+
+warning: `functions` (bin "functions") generated 1 warning
+error: could not compile `functions` (bin "functions") due to 1 previous error; 1 warning emitted
+</code></pre>
+<p>The <code>let y = 6</code> statement does not return a value, so there isn’t anything for
+<code>x</code> to bind to. This is different from what happens in other languages, such as
+C and Ruby, where the assignment returns the value of the assignment. In those
+languages, you can write <code>x = y = 6</code> and have both <code>x</code> and <code>y</code> have the value
+<code>6</code>; that is not the case in Rust.</p>
+<p>Expressions evaluate to a value and make up most of the rest of the code that
+you’ll write in Rust. Consider a math operation, such as <code>5 + 6</code>, which is an
+expression that evaluates to the value <code>11</code>. Expressions can be part of
+statements: In Listing 3-1, the <code>6</code> in the statement <code>let y = 6;</code> is an
+expression that evaluates to the value <code>6</code>. Calling a function is an
+expression. Calling a macro is an expression. A new scope block created with
+curly brackets is an expression, for example:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let y = {
+        let x = 3;
+        x + 1
+    };
+
+    println!("The value of y is: {y}");
+}</code></pre>
+<p>This expression:</p>
+<pre><code class="language-rust ignore">{
+    let x = 3;
+    x + 1
+}</code></pre>
+<p>is a block that, in this case, evaluates to <code>4</code>. That value gets bound to <code>y</code>
+as part of the <code>let</code> statement. Note the <code>x + 1</code> line without a semicolon at
+the end, which is unlike most of the lines you’ve seen so far. Expressions do
+not include ending semicolons. If you add a semicolon to the end of an
+expression, you turn it into a statement, and it will then not return a value.
+Keep this in mind as you explore function return values and expressions next.</p>
+<h4 id="functions-with-return-values"><a class="header" href="#functions-with-return-values">Functions with Return Values</a></h4>
+<p>Functions can return values to the code that calls them. We don’t name return
+values, but we must declare their type after an arrow (<code>-&gt;</code>). In Rust, the
+return value of the function is synonymous with the value of the final
+expression in the block of the body of a function. You can return early from a
+function by using the <code>return</code> keyword and specifying a value, but most
+functions return the last expression implicitly. Here’s an example of a
+function that returns a value:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn five() -&gt; i32 {
+    5
+}
+
+fn main() {
+    let x = five();
+
+    println!("The value of x is: {x}");
+}</code></pre>
+<p>There are no function calls, macros, or even <code>let</code> statements in the <code>five</code>
+function—just the number <code>5</code> by itself. That’s a perfectly valid function in
+Rust. Note that the function’s return type is specified too, as <code>-&gt; i32</code>. Try
+running this code; the output should look like this:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling functions v0.1.0 (file:///projects/functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
+     Running `target/debug/functions`
+The value of x is: 5
+</code></pre>
+<p>The <code>5</code> in <code>five</code> is the function’s return value, which is why the return type
+is <code>i32</code>. Let’s examine this in more detail. There are two important bits:
+First, the line <code>let x = five();</code> shows that we’re using the return value of a
+function to initialize a variable. Because the function <code>five</code> returns a <code>5</code>,
+that line is the same as the following:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x = 5;
+<span class="boring">}</span></code></pre>
+<p>Second, the <code>five</code> function has no parameters and defines the type of the
+return value, but the body of the function is a lonely <code>5</code> with no semicolon
+because it’s an expression whose value we want to return.</p>
+<p>Let’s look at another example:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let x = plus_one(5);
+
+    println!("The value of x is: {x}");
+}
+
+fn plus_one(x: i32) -&gt; i32 {
+    x + 1
+}</code></pre>
+<p>Running this code will print <code>The value of x is: 6</code>. But what happens if we
+place a semicolon at the end of the line containing <code>x + 1</code>, changing it from
+an expression to a statement?</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let x = plus_one(5);
+
+    println!("The value of x is: {x}");
+}
+
+fn plus_one(x: i32) -&gt; i32 {
+    x + 1;
+}</code></pre>
+<p>Compiling this code will produce an error, as follows:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling functions v0.1.0 (file:///projects/functions)
+error[E0308]: mismatched types
+ --&gt; src/main.rs:7:24
+  |
+7 | fn plus_one(x: i32) -&gt; i32 {
+  |    --------            ^^^ expected `i32`, found `()`
+  |    |
+  |    implicitly returns `()` as its body has no tail or `return` expression
+8 |     x + 1;
+  |          - help: remove this semicolon to return this value
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `functions` (bin "functions") due to 1 previous error
+</code></pre>
+<p>The main error message, <code>mismatched types</code>, reveals the core issue with this
+code. The definition of the function <code>plus_one</code> says that it will return an
+<code>i32</code>, but statements don’t evaluate to a value, which is expressed by <code>()</code>,
+the unit type. Therefore, nothing is returned, which contradicts the function
+definition and results in an error. In this output, Rust provides a message to
+possibly help rectify this issue: It suggests removing the semicolon, which
+would fix the error.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="comments-1"><a href="#comments-1" class="header">Comments</a></h2>
+<h3 id="comments"><a class="header" href="#comments">Comments</a></h3>
+<p>All programmers strive to make their code easy to understand, but sometimes
+extra explanation is warranted. In these cases, programmers leave <em>comments</em> in
+their source code that the compiler will ignore but that people reading the
+source code may find useful.</p>
+<p>Here’s a simple comment:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// hello, world
+<span class="boring">}</span></code></pre>
+<p>In Rust, the idiomatic comment style starts a comment with two slashes, and the
+comment continues until the end of the line. For comments that extend beyond a
+single line, you’ll need to include <code>//</code> on each line, like this:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// So we're doing something complicated here, long enough that we need
+// multiple lines of comments to do it! Whew! Hopefully, this comment will
+// explain what's going on.
+<span class="boring">}</span></code></pre>
+<p>Comments can also be placed at the end of lines containing code:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let lucky_number = 7; // I'm feeling lucky today
+}</code></pre>
+<p>But you’ll more often see them used in this format, with the comment on a
+separate line above the code it’s annotating:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    // I'm feeling lucky today
+    let lucky_number = 7;
+}</code></pre>
+<p>Rust also has another kind of comment, documentation comments, which we’ll
+discuss in the <a href="14%20Cargo%20for%20a%20Team.html#publishing-a-crate-to-cratesio-1">“Publishing a Crate to Crates.io”</a><!-- ignore -->
+section of Chapter 14.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="control-flow-1"><a href="#control-flow-1" class="header">Control Flow</a></h2>
+<h3 id="control-flow"><a class="header" href="#control-flow">Control Flow</a></h3>
+<p>The ability to run some code depending on whether a condition is <code>true</code> and the
+ability to run some code repeatedly while a condition is <code>true</code> are basic
+building blocks in most programming languages. The most common constructs that
+let you control the flow of execution of Rust code are <code>if</code> expressions and
+loops.</p>
+<h4 id="if-expressions"><a class="header" href="#if-expressions"><code>if</code> Expressions</a></h4>
+<p>An <code>if</code> expression allows you to branch your code depending on conditions. You
+provide a condition and then state, “If this condition is met, run this block
+of code. If the condition is not met, do not run this block of code.”</p>
+<p>Create a new project called <em>branches</em> in your <em>projects</em> directory to explore
+the <code>if</code> expression. In the <em>src/main.rs</em> file, input the following:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let number = 3;
+
+    if number &lt; 5 {
+        println!("condition was true");
+    } else {
+        println!("condition was false");
+    }
+}</code></pre>
+<p>All <code>if</code> expressions start with the keyword <code>if</code>, followed by a condition. In
+this case, the condition checks whether or not the variable <code>number</code> has a
+value less than 5. We place the block of code to execute if the condition is
+<code>true</code> immediately after the condition inside curly brackets. Blocks of code
+associated with the conditions in <code>if</code> expressions are sometimes called <em>arms</em>,
+just like the arms in <code>match</code> expressions that we discussed in the <a href="02%20An%20Input%20to%20a%20Decision.html#comparing-the-guess-to-the-secret-number">“Comparing
+the Guess to the Secret Number”</a><!--
+ignore --> section of Chapter 2.</p>
+<p>Optionally, we can also include an <code>else</code> expression, which we chose to do
+here, to give the program an alternative block of code to execute should the
+condition evaluate to <code>false</code>. If you don’t provide an <code>else</code> expression and
+the condition is <code>false</code>, the program will just skip the <code>if</code> block and move on
+to the next bit of code.</p>
+<p>Try running this code; you should see the following output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling branches v0.1.0 (file:///projects/branches)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running `target/debug/branches`
+condition was true
+</code></pre>
+<p>Let’s try changing the value of <code>number</code> to a value that makes the condition
+<code>false</code> to see what happens:</p>
+<pre><code class="language-rust ignore"><span class="boring">fn main() {
+</span>    let number = 7;
+<span class="boring">
+</span><span class="boring">    if number &lt; 5 {
+</span><span class="boring">        println!("condition was true");
+</span><span class="boring">    } else {
+</span><span class="boring">        println!("condition was false");
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<p>Run the program again, and look at the output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling branches v0.1.0 (file:///projects/branches)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running `target/debug/branches`
+condition was false
+</code></pre>
+<p>It’s also worth noting that the condition in this code <em>must</em> be a <code>bool</code>. If
+the condition isn’t a <code>bool</code>, we’ll get an error. For example, try running the
+following code:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let number = 3;
+
+    if number {
+        println!("number was three");
+    }
+}</code></pre>
+<p>The <code>if</code> condition evaluates to a value of <code>3</code> this time, and Rust throws an
+error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling branches v0.1.0 (file:///projects/branches)
+error[E0308]: mismatched types
+ --&gt; src/main.rs:4:8
+  |
+4 |     if number {
+  |        ^^^^^^ expected `bool`, found integer
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+</code></pre>
+<p>The error indicates that Rust expected a <code>bool</code> but got an integer. Unlike
+languages such as Ruby and JavaScript, Rust will not automatically try to
+convert non-Boolean types to a Boolean. You must be explicit and always provide
+<code>if</code> with a Boolean as its condition. If we want the <code>if</code> code block to run
+only when a number is not equal to <code>0</code>, for example, we can change the <code>if</code>
+expression to the following:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let number = 3;
+
+    if number != 0 {
+        println!("number was something other than zero");
+    }
+}</code></pre>
+<p>Running this code will print <code>number was something other than zero</code>.</p>
+<h5 id="handling-multiple-conditions-with-else-if"><a class="header" href="#handling-multiple-conditions-with-else-if">Handling Multiple Conditions with <code>else if</code></a></h5>
+<p>You can use multiple conditions by combining <code>if</code> and <code>else</code> in an <code>else if</code>
+expression. For example:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let number = 6;
+
+    if number % 4 == 0 {
+        println!("number is divisible by 4");
+    } else if number % 3 == 0 {
+        println!("number is divisible by 3");
+    } else if number % 2 == 0 {
+        println!("number is divisible by 2");
+    } else {
+        println!("number is not divisible by 4, 3, or 2");
+    }
+}</code></pre>
+<p>This program has four possible paths it can take. After running it, you should
+see the following output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling branches v0.1.0 (file:///projects/branches)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running `target/debug/branches`
+number is divisible by 3
+</code></pre>
+<p>When this program executes, it checks each <code>if</code> expression in turn and executes
+the first body for which the condition evaluates to <code>true</code>. Note that even
+though 6 is divisible by 2, we don’t see the output <code>number is divisible by 2</code>,
+nor do we see the <code>number is not divisible by 4, 3, or 2</code> text from the <code>else</code>
+block. That’s because Rust only executes the block for the first <code>true</code>
+condition, and once it finds one, it doesn’t even check the rest.</p>
+<p>Using too many <code>else if</code> expressions can clutter your code, so if you have more
+than one, you might want to refactor your code. Chapter 6 describes a powerful
+Rust branching construct called <code>match</code> for these cases.</p>
+<h5 id="using-if-in-a-let-statement"><a class="header" href="#using-if-in-a-let-statement">Using <code>if</code> in a <code>let</code> Statement</a></h5>
+<p>Because <code>if</code> is an expression, we can use it on the right side of a <code>let</code>
+statement to assign the outcome to a variable, as in Listing 3-2.</p>
+<figure class="listing" id="listing-3-2">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let condition = true;
+    let number = if condition { 5 } else { 6 };
+
+    println!("The value of number is: {number}");
+}</code></pre>
+<figcaption><a href="#listing-3-2">Listing 3-2</a>: Assigning the result of an <code>if</code> expression to a variable</figcaption>
+</figure>
+<p>The <code>number</code> variable will be bound to a value based on the outcome of the <code>if</code>
+expression. Run this code to see what happens:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling branches v0.1.0 (file:///projects/branches)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
+     Running `target/debug/branches`
+The value of number is: 5
+</code></pre>
+<p>Remember that blocks of code evaluate to the last expression in them, and
+numbers by themselves are also expressions. In this case, the value of the
+whole <code>if</code> expression depends on which block of code executes. This means the
+values that have the potential to be results from each arm of the <code>if</code> must be
+the same type; in Listing 3-2, the results of both the <code>if</code> arm and the <code>else</code>
+arm were <code>i32</code> integers. If the types are mismatched, as in the following
+example, we’ll get an error:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">fn main() {
+    let condition = true;
+
+    let number = if condition { 5 } else { "six" };
+
+    println!("The value of number is: {number}");
+}</code></pre>
+<p>When we try to compile this code, we’ll get an error. The <code>if</code> and <code>else</code> arms
+have value types that are incompatible, and Rust indicates exactly where to
+find the problem in the program:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling branches v0.1.0 (file:///projects/branches)
+error[E0308]: `if` and `else` have incompatible types
+ --&gt; src/main.rs:4:44
+  |
+4 |     let number = if condition { 5 } else { "six" };
+  |                                 -          ^^^^^ expected integer, found `&amp;str`
+  |                                 |
+  |                                 expected because of this
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+</code></pre>
+<p>The expression in the <code>if</code> block evaluates to an integer, and the expression in
+the <code>else</code> block evaluates to a string. This won’t work, because variables must
+have a single type, and Rust needs to know definitively at compile time what
+type the <code>number</code> variable is. Knowing the type of <code>number</code> lets the compiler
+verify the type is valid everywhere we use <code>number</code>. Rust wouldn’t be able to
+do that if the type of <code>number</code> was only determined at runtime; the compiler
+would be more complex and would make fewer guarantees about the code if it had
+to keep track of multiple hypothetical types for any variable.</p>
+<h4 id="repetition-with-loops"><a class="header" href="#repetition-with-loops">Repetition with Loops</a></h4>
+<p>It’s often useful to execute a block of code more than once. For this task,
+Rust provides several <em>loops</em>, which will run through the code inside the loop
+body to the end and then start immediately back at the beginning. To experiment
+with loops, let’s make a new project called <em>loops</em>.</p>
+<p>Rust has three kinds of loops: <code>loop</code>, <code>while</code>, and <code>for</code>. Let’s try each one.</p>
+<h5 id="repeating-code-with-loop"><a class="header" href="#repeating-code-with-loop">Repeating Code with <code>loop</code></a></h5>
+<p>The <code>loop</code> keyword tells Rust to execute a block of code over and over again
+either forever or until you explicitly tell it to stop.</p>
+<p>As an example, change the <em>src/main.rs</em> file in your <em>loops</em> directory to look
+like this:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre><code class="language-rust ignore">fn main() {
+    loop {
+        println!("again!");
+    }
+}</code></pre>
+<p>When we run this program, we’ll see <code>again!</code> printed over and over continuously
+until we stop the program manually. Most terminals support the keyboard shortcut
+<kbd>ctrl</kbd>-<kbd>C</kbd> to interrupt a program that is stuck in a continual
+loop. Give it a try:</p>
+<!-- manual-regeneration
+cd listings/ch03-common-programming-concepts/no-listing-32-loop
+cargo run
+CTRL-C
+-->
+<pre><code class="language-console">$ cargo run
+   Compiling loops v0.1.0 (file:///projects/loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running `target/debug/loops`
+again!
+again!
+again!
+again!
+^Cagain!
+</code></pre>
+<p>The symbol <code>^C</code> represents where you pressed <kbd>ctrl</kbd>-<kbd>C</kbd>.</p>
+<p>You may or may not see the word <code>again!</code> printed after the <code>^C</code>, depending on
+where the code was in the loop when it received the interrupt signal.</p>
+<p>Fortunately, Rust also provides a way to break out of a loop using code. You
+can place the <code>break</code> keyword within the loop to tell the program when to stop
+executing the loop. Recall that we did this in the guessing game in the
+<a href="02%20An%20Input%20to%20a%20Decision.html#quitting-after-a-correct-guess">“Quitting After a Correct Guess”</a><!-- ignore
+--> section of Chapter 2 to exit the program when the user won the game by
+guessing the correct number.</p>
+<p>We also used <code>continue</code> in the guessing game, which in a loop tells the program
+to skip over any remaining code in this iteration of the loop and go to the
+next iteration.</p>
+<h5 id="returning-values-from-loops"><a class="header" href="#returning-values-from-loops">Returning Values from Loops</a></h5>
+<p>One of the uses of a <code>loop</code> is to retry an operation you know might fail, such
+as checking whether a thread has completed its job. You might also need to pass
+the result of that operation out of the loop to the rest of your code. To do
+this, you can add the value you want returned after the <code>break</code> expression you
+use to stop the loop; that value will be returned out of the loop so that you
+can use it, as shown here:</p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let mut counter = 0;
+
+    let result = loop {
+        counter += 1;
+
+        if counter == 10 {
+            break counter * 2;
+        }
+    };
+
+    println!("The result is {result}");
+}</code></pre>
+<p>Before the loop, we declare a variable named <code>counter</code> and initialize it to
+<code>0</code>. Then, we declare a variable named <code>result</code> to hold the value returned from
+the loop. On every iteration of the loop, we add <code>1</code> to the <code>counter</code> variable,
+and then check whether the <code>counter</code> is equal to <code>10</code>. When it is, we use the
+<code>break</code> keyword with the value <code>counter * 2</code>. After the loop, we use a
+semicolon to end the statement that assigns the value to <code>result</code>. Finally, we
+print the value in <code>result</code>, which in this case is <code>20</code>.</p>
+<p>You can also <code>return</code> from inside a loop. While <code>break</code> only exits the current
+loop, <code>return</code> always exits the current function.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="loop-labels-to-disambiguate-between-multiple-loops"></a></p>
+<h5 id="disambiguating-with-loop-labels"><a class="header" href="#disambiguating-with-loop-labels">Disambiguating with Loop Labels</a></h5>
+<p>If you have loops within loops, <code>break</code> and <code>continue</code> apply to the innermost
+loop at that point. You can optionally specify a <em>loop label</em> on a loop that
+you can then use with <code>break</code> or <code>continue</code> to specify that those keywords
+apply to the labeled loop instead of the innermost loop. Loop labels must begin
+with a single quote. Here’s an example with two nested loops:</p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let mut count = 0;
+    'counting_up: loop {
+        println!("count = {count}");
+        let mut remaining = 10;
+
+        loop {
+            println!("remaining = {remaining}");
+            if remaining == 9 {
+                break;
+            }
+            if count == 2 {
+                break 'counting_up;
+            }
+            remaining -= 1;
+        }
+
+        count += 1;
+    }
+    println!("End count = {count}");
+}</code></pre>
+<p>The outer loop has the label <code>'counting_up</code>, and it will count up from 0 to 2.
+The inner loop without a label counts down from 10 to 9. The first <code>break</code> that
+doesn’t specify a label will exit the inner loop only. The <code>break 'counting_up;</code> statement will exit the outer loop. This code prints:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling loops v0.1.0 (file:///projects/loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.58s
+     Running `target/debug/loops`
+count = 0
+remaining = 10
+remaining = 9
+count = 1
+remaining = 10
+remaining = 9
+count = 2
+remaining = 10
+End count = 2
+</code></pre>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="conditional-loops-with-while"></a></p>
+<h5 id="streamlining-conditional-loops-with-while"><a class="header" href="#streamlining-conditional-loops-with-while">Streamlining Conditional Loops with while</a></h5>
+<p>A program will often need to evaluate a condition within a loop. While the
+condition is <code>true</code>, the loop runs. When the condition ceases to be <code>true</code>, the
+program calls <code>break</code>, stopping the loop. It’s possible to implement behavior
+like this using a combination of <code>loop</code>, <code>if</code>, <code>else</code>, and <code>break</code>; you could
+try that now in a program, if you’d like. However, this pattern is so common
+that Rust has a built-in language construct for it, called a <code>while</code> loop. In
+Listing 3-3, we use <code>while</code> to loop the program three times, counting down each
+time, and then, after the loop, to print a message and exit.</p>
+<figure class="listing" id="listing-3-3">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let mut number = 3;
+
+    while number != 0 {
+        println!("{number}!");
+
+        number -= 1;
+    }
+
+    println!("LIFTOFF!!!");
+}</code></pre>
+<figcaption><a href="#listing-3-3">Listing 3-3</a>: Using a <code>while</code> loop to run code while a condition evaluates to <code>true</code></figcaption>
+</figure>
+<p>This construct eliminates a lot of nesting that would be necessary if you used
+<code>loop</code>, <code>if</code>, <code>else</code>, and <code>break</code>, and it’s clearer. While a condition
+evaluates to <code>true</code>, the code runs; otherwise, it exits the loop.</p>
+<h5 id="looping-through-a-collection-with-for"><a class="header" href="#looping-through-a-collection-with-for">Looping Through a Collection with <code>for</code></a></h5>
+<p>You can choose to use the <code>while</code> construct to loop over the elements of a
+collection, such as an array. For example, the loop in Listing 3-4 prints each
+element in the array <code>a</code>.</p>
+<figure class="listing" id="listing-3-4">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let a = [10, 20, 30, 40, 50];
+    let mut index = 0;
+
+    while index &lt; 5 {
+        println!("the value is: {}", a[index]);
+
+        index += 1;
+    }
+}</code></pre>
+<figcaption><a href="#listing-3-4">Listing 3-4</a>: Looping through each element of a collection using a <code>while</code> loop</figcaption>
+</figure>
+<p>Here, the code counts up through the elements in the array. It starts at index
+<code>0</code> and then loops until it reaches the final index in the array (that is,
+when <code>index &lt; 5</code> is no longer <code>true</code>). Running this code will print every
+element in the array:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling loops v0.1.0 (file:///projects/loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
+     Running `target/debug/loops`
+the value is: 10
+the value is: 20
+the value is: 30
+the value is: 40
+the value is: 50
+</code></pre>
+<p>All five array values appear in the terminal, as expected. Even though <code>index</code>
+will reach a value of <code>5</code> at some point, the loop stops executing before trying
+to fetch a sixth value from the array.</p>
+<p>However, this approach is error-prone; we could cause the program to panic if
+the index value or test condition is incorrect. For example, if you changed the
+definition of the <code>a</code> array to have four elements but forgot to update the
+condition to <code>while index &lt; 4</code>, the code would panic. It’s also slow, because
+the compiler adds runtime code to perform the conditional check of whether the
+index is within the bounds of the array on every iteration through the loop.</p>
+<p>As a more concise alternative, you can use a <code>for</code> loop and execute some code
+for each item in a collection. A <code>for</code> loop looks like the code in Listing 3-5.</p>
+<figure class="listing" id="listing-3-5">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let a = [10, 20, 30, 40, 50];
+
+    for element in a {
+        println!("the value is: {element}");
+    }
+}</code></pre>
+<figcaption><a href="#listing-3-5">Listing 3-5</a>: Looping through each element of a collection using a <code>for</code> loop</figcaption>
+</figure>
+<p>When we run this code, we’ll see the same output as in Listing 3-4. More
+importantly, we’ve now increased the safety of the code and eliminated the
+chance of bugs that might result from going beyond the end of the array or not
+going far enough and missing some items. Machine code generated from <code>for</code>
+loops can be more efficient as well because the index doesn’t need to be
+compared to the length of the array at every iteration.</p>
+<p>Using the <code>for</code> loop, you wouldn’t need to remember to change any other code if
+you changed the number of values in the array, as you would with the method
+used in Listing 3-4.</p>
+<p>The safety and conciseness of <code>for</code> loops make them the most commonly used loop
+construct in Rust. Even in situations in which you want to run some code a
+certain number of times, as in the countdown example that used a <code>while</code> loop
+in Listing 3-3, most Rustaceans would use a <code>for</code> loop. The way to do that
+would be to use a <code>Range</code>, provided by the standard library, which generates
+all numbers in sequence starting from one number and ending before another
+number.</p>
+<p>Here’s what the countdown would look like using a <code>for</code> loop and another method
+we’ve not yet talked about, <code>rev</code>, to reverse the range:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    for number in (1..4).rev() {
+        println!("{number}!");
+    }
+    println!("LIFTOFF!!!");
+}</code></pre>
+<p>This code is a bit nicer, isn’t it?</p>
+<h3 id="summary-2"><a class="header" href="#summary-2">Summary</a></h3>
+<p>You made it! This was a sizable chapter: You learned about variables, scalar
+and compound data types, functions, comments, <code>if</code> expressions, and loops! To
+practice with the concepts discussed in this chapter, try building programs to
+do the following:</p>
+<ul>
+<li>Convert temperatures between Fahrenheit and Celsius.</li>
+<li>Generate the <em>n</em>th Fibonacci number.</li>
+<li>Print the lyrics to the Christmas carol “The Twelve Days of Christmas,”
+taking advantage of the repetition in the song.</li>
+</ul>
+<p>When you’re ready to move on, we’ll talk about a concept in Rust that <em>doesn’t</em>
+commonly exist in other programming languages: ownership.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="02%20An%20Input%20to%20a%20Decision.html">← 02 An Input to a Decision</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="04%20Ownership%20and%20Borrowing.html">04 Ownership and Borrowing →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#common-programming-concepts">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

@@ -1,0 +1,1668 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Closures and Iterator Pipelines</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-chemex.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 13 / 21</span></div>
+<div class="hero"><div><h1>Closures and Iterator Pipelines</h1><p>Find the consumption point in a pipeline.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>borrow slice</span></div><div class="trace"><b>Observe</b><span>map quantity</span></div><div class="trace"><b>Result</b><span>sum consumes</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="12%20A%20Command%20Line%20Adapter.html">← 12 A Command Line Adapter</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="14%20Cargo%20for%20a%20Team.html">14 Cargo for a Team →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#functional-language-features-iterators-and-closures">Functional Language Features: Iterators and Closures</a><a href="#closures-1">Closures</a><a href="#processing-a-series-of-items-with-iterators-1">Processing a Series of Items with Iterators</a><a href="#improving-our-io-project-1">Improving Our I/O Project</a><a href="#performance-in-loops-vs-iterators-1">Performance in Loops vs. Iterators</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Find the consumption point in a pipeline</h2><p>Calling map describes how each element will be transformed. The iterator is lazy until a consumer asks for elements. Here sum drives traversal, so there is no intermediate vector of quantities. The closure borrows each element briefly and returns an owned number. In a service this makes a good pattern for read-only projections such as totals, so long as the reduction implements the right business rule.</p><figure class="code"><figcaption>examples/replay.rs · excerpt</figcaption><pre><code><span class="k">trait</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">impl</span><span class="w"> </span><span class="n">HasQuantity</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Order</span><span class="p">::</span><span class="n">quantity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">fn</span><span class="w"> </span><span class="nf">total</span><span class="o">&lt;</span><span class="n">T</span><span class="p">:</span><span class="w"> </span><span class="nc">HasQuantity</span><span class="o">&gt;</span><span class="p">(</span><span class="n">items</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="n">T</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u64</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">items</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">x</span><span class="o">|</span><span class="w"> </span><span class="kt">u64</span><span class="p">::</span><span class="n">from</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">quantity</span><span class="p">())).</span><span class="n">sum</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre></figure><p>Run the replay example. Its raw total of 72 is mathematically correct for three records. Its unique total of 42 answers a different question. The compiler can enforce a valid iterator chain while the business answer is still wrong. Decide whether identity is resolved upstream or inside the projection. A closure with side effects adds another trap: taking the first matching element only drives part of a lazy chain, so it cannot double as a reliable write-through audit trail.</p><h3>Preserve failures in transformations</h3><p>Suppose you receive a sequence of input lines and each line can fail to parse. An iterator of Result values preserves a choice for the caller. Collecting into a Result of a vector can stop at the first error; filtering for successful items can continue but eliminates evidence of rejected lines unless you record it separately. That is a business decision as well as an iterator decision. A reconciliation report that silently omits malformed trades can look perfectly consistent while losing the very records it was meant to surface. Decide on fail-fast, quarantine or partial reporting before choosing the final iterator adapter.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html">doc.rust-lang.org/std/iter/trait.Iterator.html</a></p></section><div class="book"><h2 id="functional-language-features-iterators-and-closures"><a class="header" href="#functional-language-features-iterators-and-closures">Functional Language Features: Iterators and Closures</a></h2>
+<p>Rust’s design has taken inspiration from many existing languages and
+techniques, and one significant influence is <em>functional programming</em>.
+Programming in a functional style often includes using functions as values by
+passing them in arguments, returning them from other functions, assigning them
+to variables for later execution, and so forth.</p>
+<p>In this chapter, we won’t debate the issue of what functional programming is or
+isn’t but will instead discuss some features of Rust that are similar to
+features in many languages often referred to as functional.</p>
+<p>More specifically, we’ll cover:</p>
+<ul>
+<li><em>Closures</em>, a function-like construct you can store in a variable</li>
+<li><em>Iterators</em>, a way of processing a series of elements</li>
+<li>How to use closures and iterators to improve the I/O project in Chapter 12</li>
+<li>The performance of closures and iterators (spoiler alert: They’re faster than
+you might think!)</li>
+</ul>
+<p>We’ve already covered some other Rust features, such as pattern matching and
+enums, that are also influenced by the functional style. Because mastering
+closures and iterators is an important part of writing fast, idiomatic, Rust
+code, we’ll devote this entire chapter to them.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="closures-1"><a href="#closures-1" class="header">Closures</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="closures-anonymous-functions-that-can-capture-their-environment"></a>
+<a id="closures-anonymous-functions-that-capture-their-environment"></a></p>
+<h3 id="closures"><a class="header" href="#closures">Closures</a></h3>
+<p>Rust’s closures are anonymous functions you can save in a variable or pass as
+arguments to other functions. You can create the closure in one place and then
+call the closure elsewhere to evaluate it in a different context. Unlike
+functions, closures can capture values from the scope in which they’re defined.
+We’ll demonstrate how these closure features allow for code reuse and behavior
+customization.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="creating-an-abstraction-of-behavior-with-closures"></a>
+<a id="refactoring-using-functions"></a>
+<a id="refactoring-with-closures-to-store-code"></a>
+<a id="capturing-the-environment-with-closures"></a></p>
+<h4 id="capturing-the-environment"><a class="header" href="#capturing-the-environment">Capturing the Environment</a></h4>
+<p>We’ll first examine how we can use closures to capture values from the
+environment they’re defined in for later use. Here’s the scenario: Every so
+often, our T-shirt company gives away an exclusive, limited-edition shirt to
+someone on our mailing list as a promotion. People on the mailing list can
+optionally add their favorite color to their profile. If the person chosen for
+a free shirt has their favorite color set, they get that color shirt. If the
+person hasn’t specified a favorite color, they get whatever color the company
+currently has the most of.</p>
+<p>There are many ways to implement this. For this example, we’re going to use an
+enum called <code>ShirtColor</code> that has the variants <code>Red</code> and <code>Blue</code> (limiting the
+number of colors available for simplicity). We represent the company’s
+inventory with an <code>Inventory</code> struct that has a field named <code>shirts</code> that
+contains a <code>Vec&lt;ShirtColor&gt;</code> representing the shirt colors currently in stock.
+The method <code>giveaway</code> defined on <code>Inventory</code> gets the optional shirt color
+preference of the free-shirt winner, and it returns the shirt color the
+person will get. This setup is shown in Listing 13-1.</p>
+<figure class="listing" id="listing-13-1">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust noplayground">#[derive(Debug, PartialEq, Copy, Clone)]
+enum ShirtColor {
+    Red,
+    Blue,
+}
+
+struct Inventory {
+    shirts: Vec&lt;ShirtColor&gt;,
+}
+
+impl Inventory {
+    fn giveaway(&amp;self, user_preference: Option&lt;ShirtColor&gt;) -&gt; ShirtColor {
+        user_preference.unwrap_or_else(|| self.most_stocked())
+    }
+
+    fn most_stocked(&amp;self) -&gt; ShirtColor {
+        let mut num_red = 0;
+        let mut num_blue = 0;
+
+        for color in &amp;self.shirts {
+            match color {
+                ShirtColor::Red =&gt; num_red += 1,
+                ShirtColor::Blue =&gt; num_blue += 1,
+            }
+        }
+        if num_red &gt; num_blue {
+            ShirtColor::Red
+        } else {
+            ShirtColor::Blue
+        }
+    }
+}
+
+fn main() {
+    let store = Inventory {
+        shirts: vec![ShirtColor::Blue, ShirtColor::Red, ShirtColor::Blue],
+    };
+
+    let user_pref1 = Some(ShirtColor::Red);
+    let giveaway1 = store.giveaway(user_pref1);
+    println!(
+        "The user with preference {:?} gets {:?}",
+        user_pref1, giveaway1
+    );
+
+    let user_pref2 = None;
+    let giveaway2 = store.giveaway(user_pref2);
+    println!(
+        "The user with preference {:?} gets {:?}",
+        user_pref2, giveaway2
+    );
+}</code></pre>
+<figcaption><a href="#listing-13-1">Listing 13-1</a>: Shirt company giveaway situation</figcaption>
+</figure>
+<p>The <code>store</code> defined in <code>main</code> has two blue shirts and one red shirt remaining
+to distribute for this limited-edition promotion. We call the <code>giveaway</code> method
+for a user with a preference for a red shirt and a user without any preference.</p>
+<p>Again, this code could be implemented in many ways, and here, to focus on
+closures, we’ve stuck to concepts you’ve already learned, except for the body of
+the <code>giveaway</code> method that uses a closure. In the <code>giveaway</code> method, we get the
+user preference as a parameter of type <code>Option&lt;ShirtColor&gt;</code> and call the
+<code>unwrap_or_else</code> method on <code>user_preference</code>. The <a href="https://doc.rust-lang.org/stable/std/option/enum.Option.html#method.unwrap_or_else"><code>unwrap_or_else</code> method on
+<code>Option&lt;T&gt;</code></a><!-- ignore --> is defined by the standard library.
+It takes one argument: a closure without any arguments that returns a value <code>T</code>
+(the same type stored in the <code>Some</code> variant of the <code>Option&lt;T&gt;</code>, in this case
+<code>ShirtColor</code>). If the <code>Option&lt;T&gt;</code> is the <code>Some</code> variant, <code>unwrap_or_else</code>
+returns the value from within the <code>Some</code>. If the <code>Option&lt;T&gt;</code> is the <code>None</code>
+variant, <code>unwrap_or_else</code> calls the closure and returns the value returned by
+the closure.</p>
+<p>We specify the closure expression <code>|| self.most_stocked()</code> as the argument to
+<code>unwrap_or_else</code>. This is a closure that takes no parameters itself (if the
+closure had parameters, they would appear between the two vertical pipes). The
+body of the closure calls <code>self.most_stocked()</code>. We’re defining the closure
+here, and the implementation of <code>unwrap_or_else</code> will evaluate the closure
+later if the result is needed.</p>
+<p>Running this code prints the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling shirt-company v0.1.0 (file:///projects/shirt-company)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s
+     Running `target/debug/shirt-company`
+The user with preference Some(Red) gets Red
+The user with preference None gets Blue
+</code></pre>
+<p>One interesting aspect here is that we’ve passed a closure that calls
+<code>self.most_stocked()</code> on the current <code>Inventory</code> instance. The standard library
+didn’t need to know anything about the <code>Inventory</code> or <code>ShirtColor</code> types we
+defined, or the logic we want to use in this scenario. The closure captures an
+immutable reference to the <code>self</code> <code>Inventory</code> instance and passes it with the
+code we specify to the <code>unwrap_or_else</code> method. Functions, on the other hand,
+are not able to capture their environment in this way.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="closure-type-inference-and-annotation"></a></p>
+<h4 id="inferring-and-annotating-closure-types"><a class="header" href="#inferring-and-annotating-closure-types">Inferring and Annotating Closure Types</a></h4>
+<p>There are more differences between functions and closures. Closures don’t
+usually require you to annotate the types of the parameters or the return value
+like <code>fn</code> functions do. Type annotations are required on functions because the
+types are part of an explicit interface exposed to your users. Defining this
+interface rigidly is important for ensuring that everyone agrees on what types
+of values a function uses and returns. Closures, on the other hand, aren’t used
+in an exposed interface like this: They’re stored in variables, and they’re
+used without naming them and exposing them to users of our library.</p>
+<p>Closures are typically short and relevant only within a narrow context rather
+than in any arbitrary scenario. Within these limited contexts, the compiler can
+infer the types of the parameters and the return type, similar to how it’s able
+to infer the types of most variables (there are rare cases where the compiler
+needs closure type annotations too).</p>
+<p>As with variables, we can add type annotations if we want to increase
+explicitness and clarity at the cost of being more verbose than is strictly
+necessary. Annotating the types for a closure would look like the definition
+shown in Listing 13-2. In this example, we’re defining a closure and storing it
+in a variable rather than defining the closure in the spot we pass it as an
+argument, as we did in Listing 13-1.</p>
+<figure class="listing" id="listing-13-2">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">use std::thread;
+</span><span class="boring">use std::time::Duration;
+</span><span class="boring">
+</span><span class="boring">fn generate_workout(intensity: u32, random_number: u32) {
+</span>    let expensive_closure = |num: u32| -&gt; u32 {
+        println!("calculating slowly...");
+        thread::sleep(Duration::from_secs(2));
+        num
+    };
+<span class="boring">
+</span><span class="boring">    if intensity &lt; 25 {
+</span><span class="boring">        println!("Today, do {} pushups!", expensive_closure(intensity));
+</span><span class="boring">        println!("Next, do {} situps!", expensive_closure(intensity));
+</span><span class="boring">    } else {
+</span><span class="boring">        if random_number == 3 {
+</span><span class="boring">            println!("Take a break today! Remember to stay hydrated!");
+</span><span class="boring">        } else {
+</span><span class="boring">            println!(
+</span><span class="boring">                "Today, run for {} minutes!",
+</span><span class="boring">                expensive_closure(intensity)
+</span><span class="boring">            );
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let simulated_user_specified_value = 10;
+</span><span class="boring">    let simulated_random_number = 7;
+</span><span class="boring">
+</span><span class="boring">    generate_workout(simulated_user_specified_value, simulated_random_number);
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-2">Listing 13-2</a>: Adding optional type annotations of the parameter and return value types in the closure</figcaption>
+</figure>
+<p>With type annotations added, the syntax of closures looks more similar to the
+syntax of functions. Here, we define a function that adds 1 to its parameter and
+a closure that has the same behavior, for comparison. We’ve added some spaces
+to line up the relevant parts. This illustrates how closure syntax is similar
+to function syntax except for the use of pipes and the amount of syntax that is
+optional:</p>
+<pre><code class="language-rust ignore">fn  add_one_v1   (x: u32) -&gt; u32 { x + 1 }
+let add_one_v2 = |x: u32| -&gt; u32 { x + 1 };
+let add_one_v3 = |x|             { x + 1 };
+let add_one_v4 = |x|               x + 1  ;</code></pre>
+<p>The first line shows a function definition and the second line shows a fully
+annotated closure definition. In the third line, we remove the type annotations
+from the closure definition. In the fourth line, we remove the brackets, which
+are optional because the closure body has only one expression. These are all
+valid definitions that will produce the same behavior when they’re called. The
+<code>add_one_v3</code> and <code>add_one_v4</code> lines require the closures to be evaluated to be
+able to compile because the types will be inferred from their usage. This is
+similar to <code>let v = Vec::new();</code> needing either type annotations or values of
+some type to be inserted into the <code>Vec</code> for Rust to be able to infer the type.</p>
+<p>For closure definitions, the compiler will infer one concrete type for each of
+their parameters and for their return value. For instance, Listing 13-3 shows
+the definition of a short closure that just returns the value it receives as a
+parameter. This closure isn’t very useful except for the purposes of this
+example. Note that we haven’t added any type annotations to the definition.
+Because there are no type annotations, we can call the closure with any type,
+which we’ve done here with <code>String</code> the first time. If we then try to call
+<code>example_closure</code> with an integer, we’ll get an error.</p>
+<figure class="listing" id="listing-13-3">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">fn main() {
+</span>    let example_closure = |x| x;
+
+    let s = example_closure(String::from("hello"));
+    let n = example_closure(5);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-3">Listing 13-3</a>: Attempting to call a closure whose types are inferred with two different types</figcaption>
+</figure>
+<p>The compiler gives us this error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling closure-example v0.1.0 (file:///projects/closure-example)
+error[E0308]: mismatched types
+ --&gt; src/main.rs:5:29
+  |
+5 |     let n = example_closure(5);
+  |             --------------- ^ expected `String`, found integer
+  |             |
+  |             arguments to this function are incorrect
+  |
+note: expected because the closure was earlier called with an argument of type `String`
+ --&gt; src/main.rs:4:29
+  |
+4 |     let s = example_closure(String::from("hello"));
+  |             --------------- ^^^^^^^^^^^^^^^^^^^^^ expected because this argument is of type `String`
+  |             |
+  |             in this closure call
+note: closure parameter defined here
+ --&gt; src/main.rs:2:28
+  |
+2 |     let example_closure = |x| x;
+  |                            ^
+help: try using a conversion method
+  |
+5 |     let n = example_closure(5.to_string());
+  |                              ++++++++++++
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `closure-example` (bin "closure-example") due to 1 previous error
+</code></pre>
+<p>The first time we call <code>example_closure</code> with the <code>String</code> value, the compiler
+infers the type of <code>x</code> and the return type of the closure to be <code>String</code>. Those
+types are then locked into the closure in <code>example_closure</code>, and we get a type
+error when we next try to use a different type with the same closure.</p>
+<h4 id="capturing-references-or-moving-ownership"><a class="header" href="#capturing-references-or-moving-ownership">Capturing References or Moving Ownership</a></h4>
+<p>Closures can capture values from their environment in three ways, which
+directly map to the three ways a function can take a parameter: borrowing
+immutably, borrowing mutably, and taking ownership. The closure will decide
+which of these to use based on what the body of the function does with the
+captured values.</p>
+<p>In Listing 13-4, we define a closure that captures an immutable reference to
+the vector named <code>list</code> because it only needs an immutable reference to print
+the value.</p>
+<figure class="listing" id="listing-13-4">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let list = vec![1, 2, 3];
+    println!("Before defining closure: {list:?}");
+
+    let only_borrows = || println!("From closure: {list:?}");
+
+    println!("Before calling closure: {list:?}");
+    only_borrows();
+    println!("After calling closure: {list:?}");
+}</code></pre>
+<figcaption><a href="#listing-13-4">Listing 13-4</a>: Defining and calling a closure that captures an immutable reference</figcaption>
+</figure>
+<p>This example also illustrates that a variable can bind to a closure definition,
+and we can later call the closure by using the variable name and parentheses as
+if the variable name were a function name.</p>
+<p>Because we can have multiple immutable references to <code>list</code> at the same time,
+<code>list</code> is still accessible from the code before the closure definition, after
+the closure definition but before the closure is called, and after the closure
+is called. This code compiles, runs, and prints:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling closure-example v0.1.0 (file:///projects/closure-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.43s
+     Running `target/debug/closure-example`
+Before defining closure: [1, 2, 3]
+Before calling closure: [1, 2, 3]
+From closure: [1, 2, 3]
+After calling closure: [1, 2, 3]
+</code></pre>
+<p>Next, in Listing 13-5, we change the closure body so that it adds an element to
+the <code>list</code> vector. The closure now captures a mutable reference.</p>
+<figure class="listing" id="listing-13-5">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let mut list = vec![1, 2, 3];
+    println!("Before defining closure: {list:?}");
+
+    let mut borrows_mutably = || list.push(7);
+
+    borrows_mutably();
+    println!("After calling closure: {list:?}");
+}</code></pre>
+<figcaption><a href="#listing-13-5">Listing 13-5</a>: Defining and calling a closure that captures a mutable reference</figcaption>
+</figure>
+<p>This code compiles, runs, and prints:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling closure-example v0.1.0 (file:///projects/closure-example)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.43s
+     Running `target/debug/closure-example`
+Before defining closure: [1, 2, 3]
+After calling closure: [1, 2, 3, 7]
+</code></pre>
+<p>Note that there’s no longer a <code>println!</code> between the definition and the call of
+the <code>borrows_mutably</code> closure: When <code>borrows_mutably</code> is defined, it captures a
+mutable reference to <code>list</code>. We don’t use the closure again after the closure
+is called, so the mutable borrow ends. Between the closure definition and the
+closure call, an immutable borrow to print isn’t allowed, because no other
+borrows are allowed when there’s a mutable borrow. Try adding a <code>println!</code>
+there to see what error message you get!</p>
+<p>If you want to force the closure to take ownership of the values it uses in the
+environment even though the body of the closure doesn’t strictly need
+ownership, you can use the <code>move</code> keyword before the parameter list.</p>
+<p>This technique is mostly useful when passing a closure to a new thread to move
+the data so that it’s owned by the new thread. We’ll discuss threads and why
+you would want to use them in detail in Chapter 16 when we talk about
+concurrency, but for now, let’s briefly explore spawning a new thread using a
+closure that needs the <code>move</code> keyword. Listing 13-6 shows Listing 13-4 modified
+to print the vector in a new thread rather than in the main thread.</p>
+<figure class="listing" id="listing-13-6">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::thread;
+
+fn main() {
+    let list = vec![1, 2, 3];
+    println!("Before defining closure: {list:?}");
+
+    thread::spawn(move || println!("From thread: {list:?}"))
+        .join()
+        .unwrap();
+}</code></pre>
+<figcaption><a href="#listing-13-6">Listing 13-6</a>: Using <code>move</code> to force the closure for the thread to take ownership of <code>list</code></figcaption>
+</figure>
+<p>We spawn a new thread, giving the thread a closure to run as an argument. The
+closure body prints out the list. In Listing 13-4, the closure only captured
+<code>list</code> using an immutable reference because that’s the least amount of access
+to <code>list</code> needed to print it. In this example, even though the closure body
+still only needs an immutable reference, we need to specify that <code>list</code> should
+be moved into the closure by putting the <code>move</code> keyword at the beginning of the
+closure definition. If the main thread performed more operations before calling
+<code>join</code> on the new thread, the new thread might finish before the rest of the
+main thread finishes, or the main thread might finish first. If the main thread
+maintained ownership of <code>list</code> but ended before the new thread and drops
+<code>list</code>, the immutable reference in the thread would be invalid. Therefore, the
+compiler requires that <code>list</code> be moved into the closure given to the new thread
+so that the reference will be valid. Try removing the <code>move</code> keyword or using
+<code>list</code> in the main thread after the closure is defined to see what compiler
+errors you get!</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="storing-closures-using-generic-parameters-and-the-fn-traits"></a>
+<a id="limitations-of-the-cacher-implementation"></a>
+<a id="moving-captured-values-out-of-the-closure-and-the-fn-traits"></a>
+<a id="moving-captured-values-out-of-closures-and-the-fn-traits"></a></p>
+<h4 id="moving-captured-values-out-of-closures"><a class="header" href="#moving-captured-values-out-of-closures">Moving Captured Values Out of Closures</a></h4>
+<p>Once a closure has captured a reference or captured ownership of a value from
+the environment where the closure is defined (thus affecting what, if anything,
+is moved <em>into</em> the closure), the code in the body of the closure defines what
+happens to the references or values when the closure is evaluated later (thus
+affecting what, if anything, is moved <em>out of</em> the closure).</p>
+<p>A closure body can do any of the following: Move a captured value out of the
+closure, mutate the captured value, neither move nor mutate the value, or
+capture nothing from the environment to begin with.</p>
+<p>The way a closure captures and handles values from the environment affects
+which traits the closure implements, and traits are how functions and structs
+can specify what kinds of closures they can use. Closures will automatically
+implement one, two, or all three of these <code>Fn</code> traits, in an additive fashion,
+depending on how the closure’s body handles the values:</p>
+<ul>
+<li><code>FnOnce</code> applies to closures that can be called once. All closures implement
+at least this trait because all closures can be called. A closure that moves
+captured values out of its body will only implement <code>FnOnce</code> and none of the
+other <code>Fn</code> traits because it can only be called once.</li>
+<li><code>FnMut</code> applies to closures that don’t move captured values out of their body
+but might mutate the captured values. These closures can be called more than
+once.</li>
+<li><code>Fn</code> applies to closures that don’t move captured values out of their body
+and don’t mutate captured values, as well as closures that capture nothing
+from their environment. These closures can be called more than once without
+mutating their environment, which is important in cases such as calling a closure multiple times concurrently.</li>
+</ul>
+<p>Let’s look at the definition of the <code>unwrap_or_else</code> method on <code>Option&lt;T&gt;</code> that
+we used in Listing 13-1:</p>
+<pre><code class="language-rust ignore">impl&lt;T&gt; Option&lt;T&gt; {
+    pub fn unwrap_or_else&lt;F&gt;(self, f: F) -&gt; T
+    where
+        F: FnOnce() -&gt; T
+    {
+        match self {
+            Some(x) =&gt; x,
+            None =&gt; f(),
+        }
+    }
+}</code></pre>
+<p>Recall that <code>T</code> is the generic type representing the type of the value in the
+<code>Some</code> variant of an <code>Option</code>. That type <code>T</code> is also the return type of the
+<code>unwrap_or_else</code> function: Code that calls <code>unwrap_or_else</code> on an
+<code>Option&lt;String&gt;</code>, for example, will get a <code>String</code>.</p>
+<p>Next, notice that the <code>unwrap_or_else</code> function has the additional generic type
+parameter <code>F</code>. The <code>F</code> type is the type of the parameter named <code>f</code>, which is
+the closure we provide when calling <code>unwrap_or_else</code>.</p>
+<p>The trait bound specified on the generic type <code>F</code> is <code>FnOnce() -&gt; T</code>, which
+means <code>F</code> must be able to be called once, take no arguments, and return a <code>T</code>.
+Using <code>FnOnce</code> in the trait bound expresses the constraint that
+<code>unwrap_or_else</code> will not call <code>f</code> more than once. In the body of
+<code>unwrap_or_else</code>, we can see that if the <code>Option</code> is <code>Some</code>, <code>f</code> won’t be
+called. If the <code>Option</code> is <code>None</code>, <code>f</code> will be called once. Because all
+closures implement <code>FnOnce</code>, <code>unwrap_or_else</code> accepts all three kinds of
+closures and is as flexible as it can be.</p>
+<section class="note" aria-role="note">
+<p>Note: If what we want to do doesn’t require capturing a value from the
+environment, we can use the name of a function rather than a closure where we
+need something that implements one of the <code>Fn</code> traits. For example, on an
+<code>Option&lt;Vec&lt;T&gt;&gt;</code> value, we could call <code>unwrap_or_else(Vec::new)</code> to get a
+new, empty vector if the value is <code>None</code>. The compiler automatically
+implements whichever of the <code>Fn</code> traits is applicable for a function
+definition.</p>
+</section>
+<p>Now let’s look at the standard library method <code>sort_by_key</code>, defined on slices,
+to see how that differs from <code>unwrap_or_else</code> and why <code>sort_by_key</code> uses
+<code>FnMut</code> instead of <code>FnOnce</code> for the trait bound. The closure gets one argument
+in the form of a reference to the current item in the slice being considered,
+and it returns a value of type <code>K</code> that can be ordered. This function is useful
+when you want to sort a slice by a particular attribute of each item. In
+Listing 13-7, we have a list of <code>Rectangle</code> instances, and we use <code>sort_by_key</code>
+to order them by their <code>width</code> attribute from low to high.</p>
+<figure class="listing" id="listing-13-7">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let mut list = [
+        Rectangle { width: 10, height: 1 },
+        Rectangle { width: 3, height: 5 },
+        Rectangle { width: 7, height: 12 },
+    ];
+
+    list.sort_by_key(|r| r.width);
+    println!("{list:#?}");
+}</code></pre>
+<figcaption><a href="#listing-13-7">Listing 13-7</a>: Using <code>sort_by_key</code> to order rectangles by width</figcaption>
+</figure>
+<p>This code prints:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling rectangles v0.1.0 (file:///projects/rectangles)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.41s
+     Running `target/debug/rectangles`
+[
+    Rectangle {
+        width: 3,
+        height: 5,
+    },
+    Rectangle {
+        width: 7,
+        height: 12,
+    },
+    Rectangle {
+        width: 10,
+        height: 1,
+    },
+]
+</code></pre>
+<p>The reason <code>sort_by_key</code> is defined to take an <code>FnMut</code> closure is that it calls
+the closure multiple times: once for each item in the slice. The closure <code>|r| r.width</code> doesn’t capture, mutate, or move anything out from its environment, so
+it meets the trait bound requirements.</p>
+<p>In contrast, Listing 13-8 shows an example of a closure that implements just
+the <code>FnOnce</code> trait, because it moves a value out of the environment. The
+compiler won’t let us use this closure with <code>sort_by_key</code>.</p>
+<figure class="listing" id="listing-13-8">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let mut list = [
+        Rectangle { width: 10, height: 1 },
+        Rectangle { width: 3, height: 5 },
+        Rectangle { width: 7, height: 12 },
+    ];
+
+    let mut sort_operations = vec![];
+    let value = String::from("closure called");
+
+    list.sort_by_key(|r| {
+        sort_operations.push(value);
+        r.width
+    });
+    println!("{list:#?}");
+}</code></pre>
+<figcaption><a href="#listing-13-8">Listing 13-8</a>: Attempting to use an <code>FnOnce</code> closure with <code>sort_by_key</code></figcaption>
+</figure>
+<p>This is a contrived, convoluted way (that doesn’t work) to try to count the
+number of times <code>sort_by_key</code> calls the closure when sorting <code>list</code>. This code
+attempts to do this counting by pushing <code>value</code>—a <code>String</code> from the closure’s
+environment—into the <code>sort_operations</code> vector. The closure captures <code>value</code> and
+then moves <code>value</code> out of the closure by transferring ownership of <code>value</code> to
+the <code>sort_operations</code> vector. This closure can be called once; trying to call
+it a second time wouldn’t work, because <code>value</code> would no longer be in the
+environment to be pushed into <code>sort_operations</code> again! Therefore, this closure
+only implements <code>FnOnce</code>. When we try to compile this code, we get this error
+that <code>value</code> can’t be moved out of the closure because the closure must
+implement <code>FnMut</code>:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling rectangles v0.1.0 (file:///projects/rectangles)
+error[E0507]: cannot move out of `value`, a captured variable in an `FnMut` closure
+  --&gt; src/main.rs:18:30
+   |
+15 |     let value = String::from("closure called");
+   |         -----   ------------------------------ move occurs because `value` has type `String`, which does not implement the `Copy` trait
+   |         |
+   |         captured outer variable
+16 |
+17 |     list.sort_by_key(|r| {
+   |                      --- captured by this `FnMut` closure
+18 |         sort_operations.push(value);
+   |                              ^^^^^ `value` is moved here
+   |
+help: `Fn` and `FnMut` closures require captured values to be able to be consumed multiple times, but `FnOnce` closures may consume them only once
+  --&gt; /rustc/88d9e12ae178fab0fb5cc050a94da85685d449ea/library/alloc/src/slice.rs:249:11
+help: consider cloning the value if the performance cost is acceptable
+   |
+18 |         sort_operations.push(value.clone());
+   |                                   ++++++++
+
+For more information about this error, try `rustc --explain E0507`.
+error: could not compile `rectangles` (bin "rectangles") due to 1 previous error
+</code></pre>
+<p>The error points to the line in the closure body that moves <code>value</code> out of the
+environment. To fix this, we need to change the closure body so that it doesn’t
+move values out of the environment. Keeping a counter in the environment and
+incrementing its value in the closure body is a more straightforward way to
+count the number of times the closure is called. The closure in Listing 13-9
+works with <code>sort_by_key</code> because it is only capturing a mutable reference to the
+<code>num_sort_operations</code> counter and can therefore be called more than once.</p>
+<figure class="listing" id="listing-13-9">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let mut list = [
+        Rectangle { width: 10, height: 1 },
+        Rectangle { width: 3, height: 5 },
+        Rectangle { width: 7, height: 12 },
+    ];
+
+    let mut num_sort_operations = 0;
+    list.sort_by_key(|r| {
+        num_sort_operations += 1;
+        r.width
+    });
+    println!("{list:#?}, sorted in {num_sort_operations} operations");
+}</code></pre>
+<figcaption><a href="#listing-13-9">Listing 13-9</a>: Using an <code>FnMut</code> closure with <code>sort_by_key</code> is allowed.</figcaption>
+</figure>
+<p>The <code>Fn</code> traits are important when defining or using functions or types that
+make use of closures. In the next section, we’ll discuss iterators. Many
+iterator methods take closure arguments, so keep these closure details in mind
+as we continue!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="processing-a-series-of-items-with-iterators-1"><a href="#processing-a-series-of-items-with-iterators-1" class="header">Processing a Series of Items with Iterators</a></h2>
+<h3 id="processing-a-series-of-items-with-iterators"><a class="header" href="#processing-a-series-of-items-with-iterators">Processing a Series of Items with Iterators</a></h3>
+<p>The iterator pattern allows you to perform some task on a sequence of items in
+turn. An iterator is responsible for the logic of iterating over each item and
+determining when the sequence has finished. When you use iterators, you don’t
+have to reimplement that logic yourself.</p>
+<p>In Rust, iterators are <em>lazy</em>, meaning they have no effect until you call
+methods that consume the iterator to use it up. For example, the code in
+Listing 13-10 creates an iterator over the items in the vector <code>v1</code> by calling
+the <code>iter</code> method defined on <code>Vec&lt;T&gt;</code>. This code by itself doesn’t do anything
+useful.</p>
+<figure class="listing" id="listing-13-10">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v1 = vec![1, 2, 3];
+
+    let v1_iter = v1.iter();
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-10">Listing 13-10</a>: Creating an iterator</figcaption>
+</figure>
+<p>The iterator is stored in the <code>v1_iter</code> variable. Once we’ve created an
+iterator, we can use it in a variety of ways. In Listing 3-5, we iterated over
+an array using a <code>for</code> loop to execute some code on each of its items. Under
+the hood, this implicitly created and then consumed an iterator, but we glossed
+over how exactly that works until now.</p>
+<p>In the example in Listing 13-11, we separate the creation of the iterator from
+the use of the iterator in the <code>for</code> loop. When the <code>for</code> loop is called using
+the iterator in <code>v1_iter</code>, each element in the iterator is used in one
+iteration of the loop, which prints out each value.</p>
+<figure class="listing" id="listing-13-11">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v1 = vec![1, 2, 3];
+
+    let v1_iter = v1.iter();
+
+    for val in v1_iter {
+        println!("Got: {val}");
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-11">Listing 13-11</a>: Using an iterator in a <code>for</code> loop</figcaption>
+</figure>
+<p>In languages that don’t have iterators provided by their standard libraries,
+you would likely write this same functionality by starting a variable at index
+0, using that variable to index into the vector to get a value, and
+incrementing the variable value in a loop until it reached the total number of
+items in the vector.</p>
+<p>Iterators handle all of that logic for you, cutting down on repetitive code you
+could potentially mess up. Iterators give you more flexibility to use the same
+logic with many different kinds of sequences, not just data structures you can
+index into, like vectors. Let’s examine how iterators do that.</p>
+<h4 id="the-iterator-trait-and-the-next-method"><a class="header" href="#the-iterator-trait-and-the-next-method">The <code>Iterator</code> Trait and the <code>next</code> Method</a></h4>
+<p>All iterators implement a trait named <code>Iterator</code> that is defined in the
+standard library. The definition of the trait looks like this:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait Iterator {
+    type Item;
+
+    fn next(&amp;mut self) -&gt; Option&lt;Self::Item&gt;;
+
+    // methods with default implementations elided
+}
+<span class="boring">}</span></code></pre>
+<p>Notice that this definition uses some new syntax: <code>type Item</code> and <code>Self::Item</code>,
+which are defining an associated type with this trait. We’ll talk about
+associated types in depth in Chapter 20. For now, all you need to know is that
+this code says implementing the <code>Iterator</code> trait requires that you also define
+an <code>Item</code> type, and this <code>Item</code> type is used in the return type of the <code>next</code>
+method. In other words, the <code>Item</code> type will be the type returned from the
+iterator.</p>
+<p>The <code>Iterator</code> trait only requires implementors to define one method: the
+<code>next</code> method, which returns one item of the iterator at a time, wrapped in
+<code>Some</code>, and, when iteration is over, returns <code>None</code>.</p>
+<p>We can call the <code>next</code> method on iterators directly; Listing 13-12 demonstrates
+what values are returned from repeated calls to <code>next</code> on the iterator created
+from the vector.</p>
+<figure class="listing" id="listing-13-12">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground"><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span>    #[test]
+    fn iterator_demonstration() {
+        let v1 = vec![1, 2, 3];
+
+        let mut v1_iter = v1.iter();
+
+        assert_eq!(v1_iter.next(), Some(&amp;1));
+        assert_eq!(v1_iter.next(), Some(&amp;2));
+        assert_eq!(v1_iter.next(), Some(&amp;3));
+        assert_eq!(v1_iter.next(), None);
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-12">Listing 13-12</a>: Calling the <code>next</code> method on an iterator</figcaption>
+</figure>
+<p>Note that we needed to make <code>v1_iter</code> mutable: Calling the <code>next</code> method on an
+iterator changes internal state that the iterator uses to keep track of where
+it is in the sequence. In other words, this code <em>consumes</em>, or uses up, the
+iterator. Each call to <code>next</code> eats up an item from the iterator. We didn’t need
+to make <code>v1_iter</code> mutable when we used a <code>for</code> loop, because the loop took
+ownership of <code>v1_iter</code> and made it mutable behind the scenes.</p>
+<p>Also note that the values we get from the calls to <code>next</code> are immutable
+references to the values in the vector. The <code>iter</code> method produces an iterator
+over immutable references. If we want to create an iterator that takes
+ownership of <code>v1</code> and returns owned values, we can call <code>into_iter</code> instead of
+<code>iter</code>. Similarly, if we want to iterate over mutable references, we can call
+<code>iter_mut</code> instead of <code>iter</code>.</p>
+<h4 id="methods-that-consume-the-iterator"><a class="header" href="#methods-that-consume-the-iterator">Methods That Consume the Iterator</a></h4>
+<p>The <code>Iterator</code> trait has a number of different methods with default
+implementations provided by the standard library; you can find out about these
+methods by looking in the standard library API documentation for the <code>Iterator</code>
+trait. Some of these methods call the <code>next</code> method in their definition, which
+is why you’re required to implement the <code>next</code> method when implementing the
+<code>Iterator</code> trait.</p>
+<p>Methods that call <code>next</code> are called <em>consuming adapters</em> because calling them
+uses up the iterator. One example is the <code>sum</code> method, which takes ownership of
+the iterator and iterates through the items by repeatedly calling <code>next</code>, thus
+consuming the iterator. As it iterates through, it adds each item to a running
+total and returns the total when iteration is complete. Listing 13-13 has a
+test illustrating a use of the <code>sum</code> method.</p>
+<figure class="listing" id="listing-13-13">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground"><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span>    #[test]
+    fn iterator_sum() {
+        let v1 = vec![1, 2, 3];
+
+        let v1_iter = v1.iter();
+
+        let total: i32 = v1_iter.sum();
+
+        assert_eq!(total, 6);
+    }
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-13">Listing 13-13</a>: Calling the <code>sum</code> method to get the total of all items in the iterator</figcaption>
+</figure>
+<p>We aren’t allowed to use <code>v1_iter</code> after the call to <code>sum</code>, because <code>sum</code> takes
+ownership of the iterator we call it on.</p>
+<h4 id="methods-that-produce-other-iterators"><a class="header" href="#methods-that-produce-other-iterators">Methods That Produce Other Iterators</a></h4>
+<p><em>Iterator adapters</em> are methods defined on the <code>Iterator</code> trait that don’t
+consume the iterator. Instead, they produce different iterators by changing
+some aspect of the original iterator.</p>
+<p>Listing 13-14 shows an example of calling the iterator adapter method <code>map</code>,
+which takes a closure to call on each item as the items are iterated through.
+The <code>map</code> method returns a new iterator that produces the modified items. The
+closure here creates a new iterator in which each item from the vector will be
+incremented by 1.</p>
+<figure class="listing" id="listing-13-14">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Runs with an unintended result</span><pre class="playground"><code class="language-rust not_desired_behavior edition2024"><span class="boring">fn main() {
+</span>    let v1: Vec&lt;i32&gt; = vec![1, 2, 3];
+
+    v1.iter().map(|x| x + 1);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-14">Listing 13-14</a>: Calling the iterator adapter <code>map</code> to create a new iterator</figcaption>
+</figure>
+<p>However, this code produces a warning:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling iterators v0.1.0 (file:///projects/iterators)
+warning: unused `Map` that must be used
+ --&gt; src/main.rs:4:5
+  |
+4 |     v1.iter().map(|x| x + 1);
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: iterators are lazy and do nothing unless consumed
+  = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+  |
+4 |     let _ = v1.iter().map(|x| x + 1);
+  |     +++++++
+
+warning: `iterators` (bin "iterators") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.47s
+     Running `target/debug/iterators`
+</code></pre>
+<p>The code in Listing 13-14 doesn’t do anything; the closure we’ve specified
+never gets called. The warning reminds us why: Iterator adapters are lazy, and
+we need to consume the iterator here.</p>
+<p>To fix this warning and consume the iterator, we’ll use the <code>collect</code> method,
+which we used with <code>env::args</code> in Listing 12-1. This method consumes the
+iterator and collects the resultant values into a collection data type.</p>
+<p>In Listing 13-15, we collect the results of iterating over the iterator that’s
+returned from the call to <code>map</code> into a vector. This vector will end up
+containing each item from the original vector, incremented by 1.</p>
+<figure class="listing" id="listing-13-15">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {
+</span>    let v1: Vec&lt;i32&gt; = vec![1, 2, 3];
+
+    let v2: Vec&lt;_&gt; = v1.iter().map(|x| x + 1).collect();
+
+    assert_eq!(v2, vec![2, 3, 4]);
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-15">Listing 13-15</a>: Calling the <code>map</code> method to create a new iterator, and then calling the <code>collect</code> method to consume the new iterator and create a vector</figcaption>
+</figure>
+<p>Because <code>map</code> takes a closure, we can specify any operation we want to perform
+on each item. This is a great example of how closures let you customize some
+behavior while reusing the iteration behavior that the <code>Iterator</code> trait
+provides.</p>
+<p>You can chain multiple calls to iterator adapters to perform complex actions in
+a readable way. But because all iterators are lazy, you have to call one of the
+consuming adapter methods to get results from calls to iterator adapters.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-closures-that-capture-their-environment"></a></p>
+<h4 id="closures-that-capture-their-environment"><a class="header" href="#closures-that-capture-their-environment">Closures That Capture Their Environment</a></h4>
+<p>Many iterator adapters take closures as arguments, and commonly the closures
+we’ll specify as arguments to iterator adapters will be closures that capture
+their environment.</p>
+<p>For this example, we’ll use the <code>filter</code> method that takes a closure. The
+closure gets an item from the iterator and returns a <code>bool</code>. If the closure
+returns <code>true</code>, the value will be included in the iterator produced by
+<code>filter</code>. If the closure returns <code>false</code>, the value won’t be included.</p>
+<p>In Listing 13-16, we use <code>filter</code> with a closure that captures the <code>shoe_size</code>
+variable from its environment to iterate over a collection of <code>Shoe</code> struct
+instances. It will return only shoes that are the specified size.</p>
+<figure class="listing" id="listing-13-16">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust noplayground">#[derive(PartialEq, Debug)]
+struct Shoe {
+    size: u32,
+    style: String,
+}
+
+fn shoes_in_size(shoes: Vec&lt;Shoe&gt;, shoe_size: u32) -&gt; Vec&lt;Shoe&gt; {
+    shoes.into_iter().filter(|s| s.size == shoe_size).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn filters_by_size() {
+        let shoes = vec![
+            Shoe {
+                size: 10,
+                style: String::from("sneaker"),
+            },
+            Shoe {
+                size: 13,
+                style: String::from("sandal"),
+            },
+            Shoe {
+                size: 10,
+                style: String::from("boot"),
+            },
+        ];
+
+        let in_my_size = shoes_in_size(shoes, 10);
+
+        assert_eq!(
+            in_my_size,
+            vec![
+                Shoe {
+                    size: 10,
+                    style: String::from("sneaker")
+                },
+                Shoe {
+                    size: 10,
+                    style: String::from("boot")
+                },
+            ]
+        );
+    }
+}</code></pre>
+<figcaption><a href="#listing-13-16">Listing 13-16</a>: Using the <code>filter</code> method with a closure that captures <code>shoe_size</code></figcaption>
+</figure>
+<p>The <code>shoes_in_size</code> function takes ownership of a vector of shoes and a shoe
+size as parameters. It returns a vector containing only shoes of the specified
+size.</p>
+<p>In the body of <code>shoes_in_size</code>, we call <code>into_iter</code> to create an iterator that
+takes ownership of the vector. Then, we call <code>filter</code> to adapt that iterator
+into a new iterator that only contains elements for which the closure returns
+<code>true</code>.</p>
+<p>The closure captures the <code>shoe_size</code> parameter from the environment and
+compares the value with each shoe’s size, keeping only shoes of the size
+specified. Finally, calling <code>collect</code> gathers the values returned by the
+adapted iterator into a vector that’s returned by the function.</p>
+<p>The test shows that when we call <code>shoes_in_size</code>, we get back only shoes that
+have the same size as the value we specified.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="improving-our-io-project-1"><a href="#improving-our-io-project-1" class="header">Improving Our I/O Project</a></h2>
+<h3 id="improving-our-io-project"><a class="header" href="#improving-our-io-project">Improving Our I/O Project</a></h3>
+<p>With this new knowledge about iterators, we can improve the I/O project in
+Chapter 12 by using iterators to make places in the code clearer and more
+concise. Let’s look at how iterators can improve our implementation of the
+<code>Config::build</code> function and the <code>search</code> function.</p>
+<h4 id="removing-a-clone-using-an-iterator"><a class="header" href="#removing-a-clone-using-an-iterator">Removing a <code>clone</code> Using an Iterator</a></h4>
+<p>In Listing 12-6, we added code that took a slice of <code>String</code> values and created
+an instance of the <code>Config</code> struct by indexing into the slice and cloning the
+values, allowing the <code>Config</code> struct to own those values. In Listing 13-17,
+we’ve reproduced the implementation of the <code>Config::build</code> function as it was
+in Listing 12-23.</p>
+<figure class="listing" id="listing-13-17">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let args: Vec&lt;String&gt; = env::args().collect();
+</span><span class="boring">
+</span><span class="boring">    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+</span><span class="boring">        println!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        println!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Config {
+    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+        if args.len() &lt; 3 {
+            return Err("not enough arguments");
+        }
+
+        let query = args[1].clone();
+        let file_path = args[2].clone();
+
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
+
+        Ok(Config {
+            query,
+            file_path,
+            ignore_case,
+        })
+    }
+}
+<span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-17">Listing 13-17</a>: Reproduction of the <code>Config::build</code> function from Listing 12-23</figcaption>
+</figure>
+<p>At the time, we said not to worry about the inefficient <code>clone</code> calls because
+we would remove them in the future. Well, that time is now!</p>
+<p>We needed <code>clone</code> here because we have a slice with <code>String</code> elements in the
+parameter <code>args</code>, but the <code>build</code> function doesn’t own <code>args</code>. To return
+ownership of a <code>Config</code> instance, we had to clone the values from the <code>query</code>
+and <code>file_path</code> fields of <code>Config</code> so that the <code>Config</code> instance can own its
+values.</p>
+<p>With our new knowledge about iterators, we can change the <code>build</code> function to
+take ownership of an iterator as its argument instead of borrowing a slice.
+We’ll use the iterator functionality instead of the code that checks the length
+of the slice and indexes into specific locations. This will clarify what the
+<code>Config::build</code> function is doing because the iterator will access the values.</p>
+<p>Once <code>Config::build</code> takes ownership of the iterator and stops using indexing
+operations that borrow, we can move the <code>String</code> values from the iterator into
+<code>Config</code> rather than calling <code>clone</code> and making a new allocation.</p>
+<h5 id="using-the-returned-iterator-directly"><a class="header" href="#using-the-returned-iterator-directly">Using the Returned Iterator Directly</a></h5>
+<p>Open your I/O project’s <em>src/main.rs</em> file, which should look like this:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre><code class="language-rust ignore"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span>fn main() {
+    let args: Vec&lt;String&gt; = env::args().collect();
+
+    let config = Config::build(&amp;args).unwrap_or_else(|err| {
+        eprintln!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
+
+    // --snip--
+<span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        eprintln!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span>}
+<span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        let ignore_case = env::var("IGNORE_CASE").is_ok();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config {
+</span><span class="boring">            query,
+</span><span class="boring">            file_path,
+</span><span class="boring">            ignore_case,
+</span><span class="boring">        })
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<p>We’ll first change the start of the <code>main</code> function that we had in Listing
+12-24 to the code in Listing 13-18, which this time uses an iterator. This
+won’t compile until we update <code>Config::build</code> as well.</p>
+<figure class="listing" id="listing-13-18">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span>fn main() {
+    let config = Config::build(env::args()).unwrap_or_else(|err| {
+        eprintln!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
+
+    // --snip--
+<span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        eprintln!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span>}
+<span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Config {
+</span><span class="boring">    fn build(args: &amp;[String]) -&gt; Result&lt;Config, &amp;'static str&gt; {
+</span><span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        let ignore_case = env::var("IGNORE_CASE").is_ok();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config {
+</span><span class="boring">            query,
+</span><span class="boring">            file_path,
+</span><span class="boring">            ignore_case,
+</span><span class="boring">        })
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-18">Listing 13-18</a>: Passing the return value of <code>env::args</code> to <code>Config::build</code></figcaption>
+</figure>
+<p>The <code>env::args</code> function returns an iterator! Rather than collecting the
+iterator values into a vector and then passing a slice to <code>Config::build</code>, now
+we’re passing ownership of the iterator returned from <code>env::args</code> to
+<code>Config::build</code> directly.</p>
+<p>Next, we need to update the definition of <code>Config::build</code>. Let’s change the
+signature of <code>Config::build</code> to look like Listing 13-19. This still won’t
+compile, because we need to update the function body.</p>
+<figure class="listing" id="listing-13-19">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let config = Config::build(env::args()).unwrap_or_else(|err| {
+</span><span class="boring">        eprintln!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        eprintln!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Config {
+    fn build(
+        mut args: impl Iterator&lt;Item = String&gt;,
+    ) -&gt; Result&lt;Config, &amp;'static str&gt; {
+        // --snip--
+<span class="boring">        if args.len() &lt; 3 {
+</span><span class="boring">            return Err("not enough arguments");
+</span><span class="boring">        }
+</span><span class="boring">
+</span><span class="boring">        let query = args[1].clone();
+</span><span class="boring">        let file_path = args[2].clone();
+</span><span class="boring">
+</span><span class="boring">        let ignore_case = env::var("IGNORE_CASE").is_ok();
+</span><span class="boring">
+</span><span class="boring">        Ok(Config {
+</span><span class="boring">            query,
+</span><span class="boring">            file_path,
+</span><span class="boring">            ignore_case,
+</span><span class="boring">        })
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-19">Listing 13-19</a>: Updating the signature of <code>Config::build</code> to expect an iterator</figcaption>
+</figure>
+<p>The standard library documentation for the <code>env::args</code> function shows that the
+type of the iterator it returns is <code>std::env::Args</code>, and that type implements
+the <code>Iterator</code> trait and returns <code>String</code> values.</p>
+<p>We’ve updated the signature of the <code>Config::build</code> function so that the
+parameter <code>args</code> has a generic type with the trait bounds <code>impl Iterator&lt;Item = String&gt;</code> instead of <code>&amp;[String]</code>. This usage of the <code>impl Trait</code> syntax we
+discussed in the <a href="10%20Generics%20Traits%20and%20Lifetimes.html#traits-as-parameters">“Using Traits as Parameters”</a><!-- ignore -->
+section of Chapter 10 means that <code>args</code> can be any type that implements the
+<code>Iterator</code> trait and returns <code>String</code> items.</p>
+<p>Because we’re taking ownership of <code>args</code> and we’ll be mutating <code>args</code> by
+iterating over it, we can add the <code>mut</code> keyword into the specification of the
+<code>args</code> parameter to make it mutable.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-iterator-trait-methods-instead-of-indexing"></a></p>
+<h5 id="using-iterator-trait-methods"><a class="header" href="#using-iterator-trait-methods">Using <code>Iterator</code> Trait Methods</a></h5>
+<p>Next, we’ll fix the body of <code>Config::build</code>. Because <code>args</code> implements the
+<code>Iterator</code> trait, we know we can call the <code>next</code> method on it! Listing 13-20
+updates the code from Listing 12-23 to use the <code>next</code> method.</p>
+<figure class="listing" id="listing-13-20">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore noplayground"><span class="boring">use std::env;
+</span><span class="boring">use std::error::Error;
+</span><span class="boring">use std::fs;
+</span><span class="boring">use std::process;
+</span><span class="boring">
+</span><span class="boring">use minigrep::{search, search_case_insensitive};
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let config = Config::build(env::args()).unwrap_or_else(|err| {
+</span><span class="boring">        eprintln!("Problem parsing arguments: {err}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    });
+</span><span class="boring">
+</span><span class="boring">    if let Err(e) = run(config) {
+</span><span class="boring">        eprintln!("Application error: {e}");
+</span><span class="boring">        process::exit(1);
+</span><span class="boring">    }
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">pub struct Config {
+</span><span class="boring">    pub query: String,
+</span><span class="boring">    pub file_path: String,
+</span><span class="boring">    pub ignore_case: bool,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Config {
+    fn build(
+        mut args: impl Iterator&lt;Item = String&gt;,
+    ) -&gt; Result&lt;Config, &amp;'static str&gt; {
+        args.next();
+
+        let query = match args.next() {
+            Some(arg) =&gt; arg,
+            None =&gt; return Err("Didn't get a query string"),
+        };
+
+        let file_path = match args.next() {
+            Some(arg) =&gt; arg,
+            None =&gt; return Err("Didn't get a file path"),
+        };
+
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
+
+        Ok(Config {
+            query,
+            file_path,
+            ignore_case,
+        })
+    }
+}
+<span class="boring">
+</span><span class="boring">fn run(config: Config) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+</span><span class="boring">    let contents = fs::read_to_string(config.file_path)?;
+</span><span class="boring">
+</span><span class="boring">    let results = if config.ignore_case {
+</span><span class="boring">        search_case_insensitive(&amp;config.query, &amp;contents)
+</span><span class="boring">    } else {
+</span><span class="boring">        search(&amp;config.query, &amp;contents)
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    for line in results {
+</span><span class="boring">        println!("{line}");
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    Ok(())
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-20">Listing 13-20</a>: Changing the body of <code>Config::build</code> to use iterator methods</figcaption>
+</figure>
+<p>Remember that the first value in the return value of <code>env::args</code> is the name of
+the program. We want to ignore that and get to the next value, so first we call
+<code>next</code> and do nothing with the return value. Then, we call <code>next</code> to get the
+value we want to put in the <code>query</code> field of <code>Config</code>. If <code>next</code> returns
+<code>Some</code>, we use a <code>match</code> to extract the value. If it returns <code>None</code>, it means
+not enough arguments were given, and we return early with an <code>Err</code> value. We do
+the same thing for the <code>file_path</code> value.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="making-code-clearer-with-iterator-adapters"></a></p>
+<h4 id="clarifying-code-with-iterator-adapters"><a class="header" href="#clarifying-code-with-iterator-adapters">Clarifying Code with Iterator Adapters</a></h4>
+<p>We can also take advantage of iterators in the <code>search</code> function in our I/O
+project, which is reproduced here in Listing 13-21 as it was in Listing 12-19.</p>
+<figure class="listing" id="listing-13-21">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust ignore">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+    let mut results = Vec::new();
+
+    for line in contents.lines() {
+        if line.contains(query) {
+            results.push(line);
+        }
+    }
+
+    results
+}
+<span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn one_result() {
+</span><span class="boring">        let query = "duct";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-21">Listing 13-21</a>: The implementation of the <code>search</code> function from Listing 12-19</figcaption>
+</figure>
+<p>We can write this code in a more concise way using iterator adapter methods.
+Doing so also lets us avoid having a mutable intermediate <code>results</code> vector. The
+functional programming style prefers to minimize the amount of mutable state to
+make code clearer. Removing the mutable state might enable a future enhancement
+to make searching happen in parallel because we wouldn’t have to manage
+concurrent access to the <code>results</code> vector. Listing 13-22 shows this change.</p>
+<figure class="listing" id="listing-13-22">
+<span class="file-name">Filename: src/lib.rs</span>
+<pre><code class="language-rust ignore">pub fn search&lt;'a&gt;(query: &amp;str, contents: &amp;'a str) -&gt; Vec&lt;&amp;'a str&gt; {
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
+}
+<span class="boring">
+</span><span class="boring">pub fn search_case_insensitive&lt;'a&gt;(
+</span><span class="boring">    query: &amp;str,
+</span><span class="boring">    contents: &amp;'a str,
+</span><span class="boring">) -&gt; Vec&lt;&amp;'a str&gt; {
+</span><span class="boring">    let query = query.to_lowercase();
+</span><span class="boring">    let mut results = Vec::new();
+</span><span class="boring">
+</span><span class="boring">    for line in contents.lines() {
+</span><span class="boring">        if line.to_lowercase().contains(&amp;query) {
+</span><span class="boring">            results.push(line);
+</span><span class="boring">        }
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    results
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">#[cfg(test)]
+</span><span class="boring">mod tests {
+</span><span class="boring">    use super::*;
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn case_sensitive() {
+</span><span class="boring">        let query = "duct";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.
+</span><span class="boring">Duct tape.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+</span><span class="boring">    }
+</span><span class="boring">
+</span><span class="boring">    #[test]
+</span><span class="boring">    fn case_insensitive() {
+</span><span class="boring">        let query = "rUsT";
+</span><span class="boring">        let contents = "\
+</span><span class="boring">Rust:
+</span><span class="boring">safe, fast, productive.
+</span><span class="boring">Pick three.
+</span><span class="boring">Trust me.";
+</span><span class="boring">
+</span><span class="boring">        assert_eq!(
+</span><span class="boring">            vec!["Rust:", "Trust me."],
+</span><span class="boring">            search_case_insensitive(query, contents)
+</span><span class="boring">        );
+</span><span class="boring">    }
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-13-22">Listing 13-22</a>: Using iterator adapter methods in the implementation of the <code>search</code> function</figcaption>
+</figure>
+<p>Recall that the purpose of the <code>search</code> function is to return all lines in
+<code>contents</code> that contain the <code>query</code>. Similar to the <code>filter</code> example in Listing
+13-16, this code uses the <code>filter</code> adapter to keep only the lines for which
+<code>line.contains(query)</code> returns <code>true</code>. We then collect the matching lines into
+another vector with <code>collect</code>. Much simpler! Feel free to make the same change
+to use iterator methods in the <code>search_case_insensitive</code> function as well.</p>
+<p>For a further improvement, return an iterator from the <code>search</code> function by
+removing the call to <code>collect</code> and changing the return type to <code>impl Iterator&lt;Item = &amp;'a str&gt;</code> so that the function becomes an iterator adapter.
+Note that you’ll also need to update the tests! Search through a large file
+using your <code>minigrep</code> tool before and after making this change to observe the
+difference in behavior. Before this change, the program won’t print any results
+until it has collected all of the results, but after the change, the results
+will be printed as each matching line is found because the <code>for</code> loop in the
+<code>run</code> function is able to take advantage of the laziness of the iterator.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="choosing-between-loops-or-iterators"></a></p>
+<h4 id="choosing-between-loops-and-iterators"><a class="header" href="#choosing-between-loops-and-iterators">Choosing Between Loops and Iterators</a></h4>
+<p>The next logical question is which style you should choose in your own code and
+why: the original implementation in Listing 13-21 or the version using
+iterators in Listing 13-22 (assuming we’re collecting all the results before
+returning them rather than returning the iterator). Most Rust programmers
+prefer to use the iterator style. It’s a bit tougher to get the hang of at
+first, but once you get a feel for the various iterator adapters and what they
+do, iterators can be easier to understand. Instead of fiddling with the various
+bits of looping and building new vectors, the code focuses on the high-level
+objective of the loop. This abstracts away some of the commonplace code so that
+it’s easier to see the concepts that are unique to this code, such as the
+filtering condition each element in the iterator must pass.</p>
+<p>But are the two implementations truly equivalent? The intuitive assumption
+might be that the lower-level loop will be faster. Let’s talk about performance.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="performance-in-loops-vs-iterators-1"><a href="#performance-in-loops-vs-iterators-1" class="header">Performance in Loops vs. Iterators</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="comparing-performance-loops-vs-iterators"></a></p>
+<h3 id="performance-in-loops-vs-iterators"><a class="header" href="#performance-in-loops-vs-iterators">Performance in Loops vs. Iterators</a></h3>
+<p>To determine whether to use loops or iterators, you need to know which
+implementation is faster: the version of the <code>search</code> function with an explicit
+<code>for</code> loop or the version with iterators.</p>
+<p>We ran a benchmark by loading the entire contents of <em>The Adventures of
+Sherlock Holmes</em> by Sir Arthur Conan Doyle into a <code>String</code> and looking for the
+word <em>the</em> in the contents. Here are the results of the benchmark on the
+version of <code>search</code> using the <code>for</code> loop and the version using iterators:</p>
+<pre><code class="language-text">test bench_search_for  ... bench:  19,620,300 ns/iter (+/- 915,700)
+test bench_search_iter ... bench:  19,234,900 ns/iter (+/- 657,200)
+</code></pre>
+<p>The two implementations have similar performance! We won’t explain the
+benchmark code here because the point is not to prove that the two versions
+are equivalent but to get a general sense of how these two implementations
+compare performance-wise.</p>
+<p>For a more comprehensive benchmark, you should check using various texts of
+various sizes as the <code>contents</code>, different words and words of different lengths
+as the <code>query</code>, and all kinds of other variations. The point is this:
+Iterators, although a high-level abstraction, get compiled down to roughly the
+same code as if you’d written the lower-level code yourself. Iterators are one
+of Rust’s <em>zero-cost abstractions</em>, by which we mean that using the abstraction
+imposes no additional runtime overhead. This is analogous to how Bjarne
+Stroustrup, the original designer and implementor of C++, defines
+zero-overhead in his 2012 ETAPS keynote presentation “Foundations of C++”:</p>
+<blockquote>
+<p>In general, C++ implementations obey the zero-overhead principle: What you
+don’t use, you don’t pay for. And further: What you do use, you couldn’t hand
+code any better.</p>
+</blockquote>
+<p>In many cases, Rust code using iterators compiles to the same assembly you’d
+write by hand. Optimizations such as loop unrolling and eliminating bounds
+checking on array access apply and make the resultant code extremely efficient.
+Now that you know this, you can use iterators and closures without fear! They
+make code seem like it’s higher level but don’t impose a runtime performance
+penalty for doing so.</p>
+<h3 id="summary-12"><a class="header" href="#summary-12">Summary</a></h3>
+<p>Closures and iterators are Rust features inspired by functional programming
+language ideas. They contribute to Rust’s capability to clearly express
+high-level ideas at low-level performance. The implementations of closures and
+iterators are such that runtime performance is not affected. This is part of
+Rust’s goal to strive to provide zero-cost abstractions.</p>
+<p>Now that we’ve improved the expressiveness of our I/O project, let’s look at
+some more features of <code>cargo</code> that will help us share the project with the
+world.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="12%20A%20Command%20Line%20Adapter.html">← 12 A Command Line Adapter</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="14%20Cargo%20for%20a%20Team.html">14 Cargo for a Team →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#functional-language-features-iterators-and-closures">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

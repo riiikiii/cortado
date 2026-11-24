@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Structs and Invariants</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-pour.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 05 / 21</span></div>
+<div class="hero"><div><h1>Structs and Invariants</h1><p>Use private fields to protect data after validation.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>&quot;A-1&quot;, 30</span></div><div class="trace"><b>Observe</b><span>Order::new</span></div><div class="trace"><b>Result</b><span>validated Order</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="04%20Ownership%20and%20Borrowing.html">← 04 Ownership and Borrowing</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="06%20Enums%20and%20Exhaustiveness.html">06 Enums and Exhaustiveness →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#using-structs-to-structure-related-data">Using Structs to Structure Related Data</a><a href="#defining-and-instantiating-structs-1">Defining and Instantiating Structs</a><a href="#an-example-program-using-structs-1">An Example Program Using Structs</a><a href="#methods-1">Methods</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Use private fields to protect data after validation</h2><p>The wire shape carries a String and a u32. The domain shape carries a String and a NonZeroU32. Only the domain module constructs the latter struct directly. A caller holding an Order can trust its quantity and read its id without allocating. The two types have almost identical fields yet deliberately different responsibilities. Adding a second input adapter, such as a CSV importer, should reuse Order::new rather than duplicate its checks.</p><figure class="code"><figcaption>src/domain.rs</figcaption><pre><code><span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">num</span><span class="p">::</span><span class="n">NonZeroU32</span><span class="p">;</span>
+<span class="k">use</span><span class="w"> </span><span class="n">thiserror</span><span class="p">::</span><span class="n">Error</span><span class="p">;</span>
+
+<span class="cp">#[derive(Debug, Error)]</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Invalid</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cp">#[error(</span><span class="s">"id must contain 1–64 ASCII letters, digits, or hyphens"</span><span class="cp">)]</span>
+<span class="w">    </span><span class="n">Id</span><span class="p">,</span>
+<span class="w">    </span><span class="cp">#[error(</span><span class="s">"quantity must be positive"</span><span class="cp">)]</span>
+<span class="w">    </span><span class="n">Quantity</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="cp">#[derive(Debug)]</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Order</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<span class="w">    </span><span class="n">quantity</span><span class="p">:</span><span class="w"> </span><span class="nc">NonZeroU32</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">impl</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">new</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="n">quantity</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="bp">Self</span><span class="p">,</span><span class="w"> </span><span class="n">Invalid</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="n">id</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span>
+<span class="w">            </span><span class="o">||</span><span class="w"> </span><span class="n">id</span><span class="p">.</span><span class="n">len</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">64</span>
+<span class="w">            </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">id</span><span class="p">.</span><span class="n">bytes</span><span class="p">().</span><span class="n">all</span><span class="p">(</span><span class="o">|</span><span class="n">b</span><span class="o">|</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">is_ascii_alphanumeric</span><span class="p">()</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">b'-'</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="n">Invalid</span><span class="p">::</span><span class="n">Id</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NonZeroU32</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="n">quantity</span><span class="p">).</span><span class="n">ok_or</span><span class="p">(</span><span class="n">Invalid</span><span class="p">::</span><span class="n">Quantity</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="bp">Self</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">quantity</span><span class="w"> </span><span class="p">})</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">id</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="n">id</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">quantity</span><span class="p">.</span><span class="n">get</span><span class="p">()</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><p>The identifier accepts ASCII letters, digits and a hyphen with a maximum of 64 bytes. Restricting to ASCII makes the length rule unambiguous here. It would be the wrong rule for a human name. Notice that the String already exists when validation begins. Consuming it on success saves allocating a second one. On error it is dropped. An editor that needs to redisplay the user&#x27;s original input can validate a borrow before transferring ownership.</p><h3>Choose the validation surface</h3><p>The constructor establishes rules that depend only on its arguments. Whether A-1 has already been accepted depends on external state and cannot be proven by checking a string. Keep that question out of the constructor even if both failures are colloquially called invalid orders. Otherwise constructing a value becomes a database operation whose result can become stale immediately. The separation is visible in the status contract. Quantity zero fails even on a brand-new database. A changed quantity for a previously accepted id becomes a conflict only after storage comparison. Being able to explain that difference makes the module boundaries easier to defend.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://doc.rust-lang.org/std/num/type.NonZeroU32.html">doc.rust-lang.org/std/num/type.NonZeroU32.html</a></p></section><div class="book"><h2 id="using-structs-to-structure-related-data"><a class="header" href="#using-structs-to-structure-related-data">Using Structs to Structure Related Data</a></h2>
+<p>A <em>struct</em>, or <em>structure</em>, is a custom data type that lets you package
+together and name multiple related values that make up a meaningful group. If
+you’re familiar with an object-oriented language, a struct is like an object’s
+data attributes. In this chapter, we’ll compare and contrast tuples with
+structs to build on what you already know and demonstrate when structs are a
+better way to group data.</p>
+<p>We’ll demonstrate how to define and instantiate structs. We’ll discuss how to
+define associated functions, especially the kind of associated functions called
+<em>methods</em>, to specify behavior associated with a struct type. Structs and enums
+(discussed in Chapter 6) are the building blocks for creating new types in your
+program’s domain to take full advantage of Rust’s compile-time type checking.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="defining-and-instantiating-structs-1"><a href="#defining-and-instantiating-structs-1" class="header">Defining and Instantiating Structs</a></h2>
+<h3 id="defining-and-instantiating-structs"><a class="header" href="#defining-and-instantiating-structs">Defining and Instantiating Structs</a></h3>
+<p>Structs are similar to tuples, discussed in <a href="03%20Values%20and%20Control%20Flow.html#the-tuple-type">“The Tuple Type”</a><!--
+ignore --> section, in that both hold multiple related values. Like tuples, the
+pieces of a struct can be different types. Unlike with tuples, in a struct
+you’ll name each piece of data so it’s clear what the values mean. Adding these
+names means that structs are more flexible than tuples: You don’t have to rely
+on the order of the data to specify or access the values of an instance.</p>
+<p>To define a struct, we enter the keyword <code>struct</code> and name the entire struct. A
+struct’s name should describe the significance of the pieces of data being
+grouped together. Then, inside curly brackets, we define the names and types of
+the pieces of data, which we call <em>fields</em>. For example, Listing 5-1 shows a
+struct that stores information about a user account.</p>
+<figure class="listing" id="listing-5-1">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<figcaption><a href="#listing-5-1">Listing 5-1</a>: A <code>User</code> struct definition</figcaption>
+</figure>
+<p>To use a struct after we’ve defined it, we create an <em>instance</em> of that struct
+by specifying concrete values for each of the fields. We create an instance by
+stating the name of the struct and then add curly brackets containing <em><code>key: value</code></em> pairs, where the keys are the names of the fields and the values are the
+data we want to store in those fields. We don’t have to specify the fields in
+the same order in which we declared them in the struct. In other words, the
+struct definition is like a general template for the type, and instances fill
+in that template with particular data to create values of the type. For
+example, we can declare a particular user as shown in Listing 5-2.</p>
+<figure class="listing" id="listing-5-2">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
+</span><span class="boring">    active: bool,
+</span><span class="boring">    username: String,
+</span><span class="boring">    email: String,
+</span><span class="boring">    sign_in_count: u64,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let user1 = User {
+        active: true,
+        username: String::from("someusername123"),
+        email: String::from("someone@example.com"),
+        sign_in_count: 1,
+    };
+}</code></pre>
+<figcaption><a href="#listing-5-2">Listing 5-2</a>: Creating an instance of the <code>User</code> struct</figcaption>
+</figure>
+<p>To get a specific value from a struct, we use dot notation. For example, to
+access this user’s email address, we use <code>user1.email</code>. If the instance is
+mutable, we can change a value by using the dot notation and assigning into a
+particular field. Listing 5-3 shows how to change the value in the <code>email</code>
+field of a mutable <code>User</code> instance.</p>
+<figure class="listing" id="listing-5-3">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
+</span><span class="boring">    active: bool,
+</span><span class="boring">    username: String,
+</span><span class="boring">    email: String,
+</span><span class="boring">    sign_in_count: u64,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    let mut user1 = User {
+        active: true,
+        username: String::from("someusername123"),
+        email: String::from("someone@example.com"),
+        sign_in_count: 1,
+    };
+
+    user1.email = String::from("anotheremail@example.com");
+}</code></pre>
+<figcaption><a href="#listing-5-3">Listing 5-3</a>: Changing the value in the <code>email</code> field of a <code>User</code> instance</figcaption>
+</figure>
+<p>Note that the entire instance must be mutable; Rust doesn’t allow us to mark
+only certain fields as mutable. As with any expression, we can construct a new
+instance of the struct as the last expression in the function body to
+implicitly return that new instance.</p>
+<p>Listing 5-4 shows a <code>build_user</code> function that returns a <code>User</code> instance with
+the given email and username. The <code>active</code> field gets the value <code>true</code>, and the
+<code>sign_in_count</code> gets a value of <code>1</code>.</p>
+<figure class="listing" id="listing-5-4">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
+</span><span class="boring">    active: bool,
+</span><span class="boring">    username: String,
+</span><span class="boring">    email: String,
+</span><span class="boring">    sign_in_count: u64,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn build_user(email: String, username: String) -&gt; User {
+    User {
+        active: true,
+        username: username,
+        email: email,
+        sign_in_count: 1,
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let user1 = build_user(
+</span><span class="boring">        String::from("someone@example.com"),
+</span><span class="boring">        String::from("someusername123"),
+</span><span class="boring">    );
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-5-4">Listing 5-4</a>: A <code>build_user</code> function that takes an email and username and returns a <code>User</code> instance</figcaption>
+</figure>
+<p>It makes sense to name the function parameters with the same name as the struct
+fields, but having to repeat the <code>email</code> and <code>username</code> field names and
+variables is a bit tedious. If the struct had more fields, repeating each name
+would get even more annoying. Luckily, there’s a convenient shorthand!</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-the-field-init-shorthand-when-variables-and-fields-have-the-same-name"></a></p>
+<h4 id="using-the-field-init-shorthand"><a class="header" href="#using-the-field-init-shorthand">Using the Field Init Shorthand</a></h4>
+<p>Because the parameter names and the struct field names are exactly the same in
+Listing 5-4, we can use the <em>field init shorthand</em> syntax to rewrite
+<code>build_user</code> so that it behaves exactly the same but doesn’t have the
+repetition of <code>username</code> and <code>email</code>, as shown in Listing 5-5.</p>
+<figure class="listing" id="listing-5-5">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
+</span><span class="boring">    active: bool,
+</span><span class="boring">    username: String,
+</span><span class="boring">    email: String,
+</span><span class="boring">    sign_in_count: u64,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn build_user(email: String, username: String) -&gt; User {
+    User {
+        active: true,
+        username,
+        email,
+        sign_in_count: 1,
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let user1 = build_user(
+</span><span class="boring">        String::from("someone@example.com"),
+</span><span class="boring">        String::from("someusername123"),
+</span><span class="boring">    );
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-5-5">Listing 5-5</a>: A <code>build_user</code> function that uses field init shorthand because the <code>username</code> and <code>email</code> parameters have the same name as struct fields</figcaption>
+</figure>
+<p>Here, we’re creating a new instance of the <code>User</code> struct, which has a field
+named <code>email</code>. We want to set the <code>email</code> field’s value to the value in the
+<code>email</code> parameter of the <code>build_user</code> function. Because the <code>email</code> field and
+the <code>email</code> parameter have the same name, we only need to write <code>email</code> rather
+than <code>email: email</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="creating-instances-from-other-instances-with-struct-update-syntax"></a></p>
+<h4 id="creating-instances-with-struct-update-syntax"><a class="header" href="#creating-instances-with-struct-update-syntax">Creating Instances with Struct Update Syntax</a></h4>
+<p>It’s often useful to create a new instance of a struct that includes most of
+the values from another instance of the same type, but changes some of them.
+You can do this using struct update syntax.</p>
+<p>First, in Listing 5-6 we show how to create a new <code>User</code> instance in <code>user2</code> in
+the regular way, without the update syntax. We set a new value for <code>email</code> but
+otherwise use the same values from <code>user1</code> that we created in Listing 5-2.</p>
+<figure class="listing" id="listing-5-6">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
+</span><span class="boring">    active: bool,
+</span><span class="boring">    username: String,
+</span><span class="boring">    email: String,
+</span><span class="boring">    sign_in_count: u64,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    // --snip--
+<span class="boring">
+</span><span class="boring">    let user1 = User {
+</span><span class="boring">        email: String::from("someone@example.com"),
+</span><span class="boring">        username: String::from("someusername123"),
+</span><span class="boring">        active: true,
+</span><span class="boring">        sign_in_count: 1,
+</span><span class="boring">    };
+</span>
+    let user2 = User {
+        active: user1.active,
+        username: user1.username,
+        email: String::from("another@example.com"),
+        sign_in_count: user1.sign_in_count,
+    };
+}</code></pre>
+<figcaption><a href="#listing-5-6">Listing 5-6</a>: Creating a new <code>User</code> instance using all but one of the values from <code>user1</code></figcaption>
+</figure>
+<p>Using struct update syntax, we can achieve the same effect with less code, as
+shown in Listing 5-7. The syntax <code>..</code> specifies that the remaining fields not
+explicitly set should have the same value as the fields in the given instance.</p>
+<figure class="listing" id="listing-5-7">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">struct User {
+</span><span class="boring">    active: bool,
+</span><span class="boring">    username: String,
+</span><span class="boring">    email: String,
+</span><span class="boring">    sign_in_count: u64,
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn main() {
+    // --snip--
+<span class="boring">
+</span><span class="boring">    let user1 = User {
+</span><span class="boring">        email: String::from("someone@example.com"),
+</span><span class="boring">        username: String::from("someusername123"),
+</span><span class="boring">        active: true,
+</span><span class="boring">        sign_in_count: 1,
+</span><span class="boring">    };
+</span>
+    let user2 = User {
+        email: String::from("another@example.com"),
+        ..user1
+    };
+}</code></pre>
+<figcaption><a href="#listing-5-7">Listing 5-7</a>: Using struct update syntax to set a new <code>email</code> value for a <code>User</code> instance but to use the rest of the values from <code>user1</code></figcaption>
+</figure>
+<p>The code in Listing 5-7 also creates an instance in <code>user2</code> that has a
+different value for <code>email</code> but has the same values for the <code>username</code>,
+<code>active</code>, and <code>sign_in_count</code> fields from <code>user1</code>. The <code>..user1</code> must come last
+to specify that any remaining fields should get their values from the
+corresponding fields in <code>user1</code>, but we can choose to specify values for as
+many fields as we want in any order, regardless of the order of the fields in
+the struct’s definition.</p>
+<p>Note that the struct update syntax uses <code>=</code> like an assignment; this is because
+it moves the data, just as we saw in the <a href="04%20Ownership%20and%20Borrowing.html#variables-and-data-interacting-with-move">“Variables and Data Interacting with
+Move”</a><!-- ignore --> section. In this example, we can no longer use
+<code>user1</code> after creating <code>user2</code> because the <code>String</code> in the <code>username</code> field of
+<code>user1</code> was moved into <code>user2</code>. If we had given <code>user2</code> new <code>String</code> values for
+both <code>email</code> and <code>username</code>, and thus only used the <code>active</code> and <code>sign_in_count</code>
+values from <code>user1</code>, then <code>user1</code> would still be valid after creating <code>user2</code>.
+Both <code>active</code> and <code>sign_in_count</code> are types that implement the <code>Copy</code> trait, so
+the behavior we discussed in the <a href="04%20Ownership%20and%20Borrowing.html#stack-only-data-copy">“Stack-Only Data: Copy”</a><!-- ignore -->
+section would apply. We can also still use <code>user1.email</code> in this example,
+because its value was not moved out of <code>user1</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-tuple-structs-without-named-fields-to-create-different-types"></a></p>
+<h4 id="creating-different-types-with-tuple-structs"><a class="header" href="#creating-different-types-with-tuple-structs">Creating Different Types with Tuple Structs</a></h4>
+<p>Rust also supports structs that look similar to tuples, called <em>tuple structs</em>.
+Tuple structs have the added meaning the struct name provides but don’t have
+names associated with their fields; rather, they just have the types of the
+fields. Tuple structs are useful when you want to give the whole tuple a name
+and make the tuple a different type from other tuples, and when naming each
+field as in a regular struct would be verbose or redundant.</p>
+<p>To define a tuple struct, start with the <code>struct</code> keyword and the struct name
+followed by the types in the tuple. For example, here we define and use two
+tuple structs named <code>Color</code> and <code>Point</code>:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Color(i32, i32, i32);
+struct Point(i32, i32, i32);
+
+fn main() {
+    let black = Color(0, 0, 0);
+    let origin = Point(0, 0, 0);
+}</code></pre>
+</figure>
+<p>Note that the <code>black</code> and <code>origin</code> values are different types because they’re
+instances of different tuple structs. Each struct you define is its own type,
+even though the fields within the struct might have the same types. For
+example, a function that takes a parameter of type <code>Color</code> cannot take a
+<code>Point</code> as an argument, even though both types are made up of three <code>i32</code>
+values. Otherwise, tuple struct instances are similar to tuples in that you can
+destructure them into their individual pieces, and you can use a <code>.</code> followed
+by the index to access an individual value. Unlike tuples, tuple structs
+require you to name the type of the struct when you destructure them. For
+example, we would write <code>let Point(x, y, z) = origin;</code> to destructure the
+values in the <code>origin</code> point into variables named <code>x</code>, <code>y</code>, and <code>z</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="unit-like-structs-without-any-fields"></a></p>
+<h4 id="defining-unit-like-structs"><a class="header" href="#defining-unit-like-structs">Defining Unit-Like Structs</a></h4>
+<p>You can also define structs that don’t have any fields! These are called
+<em>unit-like structs</em> because they behave similarly to <code>()</code>, the unit type that
+we mentioned in <a href="03%20Values%20and%20Control%20Flow.html#the-tuple-type">“The Tuple Type”</a><!-- ignore --> section. Unit-like
+structs can be useful when you need to implement a trait on some type but don’t
+have any data that you want to store in the type itself. We’ll discuss traits
+in Chapter 10. Here’s an example of declaring and instantiating a unit struct
+named <code>AlwaysEqual</code>:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct AlwaysEqual;
+
+fn main() {
+    let subject = AlwaysEqual;
+}</code></pre>
+</figure>
+<p>To define <code>AlwaysEqual</code>, we use the <code>struct</code> keyword, the name we want, and
+then a semicolon. No need for curly brackets or parentheses! Then, we can get
+an instance of <code>AlwaysEqual</code> in the <code>subject</code> variable in a similar way: using
+the name we defined, without any curly brackets or parentheses. Imagine that
+later we’ll implement behavior for this type such that every instance of
+<code>AlwaysEqual</code> is always equal to every instance of any other type, perhaps to
+have a known result for testing purposes. We wouldn’t need any data to
+implement that behavior! You’ll see in Chapter 10 how to define traits and
+implement them on any type, including unit-like structs.</p>
+<section class="note" aria-role="note">
+<h4 id="ownership-of-struct-data"><a class="header" href="#ownership-of-struct-data">Ownership of Struct Data</a></h4>
+<p>In the <code>User</code> struct definition in Listing 5-1, we used the owned <code>String</code>
+type rather than the <code>&amp;str</code> string slice type. This is a deliberate choice
+because we want each instance of this struct to own all of its data and for
+that data to be valid for as long as the entire struct is valid.</p>
+<p>It’s also possible for structs to store references to data owned by something
+else, but to do so requires the use of <em>lifetimes</em>, a Rust feature that we’ll
+discuss in Chapter 10. Lifetimes ensure that the data referenced by a struct
+is valid for as long as the struct is. Let’s say you try to store a reference
+in a struct without specifying lifetimes, like the following in
+<em>src/main.rs</em>; this won’t work:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<!-- CAN'T EXTRACT SEE https://github.com/rust-lang/mdBook/issues/1127 -->
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">struct User {
+    active: bool,
+    username: &amp;str,
+    email: &amp;str,
+    sign_in_count: u64,
+}
+
+fn main() {
+    let user1 = User {
+        active: true,
+        username: "someusername123",
+        email: "someone@example.com",
+        sign_in_count: 1,
+    };
+}</code></pre>
+</figure>
+<p>The compiler will complain that it needs lifetime specifiers:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling structs v0.1.0 (file:///projects/structs)
+error[E0106]: missing lifetime specifier
+ --&gt; src/main.rs:3:15
+  |
+3 |     username: &amp;str,
+  |               ^ expected named lifetime parameter
+  |
+help: consider introducing a named lifetime parameter
+  |
+1 ~ struct User&lt;'a&gt; {
+2 |     active: bool,
+3 ~     username: &amp;'a str,
+  |
+
+error[E0106]: missing lifetime specifier
+ --&gt; src/main.rs:4:12
+  |
+4 |     email: &amp;str,
+  |            ^ expected named lifetime parameter
+  |
+help: consider introducing a named lifetime parameter
+  |
+1 ~ struct User&lt;'a&gt; {
+2 |     active: bool,
+3 |     username: &amp;str,
+4 ~     email: &amp;'a str,
+  |
+
+For more information about this error, try `rustc --explain E0106`.
+error: could not compile `structs` (bin "structs") due to 2 previous errors
+</code></pre>
+<p>In Chapter 10, we’ll discuss how to fix these errors so that you can store
+references in structs, but for now, we’ll fix errors like these using owned
+types like <code>String</code> instead of references like <code>&amp;str</code>.</p>
+</section>
+<!-- manual-regeneration
+for the error above
+after running update-rustc.sh:
+pbcopy < listings/ch05-using-structs-to-structure-related-data/no-listing-02-reference-in-struct/output.txt
+paste above
+add `> ` before every line -->
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="an-example-program-using-structs-1"><a href="#an-example-program-using-structs-1" class="header">An Example Program Using Structs</a></h2>
+<h3 id="an-example-program-using-structs"><a class="header" href="#an-example-program-using-structs">An Example Program Using Structs</a></h3>
+<p>To understand when we might want to use structs, let’s write a program that
+calculates the area of a rectangle. We’ll start by using single variables and
+then refactor the program until we’re using structs instead.</p>
+<p>Let’s make a new binary project with Cargo called <em>rectangles</em> that will take
+the width and height of a rectangle specified in pixels and calculate the area
+of the rectangle. Listing 5-8 shows a short program with one way of doing
+exactly that in our project’s <em>src/main.rs</em>.</p>
+<figure class="listing" id="listing-5-8">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let width1 = 30;
+    let height1 = 50;
+
+    println!(
+        "The area of the rectangle is {} square pixels.",
+        area(width1, height1)
+    );
+}
+
+fn area(width: u32, height: u32) -&gt; u32 {
+    width * height
+}</code></pre>
+<figcaption><a href="#listing-5-8">Listing 5-8</a>: Calculating the area of a rectangle specified by separate width and height variables</figcaption>
+</figure>
+<p>Now, run this program using <code>cargo run</code>:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling rectangles v0.1.0 (file:///projects/rectangles)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.42s
+     Running `target/debug/rectangles`
+The area of the rectangle is 1500 square pixels.
+</code></pre>
+<p>This code succeeds in figuring out the area of the rectangle by calling the
+<code>area</code> function with each dimension, but we can do more to make this code clear
+and readable.</p>
+<p>The issue with this code is evident in the signature of <code>area</code>:</p>
+<pre><code class="language-rust ignore"><span class="boring">fn main() {
+</span><span class="boring">    let width1 = 30;
+</span><span class="boring">    let height1 = 50;
+</span><span class="boring">
+</span><span class="boring">    println!(
+</span><span class="boring">        "The area of the rectangle is {} square pixels.",
+</span><span class="boring">        area(width1, height1)
+</span><span class="boring">    );
+</span><span class="boring">}
+</span><span class="boring">
+</span>fn area(width: u32, height: u32) -&gt; u32 {
+<span class="boring">    width * height
+</span><span class="boring">}</span></code></pre>
+<p>The <code>area</code> function is supposed to calculate the area of one rectangle, but the
+function we wrote has two parameters, and it’s not clear anywhere in our
+program that the parameters are related. It would be more readable and more
+manageable to group width and height together. We’ve already discussed one way
+we might do that in <a href="03%20Values%20and%20Control%20Flow.html#the-tuple-type">“The Tuple Type”</a><!-- ignore --> section
+of Chapter 3: by using tuples.</p>
+<h4 id="refactoring-with-tuples"><a class="header" href="#refactoring-with-tuples">Refactoring with Tuples</a></h4>
+<p>Listing 5-9 shows another version of our program that uses tuples.</p>
+<figure class="listing" id="listing-5-9">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">fn main() {
+    let rect1 = (30, 50);
+
+    println!(
+        "The area of the rectangle is {} square pixels.",
+        area(rect1)
+    );
+}
+
+fn area(dimensions: (u32, u32)) -&gt; u32 {
+    dimensions.0 * dimensions.1
+}</code></pre>
+<figcaption><a href="#listing-5-9">Listing 5-9</a>: Specifying the width and height of the rectangle with a tuple</figcaption>
+</figure>
+<p>In one way, this program is better. Tuples let us add a bit of structure, and
+we’re now passing just one argument. But in another way, this version is less
+clear: Tuples don’t name their elements, so we have to index into the parts of
+the tuple, making our calculation less obvious.</p>
+<p>Mixing up the width and height wouldn’t matter for the area calculation, but if
+we want to draw the rectangle on the screen, it would matter! We would have to
+keep in mind that <code>width</code> is the tuple index <code>0</code> and <code>height</code> is the tuple
+index <code>1</code>. This would be even harder for someone else to figure out and keep in
+mind if they were to use our code. Because we haven’t conveyed the meaning of
+our data in our code, it’s now easier to introduce errors.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="refactoring-with-structs-adding-more-meaning"></a></p>
+<h4 id="refactoring-with-structs"><a class="header" href="#refactoring-with-structs">Refactoring with Structs</a></h4>
+<p>We use structs to add meaning by labeling the data. We can transform the tuple
+we’re using into a struct with a name for the whole as well as names for the
+parts, as shown in Listing 5-10.</p>
+<figure class="listing" id="listing-5-10">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+
+    println!(
+        "The area of the rectangle is {} square pixels.",
+        area(&amp;rect1)
+    );
+}
+
+fn area(rectangle: &amp;Rectangle) -&gt; u32 {
+    rectangle.width * rectangle.height
+}</code></pre>
+<figcaption><a href="#listing-5-10">Listing 5-10</a>: Defining a <code>Rectangle</code> struct</figcaption>
+</figure>
+<p>Here, we’ve defined a struct and named it <code>Rectangle</code>. Inside the curly
+brackets, we defined the fields as <code>width</code> and <code>height</code>, both of which have
+type <code>u32</code>. Then, in <code>main</code>, we created a particular instance of <code>Rectangle</code>
+that has a width of <code>30</code> and a height of <code>50</code>.</p>
+<p>Our <code>area</code> function is now defined with one parameter, which we’ve named
+<code>rectangle</code>, whose type is an immutable borrow of a struct <code>Rectangle</code>
+instance. As mentioned in Chapter 4, we want to borrow the struct rather than
+take ownership of it. This way, <code>main</code> retains its ownership and can continue
+using <code>rect1</code>, which is the reason we use the <code>&amp;</code> in the function signature and
+where we call the function.</p>
+<p>The <code>area</code> function accesses the <code>width</code> and <code>height</code> fields of the <code>Rectangle</code>
+instance (note that accessing fields of a borrowed struct instance does not
+move the field values, which is why you often see borrows of structs). Our
+function signature for <code>area</code> now says exactly what we mean: Calculate the area
+of <code>Rectangle</code>, using its <code>width</code> and <code>height</code> fields. This conveys that the
+width and height are related to each other, and it gives descriptive names to
+the values rather than using the tuple index values of <code>0</code> and <code>1</code>. This is a
+win for clarity.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="adding-useful-functionality-with-derived-traits"></a></p>
+<h4 id="adding-functionality-with-derived-traits"><a class="header" href="#adding-functionality-with-derived-traits">Adding Functionality with Derived Traits</a></h4>
+<p>It’d be useful to be able to print an instance of <code>Rectangle</code> while we’re
+debugging our program and see the values for all its fields. Listing 5-11 tries
+using the <a href="https://doc.rust-lang.org/stable/std/macro.println.html"><code>println!</code> macro</a><!-- ignore --> as we have used in
+previous chapters. This won’t work, however.</p>
+<figure class="listing" id="listing-5-11">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+
+    println!("rect1 is {rect1}");
+}</code></pre>
+<figcaption><a href="#listing-5-11">Listing 5-11</a>: Attempting to print a <code>Rectangle</code> instance</figcaption>
+</figure>
+<p>When we compile this code, we get an error with this core message:</p>
+<pre><code class="language-text">error[E0277]: `Rectangle` doesn't implement `std::fmt::Display`
+</code></pre>
+<p>The <code>println!</code> macro can do many kinds of formatting, and by default, the curly
+brackets tell <code>println!</code> to use formatting known as <code>Display</code>: output intended
+for direct end user consumption. The primitive types we’ve seen so far
+implement <code>Display</code> by default because there’s only one way you’d want to show
+a <code>1</code> or any other primitive type to a user. But with structs, the way
+<code>println!</code> should format the output is less clear because there are more
+display possibilities: Do you want commas or not? Do you want to print the
+curly brackets? Should all the fields be shown? Due to this ambiguity, Rust
+doesn’t try to guess what we want, and structs don’t have a provided
+implementation of <code>Display</code> to use with <code>println!</code> and the <code>{}</code> placeholder.</p>
+<p>If we continue reading the errors, we’ll find this helpful note:</p>
+<pre><code class="language-text">help: the trait `std::fmt::Display` is not implemented for `Rectangle`
+  --&gt; src/main.rs:1:1
+</code></pre>
+<p>Let’s try it! The <code>println!</code> macro call will now look like <code>println!("rect1 is {rect1:?}");</code>. Putting the specifier <code>:?</code> inside the curly brackets tells
+<code>println!</code> we want to use an output format called <code>Debug</code>. The <code>Debug</code> trait
+enables us to print our struct in a way that is useful for developers so that
+we can see its value while we’re debugging our code.</p>
+<p>Compile the code with this change. Drat! We still get an error:</p>
+<pre><code class="language-text">error[E0277]: `Rectangle` doesn't implement `Debug`
+</code></pre>
+<p>But again, the compiler gives us a helpful note:</p>
+<pre><code class="language-text">   |                        required by this formatting parameter
+   |
+</code></pre>
+<p>Rust <em>does</em> include functionality to print out debugging information, but we
+have to explicitly opt in to make that functionality available for our struct.
+To do that, we add the outer attribute <code>#[derive(Debug)]</code> just before the
+struct definition, as shown in Listing 5-12.</p>
+<figure class="listing" id="listing-5-12">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+
+    println!("rect1 is {rect1:?}");
+}</code></pre>
+<figcaption><a href="#listing-5-12">Listing 5-12</a>: Adding the attribute to derive the <code>Debug</code> trait and printing the <code>Rectangle</code> instance using debug formatting</figcaption>
+</figure>
+<p>Now when we run the program, we won’t get any errors, and we’ll see the
+following output:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling rectangles v0.1.0 (file:///projects/rectangles)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
+     Running `target/debug/rectangles`
+rect1 is Rectangle { width: 30, height: 50 }
+</code></pre>
+<p>Nice! It’s not the prettiest output, but it shows the values of all the fields
+for this instance, which would definitely help during debugging. When we have
+larger structs, it’s useful to have output that’s a bit easier to read; in
+those cases, we can use <code>{:#?}</code> instead of <code>{:?}</code> in the <code>println!</code> string. In
+this example, using the <code>{:#?}</code> style will output the following:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling rectangles v0.1.0 (file:///projects/rectangles)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
+     Running `target/debug/rectangles`
+rect1 is Rectangle {
+    width: 30,
+    height: 50,
+}
+</code></pre>
+<p>Another way to print out a value using the <code>Debug</code> format is to use the <a href="https://doc.rust-lang.org/stable/std/macro.dbg.html"><code>dbg!</code>
+macro</a><!-- ignore -->, which takes ownership of an expression (as opposed
+to <code>println!</code>, which takes a reference), prints the file and line number of
+where that <code>dbg!</code> macro call occurs in your code along with the resultant value
+of that expression, and returns ownership of the value.</p>
+<section class="note" aria-role="note">
+<p>Note: Calling the <code>dbg!</code> macro prints to the standard error console stream
+(<code>stderr</code>), as opposed to <code>println!</code>, which prints to the standard output
+console stream (<code>stdout</code>). We’ll talk more about <code>stderr</code> and <code>stdout</code> in the
+<a href="12%20A%20Command%20Line%20Adapter.html#redirecting-errors-to-standard-error-1">“Redirecting Errors to Standard Error” section in Chapter
+12</a><!-- ignore -->.</p>
+</section>
+<p>Here’s an example where we’re interested in the value that gets assigned to the
+<code>width</code> field, as well as the value of the whole struct in <code>rect1</code>:</p>
+<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let scale = 2;
+    let rect1 = Rectangle {
+        width: dbg!(30 * scale),
+        height: 50,
+    };
+
+    dbg!(&amp;rect1);
+}</code></pre>
+<p>We can put <code>dbg!</code> around the expression <code>30 * scale</code> and, because <code>dbg!</code>
+returns ownership of the expression’s value, the <code>width</code> field will get the
+same value as if we didn’t have the <code>dbg!</code> call there. We don’t want <code>dbg!</code> to
+take ownership of <code>rect1</code>, so we use a reference to <code>rect1</code> in the next call.
+Here’s what the output of this example looks like:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling rectangles v0.1.0 (file:///projects/rectangles)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.61s
+     Running `target/debug/rectangles`
+[src/main.rs:10:16] 30 * scale = 60
+[src/main.rs:14:5] &amp;rect1 = Rectangle {
+    width: 60,
+    height: 50,
+}
+</code></pre>
+<p>We can see the first bit of output came from <em>src/main.rs</em> line 10 where we’re
+debugging the expression <code>30 * scale</code>, and its resultant value is <code>60</code> (the
+<code>Debug</code> formatting implemented for integers is to print only their value). The
+<code>dbg!</code> call on line 14 of <em>src/main.rs</em> outputs the value of <code>&amp;rect1</code>, which is
+the <code>Rectangle</code> struct. This output uses the pretty <code>Debug</code> formatting of the
+<code>Rectangle</code> type. The <code>dbg!</code> macro can be really helpful when you’re trying to
+figure out what your code is doing!</p>
+<p>In addition to the <code>Debug</code> trait, Rust has provided a number of traits for us
+to use with the <code>derive</code> attribute that can add useful behavior to our custom
+types. Those traits and their behaviors are listed in <a href="https://doc.rust-lang.org/stable/book/print.html#c---derivable-traits">Appendix C</a><!--
+ignore -->. We’ll cover how to implement these traits with custom behavior as
+well as how to create your own traits in Chapter 10. There are also many
+attributes other than <code>derive</code>; for more information, see <a href="https://doc.rust-lang.org/stable/reference/attributes.html">the “Attributes”
+section of the Rust Reference</a>.</p>
+<p>Our <code>area</code> function is very specific: It only computes the area of rectangles.
+It would be helpful to tie this behavior more closely to our <code>Rectangle</code> struct
+because it won’t work with any other type. Let’s look at how we can continue to
+refactor this code by turning the <code>area</code> function into an <code>area</code> method
+defined on our <code>Rectangle</code> type.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="methods-1"><a href="#methods-1" class="header">Methods</a></h2>
+<h3 id="methods"><a class="header" href="#methods">Methods</a></h3>
+<p>Methods are similar to functions: We declare them with the <code>fn</code> keyword and a
+name, they can have parameters and a return value, and they contain some code
+that’s run when the method is called from somewhere else. Unlike functions,
+methods are defined within the context of a struct (or an enum or a trait
+object, which we cover in <a href="06%20Enums%20and%20Exhaustiveness.html#enums-and-pattern-matching">Chapter 6</a><!-- ignore --> and <a href="18%20State%20and%20Behaviour%20Patterns.html#using-trait-objects-to-abstract-over-shared-behavior-1">Chapter
+18</a><!-- ignore -->, respectively), and their first parameter is
+always <code>self</code>, which represents the instance of the struct the method is being
+called on.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="defining-methods"></a></p>
+<h4 id="method-syntax"><a class="header" href="#method-syntax">Method Syntax</a></h4>
+<p>Let’s change the <code>area</code> function that has a <code>Rectangle</code> instance as a parameter
+and instead make an <code>area</code> method defined on the <code>Rectangle</code> struct, as shown
+in Listing 5-13.</p>
+<figure class="listing" id="listing-5-13">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle {
+    fn area(&amp;self) -&gt; u32 {
+        self.width * self.height
+    }
+}
+
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+
+    println!(
+        "The area of the rectangle is {} square pixels.",
+        rect1.area()
+    );
+}</code></pre>
+<figcaption><a href="#listing-5-13">Listing 5-13</a>: Defining an <code>area</code> method on the <code>Rectangle</code> struct</figcaption>
+</figure>
+<p>To define the function within the context of <code>Rectangle</code>, we start an <code>impl</code>
+(implementation) block for <code>Rectangle</code>. Everything within this <code>impl</code> block
+will be associated with the <code>Rectangle</code> type. Then, we move the <code>area</code> function
+within the <code>impl</code> curly brackets and change the first (and in this case, only)
+parameter to be <code>self</code> in the signature and everywhere within the body. In
+<code>main</code>, where we called the <code>area</code> function and passed <code>rect1</code> as an argument,
+we can instead use <em>method syntax</em> to call the <code>area</code> method on our <code>Rectangle</code>
+instance. The method syntax goes after an instance: We add a dot followed by
+the method name, parentheses, and any arguments.</p>
+<p>In the signature for <code>area</code>, we use <code>&amp;self</code> instead of <code>rectangle: &amp;Rectangle</code>.
+The <code>&amp;self</code> is actually short for <code>self: &amp;Self</code>. Within an <code>impl</code> block, the
+type <code>Self</code> is an alias for the type that the <code>impl</code> block is for. Methods must
+have a parameter named <code>self</code> of type <code>Self</code> for their first parameter, so Rust
+lets you abbreviate this with only the name <code>self</code> in the first parameter spot.
+Note that we still need to use the <code>&amp;</code> in front of the <code>self</code> shorthand to
+indicate that this method borrows the <code>Self</code> instance, just as we did in
+<code>rectangle: &amp;Rectangle</code>. Methods can take ownership of <code>self</code>, borrow <code>self</code>
+immutably, as we’ve done here, or borrow <code>self</code> mutably, just as they can any
+other parameter.</p>
+<p>We chose <code>&amp;self</code> here for the same reason we used <code>&amp;Rectangle</code> in the function
+version: We don’t want to take ownership, and we just want to read the data in
+the struct, not write to it. If we wanted to change the instance that we’ve
+called the method on as part of what the method does, we’d use <code>&amp;mut self</code> as
+the first parameter. Having a method that takes ownership of the instance by
+using just <code>self</code> as the first parameter is rare; this technique is usually
+used when the method transforms <code>self</code> into something else and you want to
+prevent the caller from using the original instance after the transformation.</p>
+<p>The main reason for using methods instead of functions, in addition to
+providing method syntax and not having to repeat the type of <code>self</code> in every
+method’s signature, is for organization. We’ve put all the things we can do
+with an instance of a type in one <code>impl</code> block rather than making future users
+of our code search for capabilities of <code>Rectangle</code> in various places in the
+library we provide.</p>
+<p>Note that we can choose to give a method the same name as one of the struct’s
+fields. For example, we can define a method on <code>Rectangle</code> that is also named
+<code>width</code>:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
+</span><span class="boring">struct Rectangle {
+</span><span class="boring">    width: u32,
+</span><span class="boring">    height: u32,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Rectangle {
+    fn width(&amp;self) -&gt; bool {
+        self.width &gt; 0
+    }
+}
+
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+
+    if rect1.width() {
+        println!("The rectangle has a nonzero width; it is {}", rect1.width);
+    }
+}</code></pre>
+</figure>
+<p>Here, we’re choosing to make the <code>width</code> method return <code>true</code> if the value in
+the instance’s <code>width</code> field is greater than <code>0</code> and <code>false</code> if the value is
+<code>0</code>: We can use a field within a method of the same name for any purpose. In
+<code>main</code>, when we follow <code>rect1.width</code> with parentheses, Rust knows we mean the
+method <code>width</code>. When we don’t use parentheses, Rust knows we mean the field
+<code>width</code>.</p>
+<p>Often, but not always, when we give a method the same name as a field we want
+it to only return the value in the field and do nothing else. Methods like this
+are called <em>getters</em>, and Rust does not implement them automatically for struct
+fields as some other languages do. Getters are useful because you can make the
+field private but the method public and thus enable read-only access to that
+field as part of the type’s public API. We will discuss what public and private
+are and how to designate a field or method as public or private in <a href="07%20Modules%20and%20Boundaries.html#exposing-paths-with-the-pub-keyword">Chapter
+7</a><!-- ignore -->.</p>
+<section class="note" aria-role="note">
+<h4 id="wheres-the---operator"><a class="header" href="#wheres-the---operator">Where’s the <code>-&gt;</code> Operator?</a></h4>
+<p>In C and C++, two different operators are used for calling methods: You use
+<code>.</code> if you’re calling a method on the object directly and <code>-&gt;</code> if you’re
+calling the method on a pointer to the object and need to dereference the
+pointer first. In other words, if <code>object</code> is a pointer,
+<code>object-&gt;something()</code> is similar to <code>(*object).something()</code>.</p>
+<p>Rust doesn’t have an equivalent to the <code>-&gt;</code> operator; instead, Rust has a
+feature called <em>automatic referencing and dereferencing</em>. Calling methods is
+one of the few places in Rust with this behavior.</p>
+<p>Here’s how it works: When you call a method with <code>object.something()</code>, Rust
+automatically adds in <code>&amp;</code>, <code>&amp;mut</code>, or <code>*</code> so that <code>object</code> matches the
+signature of the method. In other words, the following are the same:</p>
+<!-- CAN'T EXTRACT SEE BUG https://github.com/rust-lang/mdBook/issues/1127 -->
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">#[derive(Debug,Copy,Clone)]
+</span><span class="boring">struct Point {
+</span><span class="boring">    x: f64,
+</span><span class="boring">    y: f64,
+</span><span class="boring">}
+</span><span class="boring">
+</span><span class="boring">impl Point {
+</span><span class="boring">   fn distance(&amp;self, other: &amp;Point) -&gt; f64 {
+</span><span class="boring">       let x_squared = f64::powi(other.x - self.x, 2);
+</span><span class="boring">       let y_squared = f64::powi(other.y - self.y, 2);
+</span><span class="boring">
+</span><span class="boring">       f64::sqrt(x_squared + y_squared)
+</span><span class="boring">   }
+</span><span class="boring">}
+</span><span class="boring">let p1 = Point { x: 0.0, y: 0.0 };
+</span><span class="boring">let p2 = Point { x: 5.0, y: 6.5 };
+</span>p1.distance(&amp;p2);
+(&amp;p1).distance(&amp;p2);
+<span class="boring">}</span></code></pre>
+<p>The first one looks much cleaner. This automatic referencing behavior works
+because methods have a clear receiver—the type of <code>self</code>. Given the receiver
+and name of a method, Rust can figure out definitively whether the method is
+reading (<code>&amp;self</code>), mutating (<code>&amp;mut self</code>), or consuming (<code>self</code>). The fact
+that Rust makes borrowing implicit for method receivers is a big part of
+making ownership ergonomic in practice.</p>
+</section>
+<h4 id="methods-with-more-parameters"><a class="header" href="#methods-with-more-parameters">Methods with More Parameters</a></h4>
+<p>Let’s practice using methods by implementing a second method on the <code>Rectangle</code>
+struct. This time we want an instance of <code>Rectangle</code> to take another instance
+of <code>Rectangle</code> and return <code>true</code> if the second <code>Rectangle</code> can fit completely
+within <code>self</code> (the first <code>Rectangle</code>); otherwise, it should return <code>false</code>.
+That is, once we’ve defined the <code>can_hold</code> method, we want to be able to write
+the program shown in Listing 5-14.</p>
+<figure class="listing" id="listing-5-14">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust ignore">fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+    let rect2 = Rectangle {
+        width: 10,
+        height: 40,
+    };
+    let rect3 = Rectangle {
+        width: 60,
+        height: 45,
+    };
+
+    println!("Can rect1 hold rect2? {}", rect1.can_hold(&amp;rect2));
+    println!("Can rect1 hold rect3? {}", rect1.can_hold(&amp;rect3));
+}</code></pre>
+<figcaption><a href="#listing-5-14">Listing 5-14</a>: Using the as-yet-unwritten <code>can_hold</code> method</figcaption>
+</figure>
+<p>The expected output would look like the following because both dimensions of
+<code>rect2</code> are smaller than the dimensions of <code>rect1</code>, but <code>rect3</code> is wider than
+<code>rect1</code>:</p>
+<pre><code class="language-text">Can rect1 hold rect2? true
+Can rect1 hold rect3? false
+</code></pre>
+<p>We know we want to define a method, so it will be within the <code>impl Rectangle</code>
+block. The method name will be <code>can_hold</code>, and it will take an immutable borrow
+of another <code>Rectangle</code> as a parameter. We can tell what the type of the
+parameter will be by looking at the code that calls the method:
+<code>rect1.can_hold(&amp;rect2)</code> passes in <code>&amp;rect2</code>, which is an immutable borrow to
+<code>rect2</code>, an instance of <code>Rectangle</code>. This makes sense because we only need to
+read <code>rect2</code> (rather than write, which would mean we’d need a mutable borrow),
+and we want <code>main</code> to retain ownership of <code>rect2</code> so that we can use it again
+after calling the <code>can_hold</code> method. The return value of <code>can_hold</code> will be a
+Boolean, and the implementation will check whether the width and height of
+<code>self</code> are greater than the width and height of the other <code>Rectangle</code>,
+respectively. Let’s add the new <code>can_hold</code> method to the <code>impl</code> block from
+Listing 5-13, shown in Listing 5-15.</p>
+<figure class="listing" id="listing-5-15">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
+</span><span class="boring">struct Rectangle {
+</span><span class="boring">    width: u32,
+</span><span class="boring">    height: u32,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Rectangle {
+    fn area(&amp;self) -&gt; u32 {
+        self.width * self.height
+    }
+
+    fn can_hold(&amp;self, other: &amp;Rectangle) -&gt; bool {
+        self.width &gt; other.width &amp;&amp; self.height &gt; other.height
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let rect1 = Rectangle {
+</span><span class="boring">        width: 30,
+</span><span class="boring">        height: 50,
+</span><span class="boring">    };
+</span><span class="boring">    let rect2 = Rectangle {
+</span><span class="boring">        width: 10,
+</span><span class="boring">        height: 40,
+</span><span class="boring">    };
+</span><span class="boring">    let rect3 = Rectangle {
+</span><span class="boring">        width: 60,
+</span><span class="boring">        height: 45,
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    println!("Can rect1 hold rect2? {}", rect1.can_hold(&amp;rect2));
+</span><span class="boring">    println!("Can rect1 hold rect3? {}", rect1.can_hold(&amp;rect3));
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-5-15">Listing 5-15</a>: Implementing the <code>can_hold</code> method on <code>Rectangle</code> that takes another <code>Rectangle</code> instance as a parameter</figcaption>
+</figure>
+<p>When we run this code with the <code>main</code> function in Listing 5-14, we’ll get our
+desired output. Methods can take multiple parameters that we add to the
+signature after the <code>self</code> parameter, and those parameters work just like
+parameters in functions.</p>
+<h4 id="associated-functions"><a class="header" href="#associated-functions">Associated Functions</a></h4>
+<p>All functions defined within an <code>impl</code> block are called <em>associated functions</em>
+because they’re associated with the type named after the <code>impl</code>. We can define
+associated functions that don’t have <code>self</code> as their first parameter (and thus
+are not methods) because they don’t need an instance of the type to work with.
+We’ve already used one function like this: the <code>String::from</code> function that’s
+defined on the <code>String</code> type.</p>
+<p>Associated functions that aren’t methods are often used for constructors that
+will return a new instance of the struct. These are often called <code>new</code>, but
+<code>new</code> isn’t a special name and isn’t built into the language. For example, we
+could choose to provide an associated function named <code>square</code> that would have
+one dimension parameter and use that as both width and height, thus making it
+easier to create a square <code>Rectangle</code> rather than having to specify the same
+value twice:</p>
+<p><span class="filename">Filename: src/main.rs</span></p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
+</span><span class="boring">struct Rectangle {
+</span><span class="boring">    width: u32,
+</span><span class="boring">    height: u32,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Rectangle {
+    fn square(size: u32) -&gt; Self {
+        Self {
+            width: size,
+            height: size,
+        }
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let sq = Rectangle::square(3);
+</span><span class="boring">}</span></code></pre>
+<p>The <code>Self</code> keywords in the return type and in the body of the function are
+aliases for the type that appears after the <code>impl</code> keyword, which in this case
+is <code>Rectangle</code>.</p>
+<p>To call this associated function, we use the <code>::</code> syntax with the struct name;
+<code>let sq = Rectangle::square(3);</code> is an example. This function is namespaced by
+the struct: The <code>::</code> syntax is used for both associated functions and
+namespaces created by modules. We’ll discuss modules in <a href="07%20Modules%20and%20Boundaries.html#control-scope-and-privacy-with-modules-1">Chapter
+7</a><!-- ignore -->.</p>
+<h4 id="multiple-impl-blocks"><a class="header" href="#multiple-impl-blocks">Multiple <code>impl</code> Blocks</a></h4>
+<p>Each struct is allowed to have multiple <code>impl</code> blocks. For example, Listing
+5-15 is equivalent to the code shown in Listing 5-16, which has each method in
+its own <code>impl</code> block.</p>
+<figure class="listing" id="listing-5-16">
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">#[derive(Debug)]
+</span><span class="boring">struct Rectangle {
+</span><span class="boring">    width: u32,
+</span><span class="boring">    height: u32,
+</span><span class="boring">}
+</span><span class="boring">
+</span>impl Rectangle {
+    fn area(&amp;self) -&gt; u32 {
+        self.width * self.height
+    }
+}
+
+impl Rectangle {
+    fn can_hold(&amp;self, other: &amp;Rectangle) -&gt; bool {
+        self.width &gt; other.width &amp;&amp; self.height &gt; other.height
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {
+</span><span class="boring">    let rect1 = Rectangle {
+</span><span class="boring">        width: 30,
+</span><span class="boring">        height: 50,
+</span><span class="boring">    };
+</span><span class="boring">    let rect2 = Rectangle {
+</span><span class="boring">        width: 10,
+</span><span class="boring">        height: 40,
+</span><span class="boring">    };
+</span><span class="boring">    let rect3 = Rectangle {
+</span><span class="boring">        width: 60,
+</span><span class="boring">        height: 45,
+</span><span class="boring">    };
+</span><span class="boring">
+</span><span class="boring">    println!("Can rect1 hold rect2? {}", rect1.can_hold(&amp;rect2));
+</span><span class="boring">    println!("Can rect1 hold rect3? {}", rect1.can_hold(&amp;rect3));
+</span><span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-5-16">Listing 5-16</a>: Rewriting Listing 5-15 using multiple <code>impl</code> blocks</figcaption>
+</figure>
+<p>There’s no reason to separate these methods into multiple <code>impl</code> blocks here,
+but this is valid syntax. We’ll see a case in which multiple <code>impl</code> blocks are
+useful in Chapter 10, where we discuss generic types and traits.</p>
+<h3 id="summary-4"><a class="header" href="#summary-4">Summary</a></h3>
+<p>Structs let you create custom types that are meaningful for your domain. By
+using structs, you can keep associated pieces of data connected to each other
+and name each piece to make your code clear. In <code>impl</code> blocks, you can define
+functions that are associated with your type, and methods are a kind of
+associated function that let you specify the behavior that instances of your
+structs have.</p>
+<p>But structs aren’t the only way you can create custom types: Let’s turn to
+Rust’s enum feature to add another tool to your toolbox.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="04%20Ownership%20and%20Borrowing.html">← 04 Ownership and Borrowing</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="06%20Enums%20and%20Exhaustiveness.html">06 Enums and Exhaustiveness →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#using-structs-to-structure-related-data">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>

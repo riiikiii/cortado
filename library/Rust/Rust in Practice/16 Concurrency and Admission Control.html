@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Concurrency and Admission Control</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-moka.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+.book{max-width:84ch;margin:0 auto}.book h2,.book h3,.book h4{scroll-margin-top:1rem}
+.book h3{margin-top:2em}.book .header{color:inherit;text-decoration:none}.book .header:hover{text-decoration:underline}
+.book figure{margin:1.4rem 0}.book figcaption{font:inherit;font-size:.9em;color:var(--muted);margin:.45em 0 1.5em}
+.book pre,.license{background:var(--code-bg);color:var(--code-text);padding:1rem;border-radius:10px;overflow:auto;line-height:1.5;font: .88em/1.55 var(--mono);tab-size:4}
+.book pre code{background:transparent;color:inherit;white-space:pre;padding:0}
+.book .file-name,.book .sample-flag{display:block;font: .83em/1.5 var(--mono);color:var(--muted);margin-top:1em}
+.book .sample-flag{color:var(--coral);font-weight:bold}.book .note{border-left:3px solid var(--t500);padding:1em;background:var(--surface-2)}
+.book img{display:block;background:white;border-radius:8px;max-width:100%;height:auto;margin:1rem auto}.book .boring{display:none}.book h5{font-size:1.05em}
+.book p,.lab p{overflow-wrap:break-word}.license{white-space:pre-wrap}.reader-nav{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;background:var(--surface-2);padding:.9rem;border-radius:10px;margin:1rem 0}
+.book table{min-width:24rem}.lab{max-width:84ch;margin:0 auto}.lab pre{overflow:auto}.lab small{color:var(--muted)}
+.chapters{columns:2 17rem;padding-left:1.8rem}.chapters li{break-inside:avoid;padding:.18em}
+.hero .trace{grid-template-columns:5em minmax(0,1fr)}.book blockquote{margin-inline:0;padding-left:1em;border-left:3px solid var(--line)}
+@media(max-width:800px){.book img[style]{width:100%!important}.hero{grid-template-columns:1fr}.shell{min-width:0}figure{min-width:0}.book,.lab{min-width:0}.book h2{font-size:1.65rem}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Rust in Practice · 16 / 21</span></div>
+<div class="hero"><div><h1>Concurrency and Admission Control</h1><p>Distinguish a memory-safe race from a correct business result.</p></div>
+<div class="plate"><small>Worked trace</small><div class="trace"><b>Start</b><span>two handlers</span></div><div class="trace"><b>Observe</b><span>one unique constraint</span></div><div class="trace"><b>Result</b><span>one create</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="reader-nav" aria-label="Series navigation"><a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html">← 15 Smart Pointers and Shared Ownership</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="17%20Async%20Rust%20and%20Blocking%20Work.html">17 Async Rust and Blocking Work →</a></nav><nav class="menu" aria-label="On this page"><div class="menu-title">In this chapter</div><a href="#field">Production walkthrough</a><a href="#fearless-concurrency">Fearless Concurrency</a><a href="#using-threads-to-run-code-simultaneously-1">Using Threads to Run Code Simultaneously</a><a href="#transfer-data-between-threads-with-message-passing-1">Transfer Data Between Threads with Message Passing</a><a href="#shared-state-concurrency-1">Shared-State Concurrency</a><a href="#extensible-concurrency-with-send-and-sync-1">Extensible Concurrency with Send and Sync</a></nav><main><section id="field" class="lab"><span class="tag">Order intake · production walkthrough</span><h2>Distinguish a memory-safe race from a correct business result</h2><p>Safe Rust can prevent data races while allowing two logical operations to observe the same state and make incompatible decisions. A read-then-insert protocol in application memory has this weakness even if each individual read or write is protected by a lock. The store delegates uniqueness to the database and runs insert, comparison and commit on one connection inside an immediate transaction. This remains meaningful when more than one process opens the same file.</p><figure class="code"><figcaption>src/store.rs</figcaption><pre><code><span class="k">use</span><span class="w"> </span><span class="k">crate</span><span class="p">::</span><span class="n">domain</span><span class="p">::</span><span class="n">Order</span><span class="p">;</span>
+<span class="k">use</span><span class="w"> </span><span class="n">rusqlite</span><span class="p">::{</span><span class="n">Connection</span><span class="p">,</span><span class="w"> </span><span class="n">TransactionBehavior</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="p">};</span>
+<span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::{</span>
+<span class="w">    </span><span class="n">path</span><span class="p">::{</span><span class="n">Path</span><span class="p">,</span><span class="w"> </span><span class="n">PathBuf</span><span class="p">},</span>
+<span class="w">    </span><span class="n">time</span><span class="p">::</span><span class="n">Duration</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="cp">#[derive(Debug, PartialEq, Eq)]</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Outcome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Created</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Replay</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Conflict</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="cp">#[derive(Clone)]</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Store</span><span class="p">(</span><span class="n">PathBuf</span><span class="p">);</span>
+
+<span class="k">impl</span><span class="w"> </span><span class="n">Store</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="n">path</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Path</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">rusqlite</span><span class="p">::</span><span class="nb">Result</span><span class="o">&lt;</span><span class="bp">Self</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">Self</span><span class="p">(</span><span class="n">path</span><span class="p">.</span><span class="n">to_owned</span><span class="p">());</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="n">connect</span><span class="p">()</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="n">db</span><span class="p">.</span><span class="n">execute_batch</span><span class="p">(</span>
+<span class="w">            </span><span class="s">"CREATE TABLE IF NOT EXISTS orders (</span>
+<span class="s">            id TEXT PRIMARY KEY NOT NULL,</span>
+<span class="s">            quantity INTEGER NOT NULL CHECK(quantity BETWEEN 1 AND 4294967295)</span>
+<span class="s">        )"</span><span class="p">,</span>
+<span class="w">        </span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">rusqlite</span><span class="p">::</span><span class="nb">Result</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Connection</span><span class="p">::</span><span class="n">open</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="n">db</span><span class="p">.</span><span class="n">busy_timeout</span><span class="p">(</span><span class="n">Duration</span><span class="p">::</span><span class="n">from_millis</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">submit</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Order</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">rusqlite</span><span class="p">::</span><span class="nb">Result</span><span class="o">&lt;</span><span class="n">Outcome</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">connect</span><span class="p">()</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">tx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">db</span><span class="p">.</span><span class="n">transaction_with_behavior</span><span class="p">(</span><span class="n">TransactionBehavior</span><span class="p">::</span><span class="n">Immediate</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">inserted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tx</span><span class="p">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">            </span><span class="s">"INSERT INTO orders(id, quantity) VALUES (?1, ?2)</span>
+<span class="s">             ON CONFLICT(id) DO NOTHING"</span><span class="p">,</span>
+<span class="w">            </span><span class="n">params</span><span class="o">!</span><span class="p">[</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">(),</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">()],</span>
+<span class="w">        </span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">outcome</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">inserted</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">Outcome</span><span class="p">::</span><span class="n">Created</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">existing</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tx</span><span class="p">.</span><span class="n">query_row</span><span class="p">(</span>
+<span class="w">                </span><span class="s">"SELECT quantity FROM orders WHERE id = ?1"</span><span class="p">,</span>
+<span class="w">                </span><span class="p">[</span><span class="n">order</span><span class="p">.</span><span class="n">id</span><span class="p">()],</span>
+<span class="w">                </span><span class="o">|</span><span class="n">row</span><span class="o">|</span><span class="w"> </span><span class="n">row</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+<span class="w">            </span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="n">existing</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">quantity</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">Outcome</span><span class="p">::</span><span class="n">Replay</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">Outcome</span><span class="p">::</span><span class="n">Conflict</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">        </span><span class="n">tx</span><span class="p">.</span><span class="n">commit</span><span class="p">()</span><span class="o">?</span><span class="p">;</span>
+<span class="w">        </span><span class="nb">Ok</span><span class="p">(</span><span class="n">outcome</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><p>Trace two simultaneous submissions. The first writer takes the write transaction, inserts and commits. A second writer that acquires the lock in time sees a conflict on the unique key, reads the existing quantity and returns Replay. If it exhausts the busy timeout it returns a transient error instead. The guarantee is one accepted row, not that every request succeeds on the first attempt. The application semaphore limits work within one instance; it cannot replace the database constraint.</p><h3>Construct a discriminating load experiment</h3><p>Run a burst against the same id, then another against different ids. With distinct ids, conflicts on the application key disappear, yet SQLite still coordinates writers. If latency remains high, the bottleneck may be database write capacity rather than a hot business key. Change one variable at a time and capture successful writes, replays, conflicts and busy responses separately. Counting requests per second without classifying outcomes can make a service look faster simply because it rejects more work. The lab deliberately opens a connection for each database operation to clarify the scope; production tuning should measure that overhead before adding a pool.</p><p><a href="assets/order-intake.zip" download>Download the order-intake Cargo project</a> · <a href="https://www.sqlite.org/lang_transaction.html">www.sqlite.org/lang_transaction.html</a> · <a href="https://www.sqlite.org/lang_upsert.html">www.sqlite.org/lang_upsert.html</a></p></section><div class="book"><h2 id="fearless-concurrency"><a class="header" href="#fearless-concurrency">Fearless Concurrency</a></h2>
+<p>Handling concurrent programming safely and efficiently is another of Rust’s
+major goals. <em>Concurrent programming</em>, in which different parts of a program
+execute independently, and <em>parallel programming</em>, in which different parts of
+a program execute at the same time, are becoming increasingly important as more
+computers take advantage of their multiple processors. Historically,
+programming in these contexts has been difficult and error-prone. Rust hopes to
+change that.</p>
+<p>Initially, the Rust team thought that ensuring memory safety and preventing
+concurrency problems were two separate challenges to be solved with different
+methods. Over time, the team discovered that the ownership and type systems are
+a powerful set of tools to help manage memory safety <em>and</em> concurrency
+problems! By leveraging ownership and type checking, many concurrency errors
+are compile-time errors in Rust rather than runtime errors. Therefore, rather
+than making you spend lots of time trying to reproduce the exact circumstances
+under which a runtime concurrency bug occurs, incorrect code will refuse to
+compile and present an error explaining the problem. As a result, you can fix
+your code while you’re working on it rather than potentially after it has been
+shipped to production. We’ve nicknamed this aspect of Rust <em>fearless
+concurrency</em>. Fearless concurrency allows you to write code that is free of
+subtle bugs and is easy to refactor without introducing new bugs.</p>
+<section class="note" aria-role="note">
+<p>Note: For simplicity’s sake, we’ll refer to many of the problems as
+<em>concurrent</em> rather than being more precise by saying <em>concurrent and/or
+parallel</em>. For this chapter, please mentally substitute <em>concurrent and/or
+parallel</em> whenever we use <em>concurrent</em>. In the next chapter, where the
+distinction matters more, we’ll be more specific.</p>
+</section>
+<p>Many languages are dogmatic about the solutions they offer for handling
+concurrent problems. For example, Erlang has elegant functionality for
+message-passing concurrency but has only obscure ways to share state between
+threads. Supporting only a subset of possible solutions is a reasonable
+strategy for higher-level languages because a higher-level language promises
+benefits from giving up some control to gain abstractions. However, lower-level
+languages are expected to provide the solution with the best performance in any
+given situation and have fewer abstractions over the hardware. Therefore, Rust
+offers a variety of tools for modeling problems in whatever way is appropriate
+for your situation and requirements.</p>
+<p>Here are the topics we’ll cover in this chapter:</p>
+<ul>
+<li>How to create threads to run multiple pieces of code at the same time</li>
+<li><em>Message-passing</em> concurrency, where channels send messages between threads</li>
+<li><em>Shared-state</em> concurrency, where multiple threads have access to some piece
+of data</li>
+<li>The <code>Sync</code> and <code>Send</code> traits, which extend Rust’s concurrency guarantees to
+user-defined types as well as types provided by the standard library</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="using-threads-to-run-code-simultaneously-1"><a href="#using-threads-to-run-code-simultaneously-1" class="header">Using Threads to Run Code Simultaneously</a></h2>
+<h3 id="using-threads-to-run-code-simultaneously"><a class="header" href="#using-threads-to-run-code-simultaneously">Using Threads to Run Code Simultaneously</a></h3>
+<p>In most current operating systems, an executed program’s code is run in a
+<em>process</em>, and the operating system will manage multiple processes at once.
+Within a program, you can also have independent parts that run simultaneously.
+The features that run these independent parts are called <em>threads</em>. For
+example, a web server could have multiple threads so that it can respond to
+more than one request at the same time.</p>
+<p>Splitting the computation in your program into multiple threads to run multiple
+tasks at the same time can improve performance, but it also adds complexity.
+Because threads can run simultaneously, there’s no inherent guarantee about the
+order in which parts of your code on different threads will run. This can lead
+to problems, such as:</p>
+<ul>
+<li>Race conditions, in which threads are accessing data or resources in an
+inconsistent order</li>
+<li>Deadlocks, in which two threads are waiting for each other, preventing both
+threads from continuing</li>
+<li>Bugs that only happen in certain situations and are hard to reproduce and fix
+reliably</li>
+</ul>
+<p>Rust attempts to mitigate the negative effects of using threads, but
+programming in a multithreaded context still takes careful thought and requires
+a code structure that is different from that in programs running in a single
+thread.</p>
+<p>Programming languages implement threads in a few different ways, and many
+operating systems provide an API the programming language can call for creating
+new threads. The Rust standard library uses a <em>1:1</em> model of thread
+implementation, whereby a program uses one operating system thread per one
+language thread. There are crates that implement other models of threading that
+make different trade-offs to the 1:1 model. (Rust’s async system, which we will
+see in the next chapter, provides another approach to concurrency as well.)</p>
+<h4 id="creating-a-new-thread-with-spawn"><a class="header" href="#creating-a-new-thread-with-spawn">Creating a New Thread with <code>spawn</code></a></h4>
+<p>To create a new thread, we call the <code>thread::spawn</code> function and pass it a
+closure (we talked about closures in Chapter 13) containing the code we want to
+run in the new thread. The example in Listing 16-1 prints some text from a main
+thread and other text from a new thread.</p>
+<figure class="listing" id="listing-16-1">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::thread;
+use std::time::Duration;
+
+fn main() {
+    thread::spawn(|| {
+        for i in 1..10 {
+            println!("hi number {i} from the spawned thread!");
+            thread::sleep(Duration::from_millis(1));
+        }
+    });
+
+    for i in 1..5 {
+        println!("hi number {i} from the main thread!");
+        thread::sleep(Duration::from_millis(1));
+    }
+}</code></pre>
+<figcaption><a href="#listing-16-1">Listing 16-1</a>: Creating a new thread to print one thing while the main thread prints something else</figcaption>
+</figure>
+<p>Note that when the main thread of a Rust program completes, all spawned threads
+are shut down, whether or not they have finished running. The output from this
+program might be a little different every time, but it will look similar to the
+following:</p>
+<!-- Not extracting output because changes to this output aren't significant;
+the changes are likely to be due to the threads running differently rather than
+changes in the compiler -->
+<pre><code class="language-text">hi number 1 from the main thread!
+hi number 1 from the spawned thread!
+hi number 2 from the main thread!
+hi number 2 from the spawned thread!
+hi number 3 from the main thread!
+hi number 3 from the spawned thread!
+hi number 4 from the main thread!
+hi number 4 from the spawned thread!
+hi number 5 from the spawned thread!
+</code></pre>
+<p>The calls to <code>thread::sleep</code> force a thread to stop its execution for a short
+duration, allowing a different thread to run. The threads will probably take
+turns, but that isn’t guaranteed: It depends on how your operating system
+schedules the threads. In this run, the main thread printed first, even though
+the print statement from the spawned thread appears first in the code. And even
+though we told the spawned thread to print until <code>i</code> is <code>9</code>, it only got to <code>5</code>
+before the main thread shut down.</p>
+<p>If you run this code and only see output from the main thread, or don’t see any
+overlap, try increasing the numbers in the ranges to create more opportunities
+for the operating system to switch between the threads.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="waiting-for-all-threads-to-finish-using-join-handles"></a></p>
+<h4 id="waiting-for-all-threads-to-finish"><a class="header" href="#waiting-for-all-threads-to-finish">Waiting for All Threads to Finish</a></h4>
+<p>The code in Listing 16-1 not only stops the spawned thread prematurely most of
+the time due to the main thread ending, but because there is no guarantee on
+the order in which threads run, we also can’t guarantee that the spawned thread
+will get to run at all!</p>
+<p>We can fix the problem of the spawned thread not running or of it ending
+prematurely by saving the return value of <code>thread::spawn</code> in a variable. The
+return type of <code>thread::spawn</code> is <code>JoinHandle&lt;T&gt;</code>. A <code>JoinHandle&lt;T&gt;</code> is an
+owned value that, when we call the <code>join</code> method on it, will wait for its
+thread to finish. Listing 16-2 shows how to use the <code>JoinHandle&lt;T&gt;</code> of the
+thread we created in Listing 16-1 and how to call <code>join</code> to make sure the
+spawned thread finishes before <code>main</code> exits.</p>
+<figure class="listing" id="listing-16-2">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::thread;
+use std::time::Duration;
+
+fn main() {
+    let handle = thread::spawn(|| {
+        for i in 1..10 {
+            println!("hi number {i} from the spawned thread!");
+            thread::sleep(Duration::from_millis(1));
+        }
+    });
+
+    for i in 1..5 {
+        println!("hi number {i} from the main thread!");
+        thread::sleep(Duration::from_millis(1));
+    }
+
+    handle.join().unwrap();
+}</code></pre>
+<figcaption><a href="#listing-16-2">Listing 16-2</a>: Saving a <code>JoinHandle&lt;T&gt;</code> from <code>thread::spawn</code> to guarantee the thread is run to completion</figcaption>
+</figure>
+<p>Calling <code>join</code> on the handle blocks the thread currently running until the
+thread represented by the handle terminates. <em>Blocking</em> a thread means that
+thread is prevented from performing work or exiting. Because we’ve put the call
+to <code>join</code> after the main thread’s <code>for</code> loop, running Listing 16-2 should
+produce output similar to this:</p>
+<!-- Not extracting output because changes to this output aren't significant;
+the changes are likely to be due to the threads running differently rather than
+changes in the compiler -->
+<pre><code class="language-text">hi number 1 from the main thread!
+hi number 2 from the main thread!
+hi number 1 from the spawned thread!
+hi number 3 from the main thread!
+hi number 2 from the spawned thread!
+hi number 4 from the main thread!
+hi number 3 from the spawned thread!
+hi number 4 from the spawned thread!
+hi number 5 from the spawned thread!
+hi number 6 from the spawned thread!
+hi number 7 from the spawned thread!
+hi number 8 from the spawned thread!
+hi number 9 from the spawned thread!
+</code></pre>
+<p>The two threads continue alternating, but the main thread waits because of the
+call to <code>handle.join()</code> and does not end until the spawned thread is finished.</p>
+<p>But let’s see what happens when we instead move <code>handle.join()</code> before the
+<code>for</code> loop in <code>main</code>, like this:</p>
+<figure class="listing">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::thread;
+use std::time::Duration;
+
+fn main() {
+    let handle = thread::spawn(|| {
+        for i in 1..10 {
+            println!("hi number {i} from the spawned thread!");
+            thread::sleep(Duration::from_millis(1));
+        }
+    });
+
+    handle.join().unwrap();
+
+    for i in 1..5 {
+        println!("hi number {i} from the main thread!");
+        thread::sleep(Duration::from_millis(1));
+    }
+}</code></pre>
+</figure>
+<p>The main thread will wait for the spawned thread to finish and then run its
+<code>for</code> loop, so the output won’t be interleaved anymore, as shown here:</p>
+<!-- Not extracting output because changes to this output aren't significant;
+the changes are likely to be due to the threads running differently rather than
+changes in the compiler -->
+<pre><code class="language-text">hi number 1 from the spawned thread!
+hi number 2 from the spawned thread!
+hi number 3 from the spawned thread!
+hi number 4 from the spawned thread!
+hi number 5 from the spawned thread!
+hi number 6 from the spawned thread!
+hi number 7 from the spawned thread!
+hi number 8 from the spawned thread!
+hi number 9 from the spawned thread!
+hi number 1 from the main thread!
+hi number 2 from the main thread!
+hi number 3 from the main thread!
+hi number 4 from the main thread!
+</code></pre>
+<p>Small details, such as where <code>join</code> is called, can affect whether or not your
+threads run at the same time.</p>
+<h4 id="using-move-closures-with-threads"><a class="header" href="#using-move-closures-with-threads">Using <code>move</code> Closures with Threads</a></h4>
+<p>We’ll often use the <code>move</code> keyword with closures passed to <code>thread::spawn</code>
+because the closure will then take ownership of the values it uses from the
+environment, thus transferring ownership of those values from one thread to
+another. In <a href="13%20Closures%20and%20Iterator%20Pipelines.html#capturing-references-or-moving-ownership">“Capturing References or Moving Ownership”</a><!-- ignore
+--> in Chapter 13, we discussed <code>move</code> in the context of closures. Now we’ll
+concentrate more on the interaction between <code>move</code> and <code>thread::spawn</code>.</p>
+<p>Notice in Listing 16-1 that the closure we pass to <code>thread::spawn</code> takes no
+arguments: We’re not using any data from the main thread in the spawned
+thread’s code. To use data from the main thread in the spawned thread, the
+spawned thread’s closure must capture the values it needs. Listing 16-3 shows
+an attempt to create a vector in the main thread and use it in the spawned
+thread. However, this won’t work yet, as you’ll see in a moment.</p>
+<figure class="listing" id="listing-16-3">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::thread;
+
+fn main() {
+    let v = vec![1, 2, 3];
+
+    let handle = thread::spawn(|| {
+        println!("Here's a vector: {v:?}");
+    });
+
+    handle.join().unwrap();
+}</code></pre>
+<figcaption><a href="#listing-16-3">Listing 16-3</a>: Attempting to use a vector created by the main thread in another thread</figcaption>
+</figure>
+<p>The closure uses <code>v</code>, so it will capture <code>v</code> and make it part of the closure’s
+environment. Because <code>thread::spawn</code> runs this closure in a new thread, we
+should be able to access <code>v</code> inside that new thread. But when we compile this
+example, we get the following error:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling threads v0.1.0 (file:///projects/threads)
+error[E0373]: closure may outlive the current function, but it borrows `v`, which is owned by the current function
+ --&gt; src/main.rs:6:32
+  |
+6 |     let handle = thread::spawn(|| {
+  |                                ^^ may outlive borrowed value `v`
+7 |         println!("Here's a vector: {v:?}");
+  |                                     - `v` is borrowed here
+  |
+note: function requires argument type to outlive `'static`
+ --&gt; src/main.rs:6:18
+  |
+6 |       let handle = thread::spawn(|| {
+  |  __________________^
+7 | |         println!("Here's a vector: {v:?}");
+8 | |     });
+  | |______^
+help: to force the closure to take ownership of `v` (and any other referenced variables), use the `move` keyword
+  |
+6 |     let handle = thread::spawn(move || {
+  |                                ++++
+
+For more information about this error, try `rustc --explain E0373`.
+error: could not compile `threads` (bin "threads") due to 1 previous error
+</code></pre>
+<p>Rust <em>infers</em> how to capture <code>v</code>, and because <code>println!</code> only needs a reference
+to <code>v</code>, the closure tries to borrow <code>v</code>. However, there’s a problem: Rust can’t
+tell how long the spawned thread will run, so it doesn’t know whether the
+reference to <code>v</code> will always be valid.</p>
+<p>Listing 16-4 provides a scenario that’s more likely to have a reference to <code>v</code>
+that won’t be valid.</p>
+<figure class="listing" id="listing-16-4">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::thread;
+
+fn main() {
+    let v = vec![1, 2, 3];
+
+    let handle = thread::spawn(|| {
+        println!("Here's a vector: {v:?}");
+    });
+
+    drop(v); // oh no!
+
+    handle.join().unwrap();
+}</code></pre>
+<figcaption><a href="#listing-16-4">Listing 16-4</a>: A thread with a closure that attempts to capture a reference to <code>v</code> from a main thread that drops <code>v</code></figcaption>
+</figure>
+<p>If Rust allowed us to run this code, there’s a possibility that the spawned
+thread would be immediately put in the background without running at all. The
+spawned thread has a reference to <code>v</code> inside, but the main thread immediately
+drops <code>v</code>, using the <code>drop</code> function we discussed in Chapter 15. Then, when the
+spawned thread starts to execute, <code>v</code> is no longer valid, so a reference to it
+is also invalid. Oh no!</p>
+<p>To fix the compiler error in Listing 16-3, we can use the error message’s
+advice:</p>
+<!-- manual-regeneration
+after automatic regeneration, look at listings/ch16-fearless-concurrency/listing-16-03/output.txt and copy the relevant part
+-->
+<pre><code class="language-text">help: to force the closure to take ownership of `v` (and any other referenced variables), use the `move` keyword
+  |
+6 |     let handle = thread::spawn(move || {
+  |                                ++++
+</code></pre>
+<p>By adding the <code>move</code> keyword before the closure, we force the closure to take
+ownership of the values it’s using rather than allowing Rust to infer that it
+should borrow the values. The modification to Listing 16-3 shown in Listing
+16-5 will compile and run as we intend.</p>
+<figure class="listing" id="listing-16-5">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::thread;
+
+fn main() {
+    let v = vec![1, 2, 3];
+
+    let handle = thread::spawn(move || {
+        println!("Here's a vector: {v:?}");
+    });
+
+    handle.join().unwrap();
+}</code></pre>
+<figcaption><a href="#listing-16-5">Listing 16-5</a>: Using the <code>move</code> keyword to force a closure to take ownership of the values it uses</figcaption>
+</figure>
+<p>We might be tempted to try the same thing to fix the code in Listing 16-4 where
+the main thread called <code>drop</code> by using a <code>move</code> closure. However, this fix will
+not work because what Listing 16-4 is trying to do is disallowed for a
+different reason. If we added <code>move</code> to the closure, we would move <code>v</code> into the
+closure’s environment, and we could no longer call <code>drop</code> on it in the main
+thread. We would get this compiler error instead:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling threads v0.1.0 (file:///projects/threads)
+error[E0382]: use of moved value: `v`
+  --&gt; src/main.rs:10:10
+   |
+ 4 |     let v = vec![1, 2, 3];
+   |         - move occurs because `v` has type `Vec&lt;i32&gt;`, which does not implement the `Copy` trait
+ 5 |
+ 6 |     let handle = thread::spawn(move || {
+   |                                ------- value moved into closure here
+ 7 |         println!("Here's a vector: {v:?}");
+   |                                     - variable moved due to use in closure
+...
+10 |     drop(v); // oh no!
+   |          ^ value used here after move
+   |
+help: consider cloning the value before moving it into the closure
+   |
+ 6 ~     let value = v.clone();
+ 7 ~     let handle = thread::spawn(move || {
+ 8 ~         println!("Here's a vector: {value:?}");
+   |
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `threads` (bin "threads") due to 1 previous error
+</code></pre>
+<p>Rust’s ownership rules have saved us again! We got an error from the code in
+Listing 16-3 because Rust was being conservative and only borrowing <code>v</code> for the
+thread, which meant the main thread could theoretically invalidate the spawned
+thread’s reference. By telling Rust to move ownership of <code>v</code> to the spawned
+thread, we’re guaranteeing to Rust that the main thread won’t use <code>v</code> anymore.
+If we change Listing 16-4 in the same way, we’re then violating the ownership
+rules when we try to use <code>v</code> in the main thread. The <code>move</code> keyword overrides
+Rust’s conservative default of borrowing; it doesn’t let us violate the
+ownership rules.</p>
+<p>Now that we’ve covered what threads are and the methods supplied by the thread
+API, let’s look at some situations in which we can use threads.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="transfer-data-between-threads-with-message-passing-1"><a href="#transfer-data-between-threads-with-message-passing-1" class="header">Transfer Data Between Threads with Message Passing</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-message-passing-to-transfer-data-between-threads"></a></p>
+<h3 id="transfer-data-between-threads-with-message-passing"><a class="header" href="#transfer-data-between-threads-with-message-passing">Transfer Data Between Threads with Message Passing</a></h3>
+<p>One increasingly popular approach to ensuring safe concurrency is message
+passing, where threads or actors communicate by sending each other messages
+containing data. Here’s the idea in a slogan from <a href="https://golang.org/doc/effective_go.html#concurrency">the Go language documentation</a>:
+“Do not communicate by sharing memory; instead, share memory by communicating.”</p>
+<p>To accomplish message-sending concurrency, Rust’s standard library provides an
+implementation of channels. A <em>channel</em> is a general programming concept by
+which data is sent from one thread to another.</p>
+<p>You can imagine a channel in programming as being like a directional channel of
+water, such as a stream or a river. If you put something like a rubber duck
+into a river, it will travel downstream to the end of the waterway.</p>
+<p>A channel has two halves: a transmitter and a receiver. The transmitter half is
+the upstream location where you put the rubber duck into the river, and the
+receiver half is where the rubber duck ends up downstream. One part of your
+code calls methods on the transmitter with the data you want to send, and
+another part checks the receiving end for arriving messages. A channel is said
+to be <em>closed</em> if either the transmitter or receiver half is dropped.</p>
+<p>Here, we’ll work up to a program that has one thread to generate values and
+send them down a channel, and another thread that will receive the values and
+print them out. We’ll be sending simple values between threads using a channel
+to illustrate the feature. Once you’re familiar with the technique, you could
+use channels for any threads that need to communicate with each other, such as
+a chat system or a system where many threads perform parts of a calculation and
+send the parts to one thread that aggregates the results.</p>
+<p>First, in Listing 16-6, we’ll create a channel but not do anything with it.
+Note that this won’t compile yet because Rust can’t tell what type of values we
+want to send over the channel.</p>
+<figure class="listing" id="listing-16-6">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::sync::mpsc;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+}</code></pre>
+<figcaption><a href="#listing-16-6">Listing 16-6</a>: Creating a channel and assigning the two halves to <code>tx</code> and <code>rx</code></figcaption>
+</figure>
+<p>We create a new channel using the <code>mpsc::channel</code> function; <code>mpsc</code> stands for
+<em>multiple producer, single consumer</em>. In short, the way Rust’s standard library
+implements channels means a channel can have multiple <em>sending</em> ends that
+produce values but only one <em>receiving</em> end that consumes those values. Imagine
+multiple streams flowing together into one big river: Everything sent down any
+of the streams will end up in one river at the end. We’ll start with a single
+producer for now, but we’ll add multiple producers when we get this example
+working.</p>
+<p>The <code>mpsc::channel</code> function returns a tuple, the first element of which is the
+sending end—the transmitter—and the second element of which is the receiving
+end—the receiver. The abbreviations <code>tx</code> and <code>rx</code> are traditionally used in
+many fields for <em>transmitter</em> and <em>receiver</em>, respectively, so we name our
+variables as such to indicate each end. We’re using a <code>let</code> statement with a
+pattern that destructures the tuples; we’ll discuss the use of patterns in
+<code>let</code> statements and destructuring in Chapter 19. For now, know that using a
+<code>let</code> statement in this way is a convenient approach to extract the pieces of
+the tuple returned by <code>mpsc::channel</code>.</p>
+<p>Let’s move the transmitting end into a spawned thread and have it send one
+string so that the spawned thread is communicating with the main thread, as
+shown in Listing 16-7. This is like putting a rubber duck in the river upstream
+or sending a chat message from one thread to another.</p>
+<figure class="listing" id="listing-16-7">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::sync::mpsc;
+use std::thread;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let val = String::from("hi");
+        tx.send(val).unwrap();
+    });
+}</code></pre>
+<figcaption><a href="#listing-16-7">Listing 16-7</a>: Moving <code>tx</code> to a spawned thread and sending <code>"hi"</code></figcaption>
+</figure>
+<p>Again, we’re using <code>thread::spawn</code> to create a new thread and then using <code>move</code>
+to move <code>tx</code> into the closure so that the spawned thread owns <code>tx</code>. The spawned
+thread needs to own the transmitter to be able to send messages through the
+channel.</p>
+<p>The transmitter has a <code>send</code> method that takes the value we want to send. The
+<code>send</code> method returns a <code>Result&lt;T, E&gt;</code> type, so if the receiver has already
+been dropped and there’s nowhere to send a value, the send operation will
+return an error. In this example, we’re calling <code>unwrap</code> to panic in case of an
+error. But in a real application, we would handle it properly: Return to
+Chapter 9 to review strategies for proper error handling.</p>
+<p>In Listing 16-8, we’ll get the value from the receiver in the main thread. This
+is like retrieving the rubber duck from the water at the end of the river or
+receiving a chat message.</p>
+<figure class="listing" id="listing-16-8">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::sync::mpsc;
+use std::thread;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let val = String::from("hi");
+        tx.send(val).unwrap();
+    });
+
+    let received = rx.recv().unwrap();
+    println!("Got: {received}");
+}</code></pre>
+<figcaption><a href="#listing-16-8">Listing 16-8</a>: Receiving the value <code>"hi"</code> in the main thread and printing it</figcaption>
+</figure>
+<p>The receiver has two useful methods: <code>recv</code> and <code>try_recv</code>. We’re using <code>recv</code>,
+short for <em>receive</em>, which will block the main thread’s execution and wait
+until a value is sent down the channel. Once a value is sent, <code>recv</code> will
+return it in a <code>Result&lt;T, E&gt;</code>. When the transmitter closes, <code>recv</code> will return
+an error to signal that no more values will be coming.</p>
+<p>The <code>try_recv</code> method doesn’t block, but will instead return a <code>Result&lt;T, E&gt;</code>
+immediately: an <code>Ok</code> value holding a message if one is available and an <code>Err</code>
+value if there aren’t any messages this time. Using <code>try_recv</code> is useful if
+this thread has other work to do while waiting for messages: We could write a
+loop that calls <code>try_recv</code> every so often, handles a message if one is
+available, and otherwise does other work for a little while until checking
+again.</p>
+<p>We’ve used <code>recv</code> in this example for simplicity; we don’t have any other work
+for the main thread to do other than wait for messages, so blocking the main
+thread is appropriate.</p>
+<p>When we run the code in Listing 16-8, we’ll see the value printed from the main
+thread:</p>
+<!-- Not extracting output because changes to this output aren't significant;
+the changes are likely to be due to the threads running differently rather than
+changes in the compiler -->
+<pre><code class="language-text">Got: hi
+</code></pre>
+<p>Perfect!</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="channels-and-ownership-transference"></a></p>
+<h4 id="transferring-ownership-through-channels"><a class="header" href="#transferring-ownership-through-channels">Transferring Ownership Through Channels</a></h4>
+<p>The ownership rules play a vital role in message sending because they help you
+write safe, concurrent code. Preventing errors in concurrent programming is the
+advantage of thinking about ownership throughout your Rust programs. Let’s do
+an experiment to show how channels and ownership work together to prevent
+problems: We’ll try to use a <code>val</code> value in the spawned thread <em>after</em> we’ve
+sent it down the channel. Try compiling the code in Listing 16-9 to see why
+this code isn’t allowed.</p>
+<figure class="listing" id="listing-16-9">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::sync::mpsc;
+use std::thread;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let val = String::from("hi");
+        tx.send(val).unwrap();
+        println!("val is {val}");
+    });
+
+    let received = rx.recv().unwrap();
+    println!("Got: {received}");
+}</code></pre>
+<figcaption><a href="#listing-16-9">Listing 16-9</a>: Attempting to use <code>val</code> after we’ve sent it down the channel</figcaption>
+</figure>
+<p>Here, we try to print <code>val</code> after we’ve sent it down the channel via <code>tx.send</code>.
+Allowing this would be a bad idea: Once the value has been sent to another
+thread, that thread could modify or drop it before we try to use the value
+again. Potentially, the other thread’s modifications could cause errors or
+unexpected results due to inconsistent or nonexistent data. However, Rust gives
+us an error if we try to compile the code in Listing 16-9:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling message-passing v0.1.0 (file:///projects/message-passing)
+error[E0382]: borrow of moved value: `val`
+  --&gt; src/main.rs:10:27
+   |
+ 8 |         let val = String::from("hi");
+   |             --- move occurs because `val` has type `String`, which does not implement the `Copy` trait
+ 9 |         tx.send(val).unwrap();
+   |                 --- value moved here
+10 |         println!("val is {val}");
+   |                           ^^^ value borrowed here after move
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `message-passing` (bin "message-passing") due to 1 previous error
+</code></pre>
+<p>Our concurrency mistake has caused a compile-time error. The <code>send</code> function
+takes ownership of its parameter, and when the value is moved the receiver
+takes ownership of it. This stops us from accidentally using the value again
+after sending it; the ownership system checks that everything is okay.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="sending-multiple-values-and-seeing-the-receiver-waiting"></a></p>
+<h4 id="sending-multiple-values"><a class="header" href="#sending-multiple-values">Sending Multiple Values</a></h4>
+<p>The code in Listing 16-8 compiled and ran, but it didn’t clearly show us that
+two separate threads were talking to each other over the channel.</p>
+<p>In Listing 16-10, we’ve made some modifications that will prove the code in
+Listing 16-8 is running concurrently: The spawned thread will now send multiple
+messages and pause for a second between each message.</p>
+<figure class="listing" id="listing-16-10">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust noplayground">use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let vals = vec![
+            String::from("hi"),
+            String::from("from"),
+            String::from("the"),
+            String::from("thread"),
+        ];
+
+        for val in vals {
+            tx.send(val).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
+
+    for received in rx {
+        println!("Got: {received}");
+    }
+}</code></pre>
+<figcaption><a href="#listing-16-10">Listing 16-10</a>: Sending multiple messages and pausing between each one</figcaption>
+</figure>
+<p>This time, the spawned thread has a vector of strings that we want to send to
+the main thread. We iterate over them, sending each individually, and pause
+between each by calling the <code>thread::sleep</code> function with a <code>Duration</code> value of
+one second.</p>
+<p>In the main thread, we’re not calling the <code>recv</code> function explicitly anymore:
+Instead, we’re treating <code>rx</code> as an iterator. For each value received, we’re
+printing it. When the channel is closed, iteration will end.</p>
+<p>When running the code in Listing 16-10, you should see the following output
+with a one-second pause in between each line:</p>
+<!-- Not extracting output because changes to this output aren't significant;
+the changes are likely to be due to the threads running differently rather than
+changes in the compiler -->
+<pre><code class="language-text">Got: hi
+Got: from
+Got: the
+Got: thread
+</code></pre>
+<p>Because we don’t have any code that pauses or delays in the <code>for</code> loop in the
+main thread, we can tell that the main thread is waiting to receive values from
+the spawned thread.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="creating-multiple-producers-by-cloning-the-transmitter"></a></p>
+<h4 id="creating-multiple-producers"><a class="header" href="#creating-multiple-producers">Creating Multiple Producers</a></h4>
+<p>Earlier we mentioned that <code>mpsc</code> was an acronym for <em>multiple producer, single
+consumer</em>. Let’s put <code>mpsc</code> to use and expand the code in Listing 16-10 to
+create multiple threads that all send values to the same receiver. We can do so
+by cloning the transmitter, as shown in Listing 16-11.</p>
+<figure class="listing" id="listing-16-11">
+<span class="file-name">Filename: src/main.rs</span>
+<pre><code class="language-rust noplayground"><span class="boring">use std::sync::mpsc;
+</span><span class="boring">use std::thread;
+</span><span class="boring">use std::time::Duration;
+</span><span class="boring">
+</span><span class="boring">fn main() {
+</span>    // --snip--
+
+    let (tx, rx) = mpsc::channel();
+
+    let tx1 = tx.clone();
+    thread::spawn(move || {
+        let vals = vec![
+            String::from("hi"),
+            String::from("from"),
+            String::from("the"),
+            String::from("thread"),
+        ];
+
+        for val in vals {
+            tx1.send(val).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
+
+    thread::spawn(move || {
+        let vals = vec![
+            String::from("more"),
+            String::from("messages"),
+            String::from("for"),
+            String::from("you"),
+        ];
+
+        for val in vals {
+            tx.send(val).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
+
+    for received in rx {
+        println!("Got: {received}");
+    }
+
+    // --snip--
+<span class="boring">}</span></code></pre>
+<figcaption><a href="#listing-16-11">Listing 16-11</a>: Sending multiple messages from multiple producers</figcaption>
+</figure>
+<p>This time, before we create the first spawned thread, we call <code>clone</code> on the
+transmitter. This will give us a new transmitter we can pass to the first
+spawned thread. We pass the original transmitter to a second spawned thread.
+This gives us two threads, each sending different messages to the one receiver.</p>
+<p>When you run the code, your output should look something like this:</p>
+<!-- Not extracting output because changes to this output aren't significant;
+the changes are likely to be due to the threads running differently rather than
+changes in the compiler -->
+<pre><code class="language-text">Got: hi
+Got: more
+Got: from
+Got: messages
+Got: for
+Got: the
+Got: thread
+Got: you
+</code></pre>
+<p>You might see the values in another order, depending on your system. This is
+what makes concurrency interesting as well as difficult. If you experiment with
+<code>thread::sleep</code>, giving it various values in the different threads, each run
+will be more nondeterministic and create different output each time.</p>
+<p>Now that we’ve looked at how channels work, let’s look at a different method of
+concurrency.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="shared-state-concurrency-1"><a href="#shared-state-concurrency-1" class="header">Shared-State Concurrency</a></h2>
+<h3 id="shared-state-concurrency"><a class="header" href="#shared-state-concurrency">Shared-State Concurrency</a></h3>
+<p>Message passing is a fine way to handle concurrency, but it’s not the only way.
+Another method would be for multiple threads to access the same shared data.
+Consider this part of the slogan from the Go language documentation again: “Do
+not communicate by sharing memory.”</p>
+<p>What would communicating by sharing memory look like? In addition, why would
+message-passing enthusiasts caution not to use memory sharing?</p>
+<p>In a way, channels in any programming language are similar to single ownership
+because once you transfer a value down a channel, you should no longer use that
+value. Shared-memory concurrency is like multiple ownership: Multiple threads
+can access the same memory location at the same time. As you saw in Chapter 15,
+where smart pointers made multiple ownership possible, multiple ownership can
+add complexity because these different owners need managing. Rust’s type system
+and ownership rules greatly assist in getting this management correct. For an
+example, let’s look at mutexes, one of the more common concurrency primitives
+for shared memory.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="using-mutexes-to-allow-access-to-data-from-one-thread-at-a-time"></a></p>
+<h4 id="controlling-access-with-mutexes"><a class="header" href="#controlling-access-with-mutexes">Controlling Access with Mutexes</a></h4>
+<p><em>Mutex</em> is an abbreviation for <em>mutual exclusion</em>, as in a mutex allows only
+one thread to access some data at any given time. To access the data in a
+mutex, a thread must first signal that it wants access by asking to acquire the
+mutex’s lock. The <em>lock</em> is a data structure that is part of the mutex that
+keeps track of who currently has exclusive access to the data. Therefore, the
+mutex is described as <em>guarding</em> the data it holds via the locking system.</p>
+<p>Mutexes have a reputation for being difficult to use because you have to
+remember two rules:</p>
+<ol>
+<li>You must attempt to acquire the lock before using the data.</li>
+<li>When you’re done with the data that the mutex guards, you must unlock the
+data so that other threads can acquire the lock.</li>
+</ol>
+<p>For a real-world metaphor for a mutex, imagine a panel discussion at a
+conference with only one microphone. Before a panelist can speak, they have to
+ask or signal that they want to use the microphone. When they get the
+microphone, they can talk for as long as they want to and then hand the
+microphone to the next panelist who requests to speak. If a panelist forgets to
+hand the microphone off when they’re finished with it, no one else is able to
+speak. If management of the shared microphone goes wrong, the panel won’t work
+as planned!</p>
+<p>Management of mutexes can be incredibly tricky to get right, which is why so
+many people are enthusiastic about channels. However, thanks to Rust’s type
+system and ownership rules, you can’t get locking and unlocking wrong.</p>
+<h5 id="the-api-of-mutext"><a class="header" href="#the-api-of-mutext">The API of <code>Mutex&lt;T&gt;</code></a></h5>
+<p>As an example of how to use a mutex, let’s start by using a mutex in a
+single-threaded context, as shown in Listing 16-12.</p>
+<figure class="listing" id="listing-16-12">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::sync::Mutex;
+
+fn main() {
+    let m = Mutex::new(5);
+
+    {
+        let mut num = m.lock().unwrap();
+        *num = 6;
+    }
+
+    println!("m = {m:?}");
+}</code></pre>
+<figcaption><a href="#listing-16-12">Listing 16-12</a>: Exploring the API of <code>Mutex&lt;T&gt;</code> in a single-threaded context for simplicity</figcaption>
+</figure>
+<p>As with many types, we create a <code>Mutex&lt;T&gt;</code> using the associated function <code>new</code>.
+To access the data inside the mutex, we use the <code>lock</code> method to acquire the
+lock. This call will block the current thread so that it can’t do any work
+until it’s our turn to have the lock.</p>
+<p>The call to <code>lock</code> would fail if another thread holding the lock panicked. In
+that case, no one would ever be able to get the lock, so we’ve chosen to
+<code>unwrap</code> and have this thread panic if we’re in that situation.</p>
+<p>After we’ve acquired the lock, we can treat the return value, named <code>num</code> in
+this case, as a mutable reference to the data inside. The type system ensures
+that we acquire a lock before using the value in <code>m</code>. The type of <code>m</code> is
+<code>Mutex&lt;i32&gt;</code>, not <code>i32</code>, so we <em>must</em> call <code>lock</code> to be able to use the <code>i32</code>
+value. We can’t forget; the type system won’t let us access the inner <code>i32</code>
+otherwise.</p>
+<p>The call to <code>lock</code> returns a type called <code>MutexGuard</code>, wrapped in a
+<code>LockResult</code> that we handled with the call to <code>unwrap</code>. The <code>MutexGuard</code> type
+implements <code>Deref</code> to point at our inner data; the type also has a <code>Drop</code>
+implementation that releases the lock automatically when a <code>MutexGuard</code> goes
+out of scope, which happens at the end of the inner scope. As a result, we
+don’t risk forgetting to release the lock and blocking the mutex from being
+used by other threads because the lock release happens automatically.</p>
+<p>After dropping the lock, we can print the mutex value and see that we were able
+to change the inner <code>i32</code> to <code>6</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="sharing-a-mutext-between-multiple-threads"></a></p>
+<h5 id="shared-access-to-mutext"><a class="header" href="#shared-access-to-mutext">Shared Access to <code>Mutex&lt;T&gt;</code></a></h5>
+<p>Now let’s try to share a value between multiple threads using <code>Mutex&lt;T&gt;</code>. We’ll
+spin up 10 threads and have them each increment a counter value by 1, so the
+counter goes from 0 to 10. The example in Listing 16-13 will have a compiler
+error, and we’ll use that error to learn more about using <code>Mutex&lt;T&gt;</code> and how
+Rust helps us use it correctly.</p>
+<figure class="listing" id="listing-16-13">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::sync::Mutex;
+use std::thread;
+
+fn main() {
+    let counter = Mutex::new(0);
+    let mut handles = vec![];
+
+    for _ in 0..10 {
+        let handle = thread::spawn(move || {
+            let mut num = counter.lock().unwrap();
+
+            *num += 1;
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("Result: {}", *counter.lock().unwrap());
+}</code></pre>
+<figcaption><a href="#listing-16-13">Listing 16-13</a>: Ten threads, each incrementing a counter guarded by a <code>Mutex&lt;T&gt;</code></figcaption>
+</figure>
+<p>We create a <code>counter</code> variable to hold an <code>i32</code> inside a <code>Mutex&lt;T&gt;</code>, as we did
+in Listing 16-12. Next, we create 10 threads by iterating over a range of
+numbers. We use <code>thread::spawn</code> and give all the threads the same closure: one
+that moves the counter into the thread, acquires a lock on the <code>Mutex&lt;T&gt;</code> by
+calling the <code>lock</code> method, and then adds 1 to the value in the mutex. When a
+thread finishes running its closure, <code>num</code> will go out of scope and release the
+lock so that another thread can acquire it.</p>
+<p>In the main thread, we collect all the join handles. Then, as we did in Listing
+16-2, we call <code>join</code> on each handle to make sure all the threads finish. At
+that point, the main thread will acquire the lock and print the result of this
+program.</p>
+<p>We hinted that this example wouldn’t compile. Now let’s find out why!</p>
+<pre><code class="language-console">$ cargo run
+   Compiling shared-state v0.1.0 (file:///projects/shared-state)
+error[E0382]: borrow of moved value: `counter`
+  --&gt; src/main.rs:21:29
+   |
+ 5 |     let counter = Mutex::new(0);
+   |         ------- move occurs because `counter` has type `std::sync::Mutex&lt;i32&gt;`, which does not implement the `Copy` trait
+...
+ 8 |     for _ in 0..10 {
+   |     -------------- inside of this loop
+ 9 |         let handle = thread::spawn(move || {
+   |                                    ------- value moved into closure here, in previous iteration of loop
+...
+21 |     println!("Result: {}", *counter.lock().unwrap());
+   |                             ^^^^^^^ value borrowed here after move
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `shared-state` (bin "shared-state") due to 1 previous error
+</code></pre>
+<p>The error message states that the <code>counter</code> value was moved in the previous
+iteration of the loop. Rust is telling us that we can’t move the ownership of
+lock <code>counter</code> into multiple threads. Let’s fix the compiler error with the
+multiple-ownership method we discussed in Chapter 15.</p>
+<h5 id="multiple-ownership-with-multiple-threads"><a class="header" href="#multiple-ownership-with-multiple-threads">Multiple Ownership with Multiple Threads</a></h5>
+<p>In Chapter 15, we gave a value to multiple owners by using the smart pointer
+<code>Rc&lt;T&gt;</code> to create a reference-counted value. Let’s do the same here and see
+what happens. We’ll wrap the <code>Mutex&lt;T&gt;</code> in <code>Rc&lt;T&gt;</code> in Listing 16-14 and clone
+the <code>Rc&lt;T&gt;</code> before moving ownership to the thread.</p>
+<figure class="listing" id="listing-16-14">
+<span class="file-name">Filename: src/main.rs</span>
+<span class="sample-flag">Compiler rejection example</span><pre><code class="language-rust ignore does_not_compile">use std::rc::Rc;
+use std::sync::Mutex;
+use std::thread;
+
+fn main() {
+    let counter = Rc::new(Mutex::new(0));
+    let mut handles = vec![];
+
+    for _ in 0..10 {
+        let counter = Rc::clone(&amp;counter);
+        let handle = thread::spawn(move || {
+            let mut num = counter.lock().unwrap();
+
+            *num += 1;
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("Result: {}", *counter.lock().unwrap());
+}</code></pre>
+<figcaption><a href="#listing-16-14">Listing 16-14</a>: Attempting to use <code>Rc&lt;T&gt;</code> to allow multiple threads to own the <code>Mutex&lt;T&gt;</code></figcaption>
+</figure>
+<p>Once again, we compile and get… different errors! The compiler is teaching us
+a lot:</p>
+<pre><code class="language-console">$ cargo run
+   Compiling shared-state v0.1.0 (file:///projects/shared-state)
+error[E0277]: `Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;` cannot be sent between threads safely
+  --&gt; src/main.rs:11:36
+   |
+11 |           let handle = thread::spawn(move || {
+   |                        ------------- ^------
+   |                        |             |
+   |  ______________________|_____________within this `{closure@src/main.rs:11:36: 11:43}`
+   | |                      |
+   | |                      required by a bound introduced by this call
+12 | |             let mut num = counter.lock().unwrap();
+13 | |
+14 | |             *num += 1;
+15 | |         });
+   | |_________^ `Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;` cannot be sent between threads safely
+   |
+   = help: within `{closure@src/main.rs:11:36: 11:43}`, the trait `Send` is not implemented for `Rc&lt;std::sync::Mutex&lt;i32&gt;&gt;`
+note: required because it's used within this closure
+  --&gt; src/main.rs:11:36
+   |
+11 |         let handle = thread::spawn(move || {
+   |                                    ^^^^^^^
+note: required by a bound in `spawn`
+  --&gt; /rustc/88d9e12ae178fab0fb5cc050a94da85685d449ea/library/std/src/thread/functions.rs:125:0
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `shared-state` (bin "shared-state") due to 1 previous error
+</code></pre>
+<p>Wow, that error message is very wordy! Here’s the important part to focus on:
+<code>`Rc&lt;Mutex&lt;i32&gt;&gt;` cannot be sent between threads safely</code>. The compiler is
+also telling us the reason why: <code>the trait `Send` is not implemented for `Rc&lt;Mutex&lt;i32&gt;&gt;`</code>. We’ll talk about <code>Send</code> in the next section: It’s one of
+the traits that ensures that the types we use with threads are meant for use in
+concurrent situations.</p>
+<p>Unfortunately, <code>Rc&lt;T&gt;</code> is not safe to share across threads. When <code>Rc&lt;T&gt;</code>
+manages the reference count, it adds to the count for each call to <code>clone</code> and
+subtracts from the count when each clone is dropped. But it doesn’t use any
+concurrency primitives to make sure that changes to the count can’t be
+interrupted by another thread. This could lead to wrong counts—subtle bugs that
+could in turn lead to memory leaks or a value being dropped before we’re done
+with it. What we need is a type that is exactly like <code>Rc&lt;T&gt;</code>, but that makes
+changes to the reference count in a thread-safe way.</p>
+<h5 id="atomic-reference-counting-with-arct"><a class="header" href="#atomic-reference-counting-with-arct">Atomic Reference Counting with <code>Arc&lt;T&gt;</code></a></h5>
+<p>Fortunately, <code>Arc&lt;T&gt;</code> <em>is</em> a type like <code>Rc&lt;T&gt;</code> that is safe to use in
+concurrent situations. The <em>a</em> stands for <em>atomic</em>, meaning it’s an <em>atomically
+reference-counted</em> type. Atomics are an additional kind of concurrency
+primitive that we won’t cover in detail here: See the standard library
+documentation for <a href="https://doc.rust-lang.org/stable/std/sync/atomic/index.html"><code>std::sync::atomic</code></a><!-- ignore --> for more
+details. At this point, you just need to know that atomics work like primitive
+types but are safe to share across threads.</p>
+<p>You might then wonder why all primitive types aren’t atomic and why standard
+library types aren’t implemented to use <code>Arc&lt;T&gt;</code> by default. The reason is that
+thread safety comes with a performance penalty that you only want to pay when
+you really need to. If you’re just performing operations on values within a
+single thread, your code can run faster if it doesn’t have to enforce the
+guarantees atomics provide.</p>
+<p>Let’s return to our example: <code>Arc&lt;T&gt;</code> and <code>Rc&lt;T&gt;</code> have the same API, so we fix
+our program by changing the <code>use</code> line, the call to <code>new</code>, and the call to
+<code>clone</code>. The code in Listing 16-15 will finally compile and run.</p>
+<figure class="listing" id="listing-16-15">
+<span class="file-name">Filename: src/main.rs</span>
+<pre class="playground"><code class="language-rust edition2024">use std::sync::{Arc, Mutex};
+use std::thread;
+
+fn main() {
+    let counter = Arc::new(Mutex::new(0));
+    let mut handles = vec![];
+
+    for _ in 0..10 {
+        let counter = Arc::clone(&amp;counter);
+        let handle = thread::spawn(move || {
+            let mut num = counter.lock().unwrap();
+
+            *num += 1;
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("Result: {}", *counter.lock().unwrap());
+}</code></pre>
+<figcaption><a href="#listing-16-15">Listing 16-15</a>: Using an <code>Arc&lt;T&gt;</code> to wrap the <code>Mutex&lt;T&gt;</code> to be able to share ownership across multiple threads</figcaption>
+</figure>
+<p>This code will print the following:</p>
+<!-- Not extracting output because changes to this output aren't significant;
+the changes are likely to be due to the threads running differently rather than
+changes in the compiler -->
+<pre><code class="language-text">Result: 10
+</code></pre>
+<p>We did it! We counted from 0 to 10, which may not seem very impressive, but it
+did teach us a lot about <code>Mutex&lt;T&gt;</code> and thread safety. You could also use this
+program’s structure to do more complicated operations than just incrementing a
+counter. Using this strategy, you can divide a calculation into independent
+parts, split those parts across threads, and then use a <code>Mutex&lt;T&gt;</code> to have each
+thread update the final result with its part.</p>
+<p>Note that if you are doing simple numerical operations, there are types simpler
+than <code>Mutex&lt;T&gt;</code> types provided by the <a href="https://doc.rust-lang.org/stable/std/sync/atomic/index.html"><code>std::sync::atomic</code> module of the
+standard library</a><!-- ignore -->. These types provide safe, concurrent,
+atomic access to primitive types. We chose to use <code>Mutex&lt;T&gt;</code> with a primitive
+type for this example so that we could concentrate on how <code>Mutex&lt;T&gt;</code> works.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="similarities-between-refcelltrct-and-mutextarct"></a></p>
+<h4 id="comparing-refcelltrct-and-mutextarct"><a class="header" href="#comparing-refcelltrct-and-mutextarct">Comparing <code>RefCell&lt;T&gt;</code>/<code>Rc&lt;T&gt;</code> and <code>Mutex&lt;T&gt;</code>/<code>Arc&lt;T&gt;</code></a></h4>
+<p>You might have noticed that <code>counter</code> is immutable but that we could get a
+mutable reference to the value inside it; this means <code>Mutex&lt;T&gt;</code> provides
+interior mutability, as the <code>Cell</code> family does. In the same way we used
+<code>RefCell&lt;T&gt;</code> in Chapter 15 to allow us to mutate contents inside an <code>Rc&lt;T&gt;</code>, we
+use <code>Mutex&lt;T&gt;</code> to mutate contents inside an <code>Arc&lt;T&gt;</code>.</p>
+<p>Another detail to note is that Rust can’t protect you from all kinds of logic
+errors when you use <code>Mutex&lt;T&gt;</code>. Recall from Chapter 15 that using <code>Rc&lt;T&gt;</code> came
+with the risk of creating reference cycles, where two <code>Rc&lt;T&gt;</code> values refer to
+each other, causing memory leaks. Similarly, <code>Mutex&lt;T&gt;</code> comes with the risk of
+creating <em>deadlocks</em>. These occur when an operation needs to lock two resources
+and two threads have each acquired one of the locks, causing them to wait for
+each other forever. If you’re interested in deadlocks, try creating a Rust
+program that has a deadlock; then, research deadlock mitigation strategies for
+mutexes in any language and have a go at implementing them in Rust. The
+standard library API documentation for <code>Mutex&lt;T&gt;</code> and <code>MutexGuard</code> offers
+useful information.</p>
+<p>We’ll round out this chapter by talking about the <code>Send</code> and <code>Sync</code> traits and
+how we can use them with custom types.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h2 id="extensible-concurrency-with-send-and-sync-1"><a href="#extensible-concurrency-with-send-and-sync-1" class="header">Extensible Concurrency with Send and Sync</a></h2>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="extensible-concurrency-with-the-sync-and-send-traits"></a>
+<a id="extensible-concurrency-with-the-send-and-sync-traits"></a></p>
+<h3 id="extensible-concurrency-with-send-and-sync"><a class="header" href="#extensible-concurrency-with-send-and-sync">Extensible Concurrency with <code>Send</code> and <code>Sync</code></a></h3>
+<p>Interestingly, almost every concurrency feature we’ve talked about so far in
+this chapter has been part of the standard library, not the language. Your
+options for handling concurrency are not limited to the language or the
+standard library; you can write your own concurrency features or use those
+written by others.</p>
+<p>However, among the key concurrency concepts that are embedded in the language
+rather than the standard library are the <code>std::marker</code> traits <code>Send</code> and <code>Sync</code>.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="allowing-transference-of-ownership-between-threads-with-send"></a></p>
+<h4 id="transferring-ownership-between-threads"><a class="header" href="#transferring-ownership-between-threads">Transferring Ownership Between Threads</a></h4>
+<p>The <code>Send</code> marker trait indicates that ownership of values of the type
+implementing <code>Send</code> can be transferred between threads. Almost every Rust type
+implements <code>Send</code>, but there are some exceptions, including <code>Rc&lt;T&gt;</code>: This
+cannot implement <code>Send</code> because if you cloned an <code>Rc&lt;T&gt;</code> value and tried to
+transfer ownership of the clone to another thread, both threads might update
+the reference count at the same time. For this reason, <code>Rc&lt;T&gt;</code> is implemented
+for use in single-threaded situations where you don’t want to pay the
+thread-safe performance penalty.</p>
+<p>Therefore, Rust’s type system and trait bounds ensure that you can never
+accidentally send an <code>Rc&lt;T&gt;</code> value across threads unsafely. When we tried to do
+this in Listing 16-14, we got the error <code>the trait `Send` is not implemented for `Rc&lt;Mutex&lt;i32&gt;&gt;`</code>. When we switched to <code>Arc&lt;T&gt;</code>, which does implement
+<code>Send</code>, the code compiled.</p>
+<p>Any type composed entirely of <code>Send</code> types is automatically marked as <code>Send</code> as
+well. Almost all primitive types are <code>Send</code>, aside from raw pointers, which
+we’ll discuss in Chapter 20.</p>
+<!-- Old headings. Do not remove or links may break. -->
+<p><a id="allowing-access-from-multiple-threads-with-sync"></a></p>
+<h4 id="accessing-from-multiple-threads"><a class="header" href="#accessing-from-multiple-threads">Accessing from Multiple Threads</a></h4>
+<p>The <code>Sync</code> marker trait indicates that it is safe for the type implementing
+<code>Sync</code> to be referenced from multiple threads. In other words, any type <code>T</code>
+implements <code>Sync</code> if <code>&amp;T</code> (an immutable reference to <code>T</code>) implements <code>Send</code>,
+meaning the reference can be sent safely to another thread. Similar to <code>Send</code>,
+primitive types all implement <code>Sync</code>, and types composed entirely of types that
+implement <code>Sync</code> also implement <code>Sync</code>.</p>
+<p>The smart pointer <code>Rc&lt;T&gt;</code> also doesn’t implement <code>Sync</code> for the same reasons
+that it doesn’t implement <code>Send</code>. The <code>RefCell&lt;T&gt;</code> type (which we talked about
+in Chapter 15) and the family of related <code>Cell&lt;T&gt;</code> types don’t implement
+<code>Sync</code>. The implementation of borrow checking that <code>RefCell&lt;T&gt;</code> does at runtime
+is not thread-safe. The smart pointer <code>Mutex&lt;T&gt;</code> implements <code>Sync</code> and can be
+used to share access with multiple threads, as you saw in <a href="#shared-access-to-mutext">“Shared Access to
+<code>Mutex&lt;T&gt;</code>”</a><!-- ignore -->.</p>
+<h4 id="implementing-send-and-sync-manually-is-unsafe"><a class="header" href="#implementing-send-and-sync-manually-is-unsafe">Implementing <code>Send</code> and <code>Sync</code> Manually Is Unsafe</a></h4>
+<p>Because types composed entirely of other types that implement the <code>Send</code> and
+<code>Sync</code> traits also automatically implement <code>Send</code> and <code>Sync</code>, we don’t have to
+implement those traits manually. As marker traits, they don’t even have any
+methods to implement. They’re just useful for enforcing invariants related to
+concurrency.</p>
+<p>Manually implementing these traits involves implementing unsafe Rust code.
+We’ll talk about using unsafe Rust code in Chapter 20; for now, the important
+information is that building new concurrent types not made up of <code>Send</code> and
+<code>Sync</code> parts requires careful thought to uphold the safety guarantees. <a href="https://doc.rust-lang.org/stable/nomicon/index.html">“The
+Rustonomicon”</a> has more information about these guarantees and how to
+uphold them.</p>
+<h3 id="summary-15"><a class="header" href="#summary-15">Summary</a></h3>
+<p>This isn’t the last you’ll see of concurrency in this book: The next chapter
+focuses on async programming, and the project in Chapter 21 will use the
+concepts in this chapter in a more realistic situation than the smaller
+examples discussed here.</p>
+<p>As mentioned earlier, because very little of how Rust handles concurrency is
+part of the language, many concurrency solutions are implemented as crates.
+These evolve more quickly than the standard library, so be sure to search
+online for the current, state-of-the-art crates to use in multithreaded
+situations.</p>
+<p>The Rust standard library provides channels for message passing and smart
+pointer types, such as <code>Mutex&lt;T&gt;</code> and <code>Arc&lt;T&gt;</code>, that are safe to use in
+concurrent contexts. The type system and the borrow checker ensure that the
+code using these solutions won’t end up with data races or invalid references.
+Once you get your code to compile, you can rest assured that it will happily
+run on multiple threads without the kinds of hard-to-track-down bugs common in
+other languages. Concurrent programming is no longer a concept to be afraid of:
+Go forth and make your programs concurrent, fearlessly!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+</div><nav class="reader-nav" aria-label="Series navigation"><a href="15%20Smart%20Pointers%20and%20Shared%20Ownership.html">← 15 Smart Pointers and Shared Ownership</a><a href="01%20Toolchain%20and%20Cargo.html#series">Reading order</a><a href="17%20Async%20Rust%20and%20Blocking%20Work.html">17 Async Rust and Blocking Work →</a></nav><details><summary>Source, edition and licence</summary><p>The language reading is adapted under the MIT licence from <em>The Rust Programming Language</em> by Steve Klabnik, Carol Nichols and Chris Krycho, with contributions from the Rust community. The order-intake walkthroughs and lab are original to this edition.</p><a href="https://doc.rust-lang.org/stable/book/print.html#fearless-concurrency">Official chapter</a> · <a href="https://github.com/rust-lang/book">Upstream source</a><pre class="license">Copyright (c) 2010 The Rust Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the &quot;Software&quot;), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+</pre></details></main></div></body></html>
