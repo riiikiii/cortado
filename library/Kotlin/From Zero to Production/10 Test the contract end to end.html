@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Test the contract end to end</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-roaster.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+figure.code{margin-inline:0;max-width:100%;min-width:0}.code pre{max-width:100%;overflow:auto}.scroll{overflow:auto}.menu ol{columns:2;column-gap:2.5rem;padding-left:2rem}.menu li{break-inside:avoid}.menu li a{display:inline}main{min-width:0}.steps{display:flex;flex-wrap:wrap;gap:12px}.steps a{display:inline-block;padding:7px}.code figcaption{overflow-wrap:anywhere}section h2{max-width:38ch}p code{font-size:.92em}@media(max-width:680px){.menu ol{columns:1}}@media(max-width:800px){.shell main{padding-inline:0}.shell{padding-inline:16px}} </style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Kotlin · Field guide 10 / 13</span></div>
+<div class="hero"><div><h1>Test the contract end to end</h1><p>Use invariant tests, a concurrent HTTP probe and a clean CI database to catch distinct regressions.</p></div>
+<div class="plate"><small>One worked case</small><div class="trace"><b>Input</b><span>8 identical requests</span></div><div class="trace"><b>Action</b><span>One create, seven replays</span></div><div class="trace"><b>Result</b><span>GET returns 10125</span></div></div>
+</div></div></header>
+<div class="shell"><p><strong>Starting point.</strong> JDK and Maven for unit tests, a running stack and Python 3 for HTTP tests. <a href="kotlin-quotes.zip" download>Download the complete Kotlin project</a>.</p><nav class="menu"><p class="menu-title">In this guide</p><ol><li><a href="#make-the-tests-fail-at-the-right-boundary">Make the tests fail at the right boundary</a></li><li><a href="#follow-an-assertion-across-all-layers">Follow an assertion across all layers</a></li><li><a href="#structure-a-release-build">Structure a release build</a></li></ol></nav><main><section id="make-the-tests-fail-at-the-right-boundary" class="level2">
+<h2>Make the tests fail at the right boundary</h2>
+<p>A normal unit test should run with a database outage, a broken Docker daemon and no open ports. It checks the transformations that Kotlin owns. A database race needs a real unique index and simultaneous requests. These tests have different costs and catch different defects.</p>
+<figure class="code"><figcaption>src/test/kotlin/quotes/DomainTest.kt</figcaption><pre><code><span class="k">package</span><span class="w"> </span><span class="nn">quotes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.api.Assertions.*</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.api.Test</span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nc">DomainTest</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Test</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">parsesAndComparesByValue</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">assertEquals</span><span class="p">(</span><span class="n">Quote</span><span class="p">(</span><span class="s">"GILT"</span><span class="p">,</span><span class="w"> </span><span class="m">10125</span><span class="p">),</span><span class="w"> </span><span class="n">parseLine</span><span class="p">(</span><span class="s">"GILT, 10125"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nd">@Test</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">rejectsBadFeedData</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">line</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">"GILT,"</span><span class="p">,</span><span class="w"> </span><span class="s">"x,12"</span><span class="p">,</span><span class="w"> </span><span class="s">"GILT,0"</span><span class="p">,</span><span class="w"> </span><span class="s">"GILT,1,2"</span><span class="p">,</span><span class="w"> </span><span class="s">"GILT,9223372036854775808"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">assertNull</span><span class="p">(</span><span class="n">parseLine</span><span class="p">(</span><span class="n">line</span><span class="p">),</span><span class="w"> </span><span class="n">line</span><span class="p">)</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nd">@Test</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">copyChecksInvariants</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">assertThrows</span><span class="p">(</span><span class="n">IllegalArgumentException</span><span class="o">::</span><span class="n">class</span><span class="p">.</span><span class="na">java</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Quote</span><span class="p">(</span><span class="s">"GILT"</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">).</span><span class="na">copy</span><span class="p">(</span><span class="n">ticks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+<p>The rejection test contains an out-of-range integer literal <em>as text</em>. It exercises parsing before the Kotlin constructor can run. The copy test checks the second path into a data class. Remove the init requirement and that test fails even if parseLine still rejects zero. This is an example of testing an invariant through all supported ways to create the value.</p>
+<figure class="code"><figcaption>Terminal</figcaption><pre><code>mvn<span class="w"> </span><span class="nb">test</span>
+mvn<span class="w"> </span>-Dtest<span class="o">=</span>DomainTest#copyChecksInvariants<span class="w"> </span><span class="nb">test</span>
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
+<span class="c1"># Wait for readiness to report UP, then:</span>
+python3<span class="w"> </span>ops/smoke.py</code></pre></figure>
+<p>On Windows use the Python launcher if appropriate. The shell examples elsewhere use POSIX syntax and also work in WSL. Maven's test reports go into target/surefire-reports. The Python script needs an ordinary Python 3 installation and an available HTTP endpoint. It generates a new UUID and intentionally leaves one observation in the target. Use a disposable or designated test database.</p>
+</section>
+<section id="follow-an-assertion-across-all-layers" class="level2">
+<h2>Follow an assertion across all layers</h2>
+<figure class="code"><figcaption>ops/smoke.py</figcaption><pre><code><span class="sd">"""Run against a disposable quotes instance. Each run appends one row."""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">concurrent.futures</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.error</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTTPError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.request</span><span class="w"> </span><span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">urlopen</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"BASE_URL"</span><span class="p">,</span> <span class="s2">"http://127.0.0.1:8080"</span><span class="p">)</span>
+<span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">root</span><span class="si">}</span><span class="s2">/quotes/</span><span class="si">{</span><span class="n">uuid4</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="n">ticks</span><span class="p">):</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"symbol"</span><span class="p">:</span> <span class="s2">"GILT"</span><span class="p">,</span> <span class="s2">"ticks"</span><span class="p">:</span> <span class="n">ticks</span><span class="p">})</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">body</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"PUT"</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">"Content-Type"</span><span class="p">:</span> <span class="s2">"application/json"</span><span class="p">})</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="k">as</span> <span class="n">reply</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">reply</span><span class="o">.</span><span class="n">status</span>
+    <span class="k">except</span> <span class="n">HTTPError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">error</span><span class="o">.</span><span class="n">code</span>
+
+<span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="k">as</span> <span class="n">workers</span><span class="p">:</span>
+    <span class="n">statuses</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">workers</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">put</span><span class="p">,</span> <span class="p">[</span><span class="mi">10125</span><span class="p">]</span> <span class="o">*</span> <span class="mi">8</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">statuses</span> <span class="o">==</span> <span class="p">[</span><span class="mi">201</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">204</span><span class="p">]</span> <span class="o">*</span> <span class="mi">7</span><span class="p">,</span> <span class="n">statuses</span>
+<span class="k">assert</span> <span class="n">put</span><span class="p">(</span><span class="mi">10130</span><span class="p">)</span> <span class="o">==</span> <span class="mi">409</span>
+<span class="k">assert</span> <span class="n">put</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">400</span>
+<span class="k">assert</span> <span class="n">put</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span> <span class="o">==</span> <span class="mi">400</span>
+<span class="k">with</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="k">as</span> <span class="n">reply</span><span class="p">:</span>
+    <span class="n">quote</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">quote</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"symbol"</span><span class="p">:</span> <span class="s2">"GILT"</span><span class="p">,</span> <span class="s2">"ticks"</span><span class="p">:</span> <span class="mi">10125</span><span class="p">},</span> <span class="n">quote</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">statuses</span><span class="p">,</span> <span class="n">quote</span><span class="p">)</span></code></pre></figure>
+<p>Eight requests use identical JSON and one shared UUID. The thread pool overlaps requests; scheduling does not guarantee a particular order. Sorting statuses removes an irrelevant ordering dependency. The assertion demands exactly one creator and seven replays. The next call changes the economic value and should conflict. The following requests are invalid even though their identifier already exists. Finally the GET proves that the winning payload survived all those attempts.</p>
+<p>An implementation that unconditionally returned 204 for all duplicates would pass the eight-request check yet fail the altered-payload check. An implementation that overwrote then returned 409 would pass the status check and fail the final GET. The fractional input tests the JSON boundary. A Java or Kotlin-only test constructing a Long cannot express that failure mode.</p>
+<p>The HTTP run increases confidence in end-to-end wiring. Eight requests can still be scheduled serially, so this test alone cannot prove the implementation handles a real lock wait. The explicit two-session experiment in the preceding chapter controls that ordering. Add a deterministic blocked-transaction fixture in CI when changing concurrency semantics.</p>
+</section>
+<section id="structure-a-release-build" class="level2">
+<h2>Structure a release build</h2>
+<p>The included workflow runs on a GitHub project containing the companion application at its root. Extract the application into its own repository before enabling it. The guide collection only distributes the archive. The workflow uses an ephemeral PostgreSQL service, builds the jar, launches it, polls readiness and runs the public smoke contract. A fresh runner removes reliance on a developer's local Maven cache or IDE.</p>
+<figure class="code"><figcaption>.github/workflows/verify.yml</figcaption><pre><code><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Verify Kotlin quotes</span>
+<span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">push</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pull_request</span><span class="p p-Indicator">]</span>
+<span class="nt">permissions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="nv">read</span><span class="p p-Indicator">}</span>
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">verify</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<span class="w">    </span><span class="nt">timeout-minutes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15</span>
+<span class="w">    </span><span class="nt">services</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">postgres</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:17</span>
+<span class="w">        </span><span class="nt">env</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">POSTGRES_USER</span><span class="p">:</span><span class="w"> </span><span class="nv">quotes</span><span class="p p-Indicator">,</span><span class="nt"> POSTGRES_DB</span><span class="p">:</span><span class="w"> </span><span class="nv">quotes</span><span class="p p-Indicator">,</span><span class="nt"> POSTGRES_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="nv">local-ci</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"5432:5432"</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">--health-cmd "pg_isready -U quotes" --health-interval 5s</span>
+<span class="w">          </span><span class="no">--health-timeout 3s --health-retries 15</span>
+<span class="w">    </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">SPRING_DATASOURCE_URL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">jdbc:postgresql://127.0.0.1:5432/quotes</span>
+<span class="w">      </span><span class="nt">SPRING_DATASOURCE_USERNAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">quotes</span>
+<span class="w">      </span><span class="nt">SPRING_DATASOURCE_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local-ci</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-java@v4</span>
+<span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">distribution</span><span class="p">:</span><span class="w"> </span><span class="nv">temurin</span><span class="p p-Indicator">,</span><span class="nt"> java-version</span><span class="p">:</span><span class="w"> </span><span class="s">'21'</span><span class="p p-Indicator">,</span><span class="nt"> cache</span><span class="p">:</span><span class="w"> </span><span class="nv">maven</span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mvn -B clean verify</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Exercise the running jar</span>
+<span class="w">        </span><span class="nt">shell</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bash</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">java -jar target/quotes.jar &gt; app.log 2&gt;&amp;1 &amp;</span>
+<span class="w">          </span><span class="no">trap 'kill "$!" 2&gt;/dev/null || true' EXIT</span>
+<span class="w">          </span><span class="no">for i in {1..60}; do</span>
+<span class="w">            </span><span class="no">if curl -fsS http://localhost:8080/actuator/health/readiness; then break; fi</span>
+<span class="w">            </span><span class="no">sleep 2</span>
+<span class="w">          </span><span class="no">done</span>
+<span class="w">          </span><span class="no">curl -fsS http://localhost:8080/actuator/health/readiness || { cat app.log; exit 1; }</span>
+<span class="w">          </span><span class="no">python3 ops/smoke.py</span></code></pre></figure>
+<p>The readiness loop has a deadline and prints the application log on failure. Without a deadline a misconfigured database can consume the entire job timeout. Without an actual readiness check the smoke test can race server startup and obscure the underlying failure. Build once for a release, publish an identifiable immutable image from the verified source and promote that image to later environments. Rebuilding from mutable base tags later can produce a different binary environment.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Failure</th>
+<th>Narrow it down</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Pure tests pass, every valid HTTP call returns 400</td>
+<td>Inspect content type, DTO shape and JSON numeric conversion.</td>
+</tr>
+<tr class="even">
+<td>HTTP starts but readiness stays DOWN</td>
+<td>Inspect the database connection, account, migration history and health group.</td>
+</tr>
+<tr class="odd">
+<td>Race returns two creates</td>
+<td>Check that both requests used one key and reached a database with the unique constraint.</td>
+</tr>
+<tr class="even">
+<td>Replay returns 409 after unchanged payload</td>
+<td>Inspect persisted units, equality fields, normalisation and which database served the read.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Add a recovery case after a deployment change. Record a fresh UUID, restart the application while preserving its database, then retry that exact pair and expect 204. A second invocation of smoke.py uses a fresh ID and therefore cannot demonstrate persistence across restart.</p>
+</section>
+<section id="references"><h2>Technical references</h2><ul><li><a href="https://docs.spring.io/spring-boot/3.5/reference/testing/index.html">docs.spring.io · Index</a></li><li><a href="https://www.postgresql.org/docs/17/explicit-locking.html">www.postgresql.org · Explicit locking</a></li></ul></section><nav class="steps" aria-label="Series navigation">Previous · <a href="09%20Persist%20once%20under%20contention.html">09 Persist once under contention</a> Next · <a href="11%20Package%20and%20promote%20a%20release.html">11 Package and promote a release</a></nav></main></div></body></html>

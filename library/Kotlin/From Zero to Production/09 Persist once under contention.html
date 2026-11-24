@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Persist once under contention</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-espresso-pull.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+figure.code{margin-inline:0;max-width:100%;min-width:0}.code pre{max-width:100%;overflow:auto}.scroll{overflow:auto}.menu ol{columns:2;column-gap:2.5rem;padding-left:2rem}.menu li{break-inside:avoid}.menu li a{display:inline}main{min-width:0}.steps{display:flex;flex-wrap:wrap;gap:12px}.steps a{display:inline-block;padding:7px}.code figcaption{overflow-wrap:anywhere}section h2{max-width:38ch}p code{font-size:.92em}@media(max-width:680px){.menu ol{columns:1}}@media(max-width:800px){.shell main{padding-inline:0}.shell{padding-inline:16px}} </style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Kotlin · Field guide 09 / 13</span></div>
+<div class="hero"><div><h1>Persist once under contention</h1><p>Let PostgreSQL arbitrate simultaneous writes and explain why a later read can see the winner.</p></div>
+<div class="plate"><small>One worked case</small><div class="trace"><b>Input</b><span>Two inserts share one UUID</span></div><div class="trace"><b>Action</b><span>Unique index decides</span></div><div class="trace"><b>Result</b><span>One durable observation</span></div></div>
+</div></div></header>
+<div class="shell"><p><strong>Starting point.</strong> The local stack from the HTTP guide, plus two psql sessions. <a href="kotlin-quotes.zip" download>Download the complete Kotlin project</a>.</p><nav class="menu"><p class="menu-title">In this guide</p><ol><li><a href="#give-one-component-authority-over-the-invariant">Give one component authority over the invariant</a></li><li><a href="#trace-an-overlapping-write">Trace an overlapping write</a></li><li><a href="#reproduce-the-wait-using-two-sql-sessions">Reproduce the wait using two SQL sessions</a></li><li><a href="#know-when-the-design-stops-working">Know when the design stops working</a></li></ol></nav><main><section id="give-one-component-authority-over-the-invariant" class="level2">
+<h2>Give one component authority over the invariant</h2>
+<p>Two healthy pods receive the same UUID at the same instant. Each JVM has its own memory, so synchronising a method or protecting a map with a mutex cannot decide the winner across both pods. PostgreSQL owns the unique index on the key and sees both writes. Put the decision there.</p>
+<figure class="code"><figcaption>src/main/resources/db/migration/V1__quotes.sql</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">quotes</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="n">uuid</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">symbol</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">CHECK</span><span class="w"> </span><span class="p">(</span><span class="n">symbol</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s1">'^[A-Z]{1,8}$'</span><span class="p">),</span>
+<span class="w">    </span><span class="n">ticks</span><span class="w"> </span><span class="nb">bigint</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">CHECK</span><span class="w"> </span><span class="p">(</span><span class="n">ticks</span><span class="w"> </span><span class="k">BETWEEN</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="mi">1000000000</span><span class="p">)</span>
+<span class="p">);</span></code></pre></figure>
+<p>The UUID identifies a client's observation. The symbol identifies an instrument. Many independent observations can refer to GILT, so a unique index on symbol would reject valid events. A database constraint also protects against scripts and future services that bypass the Kotlin constructor. The price bound and symbol syntax must therefore match the application rules.</p>
+<figure class="code"><figcaption>src/main/kotlin/quotes/Store.kt</figcaption><pre><code><span class="k">package</span><span class="w"> </span><span class="nn">quotes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">java.util.UUID</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">org.springframework.jdbc.core.JdbcTemplate</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">org.springframework.stereotype.Component</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nc">QuoteStore</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="n">UUID</span><span class="p">,</span><span class="w"> </span><span class="n">quote</span><span class="p">:</span><span class="w"> </span><span class="n">Quote</span><span class="p">):</span><span class="w"> </span><span class="n">Booking</span>
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="n">UUID</span><span class="p">):</span><span class="w"> </span><span class="n">Quote?</span>
+<span class="p">}</span>
+
+<span class="nd">@Component</span>
+<span class="kd">class</span><span class="w"> </span><span class="nc">SqlStore</span><span class="p">(</span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">db</span><span class="p">:</span><span class="w"> </span><span class="n">JdbcTemplate</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">QuoteStore</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="n">UUID</span><span class="p">,</span><span class="w"> </span><span class="n">quote</span><span class="p">:</span><span class="w"> </span><span class="n">Quote</span><span class="p">):</span><span class="w"> </span><span class="n">Booking</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">db</span><span class="p">.</span><span class="na">update</span><span class="p">(</span>
+<span class="w">            </span><span class="s">"INSERT INTO quotes(id,symbol,ticks) VALUES (?,?,?) ON CONFLICT (id) DO NOTHING"</span><span class="p">,</span>
+<span class="w">            </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">quote</span><span class="p">.</span><span class="na">symbol</span><span class="p">,</span><span class="w"> </span><span class="n">quote</span><span class="p">.</span><span class="na">ticks</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Booking</span><span class="p">.</span><span class="na">Created</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">find</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">quote</span><span class="p">)</span><span class="w"> </span><span class="n">Booking</span><span class="p">.</span><span class="na">Replay</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">Booking</span><span class="p">.</span><span class="na">Conflict</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="n">UUID</span><span class="p">):</span><span class="w"> </span><span class="n">Quote?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">db</span><span class="p">.</span><span class="na">query</span><span class="p">(</span>
+<span class="w">        </span><span class="s">"SELECT symbol,ticks FROM quotes WHERE id = ?"</span><span class="p">,</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">row</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Quote</span><span class="p">(</span><span class="n">row</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="s">"symbol"</span><span class="p">),</span><span class="w"> </span><span class="n">row</span><span class="p">.</span><span class="na">getLong</span><span class="p">(</span><span class="s">"ticks"</span><span class="p">))</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">id</span>
+<span class="w">    </span><span class="p">).</span><span class="na">singleOrNull</span><span class="p">()</span>
+<span class="p">}</span></code></pre></figure>
+<p>JdbcTemplate manages connection checkout, cleanup and parameter binding. The question marks stand for data values bound by the driver. A successful insert affects one row. A conflicting insert whose action is DO NOTHING affects zero. The explicit conflict target matters. It limits the replay interpretation to a collision on id. A separate constraint failure must remain distinguishable.</p>
+</section>
+<section id="trace-an-overlapping-write" class="level2">
+<h2>Trace an overlapping write</h2>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Moment</th>
+<th>Session A</th>
+<th>Session B</th>
+<th>What a third reader sees</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>INSERT K, GILT, 10125 in an open transaction</td>
+<td>Idle</td>
+<td>No committed K</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Transaction still open</td>
+<td>Attempts INSERT with K; waits on the conflicting transaction</td>
+<td>No committed K</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>COMMIT</td>
+<td>Resolves conflict; zero inserted</td>
+<td>A's row</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Done</td>
+<td>New SELECT reads GILT, 10125</td>
+<td>Same row</td>
+</tr>
+</tbody>
+</table></div>
+<p>If A rolls back at moment 3, B can insert and becomes the creator. This is the case a read-then-insert implementation misses. Both sessions can first read “absent”. Unique enforcement still stops a duplicate, but you must handle the losing write. ON CONFLICT makes the expected alternative explicit.</p>
+<p>Our adapter uses JDBC autocommit, an immutable table through the API and primary-database reads. The comparison runs in a fresh statement after the insert finishes. The winner can commit after B's insert statement took its initial snapshot. Under PostgreSQL Read Committed a later statement can see the winner. Folding the fallback SELECT into the same statement with a CTE can yield an unexpectedly empty result under contention because the statement uses one snapshot. A read replica introduces a different problem: replication lag can briefly hide the committed row. Keep the conflict read on the primary.</p>
+</section>
+<section id="reproduce-the-wait-using-two-sql-sessions" class="level2">
+<h2>Reproduce the wait using two SQL sessions</h2>
+<p>From the project root use <code>docker compose exec db psql -U quotes -d quotes</code> in two terminals. Use an unused identifier for each experiment. First execute the following in A and leave the transaction open.</p>
+<figure class="code"><figcaption>SQL session</figcaption><pre><code><span class="k">BEGIN</span><span class="p">;</span>
+<span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">quotes</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="n">symbol</span><span class="p">,</span><span class="n">ticks</span><span class="p">)</span>
+<span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">'00000000-0000-4000-8000-000000000777'</span><span class="p">,</span><span class="s1">'GILT'</span><span class="p">,</span><span class="mi">10125</span><span class="p">);</span></code></pre></figure>
+<p>Then execute the following in B. In A issue COMMIT. B should finish with INSERT 0 0. Now run a SELECT on that identifier in B. Repeat with a fresh ID and ROLLBACK in A to observe INSERT 0 1 instead.</p>
+<figure class="code"><figcaption>SQL session</figcaption><pre><code><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">quotes</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="n">symbol</span><span class="p">,</span><span class="n">ticks</span><span class="p">)</span>
+<span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">'00000000-0000-4000-8000-000000000777'</span><span class="p">,</span><span class="s1">'GILT'</span><span class="p">,</span><span class="mi">10130</span><span class="p">)</span>
+<span class="k">ON</span><span class="w"> </span><span class="n">CONFLICT</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">DO</span><span class="w"> </span><span class="k">NOTHING</span><span class="p">;</span></code></pre></figure>
+</section>
+<section id="know-when-the-design-stops-working" class="level2">
+<h2>Know when the design stops working</h2>
+<p>The table must remain append-only for the service's advertised replay window. If another writer deletes K between the conflict and the comparison, find returns null and the adapter classifies it as a conflict. If a retention job deletes K tomorrow, tomorrow's retry can be created anew. Set the retention and retry contract together. Grant limited runtime privileges on an established schema. Run DDL with a separately controlled migration identity when moving beyond the local lab.</p>
+<p>One SQL insertion makes the quote durable. Adding a Kafka publication immediately afterwards creates two independent commits. A crash between them would persist the quote and omit the notification. If that notification becomes a requirement, introduce an outbox row in the same database transaction and a relay with replay-aware consumers. Suspended code, a retry loop or a method named saveAndPublish cannot confer atomicity across those systems.</p>
+<p>For a lost HTTP response after commit, retry the original ID and payload. For a 409 stop and reconcile the payload. Retrying with a fresh identifier defeats the mechanism. A unique index establishes at most one persisted row per key. It does not prove that every client ever saw a successful response.</p>
+</section>
+<section id="references"><h2>Technical references</h2><ul><li><a href="https://www.postgresql.org/docs/17/sql-insert.html">www.postgresql.org · Sql insert</a></li><li><a href="https://www.postgresql.org/docs/17/transaction-iso.html">www.postgresql.org · Transaction iso</a></li></ul></section><nav class="steps" aria-label="Series navigation">Previous · <a href="08%20Publish%20an%20HTTP%20contract.html">08 Publish an HTTP contract</a> Next · <a href="10%20Test%20the%20contract%20end%20to%20end.html">10 Test the contract end to end</a></nav></main></div></body></html>

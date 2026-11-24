@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Design typed JVM APIs</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-chemex.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+figure.code{margin-inline:0;max-width:100%;min-width:0}.code pre{max-width:100%;overflow:auto}.scroll{overflow:auto}.menu ol{columns:2;column-gap:2.5rem;padding-left:2rem}.menu li{break-inside:avoid}.menu li a{display:inline}main{min-width:0}.steps{display:flex;flex-wrap:wrap;gap:12px}.steps a{display:inline-block;padding:7px}.code figcaption{overflow-wrap:anywhere}section h2{max-width:38ch}p code{font-size:.92em}@media(max-width:680px){.menu ol{columns:1}}@media(max-width:800px){.shell main{padding-inline:0}.shell{padding-inline:16px}} </style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Kotlin · Field guide 04 / 13</span></div>
+<div class="hero"><div><h1>Design typed JVM APIs</h1><p>Read generic signatures, choose variance, wrap units and work across the Java boundary.</p></div>
+<div class="plate"><small>One worked case</small><div class="trace"><b>Input</b><span>Source of Quote</span></div><div class="trace"><b>Action</b><span>Map into Source of Ticks</span></div><div class="trace"><b>Result</b><span>Sink logs 10125</span></div></div>
+</div></div></header>
+<div class="shell"><p><strong>Starting point.</strong> You can follow a collection lambda. Open Types.kt. <a href="kotlin-quotes.zip" download>Download the complete Kotlin project</a>.</p><nav class="menu"><p class="menu-title">In this guide</p><ol><li><a href="#design-the-smallest-useful-interface">Design the smallest useful interface</a></li><li><a href="#read-variance-in-the-direction-data-crosses-the-boundary">Read variance in the direction data crosses the boundary</a></li><li><a href="#introduce-units-where-confusion-would-be-expensive">Introduce units where confusion would be expensive</a></li><li><a href="#scope-functions-and-java-callers">Scope functions and Java callers</a></li></ol></nav><main><section id="design-the-smallest-useful-interface" class="level2">
+<h2>Design the smallest useful interface</h2>
+<p>How can a feed of quotes become a feed of prices without the consumer knowing the feed implementation? Open Types.kt. A Source supplies a value on demand. A Sink accepts a value. The distinction matters to the compiler and to the programmer deciding which part owns a transformation.</p>
+<figure class="code"><figcaption>src/main/kotlin/quotes/Types.kt</figcaption><pre><code><span class="k">package</span><span class="w"> </span><span class="nn">quotes</span>
+
+<span class="kd">fun</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nc">Source</span><span class="o">&lt;</span><span class="k">out</span><span class="w"> </span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">latest</span><span class="p">():</span><span class="w"> </span><span class="n">T</span>
+<span class="p">}</span>
+
+<span class="kd">fun</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nc">Sink</span><span class="o">&lt;</span><span class="k">in</span><span class="w"> </span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="n">value</span><span class="p">:</span><span class="w"> </span><span class="n">T</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="kd">fun</span><span class="w"> </span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">R</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">Source</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">transform</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">R</span><span class="p">):</span><span class="w"> </span><span class="n">Source</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="n">Source</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">latest</span><span class="p">())</span><span class="w"> </span><span class="p">}</span>
+
+<span class="nd">@JvmInline</span>
+<span class="kd">value</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nc">Ticks</span><span class="p">(</span><span class="kd">val</span><span class="w"> </span><span class="nv">value</span><span class="p">:</span><span class="w"> </span><span class="kt">Long</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">init</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">require</span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">object</span><span class="w"> </span><span class="nc">Types</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@JvmStatic</span>
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">:</span><span class="w"> </span><span class="n">Array</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Source</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Quote</span><span class="p">(</span><span class="s">"GILT"</span><span class="p">,</span><span class="w"> </span><span class="m">10125</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">prices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">source</span><span class="p">.</span><span class="na">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Ticks</span><span class="p">(</span><span class="nb">it</span><span class="p">.</span><span class="na">ticks</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">log</span><span class="p">:</span><span class="w"> </span><span class="n">Sink</span><span class="o">&lt;</span><span class="kt">Any</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Sink</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">println</span><span class="p">(</span><span class="nb">it</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">priceLog</span><span class="p">:</span><span class="w"> </span><span class="n">Sink</span><span class="o">&lt;</span><span class="n">Ticks</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">log</span>
+<span class="w">        </span><span class="n">priceLog</span><span class="p">.</span><span class="na">write</span><span class="p">(</span><span class="n">prices</span><span class="p">.</span><span class="na">latest</span><span class="p">())</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+<p>A <code>fun interface</code> has one abstract method. Kotlin can turn a lambda into an instance when the expected interface is known. <code>Source { Quote(...) }</code> builds an object. Calling latest later runs the lambda. Likewise the map extension returns a new source that invokes the original source and then transforms the result on <em>each</em> read. Nothing in that signature promises caching. Add a counter to the original lambda and call latest twice to observe two reads.</p>
+<p>Read <code>fun &lt;T, R&gt; Source&lt;T&gt;.map(transform: (T) -&gt; R): Source&lt;R&gt;</code> from the receiver outwards. A caller has a Source of T and a function that consumes T and produces R. The result is a Source of R. The dot gives the operation member-call syntax. The compiler resolves extensions from the receiver's declared type. A member function with an applicable signature takes precedence. An extension cannot override the runtime behaviour of a class.</p>
+</section>
+<section id="read-variance-in-the-direction-data-crosses-the-boundary" class="level2">
+<h2>Read variance in the direction data crosses the boundary</h2>
+<p>A Source of Quote can stand in for a Source of Any. Every object it produces will satisfy the broader promise. The <code>out</code> annotation expresses covariance. A Sink of Any can stand in for a Sink of Ticks because it accepts every Ticks the caller could send it. This is contravariance, written <code>in</code>. Follow the assignment to priceLog in the example. Reversing its direction would let a caller send an arbitrary String to a sink that only understands Ticks.</p>
+<p>A mutable container both accepts and returns values. If a MutableList of Quote could stand in for a MutableList of Any, someone could append a String to the original quote list. The compiler disallows that assignment. Use a read-only List for a publishing interface when the caller only needs values. Generic type arguments are generally erased on the JVM. An <code>is List&lt;*&gt;</code> check can establish that an object is a list. It cannot prove that every element is a Quote. Check the elements or validate the input during deserialisation.</p>
+</section>
+<section id="introduce-units-where-confusion-would-be-expensive" class="level2">
+<h2>Introduce units where confusion would be expensive</h2>
+<p>The value class in Types.kt makes a price distinct from an arbitrary Long in Kotlin source. Compared with <code>typealias Ticks = Long</code>, it gives a real compiler-enforced distinction. Depending on context the compiler may use the underlying representation or box the value, particularly through generic interfaces. Use it to prevent unit mistakes. Benchmark before relying on an allocation saving.</p>
+<figure class="code"><figcaption>Kotlin</figcaption><pre><code><span class="kd">interface</span><span class="w"> </span><span class="nc">Pricer</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">price</span><span class="p">(</span><span class="n">symbol</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">):</span><span class="w"> </span><span class="n">Ticks</span><span class="w"> </span><span class="p">}</span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nc">MeteredPricer</span><span class="p">(</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">delegate</span><span class="p">:</span><span class="w"> </span><span class="n">Pricer</span><span class="p">,</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">count</span><span class="p">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Unit</span>
+<span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Pricer</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">delegate</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">price</span><span class="p">(</span><span class="n">symbol</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">):</span><span class="w"> </span><span class="n">Ticks</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">count</span><span class="p">()</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">delegate</span><span class="p">.</span><span class="na">price</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+<p>Interface delegation forwards methods to the supplied implementation. This override counts calls at the boundary. Calls an implementation makes internally to its own methods can bypass the wrapper. If you need one observation per external request, this is appropriate. If you need one per database query, instrument the database adapter. Kotlin classes and methods are final by default. Plain interface composition usually suffices for this kind of behaviour.</p>
+</section>
+<section id="scope-functions-and-java-callers" class="level2">
+<h2>Scope functions and Java callers</h2>
+<figure class="code"><figcaption>Kotlin</figcaption><pre><code><span class="kd">val</span><span class="w"> </span><span class="nv">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parseLine</span><span class="p">(</span><span class="s">"GILT,10125"</span><span class="p">)</span><span class="o">?.</span><span class="na">let</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">quote</span><span class="w"> </span><span class="o">-&gt;</span>
+<span class="w">    </span><span class="s">"</span><span class="si">${</span><span class="n">quote</span><span class="p">.</span><span class="na">symbol</span><span class="si">}</span><span class="s">=</span><span class="si">${</span><span class="n">quote</span><span class="p">.</span><span class="na">ticks</span><span class="si">}</span><span class="s">"</span>
+<span class="p">}</span>
+<span class="kd">val</span><span class="w"> </span><span class="nv">requestId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">also</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">println</span><span class="p">(</span><span class="s">"created </span><span class="si">$</span><span class="n">it</span><span class="s">"</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<span class="kd">val</span><span class="w"> </span><span class="nv">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StringBuilder</span><span class="p">().</span><span class="na">apply</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">append</span><span class="p">(</span><span class="s">"quote "</span><span class="p">)</span>
+<span class="w">    </span><span class="n">append</span><span class="p">(</span><span class="n">requestId</span><span class="p">)</span>
+<span class="p">}.</span><span class="na">toString</span><span class="p">()</span></code></pre></figure>
+<p>Choose by the required return value first. Let and run return the lambda result. Also and apply return the original receiver. Let and also pass it as an argument. Run and apply give it the implicit receiver named this. Nested scopes with several implicit receivers make it easy to modify the wrong builder. Use a normal local name when it clarifies ownership.</p>
+<p>A Java library with unknown nullability can expose a platform type, often displayed as String! in an IDE. Assigning it directly to String permits a runtime failure on a null value. Assign to String? at the boundary and validate once. Java exceptions do not become checked exceptions in Kotlin source. For a Kotlin API consumed by Java, <code>@Throws</code> can expose the checked-exception contract and <code>@JvmOverloads</code> can emit selected overloads for trailing defaulted parameters. Named arguments are a Kotlin caller facility and cannot generally be used with Java methods.</p>
+<p>Run the standalone class quotes.Types using the Maven exec command from chapter one. Expect <code>Ticks(value=10125)</code>. Now replace the string-transforming expression inside let with println. Its inferred result becomes Unit, or null when the receiver is absent. That small change demonstrates how a scope function can accidentally turn a value pipeline into a side effect.</p>
+</section>
+<section id="references"><h2>Technical references</h2><ul><li><a href="https://kotlinlang.org/docs/generics.html">kotlinlang.org · Generics</a></li><li><a href="https://kotlinlang.org/docs/java-interop.html">kotlinlang.org · Java interop</a></li></ul></section><nav class="steps" aria-label="Series navigation">Previous · <a href="03%20Transform%20collections%20and%20streams.html">03 Transform collections and streams</a> Next · <a href="05%20Build%20a%20Kotlin%20DSL.html">05 Build a Kotlin DSL</a></nav></main></div></body></html>

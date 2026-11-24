@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Operate the service under load</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-cortado.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+figure.code{margin-inline:0;max-width:100%;min-width:0}.code pre{max-width:100%;overflow:auto}.scroll{overflow:auto}.menu ol{columns:2;column-gap:2.5rem;padding-left:2rem}.menu li{break-inside:avoid}.menu li a{display:inline}main{min-width:0}.steps{display:flex;flex-wrap:wrap;gap:12px}.steps a{display:inline-block;padding:7px}.code figcaption{overflow-wrap:anywhere}section h2{max-width:38ch}p code{font-size:.92em}@media(max-width:680px){.menu ol{columns:1}}@media(max-width:800px){.shell main{padding-inline:0}.shell{padding-inline:16px}} </style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Kotlin · Field guide 13 / 13</span></div>
+<div class="hero"><div><h1>Operate the service under load</h1><p>Explain a slow request and demonstrate persistence across a production-style release and recovery.</p></div>
+<div class="plate"><small>One worked case</small><div class="trace"><b>Input</b><span>200 requests per second</span></div><div class="trace"><b>Action</b><span>Hold connections for 100 ms</span></div><div class="trace"><b>Result</b><span>Mean demand ≈ 20</span></div></div>
+</div></div></header>
+<div class="shell"><p><strong>Starting point.</strong> A running staging release, operator access and a known observation ID. <a href="kotlin-quotes.zip" download>Download the complete Kotlin project</a>.</p><nav class="menu"><p class="menu-title">In this guide</p><ol><li><a href="#decide-whether-the-service-is-meeting-its-contract">Decide whether the service is meeting its contract</a></li><li><a href="#separate-a-slow-dependency-from-a-saturated-jvm">Separate a slow dependency from a saturated JVM</a></li><li><a href="#build-an-operational-budget">Build an operational budget</a></li><li><a href="#graduation-exercise-recover-an-observation-across-a-release">Graduation exercise: recover an observation across a release</a></li><li><a href="#what-was-exercised-for-this-edition">What was exercised for this edition</a></li></ol></nav><main><section id="decide-whether-the-service-is-meeting-its-contract" class="level2">
+<h2>Decide whether the service is meeting its contract</h2>
+<p>Imagine the desk reports “recording a quote takes two seconds”. A live process can still be unusably slow. Separate the client timeline into admission, waiting for a connection, executing SQL and sending the reply. Begin with one affected interval and one known request. Confirm the endpoint, response status and whether the client retried with the same identifier.</p>
+<figure class="code"><figcaption>Terminal</figcaption><pre><code>curl<span class="w"> </span>-fsS<span class="w"> </span>http://127.0.0.1:8080/actuator/health/liveness
+curl<span class="w"> </span>-fsS<span class="w"> </span>http://127.0.0.1:8080/actuator/health/readiness
+curl<span class="w"> </span>-fsS<span class="w"> </span>http://127.0.0.1:8080/actuator/prometheus<span class="w"> </span>&gt;<span class="w"> </span>metrics.txt
+rg<span class="w"> </span><span class="s1">'http_server_requests_seconds|hikaricp_connections|jvm_memory_used_bytes'</span><span class="w"> </span>metrics.txt</code></pre></figure>
+<p>Make a few HTTP requests first so the relevant meter series exist. Micrometer records HTTP timings and pool metrics. Endpoint labels should identify a route template such as /quotes/{id}. Raw UUIDs as metric labels create a time series for each observation and can overwhelm the monitoring system. Use request or trace IDs in structured logs for individual investigations, subject to retention and access policy.</p>
+</section>
+<section id="separate-a-slow-dependency-from-a-saturated-jvm" class="level2">
+<h2>Separate a slow dependency from a saturated JVM</h2>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Evidence over the same interval</th>
+<th>Plausible mechanism</th>
+<th>Distinguishing observation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Borrowers waiting and active connections near maximum</td>
+<td>Database work is slow or requests exceed available pool capacity</td>
+<td>Compare query and lock wait times with pool wait times.</td>
+</tr>
+<tr class="even">
+<td>CPU high, little database time</td>
+<td>Parsing, allocation or application compute dominates</td>
+<td>Sample stacks or collect a bounded Java Flight Recorder recording on a representative instance.</td>
+</tr>
+<tr class="odd">
+<td>Many 409s, normal latency</td>
+<td>Reused keys carry different payloads</td>
+<td>Compare the sender's immutable request identity and payload history.</td>
+</tr>
+<tr class="even">
+<td>Readiness fails on all pods, liveness stays UP</td>
+<td>A dependency shared across replicas is unavailable</td>
+<td>Check the database and network from the service network, then verify recovery.</td>
+</tr>
+</tbody>
+</table></div>
+<p>A pool can become saturated while database CPU stays low. Return to the persistence guide and leave the winning insert uncommitted. Conflicting writers can occupy connections waiting on that one transaction while making almost no CPU progress. Raising the pool limit permits more waiters. Inspect lock holders and transaction age first.</p>
+<p>For a controlled staging diagnosis, use a database role with the required monitoring visibility and inspect aggregate waits. An empty wait category alone does not establish that there is no lock contention. Sample over the actual incident interval.</p>
+<figure class="code"><figcaption>SQL session</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="k">state</span><span class="p">,</span><span class="w"> </span><span class="n">wait_event_type</span><span class="p">,</span><span class="w"> </span><span class="n">wait_event</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_activity</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">datname</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">current_database</span><span class="p">()</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="k">state</span><span class="p">,</span><span class="w"> </span><span class="n">wait_event_type</span><span class="p">,</span><span class="w"> </span><span class="n">wait_event</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span></code></pre></figure>
+</section>
+<section id="build-an-operational-budget" class="level2">
+<h2>Build an operational budget</h2>
+<p>Assume the service receives 200 requests per second and each borrows one connection for a mean of 20 ms. In a stable system the mean number occupied by these requests is about 200 × 0.020 = 4. If the database time rises to 100 ms, the same arrival rate needs about 20 concurrent connections before allowing for variability. Two pools of eight cannot sustain that steady state. Work queues, timeouts or client backoff must absorb the mismatch. The calculation uses <strong>means</strong>, not p99 latency, and ignores retries, pool acquisition and other workloads. Measure those separately.</p>
+<p>Derive an availability indicator from valid requests. Decide deliberately whether an expected replay or an intentional conflict counts as success for the client journey. A raw percentage of non-2xx responses can page the wrong team when one sender reuses UUIDs. Track latency by route and outcome. If you need fleet-wide percentiles, configure appropriate histogram buckets before querying them; a count and sum alone give a mean. Establish a baseline at realistic payload sizes and connection counts before promising an SLO.</p>
+</section>
+<section id="graduation-exercise-recover-an-observation-across-a-release" class="level2">
+<h2>Graduation exercise: recover an observation across a release</h2>
+<p>Use a disposable staging namespace and a database whose backup policy and restoration process are understood. Choose a fresh ID and commit GILT at 10125. Save the request and expected response outside the pod. Send the same payload concurrently and confirm that only the original create exists. Attempt 10130 for the same ID and verify that the stored price is still 10125.</p>
+<p>Roll a compatible second image using the previous lesson. Follow availability and the HTTP and pool metrics. Retry the original request after both new pods become ready. A replay should return 204. Introduce an invalid database configuration only in an isolated test deployment. Observe whether startup fails or established readiness drops, identify the responsible layer and recover the previous working configuration. Finally perform a binary rollback and exercise the same known key once more.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Evidence to retain</th>
+<th>What it establishes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Unit-test report and reproducible build identifiers</td>
+<td>The intended revision compiled and its invariants passed.</td>
+</tr>
+<tr class="even">
+<td>First response, concurrent replay statuses and final GET</td>
+<td>Duplicate delivery preserved one economic observation.</td>
+</tr>
+<tr class="odd">
+<td>Image digest, rollout history and probe transitions</td>
+<td>You can identify the running release and explain its traffic eligibility.</td>
+</tr>
+<tr class="even">
+<td>Replayed key after replacement and rollback</td>
+<td>Durable state outlived both application versions.</td>
+</tr>
+<tr class="odd">
+<td>Restore drill in a separate database</td>
+<td>The data protection procedure can recover actual rows within the required time window.</td>
+</tr>
+</tbody>
+</table></div>
+<p>For real client traffic, close the remaining environment decisions explicitly. Identify the owner of the ingress and service identity, configure verified TLS, limit database permissions, protect management endpoints, set request and dependency deadlines, define retention and backups, and agree who acts on alerts. The sample gives you executable evidence for application behaviour. Those environment decisions supply the operating guarantees for a particular deployment.</p>
+</section>
+<section id="what-was-exercised-for-this-edition" class="level2">
+<h2>What was exercised for this edition</h2>
+<p>The supplied Kotlin source was compiled with Kotlin 2.2.21 targeting JVM 21. All five language entry points ran, including both deadline paths and the 8,000-increment check. The three JUnit tests passed. The compiled Spring application started against a fresh PostgreSQL 17.12 database, applied V1, served the eight-request concurrency test and exposed Prometheus metrics. An identical PUT returned 204 after restarting the JVM against the same database. Container publishing, hosted CI and the Kubernetes rollout are hands-on deployment labs for your own environment.</p>
+</section>
+<section id="references"><h2>Technical references</h2><ul><li><a href="https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html">docs.spring.io · Endpoints</a></li><li><a href="https://docs.spring.io/spring-boot/3.5/reference/actuator/metrics.html">docs.spring.io · Metrics</a></li></ul></section><nav class="steps" aria-label="Series navigation">Previous · <a href="12%20Roll%20out%20and%20roll%20back.html">12 Roll out and roll back</a></nav></main></div></body></html>
