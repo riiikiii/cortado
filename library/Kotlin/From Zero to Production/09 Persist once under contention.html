@@ -151,7 +151,7 @@ section > p, section > ul, section > ol {max-width:76ch}
 .trace span, a, :not(pre) > code {overflow-wrap:anywhere}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
 figure.code{margin-inline:0;max-width:100%;min-width:0}.code pre{max-width:100%;overflow:auto}.scroll{overflow:auto}.menu ol{columns:2;column-gap:2.5rem;padding-left:2rem}.menu li{break-inside:avoid}.menu li a{display:inline}main{min-width:0}.steps{display:flex;flex-wrap:wrap;gap:12px}.steps a{display:inline-block;padding:7px}.code figcaption{overflow-wrap:anywhere}section h2{max-width:38ch}p code{font-size:.92em}@media(max-width:680px){.menu ol{columns:1}}@media(max-width:800px){.shell main{padding-inline:0}.shell{padding-inline:16px}} </style></head><body id="top">
-<header><div class="head"><div class="mast"><span>Kotlin · Field guide 09 / 13</span></div>
+<header><div class="head"><div class="mast"><span>Kotlin · Field guide 09 / 14</span></div>
 <div class="hero"><div><h1>Persist once under contention</h1><p>Let PostgreSQL arbitrate simultaneous writes and explain why a later read can see the winner.</p></div>
 <div class="plate"><small>One worked case</small><div class="trace"><b>Input</b><span>Two inserts share one UUID</span></div><div class="trace"><b>Action</b><span>Unique index decides</span></div><div class="trace"><b>Result</b><span>One durable observation</span></div></div>
 </div></div></header>
