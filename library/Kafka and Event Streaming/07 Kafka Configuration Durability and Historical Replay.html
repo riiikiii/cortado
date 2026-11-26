@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Kafka configuration, durability and historical replay</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../assets/impasto-espresso-pull.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+.offset-lab label{display:block;margin:.6rem 0}.offset-lab input[type=range]{width:min(220px,48%);vertical-align:middle;accent-color:var(--t600)}#range-cells{display:flex;flex-wrap:wrap;gap:8px}#range-cells span{font:600 .83rem var(--mono);padding:.6em;border-radius:6px;border:1px solid var(--line)}#range-cells .included{background:var(--t900);color:#fff}.menu-grid a{line-height:1.35}figure.code{min-width:0;max-width:100%}table col{width:auto!important}td,th{overflow-wrap:anywhere}td code{font-size:.92em}section>h3{margin-top:1.7em}section p{max-width:80ch}.code pre{overflow:auto;max-width:100%}.code pre code{white-space:pre}</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Kafka and event streaming · Apache Kafka 4.4</span></div>
+<div class="hero"><div><h1>Kafka configuration, durability and historical replay</h1><p>Follow a trade from its first acknowledgement to a bounded bulk replay. Choose which failures a write must survive, which history to keep and exactly where a restarted consumer should resume.</p></div>
+<div class="plate"><small>One partition · two independent readers</small><div class="trace"><b>Write</b><span>T17 booked at £100, amended to £120</span></div><div class="trace"><b>Retain</b><span>Journal keeps both events. A compacted state topic can keep only the amendment.</span></div><div class="trace"><b>Replay</b><span>Capture end 3. Read offsets 0, 1 and 2 while the live writer continues.</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="menu" aria-label="Contents"><p class="menu-title">In this guide</p><div class="menu-grid"><a href="#read-one-trade-twice">Read one trade twice</a><a href="#where-a-configuration-takes-effect">Where a configuration takes effect</a><a href="#design-the-log-and-the-key">Design the log and the key</a><a href="#what-a-successful-send-guarantees">What a successful send guarantees</a><a href="#retries-ordering-and-transactions">Retries, ordering and transactions</a><a href="#batches-compression-and-the-network">Batches, compression and the network</a><a href="#how-history-survives-expires-or-changes-shape">How history survives, expires or changes shape</a><a href="#who-owns-consumer-state">Who owns consumer state?</a><a href="#request-history-in-bulk">Request history in bulk</a><a href="#limits-from-producer-memory-to-sink-capacity">Limits from producer memory to sink capacity</a><a href="#select-the-consumption-and-integration-model">Select the consumption and integration model</a><a href="#operate-and-observe-the-cluster">Operate and observe the cluster</a><a href="#choose-a-configuration-for-the-job">Choose a configuration for the job</a></div></nav><main><section id="read-one-trade-twice"><h2>Read one trade twice</h2><p>At 09:00 a trade is booked for £100. At 09:01 its value is corrected to £120. The live blotter needs £120, the audit reader needs both events, and a new risk calculation needs to replay yesterday without submitting a second order. All three can use the same Kafka cluster. They need different keys, history policies, checkpoints and side-effect boundaries.</p>
+<p>This field guide targets Apache Kafka <strong>4.4.0</strong>, its Java client and a KRaft cluster. The lab assumes a shell, Docker and familiarity with Java. The design examples assume three brokers spread across failure domains. Use the one-broker lab to observe records and offsets. Replication and failover require the three-broker topology. For managed Kafka, inspect the deployed broker version, feature levels and service limits before adopting a setting.</p>
+<h3 id="a-five-minute-experiment">A five-minute experiment</h3>
+<p>Start a fresh disposable broker. Run the following in one Bash session. The helper invokes the command-line programs shipped inside the image. Wait for the broker to answer the topics command before proceeding.</p>
+<figure class="code"><figcaption>Bash</figcaption><pre><code>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>cortado-kafka<span class="w"> </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:9092:9092<span class="w"> </span>apache/kafka:4.4.0
+k<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-i<span class="w"> </span>cortado-kafka<span class="w"> </span><span class="s2">"/opt/kafka/bin/</span><span class="nv">$1</span><span class="s2">.sh"</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="p">@:</span><span class="nv">2</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<span class="nv">B</span><span class="o">=</span>localhost:9092
+k<span class="w"> </span>kafka-topics<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--list
+k<span class="w"> </span>kafka-topics<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--create<span class="w"> </span>--topic<span class="w"> </span>trades.lab<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--partitions<span class="w"> </span><span class="m">1</span><span class="w"> </span>--replication-factor<span class="w"> </span><span class="m">1</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'T17:BOOK,100\nT17:AMEND,120\nT42:BOOK,50\n'</span><span class="w"> </span><span class="p">|</span>
+<span class="w">  </span>k<span class="w"> </span>kafka-console-producer<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--topic<span class="w"> </span>trades.lab<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--reader-property<span class="w"> </span>parse.key<span class="o">=</span><span class="nb">true</span><span class="w"> </span>--reader-property<span class="w"> </span>key.separator<span class="o">=</span>:
+<span class="k">for</span><span class="w"> </span>group<span class="w"> </span><span class="k">in</span><span class="w"> </span>audit.lab<span class="w"> </span>risk.lab<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>k<span class="w"> </span>kafka-console-consumer<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--topic<span class="w"> </span>trades.lab<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--group<span class="w"> </span><span class="s2">"</span><span class="nv">$group</span><span class="s2">"</span><span class="w"> </span>--from-beginning<span class="w"> </span>--max-messages<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--formatter-property<span class="w"> </span>print.partition<span class="o">=</span><span class="nb">true</span><span class="w"> </span>--formatter-property<span class="w"> </span>print.offset<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--formatter-property<span class="w"> </span>print.key<span class="o">=</span><span class="nb">true</span>
+<span class="k">done</span>
+</code></pre></figure>
+<p>On a fresh topic both groups should print offsets 0, 1 and 2 in partition 0, with keys T17, T17 and T42. These are illustrative broker results. Reading a record leaves it available to the other group. A group with an existing checkpoint can resume later even when invoked with <code>--from-beginning</code>. Use a fresh group name to repeat the experiment. Keep the broker running for the Java replay below.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Question</th>
+<th>Kafka identity or coordinate</th>
+<th>Consequence for T17</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Which trade?</td>
+<td>Business key, here T17</td>
+<td>All versions can be routed to the same partition.</td>
+</tr>
+<tr class="even">
+<td>Which event?</td>
+<td>Application event ID, e.g. evt-002, and business version</td>
+<td>A retry of the same amendment can be recognised across republishes. The short lab payload omits these fields.</td>
+</tr>
+<tr class="odd">
+<td>Where is the record?</td>
+<td>Cluster, topic identity, partition, offset</td>
+<td>Offset 1 in partition 0 addresses the amendment in this particular log. A recreated topic has a different identity.</td>
+</tr>
+<tr class="even">
+<td>Who has read it?</td>
+<td>Consumer group plus topic-partition and committed next offset</td>
+<td>Audit and risk advance independently. Kafka does not maintain a per-record receipt ledger for ordinary groups.</td>
+</tr>
+<tr class="odd">
+<td>What is the current exposure?</td>
+<td>Application projection or state store</td>
+<td>Interpreting AMEND as a replacement yields £170 total. Adding every amount yields the wrong £270.</td>
+</tr>
+</tbody>
+</table></div>
+<p><a href="https://kafka.apache.org/44/getting-started/quickstart/">Apache Kafka quick start</a> · <a href="https://kafka.apache.org/44/design/design/">Record delivery and replication design</a></p>
+</section><section id="where-a-configuration-takes-effect"><h2>Where a configuration takes effect</h2><p>A producer starts with bootstrap addresses, discovers partition leaders and sends batches to them. Brokers store and replicate partition logs. KRaft controllers maintain cluster metadata and coordinate leadership. Consumers discover brokers and fetch from explicit positions. A group coordinator manages group membership and offsets. Changing a producer property cannot retroactively change stored records, and changing a consumer property cannot extend topic retention.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Scope</th>
+<th>Place to set it</th>
+<th>Examples</th>
+<th>How to establish the effective value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Cluster and broker</td>
+<td>Broker properties at startup, dynamic cluster defaults or per-broker overrides where supported</td>
+<td>Listeners, quotas, thread pools, default topic policies</td>
+<td>Describe broker configs with sources and synonyms. Check the documented update mode before planning a restart.</td>
+</tr>
+<tr class="even">
+<td>Topic</td>
+<td>Admin API, create/alter CLI, infrastructure provisioning</td>
+<td>Retention, compaction, minimum ISR, maximum batch size</td>
+<td>Describe the topic configs and partition assignments separately. Explicit topic overrides supersede applicable broker defaults.</td>
+</tr>
+<tr class="odd">
+<td>Producer or consumer</td>
+<td>Properties supplied when constructing each client</td>
+<td>Acknowledgements, batching, group ID, isolation, fetch sizes</td>
+<td>Inspect deployed application config and client startup logs with secrets redacted. Rolling out new broker defaults does not rebuild live clients.</td>
+</tr>
+<tr class="even">
+<td>Group</td>
+<td>Group configs and coordinator-managed state</td>
+<td>Consumer-protocol session behaviour, share-group lock duration</td>
+<td>Inspect the group type, protocol and group-specific settings. Offset resets change progress, independently of membership configuration.</td>
+</tr>
+<tr class="odd">
+<td>Connect, Streams, replication</td>
+<td>Worker, connector, Streams application or MirrorMaker configuration</td>
+<td>Converters, tasks, state directories, internal topics, checkpoints</td>
+<td>Inspect the running connector/task or Streams topology and the underlying Kafka clients it creates.</td>
+</tr>
+</tbody>
+</table></div>
+<p>In the broker hierarchy, an applicable dynamic per-broker override generally wins over a dynamic cluster default, then the static broker property, then the built-in default. Some settings permit only cluster-wide changes or require restart. Topic settings can use different names from their broker defaults, e.g. <code>retention.ms</code> and <code>log.retention.ms</code>. Replication factor is the actual replica assignment. Altering <code>default.replication.factor</code> only changes a default for future creation.</p>
+<figure class="code"><figcaption>Bash</figcaption><pre><code>k<span class="w"> </span>kafka-topics<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--describe<span class="w"> </span>--topic<span class="w"> </span>trades.lab
+k<span class="w"> </span>kafka-configs<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--describe<span class="w"> </span>--all<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--entity-type<span class="w"> </span>topics<span class="w"> </span>--entity-name<span class="w"> </span>trades.lab
+k<span class="w"> </span>kafka-configs<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--alter<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--entity-type<span class="w"> </span>topics<span class="w"> </span>--entity-name<span class="w"> </span>trades.lab<span class="w"> </span>--add-config<span class="w"> </span>retention.ms<span class="o">=</span><span class="m">604800000</span>
+k<span class="w"> </span>kafka-configs<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--describe<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--entity-type<span class="w"> </span>topics<span class="w"> </span>--entity-name<span class="w"> </span>trades.lab
+</code></pre></figure>
+<p>The first command shows leader, replica assignment and in-sync replicas per partition. The last command exposes the explicit seven-day topic override. Removing that override with <code>--delete-config retention.ms</code> restores inheritance. Shortening retention on a real topic can permanently remove history. Inspect beginning offsets before and after a policy change.</p>
+<p><a href="https://kafka.apache.org/44/configuration/">All 4.4 configuration families</a> · <a href="https://kafka.apache.org/44/configuration/broker-configs/">Broker settings and update modes</a> · <a href="https://kafka.apache.org/44/configuration/topic-configs/">Topic overrides and corresponding broker defaults</a></p>
+<h3 id="three-entry-points-for-the-same-client-settings">Three entry points for the same client settings</h3>
+<p>The CLI commands in the lab rely on local plaintext defaults. With a secured cluster, keep endpoint, TLS and SASL configuration in the appropriate client properties file. Administrative commands such as <code>kafka-topics</code> accept <code>--command-config admin.properties</code>; the 4.4 console tools also accept <code>--command-config</code>. Use <code>--reader-property</code> and <code>--formatter-property</code> for parsing console input and displaying output. Broker configuration does not supply credentials to an application. For programmatic administration, the Admin client can describe configurations and their source, and incrementally set or delete overrides. Prefer incremental changes when you own only a subset of an existing topic's settings.</p>
+<p>In Java, pass a <code>Properties</code> map at construction time. The successful write below expects Kafka client 4.4.0 and an existing lab topic. It sends a single extra event, so use a fresh topic or run it <strong>after</strong> checking the three-row replay. Waiting on a single future is useful for this probe because it returns the broker-confirmed partition and offset. Sustained traffic should pipeline sends and observe their completions.</p>
+<figure class="code"><figcaption>Java</figcaption><pre><code><span class="c1">// Within main() throws Exception, with java.util.Properties,</span>
+<span class="c1">// org.apache.kafka.clients.producer.* and StringSerializer imported.</span>
+<span class="kd">var</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Properties</span><span class="p">();</span>
+<span class="n">p</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"bootstrap.servers"</span><span class="p">,</span><span class="w"> </span><span class="s">"localhost:9092"</span><span class="p">);</span>
+<span class="n">p</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"key.serializer"</span><span class="p">,</span><span class="w"> </span><span class="n">StringSerializer</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="n">p</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"value.serializer"</span><span class="p">,</span><span class="w"> </span><span class="n">StringSerializer</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="n">p</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"acks"</span><span class="p">,</span><span class="w"> </span><span class="s">"all"</span><span class="p">);</span>
+<span class="n">p</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"enable.idempotence"</span><span class="p">,</span><span class="w"> </span><span class="s">"true"</span><span class="p">);</span>
+<span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">writer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">KafkaProducer</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writer</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ProducerRecord</span><span class="o">&lt;&gt;</span><span class="p">(</span>
+<span class="w">        </span><span class="s">"trades.lab"</span><span class="p">,</span><span class="w"> </span><span class="s">"T42"</span><span class="p">,</span><span class="w"> </span><span class="s">"AMEND,55"</span><span class="p">)).</span><span class="na">get</span><span class="p">();</span>
+<span class="w">    </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">printf</span><span class="p">(</span><span class="s">"p%d offset %d%n"</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="na">partition</span><span class="p">(),</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="na">offset</span><span class="p">());</span>
+<span class="p">}</span>
+</code></pre></figure>
+<p>Spring Boot builds those clients from application configuration. Dedicated properties cover common fields; the bracketed map syntax forwards a literal Kafka property name. The snippet illustrates client wiring. Configure listener container acknowledgement mode and transaction manager to match the processing pattern; disabling Kafka auto-commit alone does not choose when Spring's container commits offsets.</p>
+<figure class="code"><figcaption>Configuration properties</figcaption><pre><code><span class="na">spring.kafka.bootstrap-servers</span><span class="o">=</span><span class="s">localhost:9092</span>
+<span class="na">spring.kafka.producer.acks</span><span class="o">=</span><span class="s">all</span>
+<span class="na">spring.kafka.producer.properties[enable.idempotence]</span><span class="o">=</span><span class="s">true</span>
+<span class="na">spring.kafka.producer.properties[compression.type]</span><span class="o">=</span><span class="s">zstd</span>
+<span class="na">spring.kafka.consumer.group-id</span><span class="o">=</span><span class="s">blotter-v1</span>
+<span class="na">spring.kafka.consumer.enable-auto-commit</span><span class="o">=</span><span class="s">false</span>
+<span class="na">spring.kafka.consumer.properties[isolation.level]</span><span class="o">=</span><span class="s">read_committed</span>
+</code></pre></figure>
+<p>Container environment variables and infrastructure-as-code modules are packaging layers. Their names and update semantics are image/provider specific. The upstream Java property is the stable coordinate to use when checking what reached the client. For managed brokers, track cluster configuration revisions separately from application releases and topic-level overrides.</p>
+<p><a href="https://docs.spring.io/spring-boot/reference/messaging/kafka.html">Spring Boot Kafka client configuration</a> · <a href="https://docs.spring.io/spring-kafka/reference/kafka/receiving-messages/message-listener-container.html">Spring Kafka listener acknowledgement modes</a></p>
+</section><section id="design-the-log-and-the-key"><h2>Design the log and the key</h2><p>A record has a key and value expressed as bytes, optional headers and a timestamp. Serializers translate Java types into bytes. Use a key whose serialized form remains stable over the contract lifetime. A change from UTF-8 trade IDs to schema-wrapped key bytes can move the same logical trade to another partition. Null values have deletion semantics on a compacted topic. An empty byte array encodes a real value.</p>
+<p>A producer can choose a partition explicitly, use a custom partitioner, or let the default partitioner route serialized keys. Unkeyed traffic can be batched on a partition before the producer switches. Per-partition order is append order. Two services racing to amend T17 can arrive in the opposite order from their business versions. Carry an event ID, business version, effective time and ingestion time when these distinctions matter.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Candidate key</th>
+<th>Good operation</th>
+<th>Cost paid elsewhere</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Trade ID</td>
+<td>Enforce an ordered state machine per trade</td>
+<td>Portfolio totals require grouping many trades again.</td>
+</tr>
+<tr class="even">
+<td>Portfolio ID</td>
+<td>Process one portfolio serially</td>
+<td>A large book becomes a hot partition.</td>
+</tr>
+<tr class="odd">
+<td>Unique event ID</td>
+<td>Spread append-only events</td>
+<td>Corrections to a trade may land on different workers.</td>
+</tr>
+<tr class="even">
+<td>Explicit shard or salted key</td>
+<td>Spread an exceptionally hot entity</td>
+<td>Reassembly needs an ordering or merge rule and additional state.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Increasing partitions can change the mapping of existing keys. Old records stay in their original partition. If continuous per-key order is an invariant, migrate to a versioned topic at a known cutover or use an explicit, stable routing scheme. Consumer instances above the number of assigned partitions provide no additional partition owners in a conventional consumer group.</p>
+<p><strong>Sizing example.</strong> Suppose measurements show one partition worker can project 4,000 events/s at acceptable latency and peak arrival is 14,000/s. Four evenly loaded partitions cover the arithmetic minimum. At a target 70% utilisation, the estimate becomes ceil(14,000 / 2,800) = <strong>five</strong>. If one key alone generates 5,000/s, adding partitions leaves that key above the single-worker limit. Measure key skew, recovery time and the effect of losing a broker before fixing a partition count.</p>
+<p>Use separate topics for immutable trade events, latest trade state and execution commands. Set schemas and compatibility rules for values and keys. JSON is easy to inspect, Avro and Protobuf can use registry-backed schema IDs, and Kafka itself stores bytes. Keep old writer schemas available as long as history can be replayed. Test old bytes with the new application, including tombstones and unknown fields. Headers are useful for tracing and schema metadata. Broker fetches do not filter by arbitrary header or business key.</p>
+</section><section id="what-a-successful-send-guarantees"><h2>What a successful send guarantees</h2><p>Follow one partition with leader A and followers B and C. The replication factor is three. Its <strong>in-sync replica set</strong> (ISR) changes as followers fall behind and catch up. Set the topic minimum ISR to two and keep unclean election disabled. A producer future completing successfully answers a specific question determined by its acknowledgement policy.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Producer setting</th>
+<th>When the producer can report success</th>
+<th>Failure that remains possible</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>acks=0</code></td>
+<td>The client hands off the request without waiting for a broker response. No confirmed offset.</td>
+<td>Network loss or broker rejection can go undetected. A send can still fail locally during serialization or buffering.</td>
+</tr>
+<tr class="even">
+<td><code>acks=1</code></td>
+<td>The leader has appended the batch.</td>
+<td>Leader loss before a follower copies it can lose an acknowledged write. Acknowledgement can precede consumer visibility.</td>
+</tr>
+<tr class="odd">
+<td><code>acks=all</code> or <code>-1</code></td>
+<td>Kafka fulfils the replication condition for the current ISR, subject to the minimum ISR.</td>
+<td>A lost response leaves the client uncertain. Correlated loss of all safe copies, retention and operator deletion remain separate risks.</td>
+</tr>
+</tbody>
+</table></div>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 40%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Stable ISR at write</th>
+<th style="text-align: right;">Minimum ISR</th>
+<th>Result with all acknowledgements</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A, B, C</td>
+<td style="text-align: right;">2</td>
+<td>All three participate. Two is an admission floor, not a request for the fastest two.</td>
+</tr>
+<tr class="even">
+<td>A, B</td>
+<td style="text-align: right;">2</td>
+<td>The two replicas can complete the write. C must catch up before returning to the ISR.</td>
+</tr>
+<tr class="odd">
+<td>A</td>
+<td style="text-align: right;">2</td>
+<td>The write cannot be acknowledged successfully. An ISR change during an in-flight append can produce an after-append error.</td>
+</tr>
+<tr class="even">
+<td>A</td>
+<td style="text-align: right;">1</td>
+<td>A can acknowledge alone. The same producer config now provides weaker fault tolerance.</td>
+</tr>
+</tbody>
+</table></div>
+<p>These rows assume stable membership during each example. Followers fetch data; the leader infers their progress. The <strong>high watermark</strong> is the exclusive replication visibility boundary. On 4.4 with strict minimum ISR, it cannot advance for a data partition while ISR size is below the minimum. A leader-only acknowledgement may therefore precede both replication and visibility. With eligible leader replicas enabled, the controller can remember an out-of-ISR replica known to contain committed data and elect it safely under defined conditions. An unclean election can select a stale replica and lose acknowledged history. Inspect feature levels when comparing upgraded clusters.</p>
+<p>An acknowledgement does not imply an fsync of each replica for each record. Kafka uses the operating system's page cache and replication across machines. For power or zone failures, place replicas across independent failure domains using rack awareness, allow sufficient remaining capacity and verify placement. Controller quorum members protect metadata availability. Adding more controllers does not add copies of the trade log.</p>
+<figure class="code"><figcaption>Configuration properties</figcaption><pre><code><span class="c1"># Producer properties for a trade writer</span>
+<span class="na">acks</span><span class="o">=</span><span class="s">all</span>
+<span class="na">enable.idempotence</span><span class="o">=</span><span class="s">true</span>
+<span class="na">retries</span><span class="o">=</span><span class="s">2147483647</span>
+<span class="na">max.in.flight.requests.per.connection</span><span class="o">=</span><span class="s">5</span>
+<span class="na">delivery.timeout.ms</span><span class="o">=</span><span class="s">120000</span>
+<span class="na">request.timeout.ms</span><span class="o">=</span><span class="s">30000</span>
+<span class="na">linger.ms</span><span class="o">=</span><span class="s">5</span>
+<span class="na">compression.type</span><span class="o">=</span><span class="s">zstd</span>
+</code></pre></figure>
+<p>Use a replicated topic with this producer. With three brokers, create it with <code>--replication-factor 3 --config min.insync.replicas=2</code>. The one-broker lab deliberately cannot demonstrate that policy. Configure the replication and minimum ISR of internal transaction topics, and the offsets topic replication factor, when provisioning a cluster. A healthy data topic alone cannot make dependent coordinators available.</p>
+<p><a href="https://kafka.apache.org/44/configuration/producer-configs/">Producer acknowledgements and idempotence</a> · <a href="https://kafka.apache.org/44/configuration/topic-configs/">Minimum ISR</a> · <a href="https://kafka.apache.org/44/operations/eligible-leader-replicas/">Eligible leader replicas</a></p>
+</section><section id="retries-ordering-and-transactions"><h2>Retries, ordering and transactions</h2><p>An application sends evt-002. The leader stores it and the acknowledgement disappears. The producer retries. With idempotence enabled, producer IDs, epochs and per-partition sequence numbers let Kafka recognise an internal retry and avoid a duplicate append. Explicitly enabling idempotence makes conflicting settings fail configuration validation. It requires all acknowledgements, retries enabled and at most five requests in flight per connection. Without idempotence, multiple in-flight requests and retries can reverse batch order if a later batch succeeds first.</p>
+<p>Application-level resubmission is a different operation. A user clicks twice, a restarted process reads its outbox again, or a timeout handler constructs another record with the same payload. Kafka may validly append both. Give the business event a stable ID and make its effect idempotent. A producer callback or future is where the caller learns the asynchronous delivery result. Calling Java's <code>send().get()</code> on every record serialises the application and defeats much of the batching opportunity. Bound outstanding work and handle both synchronous exceptions and asynchronous failures.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Timer or buffer</th>
+<th>What it bounds</th>
+<th>Diagnostic use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>max.block.ms</code></td>
+<td>Time waiting for metadata or buffer allocation in relevant producer API calls</td>
+<td>A thread stuck inside send may be waiting before the delivery timer does the work you expect. User serializer and partitioner time is separate.</td>
+</tr>
+<tr class="even">
+<td><code>request.timeout.ms</code></td>
+<td>Wait for a particular broker response</td>
+<td>One timeout may trigger a retry. A timeout alone cannot establish whether an append happened.</td>
+</tr>
+<tr class="odd">
+<td><code>delivery.timeout.ms</code></td>
+<td>Overall record delivery budget including batching, transmission and retries</td>
+<td>Set it at least as large as request timeout plus linger. Size it against the application's real deadline.</td>
+</tr>
+<tr class="even">
+<td><code>buffer.memory</code> / <code>batch.size</code></td>
+<td>Producer buffering budget / batching target per partition</td>
+<td>Many active partitions increase partially filled buffers. Compression, requests and JVM objects add memory overhead.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="atomically-publish-output-and-advance-input">Atomically publish output and advance input</h3>
+<p>For a Kafka-to-Kafka transform, a producer transaction can cover output to multiple topics/partitions and input offsets for a consumer group on the same cluster. Set a stable <code>transactional.id</code> unique to the active logical writer, call <code>initTransactions()</code> on startup, turn off consumer auto-commit and consume with <code>isolation.level=read_committed</code> where aborted data must be excluded. The following is the successful path for one non-empty poll returned by a subscribed consumer. Output serialization and the transform are application-specific.</p>
+<figure class="code"><figcaption>Java</figcaption><pre><code><span class="n">producer</span><span class="p">.</span><span class="na">beginTransaction</span><span class="p">();</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">batch</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProducerRecord</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="s">"trades.normalised"</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="na">key</span><span class="p">(),</span><span class="w"> </span><span class="n">normalise</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="na">value</span><span class="p">()));</span>
+<span class="w">    </span><span class="n">producer</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="n">out</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">producer</span><span class="p">.</span><span class="na">sendOffsetsToTransaction</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="na">nextOffsets</span><span class="p">(),</span><span class="w"> </span><span class="n">consumer</span><span class="p">.</span><span class="na">groupMetadata</span><span class="p">());</span>
+<span class="n">producer</span><span class="p">.</span><span class="na">commitTransaction</span><span class="p">();</span>
+</code></pre></figure>
+<p>If the transaction aborts, staged output is hidden from read-committed consumers and the transactional checkpoint does not advance. The live consumer's position already moved during poll. On a recoverable abort, restore the input positions to the last committed offsets or restart the consumer before processing the next batch. If fenced, stop that writer. A commit timeout can have an uncertain outcome; follow the Java client's operation-specific retry rules. Blindly aborting or starting the next transaction can break recovery. Bound transaction duration and handle rebalances and ownership loss.</p>
+<p>A transaction cannot roll back a wire transfer, email or independently committed PostgreSQL transaction. For a relational sink, save the event identity or partition progress <strong>in the same database transaction</strong> as the projection; for a database source, write an outbox row alongside the business mutation and relay it. A relay can repeat publication. Retain the event identity through the entire path.</p>
+<p><a href="https://kafka.apache.org/44/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html">Kafka producer transaction API and failure handling</a> · <a href="https://kafka.apache.org/44/operations/transaction-protocol/">Transaction protocol</a></p>
+</section><section id="batches-compression-and-the-network"><h2>Batches, compression and the network</h2><p>Four units frequently get called a “batch”. A producer <strong>record batch</strong> belongs to one partition and can compress several records together. A <strong>produce request</strong> to one broker may contain batches from several partitions. A <strong>fetch response</strong> returns record batches beginning at requested partition offsets. A <strong>poll result</strong> is an application-facing selection from fetched data, and a database batch is an independent choice of transaction size. Ten calls to poll might consume data delivered by one network response.</p>
+<p>Java 4.4's default producer linger is 5 ms. A full batch can go immediately. A short wait can lower latency under load if it reduces queueing and request overhead. Under sparse traffic a higher linger can add visible delay while barely improving compression. Try a representative key distribution, compare p50/p99 delivery time, records per request, bytes per record and CPU. Compressing each tiny JSON payload inside the application sacrifices redundancy across records and can prevent the broker/client codec from helping.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Codec or policy</th>
+<th>Useful starting workload</th>
+<th>What to measure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>none</code> on producer / <code>uncompressed</code> on topic</td>
+<td>Already-compressed or low-volume payloads</td>
+<td>Network and disk bytes versus CPU saved. Encrypted payloads often have little remaining redundancy.</td>
+</tr>
+<tr class="even">
+<td><code>lz4</code> / <code>snappy</code></td>
+<td>High-throughput streams with a tight CPU or latency budget</td>
+<td>Compression ratio and producer/consumer CPU on real batches.</td>
+</tr>
+<tr class="odd">
+<td><code>zstd</code></td>
+<td>Repeated field names or similar records, large retention footprint</td>
+<td>Storage and network savings versus compression level and decompression throughput.</td>
+</tr>
+<tr class="even">
+<td><code>gzip</code></td>
+<td>Interoperability or workloads where its measured size reduction pays</td>
+<td>CPU per MB and latency tails at peak.</td>
+</tr>
+<tr class="odd">
+<td>Topic <code>compression.type=producer</code></td>
+<td>Preserve the producer's chosen codec</td>
+<td>Mixed producers can create mixed-codec segments. Consumers transparently decode each batch with supported codecs.</td>
+</tr>
+<tr class="even">
+<td>Topic forces a codec</td>
+<td>Standardise the on-disk format for new batches</td>
+<td>Incoming batches encoded differently can require broker recompression. Budget broker CPU.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Compression changes bytes stored and transferred. It leaves keys, offsets, record count and retention policy semantics intact. <strong>Compaction</strong> instead removes obsolete values for a key and can create offset holes. A compacted topic can simultaneously hold compressed record batches. A codec change applies to newly written batches; existing segments are not synchronously rewritten.</p>
+<p>Suppose 100 similarly sized trades total 100 KiB uncompressed and a producer batch occupies 25 KiB compressed. Disk and fetch bandwidth may approach the smaller size plus overhead. A reader decoding thousands of such records must still allocate for the expanded payload and Java objects. Set heap and processing queues from measurements after decompression. A byte-oriented fetch setting is an incomplete heap budget.</p>
+<p><a href="https://kafka.apache.org/44/configuration/producer-configs/">Producer batching and codec controls</a> · <a href="https://kafka.apache.org/44/configuration/topic-configs/">Topic-side compression</a></p>
+</section><section id="how-history-survives-expires-or-changes-shape"><h2>How history survives, expires or changes shape</h2><p>Each partition is an append-only sequence spread across segment files, with sparse offset and timestamp indexes. The active segment receives appends. Segment rolling creates closed units that deletion, cleaning and remote copying can operate on. A lookup uses an index to approach the requested position, then scans batches. Kafka can serve a sequential scan efficiently, but it does not provide an arbitrary predicate index for “all T17 trades between two business dates”.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Topic model</th>
+<th>Settings</th>
+<th>What an old reader can recover</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Event journal</td>
+<td><code>cleanup.policy=delete</code>, size/time sized for the SLA</td>
+<td>Retained individual events, including superseded amendments. A reader can fall behind the earliest retained offset.</td>
+</tr>
+<tr class="even">
+<td>Latest value per key</td>
+<td><code>cleanup.policy=compact</code></td>
+<td>The latest retained value for each live key, plus earlier versions still awaiting cleaning. A fresh full scan can reconstruct current state under the tombstone timing constraints.</td>
+</tr>
+<tr class="odd">
+<td>Bounded keyed cache</td>
+<td><code>cleanup.policy=compact,delete</code></td>
+<td>Obsolete versions can be cleaned and age/size retention can remove even the final value. An inactive key may disappear entirely.</td>
+</tr>
+<tr class="even">
+<td>Long replay horizon</td>
+<td>Remote tier enabled with appropriate total and local retention</td>
+<td>Clients can fetch eligible older segments through Kafka. Read latency, throughput, provider capabilities and costs differ from a local fetch.</td>
+</tr>
+<tr class="odd">
+<td>Audit archive</td>
+<td>Independent immutable export with schemas, manifests and reconciliation</td>
+<td>History beyond Kafka retention if the export is complete. Restore and query are separate operations that require verification.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="segment-deletion-and-capacity">Segment deletion and capacity</h3>
+<p><code>retention.ms</code> governs age; <code>retention.bytes</code> sets a limit <strong>per partition</strong>. With both enabled, either can make old closed segments eligible. <code>segment.bytes</code> and <code>segment.ms</code> influence rolling. Cleanup checks, active segment lifetime and deletion delay mean the physical file removal time can differ from the configured retention age. Short segments improve deletion granularity but increase files, index overhead and remote object count. Long segments can leave infrequent topics retaining records longer than a simple age calculation predicts. Consumer progress never pins these segments.</p>
+<p>For an evenly loaded 12-partition topic receiving <strong>12 MiB/s after compression</strong>, seven days of leader data occupies roughly 12 × 604,800 MiB = <strong>6.92 TiB</strong>. At replication factor three, that is <strong>20.76 TiB</strong> of cluster disk before indexes, spare capacity, temporary cleaner output, reassignments and other topics. Averaging across all partitions hides the hot one. A 100 GiB per-partition cap at 2 MiB/s covers only <strong>14.2 hours</strong> for that partition, even with seven-day time retention. Use the larger of planned outage plus recovery time and the business replay obligation as the required horizon. Check size caps and actual log starts against it.</p>
+<h3 id="compaction-by-example">Compaction by example</h3>
+<div class="scroll"><table style="width:100%;">
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Offset in p0</th>
+<th>Key</th>
+<th>Value in a state topic</th>
+<th>A possible fully cleaned view</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td>T17</td>
+<td>100</td>
+<td>Superseded</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td>T17</td>
+<td>120</td>
+<td>Latest T17 survives</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td>T42</td>
+<td>50</td>
+<td>Superseded by delete</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td>T42</td>
+<td>null (tombstone)</td>
+<td>Signals removal until the tombstone itself is eligible to disappear</td>
+</tr>
+</tbody>
+</table></div>
+<p>A seek to 0 can return offset 1. Kafka preserves the surviving records' offset identities; it does not renumber them. Compaction is asynchronous, so a reader must also work when it sees all four rows. A consumer maintaining an old external map can retain a ghost T42 if it misses the tombstone. Rebuild from an empty map when the incremental checkpoint no longer has reliable deletion coverage. A fresh scanner also needs sufficient time to finish before tombstones it needs can vanish. Size <code>delete.retention.ms</code> against the worst bootstrap scan. This is different from the delay before unlinking an expired segment file.</p>
+<p><code>min.cleanable.dirty.ratio</code> affects when cleaning becomes worthwhile. <code>min.compaction.lag.ms</code> can preserve a period of recent revisions; <code>max.compaction.lag.ms</code> limits how long data can remain ineligible, subject to cleaner throughput. A saturated cleaner cannot promise an exact per-record erasure deadline. Compaction uses the serialized key within one partition. A key that moves partitions after expansion has two independent histories. A latest-value topic should publish full state or a reconstructible snapshot per key. If the final record says only “increase by £20”, cleaning away the starting value destroys the reconstruction.</p>
+<h3 id="hot-and-remote-history">Hot and remote history</h3>
+<p>Tiering separates <strong>local</strong> <code>local.retention.ms/bytes</code> from the topic's overall <code>retention.ms/bytes</code>. Self-managed deployment requires broker support, a remote storage manager implementation and its metadata management, plus per-topic enablement such as <code>remote.storage.enable</code>. Check backend storage, credentials, quotas, upload lag, previous feature levels and supported cleanup policies on the selected distribution. A remote tier participates in the cluster's lifecycle policy; deletion and retention can propagate. An independent archive has a different failure boundary. On a cold backfill, monitor remote-fetch rate and request latency separately from live broker disk reads.</p>
+<p><a href="https://kafka.apache.org/44/configuration/topic-configs/">Topic retention, cleaning and segment settings</a> · <a href="https://kafka.apache.org/44/operations/tiered-storage/">Tiered storage architecture and setup</a></p>
+</section><section id="who-owns-consumer-state"><h2>Who owns consumer state?</h2><p>An ordinary Java consumer groups work by partition. With <code>subscribe</code>, group coordination assigns ownership and can move it when instances join, leave or fail. With <code>assign</code>, the application specifies partitions itself. Two manually assigned readers can independently read the same partition. Position is local to a consumer instance. Durable restart progress needs a group commit or an external checkpoint. KafkaConsumer is not thread-safe; keep poll, seek, assignment and commit operations on its owning thread. Use the supported wakeup mechanism to interrupt a blocking poll for shutdown.</p>
+<div class="scroll"><table style="width:100%;">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>At p0 after a poll of offsets 0, 1, 2</th>
+<th style="text-align: right;">Next offset</th>
+<th>Owner</th>
+<th>What it proves</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Consumer position</td>
+<td style="text-align: right;">3</td>
+<td>Local client</td>
+<td>All three have been handed to the application.</td>
+</tr>
+<tr class="even">
+<td>Only offset 0 durably applied</td>
+<td style="text-align: right;">1</td>
+<td>Projection/database</td>
+<td>Processing may safely restart at 1 if this progress is made durable with the effect.</td>
+</tr>
+<tr class="odd">
+<td>Previous group commit</td>
+<td style="text-align: right;">0</td>
+<td>Kafka group coordinator, backed by offsets topic</td>
+<td>A restarted group member will replay 0, 1 and 2 if all remain readable.</td>
+</tr>
+<tr class="even">
+<td>End for a read-committed scan, assuming no open transactions or later writes</td>
+<td style="text-align: right;">3</td>
+<td>Broker</td>
+<td>The first three offsets are within the captured boundary. It says nothing about the database.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Offset commits always identify the <strong>next</strong> position. Committing 3 while offset 1 remains unprocessed can skip a trade on restart. If worker completions arrive in order 2, 0, 1, hold the durable frontier at the first outstanding delivered record. Advance to 3 after all earlier delivered work is durable. Offset gaps are legitimate. Track ordered delivered records and the next offsets supplied by the client, rather than waiting forever for integers removed by compaction or control records.</p>
+<p>A group offset can expire independently of the data it refers to. An inactive group can lose its checkpoint while its topic still retains years of data. Conversely a healthy checkpoint can point below the start because size retention advanced during an outage. Inspect group history, group ID, broker offset-retention policy and actual partition starts before applying a reset. Renaming a group creates an independent progress namespace. Deleting records from a topic, deleting a group and resetting its offsets are three different operations.</p>
+<h3 id="four-ways-to-couple-progress-to-work">Four ways to couple progress to work</h3>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Pattern</th>
+<th>Where the durable acknowledgement lives</th>
+<th>Crash behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Commit first, process second</td>
+<td>Group offset committed before effect</td>
+<td>A crash between them skips work (at-most-once processing attempt).</td>
+</tr>
+<tr class="even">
+<td>Process first, commit second</td>
+<td>Group checkpoint after effect</td>
+<td>A crash between them repeats work. An idempotent sink can absorb repeats.</td>
+</tr>
+<tr class="odd">
+<td>Store output and next offset in one database transaction</td>
+<td>Database row per projection version, topic identity and partition</td>
+<td>Rollback leaves both unchanged. On restart seek from the database. Fence stale owners before updates.</td>
+</tr>
+<tr class="even">
+<td>Kafka-to-Kafka transaction</td>
+<td>Broker transaction includes output and group offsets</td>
+<td>Read-committed downstream readers see committed output; aborted attempts can be retried.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Auto-commit periodically records progress as the consumer runs and can be convenient for synchronous, disposable processing. Handing records to an asynchronous queue then continuing to poll can commit past unfinished work. Disable it for explicit boundaries. <code>commitSync</code> waits for success or error. <code>commitAsync</code> can reduce delay but an application retry of an older failed commit can rewind progress. In batch processing, pass the offsets actually finished; the no-argument commit uses the consumer's poll progress. A revoked partition requires a coordinated hand-off. On lost ownership, abandon stale work or fence it at the sink.</p>
+<p><strong>Database implementation.</strong> Give each projection version its own checkpoint row. In one SQL transaction, lock or conditionally update that row using the expected previous checkpoint and current ownership token, apply ordered events, then advance the row. On conflict, roll back business changes too. Alternatively insert stable event IDs into an inbox with a unique constraint and update business state only for newly inserted IDs inside the same transaction. A unique row for the Kafka offset deduplicates delivery of that exact record; a unique business ID can also catch republished duplicates at a different offset. Design the scope of that uniqueness, e.g. per projection version. Otherwise rebuilding v2 can suppress every event already handled by v1.</p>
+<h3 id="rebalancing-and-liveliness">Rebalancing and liveliness</h3>
+<p>With the classic group protocol, assignment strategy, session timeout and heartbeat interval are client settings subject to broker limits. Eager assignment can revoke all partitions; cooperative assignment moves ownership incrementally when supported by the group. With <code>group.protocol=consumer</code>, the broker manages assignment and heartbeat/session policy, with group overrides where supported. Kafka 4.4's Java consumer config still lists classic as the default. Check the actual client and protocol before tuning. A stable, unique <code>group.instance.id</code> can reduce churn on short restarts, but can delay reassignment of genuinely failed members.</p>
+<p><code>max.poll.interval.ms</code> bounds the time between poll calls for group-managed processing. Healthy heartbeats alone do not excuse a stalled application. If a 500-record batch can take 400 seconds and the interval is 300 seconds, shrink <code>max.poll.records</code>, speed up the sink, or decouple work with bounded partition-aware queues. Pause assigned partitions under backpressure, keep polling for group participation, and resume them as capacity returns. Pausing affects future delivery; records already returned still belong to the application. Track in-flight work and rebalance callbacks. Slow processing, session loss and stop-the-world GC have different remedies.</p>
+<p><a href="https://kafka.apache.org/44/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">Consumer positions, commits, threads and rebalances</a> · <a href="https://kafka.apache.org/44/configuration/consumer-configs/">Classic and consumer protocol controls</a></p>
+</section><section id="request-history-in-bulk"><h2>Request history in bulk</h2><p><strong>Yes.</strong> Send Kafka a starting offset for each partition, then fetch sequential batches. The Java consumer issues fetch requests and buffers responses as you call poll. There is no requirement to make a network round trip per message. There is also no single “return the whole topic” response. A terabyte backfill streams through bounded memory. Most engineering effort goes into selecting a defensible start and stop, keeping the sink consistent and protecting live traffic.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Requirement</th>
+<th>API or procedure</th>
+<th>Boundary to remember</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Read everything still available</td>
+<td>New group with earliest reset, or assign then seek to beginning</td>
+<td>Earliest can be well above zero. It describes available history.</td>
+</tr>
+<tr class="even">
+<td>Read known ranges</td>
+<td><code>assign</code>, <code>seek(partition, start)</code>, poll until exclusive end</td>
+<td>Persist a vector of ranges. Offset 100 from partition 0 has no meaning in partition 1.</td>
+</tr>
+<tr class="odd">
+<td>Start from record time</td>
+<td>One <code>offsetsForTimes(Map&lt;TopicPartition,Long&gt;)</code> call can look up all partitions</td>
+<td>Per partition it finds the earliest offset with timestamp at least the target; null means no matching retained offset. Lookup returns coordinates, not payloads.</td>
+</tr>
+<tr class="even">
+<td>Rewind a production group</td>
+<td>Stop its active members, inspect/export current offsets, dry-run a group reset, execute and restart</td>
+<td>Same sink and side effects will be invoked again. Resetting an active group races its members or is refused.</td>
+</tr>
+<tr class="odd">
+<td>Replay as a separate calculation</td>
+<td>Use an isolated group or manual assignment and a new projection/sink</td>
+<td>Production checkpoints stay independent. Both readers share infrastructure capacity.</td>
+</tr>
+<tr class="even">
+<td>Retrieve selected event IDs</td>
+<td>Query an application index that maps IDs to durable data/coordinates, or scan and filter</td>
+<td>Seeking each offset can be inefficient. Batch adjacent ranges by partition. Kafka exposes no built-in multi-get by trade ID.</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>auto.offset.reset</code> applies when a usable committed position is missing or out of range. Setting it to <code>earliest</code> does not rewind a valid existing commit. <code>latest</code> can silently skip history for a newly created group or new partition. <code>none</code> surfaces missing progress as an error. The Java 4.4 client also supports <code>by_duration:PT24H</code> as a reset policy. For an auditable fixed run, store concrete offsets and the time basis instead of recalculating a moving “last day” on restart.</p>
+<h3 id="freeze-a-range-then-consume-it">Freeze a range, then consume it</h3>
+<p>At 09:10 capture a stop offset of 3 on p0. A new event at offset 3 arrives at 09:11. One poll can return offsets 0 through 3 together. Filtering with <strong>offset &lt; 3</strong> keeps the three intended records. Stopping at the first empty poll instead can finish too early. Re-reading the end continuously can make the job chase a live stream forever.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Frozen bounds</th>
+<th>Records returned across polls</th>
+<th>Records admitted</th>
+<th>Completion evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>p0 [0, 3)</td>
+<td>0, 1, 2, 3</td>
+<td>0, 1, 2</td>
+<td>Position ≥ 3 after durable output</td>
+</tr>
+<tr class="even">
+<td>p1 [7, 10), offset 8 compacted</td>
+<td>7, 9, 10</td>
+<td>7, 9</td>
+<td>Position ≥ 10; expecting exactly three records would hang</td>
+</tr>
+<tr class="odd">
+<td>p2 [22, 22)</td>
+<td>None required</td>
+<td>None</td>
+<td>Complete before polling</td>
+</tr>
+</tbody>
+</table></div>
+<p>The vector is a per-partition cut. Reads from multiple brokers and partitions do not create a single atomic business-time snapshot. Even a vector captured with <code>read_committed</code> can split the effects of a cross-partition transaction if observations bracket its commit. Use an application barrier, source ledger sequence, or reconciled business watermark if you need an as-of report with a stronger meaning.</p>
+<aside class="offset-lab"><h3>Try a partition scan</h3>
+<p>Partition 0 contains offsets 0, 1 and 2. Offset 3 arrives after the job freezes its end. Move the start or stop to change which rows enter the output.</p>
+<label>Inclusive start <input id="range-start" type="range" min="0" max="4" value="0"></label>
+<label>Exclusive stop <input id="range-stop" type="range" min="0" max="4" value="3"></label>
+<label><input id="range-gap" type="checkbox"> Compact away the older T17 at offset 0</label>
+<p id="range-result" aria-live="polite">[0, 3) includes offsets 0, 1 and 2. Offset 3 falls outside the cut.</p>
+<div id="range-cells" aria-hidden="true"></div>
+</aside>
+<script>
+(() => {
+  const start = document.querySelector('#range-start');
+  const stop = document.querySelector('#range-stop');
+  const gap = document.querySelector('#range-gap');
+  const cells = document.querySelector('#range-cells');
+  function paint() {
+    const a = Number(start.value), b = Number(stop.value);
+    const offsets = [0, 1, 2, 3];
+    const selected = offsets.filter(i => i >= a && i < b && !(i === 0 && gap.checked));
+    document.querySelector('#range-result').textContent = a > b
+      ? 'Invalid range. The start exceeds the stop.'
+      : '[' + a + ', ' + b + ') returns ' + selected.length + ' records. Included offsets: ' + (selected.join(', ') || 'none') + '.';
+    cells.replaceChildren(...offsets.map(i => {
+      const cell = document.createElement('span');
+      const included = selected.includes(i);
+      cell.className = included ? 'included' : '';
+      cell.textContent = i + ' · ' + (i === 0 && gap.checked ? 'removed' : included ? 'included' : 'outside');
+      return cell;
+    }));
+  }
+  for (const input of [start, stop, gap]) input.addEventListener('input', paint);
+  paint();
+})();
+</script>
+<h3 id="run-a-bounded-java-backfill">Run a bounded Java backfill</h3>
+<p>Install JBang and JDK 17+ or put the same client dependency on an existing project's classpath. Save the following as <strong>Replay.java</strong> and run <code>jbang Replay.java localhost:9092 trades.lab</code> against the lab. The optional third argument is an ISO instant for an inclusive lower bound on Kafka record timestamps. Plaintext string inputs match the lab. The program prints to stdout so it can be run twice without triggering a business action. Output from different partitions can interleave.</p>
+<figure class="code"><figcaption>Replay.java · bounded historical scan</figcaption><pre><code><span class="c1">//DEPS org.apache.kafka:kafka-clients:4.4.0</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.time.*</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.*</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.apache.kafka.clients.consumer.*</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.apache.kafka.common.TopicPartition</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.apache.kafka.common.serialization.StringDeserializer</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Replay</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">topic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Long</span><span class="w"> </span><span class="n">since</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="na">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">Instant</span><span class="p">.</span><span class="na">parse</span><span class="p">(</span><span class="n">args</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span><span class="p">).</span><span class="na">toEpochMilli</span><span class="p">()</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">props</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Properties</span><span class="p">();</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"bootstrap.servers"</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">);</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"client.id"</span><span class="p">,</span><span class="w"> </span><span class="s">"cortado-replay"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"enable.auto.commit"</span><span class="p">,</span><span class="w"> </span><span class="s">"false"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"auto.offset.reset"</span><span class="p">,</span><span class="w"> </span><span class="s">"none"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"allow.auto.create.topics"</span><span class="p">,</span><span class="w"> </span><span class="s">"false"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"isolation.level"</span><span class="p">,</span><span class="w"> </span><span class="s">"read_committed"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"key.deserializer"</span><span class="p">,</span><span class="w"> </span><span class="n">StringDeserializer</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="w">        </span><span class="n">props</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"value.deserializer"</span><span class="p">,</span><span class="w"> </span><span class="n">StringDeserializer</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="w">        </span><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">KafkaConsumer</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="p">(</span><span class="n">props</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="n">partitions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="na">partitionsFor</span><span class="p">(</span><span class="n">topic</span><span class="p">).</span><span class="na">stream</span><span class="p">()</span>
+<span class="w">                </span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">p</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">TopicPartition</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="na">partition</span><span class="p">())).</span><span class="na">toList</span><span class="p">();</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">partitions</span><span class="p">.</span><span class="na">isEmpty</span><span class="p">())</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalStateException</span><span class="p">(</span><span class="s">"No partitions"</span><span class="p">);</span>
+<span class="w">            </span><span class="n">c</span><span class="p">.</span><span class="na">assign</span><span class="p">(</span><span class="n">partitions</span><span class="p">);</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="n">stop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="na">endOffsets</span><span class="p">(</span><span class="n">partitions</span><span class="p">);</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="na">beginningOffsets</span><span class="p">(</span><span class="n">partitions</span><span class="p">);</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="n">starts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HashMap</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">first</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">since</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="kd">var</span><span class="w"> </span><span class="n">queries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">TopicPartition</span><span class="p">,</span><span class="w"> </span><span class="n">Long</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="w">                </span><span class="n">partitions</span><span class="p">.</span><span class="na">forEach</span><span class="p">(</span><span class="n">p</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">queries</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">since</span><span class="p">));</span>
+<span class="w">                </span><span class="n">c</span><span class="p">.</span><span class="na">offsetsForTimes</span><span class="p">(</span><span class="n">queries</span><span class="p">).</span><span class="na">forEach</span><span class="p">((</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span>
+<span class="w">                    </span><span class="n">starts</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">stop</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="w">                                              </span><span class="p">:</span><span class="w"> </span><span class="n">Math</span><span class="p">.</span><span class="na">min</span><span class="p">(</span><span class="n">hit</span><span class="p">.</span><span class="na">offset</span><span class="p">(),</span><span class="w"> </span><span class="n">stop</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">))));</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="n">active</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HashSet</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">partitions</span><span class="p">);</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">partitions</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">first</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">stop</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="w">                    </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalStateException</span><span class="p">(</span><span class="s">"Range expired: "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p</span><span class="p">);</span>
+<span class="w">                </span><span class="n">c</span><span class="p">.</span><span class="na">seek</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">starts</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">));</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">starts</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">stop</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="w"> </span><span class="n">active</span><span class="p">.</span><span class="na">remove</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+<span class="w">                </span><span class="n">System</span><span class="p">.</span><span class="na">err</span><span class="p">.</span><span class="na">printf</span><span class="p">(</span><span class="s">"%s [%d,%d)%n"</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">starts</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">),</span><span class="w"> </span><span class="n">stop</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">));</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">c</span><span class="p">.</span><span class="na">pause</span><span class="p">(</span><span class="n">partitions</span><span class="p">.</span><span class="na">stream</span><span class="p">().</span><span class="na">filter</span><span class="p">(</span><span class="n">p</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="o">!</span><span class="n">active</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="n">p</span><span class="p">)).</span><span class="na">toList</span><span class="p">());</span>
+<span class="w">            </span><span class="c1">// A finite lab deadline makes a stalled read explicit.</span>
+<span class="w">            </span><span class="kt">long</span><span class="w"> </span><span class="n">deadline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">nanoTime</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMinutes</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="na">toNanos</span><span class="p">();</span>
+<span class="w">            </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">active</span><span class="p">.</span><span class="na">isEmpty</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">nanoTime</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">deadline</span><span class="p">)</span>
+<span class="w">                    </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalStateException</span><span class="p">(</span><span class="s">"Unfinished ranges: "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">active</span><span class="p">);</span>
+<span class="w">                </span><span class="kd">var</span><span class="w"> </span><span class="n">batch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="na">poll</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMillis</span><span class="p">(</span><span class="mi">500</span><span class="p">));</span>
+<span class="w">                </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">batch</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="kd">var</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">TopicPartition</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="na">partition</span><span class="p">());</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="na">offset</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">stop</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">since</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="na">timestamp</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">since</span><span class="p">))</span>
+<span class="w">                        </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">printf</span><span class="p">(</span><span class="s">"%d/%d %s %s%n"</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">r</span><span class="p">.</span><span class="na">partition</span><span class="p">(),</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="na">offset</span><span class="p">(),</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="na">key</span><span class="p">(),</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="na">value</span><span class="p">());</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">                </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">active</span><span class="p">.</span><span class="na">iterator</span><span class="p">();</span><span class="w"> </span><span class="n">it</span><span class="p">.</span><span class="na">hasNext</span><span class="p">();)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="kd">var</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="p">.</span><span class="na">next</span><span class="p">();</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="na">position</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">stop</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="n">c</span><span class="p">.</span><span class="na">pause</span><span class="p">(</span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">p</span><span class="p">));</span>
+<span class="w">                        </span><span class="n">it</span><span class="p">.</span><span class="na">remove</span><span class="p">();</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure>
+<figure class="code"><figcaption>Expected standard output on a fresh topic</figcaption><pre><code>0/0 T17 BOOK,100
+0/1 T17 AMEND,120
+0/2 T42 BOOK,50
+</code></pre></figure>
+<p>The output above assumes the fresh three-record lab. The same command with <code>2100-01-01T00:00:00Z</code> on today's data should print no records and terminate, with empty ranges on stderr. A read-committed consumer's end is the <strong>last stable offset</strong> (exclusive), which can lag the high watermark while a transaction is open. With read-uncommitted isolation, endOffsets reflects the high watermark and aborted transactional records can be returned. Neither mode uses the leader's private, unreplicated tail as its normal fetch boundary.</p>
+<p>Timestamp search uses the Kafka record timestamp. With <code>CreateTime</code>, producer timestamps can run backwards in offset order. The code filters every record after seeking. For a <code>[from,to)</code> time report, test both timestamps per record and scan to the captured offset end. Stopping at the first timestamp ≥ to can drop a later-offset record whose timestamp is earlier. With <code>LogAppendTime</code>, the broker supplies append time. A payload's business effective date is a third clock: records booked today can correct yesterday's positions. Source an as-of report against the appropriate clock and keep the ingest cutoff explicit.</p>
+<p>The example captures what is <strong>currently readable</strong>. It cannot certify that every event since a requested date was retained. Oldest available timestamp alone cannot establish completeness for a quiet partition. For required coverage, record manifests at ingestion or reconcile to a source ledger; reject a required offset below the current beginning. Retention and compaction continue while reading. A cut fixes the upper offsets but does not pin the underlying records. Persist the topic ID, partition set, start and stop vectors, schema/transform version and last durable next offsets for a resumable run. Fail on topic recreation, truncation or expired ranges. Decide explicitly how partitions added after capture enter a later run.</p>
+<h3 id="from-a-backfill-to-a-live-projection">From a backfill to a live projection</h3>
+<p>Start v2 in an isolated table with outbound actions disabled. Capture the range, bulk-write rows in idempotent transactions, checkpoint each partition and compare counts and totals against the source at a common cut. Then tail from the captured stops, reconcile again at a later barrier, and switch the read alias when the agreed lag is met. Keep v1 advancing until rollback is no longer needed. Restart a failed job from its durable manifest. Capturing new ends when resuming silently changes the job's contract.</p>
+<p><strong>Throughput calculation.</strong> A frozen 360 GiB backlog at sustained 60 MiB/s takes 6,144 s, about <strong>1 h 42 min</strong>. Catching the live head while it grows at 20 MiB/s takes about <strong>2 h 34 min</strong> at the same service rate (360 × 1,024 / 40 seconds). At 20 MiB/s service there is no catch-up margin. These calculations assume comparable byte measurements and ignore warm-up, retries and key skew. Parallelise across partitions, batch sink writes and limit replay bandwidth per client/user so the live workload meets its latency budget.</p>
+<p><a href="https://kafka.apache.org/44/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">Bulk lookups, seek and end offset contracts</a> · <a href="https://kafka.apache.org/44/configuration/consumer-configs/">Reset, isolation and fetch options</a></p>
+</section><section id="limits-from-producer-memory-to-sink-capacity"><h2>Limits from producer memory to sink capacity</h2><p>Kafka has no single maximum history query size expressed in records. A backfill can read many fetches until retention or the saved stop boundary. The limiting quantities have different units and scopes. Selected upstream Java/broker defaults below are a reference for <strong>4.4</strong>; inspect topic overrides and managed-service ceilings.</p>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Upstream default or scope</th>
+<th>What happens at the boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Producer <code>batch.size</code></td>
+<td>16,384 bytes per partition batch target</td>
+<td>A large individual record can get its own batch. This is a batching target, not a record admission limit.</td>
+</tr>
+<tr class="even">
+<td>Producer <code>max.request.size</code></td>
+<td>1,048,576 bytes</td>
+<td>Limits request size and effectively the maximum uncompressed record batch the producer will send. Include keys, headers and framing.</td>
+</tr>
+<tr class="odd">
+<td>Broker <code>message.max.bytes</code> / topic <code>max.message.bytes</code></td>
+<td>Topic default 1,048,588 bytes</td>
+<td>Broker checks the accepted record batch after compression where applicable. The limits on producer and broker measure different representations.</td>
+</tr>
+<tr class="even">
+<td>Topic <code>max.decompressed.message.bytes</code></td>
+<td>Individual decompressed record in 4.4</td>
+<td>A compressed batch can pass its wire cap while one expanded record exceeds this separate limit. Lowering it below existing record sizes can also disrupt cleaning and timestamp lookups.</td>
+</tr>
+<tr class="odd">
+<td>Follower <code>replica.fetch.max.bytes</code>, <code>replica.fetch.response.max.bytes</code></td>
+<td>Per-partition / per-response follower fetch budgets</td>
+<td>Large accepted batches change replication memory and latency. Review these with producer and consumer settings and watch ISR stability.</td>
+</tr>
+<tr class="even">
+<td>Consumer <code>max.partition.fetch.bytes</code></td>
+<td>1 MiB per partition</td>
+<td>Controls a partition's usual contribution to a fetch. An oversized first batch can still be returned for progress.</td>
+</tr>
+<tr class="odd">
+<td>Consumer <code>fetch.max.bytes</code></td>
+<td>50 MiB per fetch response</td>
+<td>Multiple broker fetches can run concurrently. The first record batch of the first non-empty partition can exceed this cap.</td>
+</tr>
+<tr class="even">
+<td>Consumer <code>fetch.min.bytes</code> / <code>fetch.max.wait.ms</code></td>
+<td>1 byte / 500 ms for local fetch</td>
+<td>Broker can wait for more bytes up to the time limit. Larger minima amortise requests and can hurt sparse-stream latency.</td>
+</tr>
+<tr class="odd">
+<td>Consumer <code>max.poll.records</code></td>
+<td>500 records per poll</td>
+<td>Caps records handed to the application from the client cache. Does not bound bytes fetched, decoded heap or remaining history.</td>
+</tr>
+<tr class="even">
+<td>Group parallelism</td>
+<td>One owner per assigned partition in an ordinary group</td>
+<td>A 12-partition topic can supply at most 12 simultaneous partition owners in one group. Internal workers still need ordered checkpointing.</td>
+</tr>
+<tr class="odd">
+<td>Total retained history</td>
+<td>Time/bytes per partition, cleaner policy, tier and available storage</td>
+<td>An offset below the log start is unavailable through Kafka. Rewinding a group does not restore deleted bytes.</td>
+</tr>
+<tr class="even">
+<td>Throughput, connections and requests</td>
+<td>Deployment-specific broker, quota and service limits</td>
+<td>Bandwidth, broker CPU/disk, remote reads, decompression and sink writes can each dominate. There is no universal TPS or safe partition-count figure.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Worked tuning decision.</strong> The client fetches roughly 8 MiB of compressed data across four partitions. The application polls 100 records at a time. Raising <code>max.poll.records</code> to 1,000 reduces application loop overhead only if the client has records waiting. It may increase database transaction duration and risk <code>max.poll.interval.ms</code>. If network round trips dominate a cold backfill, look instead at fetch sizes, latency and the remote tier. If the database saturates at 10,000 upserts/s, increasing fetch buffers just moves the queue.</p>
+<p>For multi-megabyte documents, a common design stores the object once and publishes an immutable URI, version, byte size and content hash. Ensure the object exists before sending the event, retain it for the full replay horizon, and grant readers access to that exact version. For large inline records verify the producer's pre-compression check, broker compressed/decompressed checks, follower catch-up, consumer heap and any Connect/Streams paths. Test the largest poorly compressible record as well as the average case. Java strings, JSON trees and application queues often dominate compressed bytes in memory.</p>
+<p><a href="https://kafka.apache.org/44/configuration/producer-configs/">Producer limits</a> · <a href="https://kafka.apache.org/44/configuration/consumer-configs/">Consumer limits and first-batch exceptions</a> · <a href="https://kafka.apache.org/44/configuration/topic-configs/">Topic batch limits</a></p>
+</section><section id="select-the-consumption-and-integration-model"><h2>Select the consumption and integration model</h2><h3 id="consumer-groups-and-share-groups">Consumer groups and share groups</h3>
+<p>A conventional group gives an application partition ownership and an ordered cursor. It fits T17's lifecycle because the same worker can serialise updates and checkpoint a contiguous prefix. A share group provides queue-like delivery using acquisition locks and record acknowledgements. Several share consumers can work on the same partition, and worker count can exceed partition count. In 4.4 a share consumer can accept completed work, release it for retry, reject an unprocessable record or renew its acquisition as supported by the API. Locks expire and delivery attempts are tracked. A worker can finish a side effect after its lock expires and another worker can then attempt it too.</p>
+<p>Use a share group for independent jobs such as rendering completed trade confirmations with idempotent job IDs. Use a conventional assigned or subscribed consumer for a deterministic historical range scan. A share acknowledgement concerns one group's delivery lifecycle. Producer <code>acks</code> concerns replicated writes. Neither action removes the record for other readers. Check that the managed service, client and cluster feature levels support share groups before choosing the model.</p>
+<h3 id="kafka-streams">Kafka Streams</h3>
+<p>Streams embeds processing in a Java application. A <strong>KStream</strong> models events; a <strong>KTable</strong> models a changing value per key. For full-state trade updates, materialise a table keyed by trade ID. To sum exposures by portfolio, a trade amendment must retract its old portfolio contribution before adding its replacement. A plain sum over update events counts £100 and £120 for T17. A table aggregation with subtraction/addition can produce the intended £120. If the input consists of deltas instead, an event aggregation can be appropriate.</p>
+<p>Grouping by a new key can trigger a repartition topic. Stateful tasks keep local stores, commonly RocksDB-backed, and changelog topics support recovery where logging is enabled. <code>application.id</code> scopes consumer identity and internal resources. <code>state.dir</code> chooses local storage; <code>num.standby.replicas</code> trades resources for faster failover; <code>num.stream.threads</code> increases local processing concurrency up to the available tasks. <code>processing.guarantee=exactly_once_v2</code> coordinates Kafka outputs, state changelogs and consumed offsets. A REST call inside a processor still has its own failure semantics.</p>
+<p>Windowed joins and aggregations require event-time rules, window size, grace for late records and enough state retention. A late amendment beyond grace may need a correction path or a separate backfill. Order and co-partition keys consistently for keyed joins; inspect <code>Topology.describe()</code> to see repartition boundaries. Rebuilding a Streams app means coordinating group offsets, local stores, intermediate topics and downstream consumers. For a versioned rebuild, give the new application fresh state and output namespaces and compare both at the same business cut.</p>
+<h3 id="kafka-connect-and-data-movement">Kafka Connect and data movement</h3>
+<p>A <strong>source</strong> connector reads an external system and produces records; its connector-specific source offset is a coordinate such as a database log position. A <strong>sink</strong> connector consumes Kafka and writes externally; restart semantics depend on the connector and destination. Distributed workers share configuration, offset and status topics and redistribute tasks. Standalone workers suit development. <code>tasks.max</code> caps parallelism; a connector supporting one source cursor may still run only one task. Converters define key/value wire representations, and single-message transforms handle lightweight per-record changes.</p>
+<p>A CDC source can bootstrap with a database snapshot and follow the transaction log. Verify how the snapshot boundary joins the log, how deletes and schema changes are represented, and what happens when the source log expires. A sink writing files can have both a Kafka offset and a file-commit protocol. Measure restart behaviour by failing it between file upload and checkpoint. Exactly-once support is connector- and system-specific. Error tolerance and dead-letter routing can preserve availability at the price of skipped business records. Monitor the quarantine stream and retain original topic, partition, offset, schema and failure reason.</p>
+<h3 id="mirrormaker-2-federation-and-disaster-recovery">MirrorMaker 2, federation and disaster recovery</h3>
+<p>MirrorMaker 2 uses Connect to replicate selected topics asynchronously across clusters. Configure source and target aliases, inclusion rules, replication policy and checkpoint/heartbeat functions. Partition offsets in the two clusters can differ. Consumer group offset translation and synchronisation need explicit configuration and verification. A disaster runbook needs the last replicated business event and tested restart coordinates; the existence of the destination topic proves neither completeness nor a zero recovery-point objective.</p>
+<p>For active/passive trading, establish one write authority, fence the old writer before failover, measure the replication gap, and reconcile against the source ledger. For active/active, define key ownership, conflict rules and replication-loop avoidance. Internal Kafka transactions and offsets belong to their cluster; a replicated record does not automatically retain an atomic relationship with an external side effect or the original cluster's group checkpoint.</p>
+<p><a href="https://kafka.apache.org/44/design/design/">Share-group design</a> · <a href="https://kafka.apache.org/44/streams/">Streams architecture and APIs</a> · <a href="https://kafka.apache.org/44/kafka-connect/">Kafka Connect</a> · <a href="https://kafka.apache.org/44/configuration/">All component configuration references, including MirrorMaker</a></p>
+</section><section id="operate-and-observe-the-cluster"><h2>Operate and observe the cluster</h2><h3 id="metadata-quorum-storage-and-upgrades">Metadata quorum, storage and upgrades</h3>
+<p>KRaft separates controller quorum membership from broker replica placement. A three-voter quorum tolerates one voter being unavailable; five tolerate two under majority assumptions. Combined controller/broker mode is convenient for the local lab. Separate roles and failure domains allow independent capacity and recovery decisions. Configure unique node IDs, process roles, storage paths, controller listener names and quorum bootstrap or voter settings appropriate to the quorum type. Format new storage with the intended cluster identity once. Reformatting a failed production node as a new cluster is not recovery.</p>
+<p>A broker can host leaders and followers across many partitions. More partitions add file handles, metadata, leader elections and recovery work; more replicas add network and disk load. To change replication factor of existing data, plan partition reassignment with target replicas, throttle migration, check completion and remove temporary throttles. Leader balancing changes where clients send traffic; it need not move all replicas. Distribute leaders as well as bytes. Measure disk headroom during broker loss and rebuild, not only during steady operation.</p>
+<p>Binaries, metadata feature levels and client protocol support can move on different schedules. Before an upgrade inspect supported versions and features, use rolling procedures for the installed quorum type, verify replication and client interoperability, then advance feature levels according to the release procedure. Restore tests should include topics, configs, schemas, authorisation, group checkpoints and external application state.</p>
+<h3 id="listeners-identity-and-isolation">Listeners, identity and isolation</h3>
+<p><code>listeners</code> controls broker bind endpoints; <code>advertised.listeners</code> contains the addresses handed to clients through metadata. A TCP connection to the bootstrap host can succeed while every produce/fetch afterwards fails if those advertised names are unreachable from the client network. Use routable endpoints for each audience, correct certificates and separate controller/inter-broker listener roles. Supply more than one bootstrap broker for resilience.</p>
+<p>Configure <code>security.protocol</code> and the matching listener mechanism. TLS protects transport and verifies the server, mTLS can authenticate clients, and SASL mechanisms such as SCRAM or OAuth can authenticate over TLS. Authorisation is separate. Grant the writer rights to its output topics and transactional ID as required, the consumer appropriate topic and group permissions, and the replay principal read access plus its isolated output permissions. Keep command-topic write rights away from reporting jobs. Control schema registry, remote tier and external sink access independently. Record audit identities with meaningful principals and <code>client.id</code> values; a client ID is an observation/quota label and is user-configurable.</p>
+<p>Quotas can limit producer/consumer byte rates and request utilisation for client/user entities; administrative mutation and replication throttles serve different purposes. Give backfills a recognisable identity and observe throttle time. A larger poll interval cannot cure a saturated disk, and extra broker threads will not speed up a slow PostgreSQL index.</p>
+<h3 id="deciding-which-metric-to-inspect">Deciding which metric to inspect</h3>
+<div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Observation</th>
+<th>Discriminating evidence</th>
+<th>Action to verify</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Send timeout while brokers appear healthy</td>
+<td>Compare metadata resolution, buffer wait, throttle time, request latency, retry count and ISR per partition</td>
+<td>Verify advertised addresses; inspect a single affected leader and the delivery deadline. Reconcile ambiguous event IDs.</td>
+</tr>
+<tr class="even">
+<td>Writes fail after one broker outage</td>
+<td>Compare RF, ISR and minimum ISR; inspect internal transaction topics if only transactional writes fail</td>
+<td>Restore the missing safe copy or capacity. Observe ISR return and a replicated probe acknowledged on the intended topic.</td>
+</tr>
+<tr class="odd">
+<td>Consumer appears caught up, dashboard remains stale</td>
+<td>Compare group offset, consumer position, durable DB checkpoint and business event age</td>
+<td>Look for auto-commit ahead of processing, a blocked work queue or filtered amendments. Validate a known event end to end.</td>
+</tr>
+<tr class="even">
+<td>Lag rises on one partition</td>
+<td>Compare per-key arrival distribution with per-partition processing latency</td>
+<td>Identify a hot key or a poison record before adding group members.</td>
+</tr>
+<tr class="odd">
+<td>Stable group lag but read-committed jobs stall</td>
+<td>Compare high watermark, last stable offset and open transaction lifetime</td>
+<td>Find the long-running producer transaction and verify its commit or abort.</td>
+</tr>
+<tr class="even">
+<td>Rebalance loop after deploy</td>
+<td>Poll gaps, GC, task duration, duplicate static IDs, member assignments</td>
+<td>Reduce work per poll or bound queues. Expect sustained ownership and successful commits after recovery.</td>
+</tr>
+<tr class="odd">
+<td>Backfill starts too late or returns fewer rows</td>
+<td>Compare requested and available starts, cleanup policy, aborted transactions, timestamp basis and isolation</td>
+<td>Reconcile business IDs against the archive. Offset subtraction is a distance, not an exact row count.</td>
+</tr>
+<tr class="even">
+<td>Healthy live reads, slow historical reads</td>
+<td>Compare hot/cold fetch latency, tier upload/read metrics, quotas, cache, network and sink flush time</td>
+<td>Benchmark a fixed range with a disposable fast sink, then repeat with the real sink.</td>
+</tr>
+<tr class="odd">
+<td>Consumers see duplicates after crash</td>
+<td>Compare duplicate business IDs and actual Kafka coordinates</td>
+<td>Same coordinate suggests redelivery; a new coordinate suggests re-publication. Check which transaction committed first.</td>
+</tr>
+</tbody>
+</table></div>
+<figure class="code"><figcaption>Bash</figcaption><pre><code>k<span class="w"> </span>kafka-consumer-groups<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--describe<span class="w"> </span>--group<span class="w"> </span>audit.lab
+k<span class="w"> </span>kafka-get-offsets<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--topic<span class="w"> </span>trades.lab<span class="w"> </span>--time<span class="w"> </span>earliest
+k<span class="w"> </span>kafka-get-offsets<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--topic<span class="w"> </span>trades.lab<span class="w"> </span>--time<span class="w"> </span>latest
+<span class="c1"># Preview a change for an inactive lab group. No offsets are altered here.</span>
+k<span class="w"> </span>kafka-consumer-groups<span class="w"> </span>--bootstrap-server<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">"</span><span class="w"> </span>--group<span class="w"> </span>audit.lab<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--topic<span class="w"> </span>trades.lab<span class="w"> </span>--reset-offsets<span class="w"> </span>--to-earliest<span class="w"> </span>--dry-run
+</code></pre></figure>
+<p>For an intentional reset, record the prior per-partition checkpoints and sink state, stop all group members, verify the preview, then replace <code>--dry-run</code> with <code>--execute</code>. Restart and verify effects as well as group offsets. Reverting a checkpoint does not reverse SQL updates or messages previously sent. For day-to-day observation, track under-replicated and offline partitions, ISR changes, disk and controller health, bytes in/out, request queues and latency, produce errors/retries, client throttling, poll interval, commit latency, group lag, business freshness and sink checkpoint age.</p>
+<p><a href="https://kafka.apache.org/44/operations/">Kafka operations and monitoring</a> · <a href="https://kafka.apache.org/44/security/">Kafka security and listener configuration</a> · <a href="https://kafka.apache.org/44/configuration/broker-configs/">Broker and quota controls</a></p>
+</section><section id="choose-a-configuration-for-the-job"><h2>Choose a configuration for the job</h2><div class="scroll"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Workload</th>
+<th>Starting design</th>
+<th>Acceptance test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Trade event journal</td>
+<td>Trade-ID keys; delete policy sized for replay plus archive; RF 3 across failure domains; minimum ISR 2; all acknowledgements; idempotent producer</td>
+<td>Lose one replica in a test cluster, reconcile acknowledged IDs, verify you can still read all required event versions.</td>
+</tr>
+<tr class="even">
+<td>Latest trade snapshot</td>
+<td>Full state keyed by trade, compaction, explicit null tombstones; separate raw event stream</td>
+<td>Clear a projection, rebuild from earliest, compare live keys and totals, including cancelled trades.</td>
+</tr>
+<tr class="odd">
+<td>Low-latency live blotter</td>
+<td>Dedicated group, bounded queues, small enough batches, idempotent sink</td>
+<td>Compare p99 event-to-screen age under peak and failure load. Small producer linger alone cannot establish this SLA.</td>
+</tr>
+<tr class="even">
+<td>Overnight analytics backfill</td>
+<td>Fixed partition ranges, read-committed isolation if required, bulk fetch and writes, isolated identity/output</td>
+<td>Hold the live SLA, finish before required history expires, restart mid-range and obtain identical results.</td>
+</tr>
+<tr class="odd">
+<td>Independent CPU-heavy job queue</td>
+<td>Share group where supported, per-job idempotency, retry and poison-message policy</td>
+<td>Simulate a worker dying after its side effect but before acknowledging. One logical result survives redelivery.</td>
+</tr>
+<tr class="even">
+<td>Kafka-to-Kafka transformation</td>
+<td>Transactional producer or Streams EOS, read-committed downstream, replicated internal topics</td>
+<td>Abort an in-flight transformation. Verify no partial committed output and reproducible input progress.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="a-release-test-using-the-three-trade-events">A release test using the three trade events</h3>
+<ol type="1">
+<li>Run the one-partition lab. Read it independently as audit and risk. Record offsets 0 through 2 and confirm the final £170 projection manually.</li>
+<li>Run the Java backfill and compare its three rows with the console output. Repeat with a future start timestamp. Expect zero output rows and a completed empty range.</li>
+<li>For a production rehearsal, capture stops in a manifest. Append a fourth trade after capture. Verify its offset is excluded from that run and included when tailing from the saved stop.</li>
+<li>Kill a test projection between a durable update and its Kafka commit. A replay should repeat the input and leave the same database total. Repeat with an out-of-order worker completion and verify the checkpoint never skips unfinished work.</li>
+<li>In a separate replicated test cluster, remove one of three replicas, wait for the ISR to settle and run the write probe. Remove a second and observe the minimum-ISR failure. Restore replicas, observe catch-up, then reconcile acknowledged IDs.</li>
+<li>Compare elapsed replay time with both the fixed-range and live catch-up budgets. Document the earliest guaranteed restart point, source of any missing history and observable evidence required before enabling v2.</li>
+</ol>
+<p><strong>Verification scope.</strong> The interactive scan was exercised with normal, compacted, empty and invalid offset ranges. Layout was checked at 375, 744 and 1,133 CSS pixels in both colour schemes. Kafka command and Java API behaviour are documented against 4.4; the broker lab, Java client and failover rehearsal were not run against a live cluster for this edition.</p>
+<p><strong>Reference shelf.</strong> The upstream configuration index enumerates individual settings, accepted values, defaults and scope for brokers, topics, groups, producers, consumers, Connect, Streams, Admin, MirrorMaker, JVM properties, remote storage and config providers. Use it alongside the decision tables when changing a named setting. The neighbouring Cortado lessons go deeper on Java application patterns and consumer recovery.</p>
+<p><a href="https://kafka.apache.org/44/configuration/">Apache Kafka 4.4 configuration index</a> · <a href="05%20Kafka%20Design%20Patterns%20with%20Implementations.html">Kafka design patterns with implementations</a> · <a href="06%20Kafka%20Consumers%20in%20Practice%20-%20State%20and%20Replay.html">Consumer state and replay</a></p>
+</section></main></div></body></html>
