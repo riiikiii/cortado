@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Testing a Spring Boot application</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-tasting-flight.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+main,section,.shell,.scroll,figure{min-width:0}.code pre{max-width:100%;overflow-x:auto}.lab{font-weight:700}.scroll{overflow:auto}.scroll table{min-width:550px}section>section{padding:0;border:none}.shell nav{margin-top:20px}</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Java · Spring Boot · Testing</span></div>
+<div class="hero"><div><h1>Testing a Spring Boot application</h1><p>Follow one trade from a six-case Java test to a committed PostgreSQL row. Build a suite that can tell you which boundary broke when a booking changes.</p></div>
+<div class="plate"><small>A duplicate booking</small><div class="trace"><b>Submit</b><span>T-17 · 100 lots → 201 Created</span></div><div class="trace"><b>Retry</b><span>T-17 · 7 lots → 409 Conflict</span></div><div class="trace"><b>Observe</b><span>One committed row · 100 lots</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="menu" aria-label="Contents"><p class="menu-title">Reading order</p><div class="menu-grid"><a href="#choose-the-boundary-from-the-failure">Choose the boundary from the failure</a><a href="#run-the-booking-lab">Run the booking lab</a><a href="#test-an-invariant-with-plain-java">Test an invariant with plain Java</a><a href="#mocks-fakes-and-a-real-collaborator">Mocks, fakes and a real collaborator</a><a href="#exercise-http-mapping-and-security">Exercise HTTP mapping and security</a><a href="#give-persistence-tests-the-production-dialect">Give persistence tests the production dialect</a><a href="#see-exactly-who-owns-the-transaction">See exactly who owns the transaction</a><a href="#prove-the-application-works-over-a-socket">Prove the application works over a socket</a><a href="#test-outbound-http-and-shared-contracts">Test outbound HTTP and shared contracts</a><a href="#prove-asynchronous-effects-and-kafka-replay">Prove asynchronous effects and Kafka replay</a><a href="#select-specialised-spring-test-tools">Select specialised Spring test tools</a><a href="#keep-the-suite-fast-isolated-and-observable">Keep the suite fast, isolated and observable</a></div></nav><main><section id="choose-the-boundary-from-the-failure" class="level2">
+<h2>Choose the boundary from the failure</h2>
+<p>A dealer submits 100 lots under reference T-17. The order sits
+exactly on the desk limit. The client times out and resubmits the
+reference, this time with seven lots. What evidence would convince you
+the first booking survived? A green controller test, a successful SQL
+insert and an HTTP 201 each answer a different part of that
+question.</p>
+<p>Our contract is deliberately small. The first valid booking returns
+201 with its reference. Any later use of an existing reference returns
+409 and preserves the original quantity. An empty reference produces
+400. An out-of-range quantity produces 422. A booking is a single SQL
+statement in this lab. A real desk might distinguish an identical retry
+from a conflicting amendment. That would require storing and comparing
+the request as well as changing the HTTP contract.</p>
+<div class="scroll"><table>
+<thead>
+<tr class="header">
+<th>Change that could break the desk</th>
+<th>Smallest useful test</th>
+<th>Evidence to collect</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>An inclusive limit becomes exclusive</td>
+<td>Plain JUnit parameterised test</td>
+<td>Exactly 100 passes and 101 fails</td>
+</tr>
+<tr class="even">
+<td>A JSON field or validation rule changes</td>
+<td>MVC slice with MockMvc</td>
+<td>Wire-shaped request, HTTP status, response field, no write on
+rejection</td>
+</tr>
+<tr class="odd">
+<td>A migration loses the unique key</td>
+<td>JDBC slice on PostgreSQL</td>
+<td>Second insert fails to create a row and the first quantity
+survives</td>
+</tr>
+<tr class="even">
+<td>A filter or configuration class disappears</td>
+<td>Full Spring context with MockMvc</td>
+<td>The production bean graph and filter chain handle the request</td>
+</tr>
+<tr class="odd">
+<td>A committed write is lost between requests</td>
+<td>Full app on a random port with PostgreSQL</td>
+<td>Two responses plus a separate SQL read</td>
+</tr>
+<tr class="even">
+<td>A Kafka projection applies an execution twice</td>
+<td>Broker and database integration test</td>
+<td>Committed position changes once after two deliveries have been
+handled</td>
+</tr>
+</tbody>
+</table>
+</div><p>A slice loads selected infrastructure from the application context,
+Spring's registry of configured objects. A container runs an external
+process such as PostgreSQL. The two choices are independent. Here the
+JDBC slice uses a real database while the MVC slice substitutes the
+store. Reserve the widest test for a crossing where the collaboration
+itself can break.</p>
+</section>
+<section id="run-the-booking-lab" class="level2">
+<h2>Run the booking lab</h2>
+<p>The lab targets <strong>Java 21, Spring Boot 3.5.16, JUnit Jupiter,
+Maven 3.9 and PostgreSQL 16</strong>. It assumes you can read a
+controller and SQL. You can run the policy and web tests with a JDK and
+Maven. The integration tests also need a Docker-compatible
+Testcontainers runtime with permission to start containers, and access
+to the PostgreSQL image. The first Maven build needs access to its
+dependencies. All project files are embedded in this page.</p>
+<p><a class="lab" download="spring-booking-tests.zip" href="data:application/zip;base64,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">Download the complete Maven lab (.zip)</a></p><figure class="code"><figcaption>BASH</figcaption><pre><code><span class="c1"># From the unpacked directory containing pom.xml</span>
+mvn<span class="w"> </span>-Dtest<span class="o">=</span>BookingPolicyTest<span class="w"> </span><span class="nb">test</span>
+mvn<span class="w"> </span>-Dtest<span class="o">=</span>TradesWebTest<span class="w"> </span><span class="nb">test</span>
+mvn<span class="w"> </span><span class="nb">test</span>
+mvn<span class="w"> </span>verify
+</code></pre></figure><p>Surefire discovers the two classes ending in Test. The six parameter
+rows and two MVC methods give <strong>eight fast-test
+invocations</strong>. Failsafe adds two IT classes during verify, each
+with one method. A successful build should therefore report eight
+Surefire and two Failsafe tests across their respective reports. These
+are expected counts. The six policy inputs were independently executed
+on Java 21 during authoring. The Spring, Maven and container runs are
+provided for local execution.</p>
+<p>The application package is <code>guide</code>. Application.java sits
+above the tests in package-search terms, so Boot can discover the main
+configuration. Production sources live in src/main/java/guide, tests in
+src/test/java/guide, and the migration in
+src/main/resources/db/migration. The parent POM manages compatible
+versions. It includes validation explicitly, Flyway's PostgreSQL module,
+the JDBC driver, Boot's test starter and Boot's Testcontainers
+integration. The container is a Spring bean, so this fixture needs no
+JUnit container extension.</p>
+<p><strong>Working on Boot 4?</strong> Its focused testing modules
+change the build and imports. For an MVC test, use the matching Boot 4
+web MVC test starter and the annotation in
+<code>org.springframework.boot.webmvc.test.autoconfigure</code>. For
+persistence choose the JDBC or Data JPA test module matching the
+application. Regenerate the POM from your project's Boot release and
+check the resolved imports before moving lab classes. The Boot 3.5
+examples below share one dependency baseline. <a href="https://docs.spring.io/spring-boot/3.5/reference/testing/spring-boot-applications.html">Boot
+3.5 application testing</a> Â· <a href="https://docs.spring.io/spring-boot/4.2/reference/testing/test-modules.html">Boot
+4 test modules</a></p>
+</section>
+<section id="test-an-invariant-with-plain-java" class="level2">
+<h2>Test an invariant with plain Java</h2>
+<figure class="code"><figcaption>BookingPolicy.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">BookingPolicy</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">MAX_LOTS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">static</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="nf">accepts</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">lots</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">lots</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">lots</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">MAX_LOTS</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><figure class="code"><figcaption>BookingPolicyTest.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.params.ParameterizedTest</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.params.provider.CsvSource</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.assertj.core.api.Assertions.assertThat</span><span class="p">;</span>
+
+<span class="kd">class</span> <span class="nc">BookingPolicyTest</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@ParameterizedTest</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"{0} lots accepted = {1}"</span><span class="p">)</span>
+<span class="w">    </span><span class="nd">@CsvSource</span><span class="p">({</span><span class="s">"-1,false"</span><span class="p">,</span><span class="w"> </span><span class="s">"0,false"</span><span class="p">,</span><span class="w"> </span><span class="s">"1,true"</span><span class="p">,</span><span class="w"> </span><span class="s">"99,true"</span><span class="p">,</span><span class="w"> </span><span class="s">"100,true"</span><span class="p">,</span><span class="w"> </span><span class="s">"101,false"</span><span class="p">})</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">appliesInclusiveDeskLimit</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">lots</span><span class="p">,</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">expected</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">assertThat</span><span class="p">(</span><span class="n">BookingPolicy</span><span class="p">.</span><span class="na">accepts</span><span class="p">(</span><span class="n">lots</span><span class="p">)).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="n">expected</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><p>The highest-value pair here is 100 and 101. Replacing the upper
+comparison with a strict inequality breaks the 100 case while leaving a
+conventional example such as ten lots green. The zero and one pair
+exercises the lower boundary independently. A test that computes its
+expected boolean from the same inequalities could reproduce the
+production bug. Literal examples give it an independent oracle.</p>
+<p>JUnit Jupiter discovers the method and invokes it once per CSV row.
+AssertJ builds the assertion and reports the failing input via the
+display name. Spring has no work to do. Use a fresh object per test when
+mutable state enters the design. By default Jupiter creates a fresh test
+instance for each method invocation. Static collections and resources
+held by Spring beans can still outlive it. Use a method source when a
+case contains a currency pair, a timestamp and an expected allocation.
+Give the case a business name so a CI failure identifies the violated
+rule. <a href="https://docs.junit.org/5.13.4/user-guide/">JUnit Jupiter
+user guide</a></p>
+<section id="time-decimals-and-generated-data" class="level3">
+<h3>Time, decimals and generated data</h3>
+<p>Suppose the desk adds a 16:30 London cut-off. Pass a Clock into the
+policy and derive the local time in an explicit Europe/London zone.
+Choose instants immediately before and at the cut-off, once in winter
+and once in summer. At 15:30 UTC in July the London clock already reads
+16:30. A test built from the machine's default zone can stay green on a
+developer laptop and fail in CI. For quantities represented by
+BigDecimal, decide whether the contract includes scale. AssertJ's
+isEqualByComparingTo expresses numeric equality across 1.0 and 1.00. For
+a wire contract requiring two decimals, inspect the encoded
+representation as well.</p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// Inside a policy test that fixes the market clock</span>
+<span class="kd">var</span><span class="w"> </span><span class="n">london</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ZoneId</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"Europe/London"</span><span class="p">);</span>
+<span class="kd">var</span><span class="w"> </span><span class="n">clock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Clock</span><span class="p">.</span><span class="na">fixed</span><span class="p">(</span><span class="n">Instant</span><span class="p">.</span><span class="na">parse</span><span class="p">(</span><span class="s">"2026-07-01T15:30:00Z"</span><span class="p">),</span><span class="w"> </span><span class="n">london</span><span class="p">);</span>
+<span class="n">assertThat</span><span class="p">(</span><span class="n">LocalTime</span><span class="p">.</span><span class="na">now</span><span class="p">(</span><span class="n">clock</span><span class="p">)).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="n">LocalTime</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">));</span>
+</code></pre></figure><p>Example tests anchor known boundaries. Property-based tests can add
+breadth when you know an invariant independent of the implementation.
+For an allocation algorithm, generate positive lot sizes and eligible
+account weights, then assert that integer allocations sum to the
+original size and no allocation is negative. Preserve the smallest
+failing input and seed. For broad algorithmic coverage this can find
+rounding combinations the handful of hand-written examples miss.</p>
+</section>
+</section>
+<section id="mocks-fakes-and-a-real-collaborator" class="level2">
+<h2>Mocks, fakes and a real collaborator</h2>
+<p>A stub supplies an answer. A mock can also record calls. A fake
+implements a small working substitute, for example an in-memory trade
+store. Use real value objects and the real booking rule in the
+controller test. Substitute the store because the question there
+concerns request mapping and JSON. The JDBC test later makes the
+substitute answer for its assumptions.</p>
+<p>Mockito's plain <code>@Mock</code> creates a test-side object when
+initialised with MockitoExtension. Construct the subject explicitly so
+you can see which collaborators it receives. <code>@MockitoBean</code>
+instead supplies a Mockito object in the Spring test context. In an MVC
+slice the real store is outside the component selection, so Spring needs
+a bean for the controller constructor. A plain field annotated with
+<code>@Mock</code> does not satisfy that dependency. In a full-context
+test where you expect the original bean to exist,
+<code>@MockitoBean(enforceOverride = true)</code> can catch a missing
+registration.</p>
+<p>A boolean method on an unstubbed Mockito mock normally returns false.
+In our controller that means 409. A duplicate test that omits the stub
+might pass even if the controller asks the store about the wrong
+reference. Explicitly arrange the duplicate and verify the relevant
+arguments when the interaction is the only observable record of which
+trade was attempted. In the repository test inspect the real row
+instead.</p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// Inside TradesWebTest, with the same MockMvc and TradeStore fields</span>
+<span class="n">given</span><span class="p">(</span><span class="n">store</span><span class="p">.</span><span class="na">insert</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">)).</span><span class="na">willReturn</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="n">mvc</span><span class="p">.</span><span class="na">perform</span><span class="p">(</span><span class="n">post</span><span class="p">(</span><span class="s">"/trades"</span><span class="p">).</span><span class="na">contentType</span><span class="p">(</span><span class="s">"application/json"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">content</span><span class="p">(</span><span class="s">"{\"ref\":\"T-17\",\"lots\":7}"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">andExpect</span><span class="p">(</span><span class="n">status</span><span class="p">().</span><span class="na">isConflict</span><span class="p">());</span>
+<span class="n">org</span><span class="p">.</span><span class="na">mockito</span><span class="p">.</span><span class="na">Mockito</span><span class="p">.</span><span class="na">verify</span><span class="p">(</span><span class="n">store</span><span class="p">).</span><span class="na">insert</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">);</span>
+</code></pre></figure><p>A fake backed by a HashMap is convenient for service-level scenario
+tests. It cannot reproduce PostgreSQL locking or SQL type conversion.
+Give real and fake adapters a shared contract test when multiple
+services depend on their equivalence. Include the
+duplicate-with-changed-quantity case. Keep database-specific race tests
+against PostgreSQL itself.</p>
+</section>
+<section id="exercise-http-mapping-and-security" class="level2">
+<h2>Exercise HTTP mapping and security</h2>
+<figure class="code"><figcaption>Trades.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jakarta.validation.Valid</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jakarta.validation.constraints.NotBlank</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.http.HttpStatus</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.http.ResponseEntity</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.*</span><span class="p">;</span>
+
+<span class="nd">@RestController</span>
+<span class="nd">@RequestMapping</span><span class="p">(</span><span class="s">"/trades"</span><span class="p">)</span>
+<span class="kd">class</span> <span class="nc">Trades</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">record</span> <span class="nc">Order</span><span class="p">(</span><span class="nd">@NotBlank</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">lots</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="kd">record</span> <span class="nc">Receipt</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">ref</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">TradeStore</span><span class="w"> </span><span class="n">store</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">Trades</span><span class="p">(</span><span class="n">TradeStore</span><span class="w"> </span><span class="n">store</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">store</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@PostMapping</span>
+<span class="w">    </span><span class="n">ResponseEntity</span><span class="o">&lt;</span><span class="n">Receipt</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">book</span><span class="p">(</span><span class="nd">@Valid</span><span class="w"> </span><span class="nd">@RequestBody</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="n">order</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">BookingPolicy</span><span class="p">.</span><span class="na">accepts</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="na">lots</span><span class="p">()))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">ResponseEntity</span><span class="p">.</span><span class="na">unprocessableEntity</span><span class="p">().</span><span class="na">build</span><span class="p">();</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">store</span><span class="p">.</span><span class="na">insert</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="na">ref</span><span class="p">(),</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="na">lots</span><span class="p">()))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">ResponseEntity</span><span class="p">.</span><span class="na">status</span><span class="p">(</span><span class="n">HttpStatus</span><span class="p">.</span><span class="na">CONFLICT</span><span class="p">).</span><span class="na">build</span><span class="p">();</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ResponseEntity</span><span class="p">.</span><span class="na">status</span><span class="p">(</span><span class="n">HttpStatus</span><span class="p">.</span><span class="na">CREATED</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">body</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Receipt</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="na">ref</span><span class="p">()));</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><figure class="code"><figcaption>TradesWebTest.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.api.Test</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.test.context.bean.override.mockito.MockitoBean</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.test.web.servlet.MockMvc</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.mockito.BDDMockito.given</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.mockito.Mockito.verifyNoInteractions</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.springframework.test.web.servlet.result.MockMvcResultMatchers.*</span><span class="p">;</span>
+
+<span class="nd">@WebMvcTest</span><span class="p">(</span><span class="n">Trades</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="kd">class</span> <span class="nc">TradesWebTest</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">MockMvc</span><span class="w"> </span><span class="n">mvc</span><span class="p">;</span>
+<span class="w">    </span><span class="nd">@MockitoBean</span><span class="w"> </span><span class="n">TradeStore</span><span class="w"> </span><span class="n">store</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Test</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">serialisesTheCreatedReference</span><span class="p">()</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">given</span><span class="p">(</span><span class="n">store</span><span class="p">.</span><span class="na">insert</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">)).</span><span class="na">willReturn</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="n">mvc</span><span class="p">.</span><span class="na">perform</span><span class="p">(</span><span class="n">post</span><span class="p">(</span><span class="s">"/trades"</span><span class="p">).</span><span class="na">contentType</span><span class="p">(</span><span class="s">"application/json"</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">content</span><span class="p">(</span><span class="s">"{\"ref\":\"T-17\",\"lots\":100}"</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">andExpect</span><span class="p">(</span><span class="n">status</span><span class="p">().</span><span class="na">isCreated</span><span class="p">())</span>
+<span class="w">            </span><span class="p">.</span><span class="na">andExpect</span><span class="p">(</span><span class="n">jsonPath</span><span class="p">(</span><span class="s">"$.ref"</span><span class="p">).</span><span class="na">value</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Test</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">rejectsBlankReferenceBeforeStorage</span><span class="p">()</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">mvc</span><span class="p">.</span><span class="na">perform</span><span class="p">(</span><span class="n">post</span><span class="p">(</span><span class="s">"/trades"</span><span class="p">).</span><span class="na">contentType</span><span class="p">(</span><span class="s">"application/json"</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">content</span><span class="p">(</span><span class="s">"{\"ref\":\" \",\"lots\":100}"</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">andExpect</span><span class="p">(</span><span class="n">status</span><span class="p">().</span><span class="na">isBadRequest</span><span class="p">());</span>
+<span class="w">        </span><span class="n">verifyNoInteractions</span><span class="p">(</span><span class="n">store</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><p>MockMvc sends a simulated servlet request through the Spring MVC
+dispatcher. Jackson reads the actual JSON, Bean Validation checks the
+reference, the controller applies the desk rule and the selected message
+converter writes the response. No port is opened. Constructing the
+request as literal JSON gives the client an independent vocabulary.
+Serialising a Java request object shared with the server can silently
+update both sides of a field rename.</p>
+<div class="scroll"><table>
+<thead>
+<tr class="header">
+<th>Request variation</th>
+<th>Expected result in this lab</th>
+<th>Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Valid JSON with a blank ref</td>
+<td>400 and no insert</td>
+<td>Bean Validation rejects the record before controller execution</td>
+</tr>
+<tr class="even">
+<td>Well-formed order for 101 lots</td>
+<td>422 and no insert</td>
+<td>Controller reaches the domain policy</td>
+</tr>
+<tr class="odd">
+<td>Truncated JSON</td>
+<td>400</td>
+<td>Message conversion fails before validation</td>
+</tr>
+<tr class="even">
+<td>POST labelled text/plain</td>
+<td>415 with standard MVC converters</td>
+<td>No matching reader for this request body</td>
+</tr>
+<tr class="odd">
+<td>Valid retry with changed lots</td>
+<td>409 and original quantity 100</td>
+<td>MVC can prove status, SQL can prove preserved state</td>
+</tr>
+</tbody>
+</table>
+</div><p>Add a controller advice when the external contract requires a stable
+error code or ProblemDetail shape. Assert the content type,
+machine-readable code and affected field. A status-only test would miss
+a change that breaks downstream error handling. A standalone MockMvc
+builder is useful for a tiny controller harness, but custom filters,
+converters and advice must be installed deliberately. Use the Boot slice
+when those registrations matter.</p>
+<section id="add-an-authentication-boundary" class="level3">
+<h3>Add an authentication boundary</h3>
+<p>The downloadable lab has no authentication dependency. For a
+session-authenticated desk application, add Spring Security and the
+test-scoped spring-security-test dependency. Import the production
+SecurityFilterChain configuration into the slice when its configuration
+class falls outside slice scanning. Test the endpoint with an authorised
+trader, a signed-in reader, and an anonymous caller. For the example
+below assume the chain requires ROLE_TRADER and CSRF is enabled.</p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// Inside the secured variant of TradesWebTest</span>
+<span class="c1">// static imports from SecurityMockMvcRequestPostProcessors</span>
+<span class="n">mvc</span><span class="p">.</span><span class="na">perform</span><span class="p">(</span><span class="n">post</span><span class="p">(</span><span class="s">"/trades"</span><span class="p">).</span><span class="na">with</span><span class="p">(</span><span class="n">user</span><span class="p">(</span><span class="s">"analyst"</span><span class="p">).</span><span class="na">roles</span><span class="p">(</span><span class="s">"READER"</span><span class="p">))</span>
+<span class="w">        </span><span class="p">.</span><span class="na">with</span><span class="p">(</span><span class="n">csrf</span><span class="p">()).</span><span class="na">contentType</span><span class="p">(</span><span class="s">"application/json"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">content</span><span class="p">(</span><span class="s">"{\"ref\":\"T-17\",\"lots\":100}"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">andExpect</span><span class="p">(</span><span class="n">status</span><span class="p">().</span><span class="na">isForbidden</span><span class="p">());</span>
+<span class="n">verifyNoInteractions</span><span class="p">(</span><span class="n">store</span><span class="p">);</span>
+</code></pre></figure><p>Providing a valid CSRF token isolates the role check. Repeat as
+TRADER with a missing token to isolate CSRF. Run TRADER with a valid
+token and expect 201 after stubbing storage. Without that positive
+control a chain that rejects every request could pass both denial tests.
+Anonymous behaviour depends on the configured entry point, for example
+401 for HTTP Basic or a redirect for form login. In a bearer-token API,
+a mock JWT lets you test claims and authority decisions. Separately
+exercise real token decoding and your issuer, audience and signature
+configuration where those are part of the deployment contract. <a href="https://docs.spring.io/spring-security/reference/servlet/test/mockmvc/csrf.html">Spring
+Security MockMvc CSRF testing</a></p>
+</section>
+</section>
+<section id="give-persistence-tests-the-production-dialect" class="level2">
+<h2>Give persistence tests the production dialect</h2>
+<figure class="code"><figcaption>V1__trade.sql</figcaption><pre><code><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">trade</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">ref</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="p">,</span>
+<span class="w">    </span><span class="n">lots</span><span class="w"> </span><span class="nb">integer</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">check</span><span class="w"> </span><span class="p">(</span><span class="n">lots</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
+<span class="p">);</span>
+</code></pre></figure><figure class="code"><figcaption>TradeStore.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.jdbc.core.JdbcTemplate</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.stereotype.Repository</span><span class="p">;</span>
+
+<span class="nd">@Repository</span>
+<span class="kd">class</span> <span class="nc">TradeStore</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">JdbcTemplate</span><span class="w"> </span><span class="n">jdbc</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">TradeStore</span><span class="p">(</span><span class="n">JdbcTemplate</span><span class="w"> </span><span class="n">jdbc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">jdbc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jdbc</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kt">boolean</span><span class="w"> </span><span class="nf">insert</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">lots</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">jdbc</span><span class="p">.</span><span class="na">update</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">            insert into trade(ref, lots) values (?, ?)</span>
+<span class="s">            on conflict (ref) do nothing</span>
+<span class="s">            """</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="n">lots</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><figure class="code"><figcaption>DatabaseFixture.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.test.context.TestConfiguration</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.testcontainers.service.connection.ServiceConnection</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.context.annotation.Bean</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.testcontainers.containers.PostgreSQLContainer</span><span class="p">;</span>
+
+<span class="nd">@TestConfiguration</span><span class="p">(</span><span class="n">proxyBeanMethods</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<span class="kd">class</span> <span class="nc">DatabaseFixture</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Bean</span>
+<span class="w">    </span><span class="nd">@ServiceConnection</span>
+<span class="w">    </span><span class="n">PostgreSQLContainer</span><span class="o">&lt;?&gt;</span><span class="w"> </span><span class="nf">postgres</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostgreSQLContainer</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="s">"postgres:16-alpine"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><figure class="code"><figcaption>TradeStoreIT.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.api.Test</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.test.autoconfigure.jdbc.JdbcTest</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.context.annotation.Import</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.jdbc.core.JdbcTemplate</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.assertj.core.api.Assertions.assertThat</span><span class="p">;</span>
+
+<span class="nd">@JdbcTest</span>
+<span class="nd">@AutoConfigureTestDatabase</span><span class="p">(</span><span class="n">replace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AutoConfigureTestDatabase</span><span class="p">.</span><span class="na">Replace</span><span class="p">.</span><span class="na">NONE</span><span class="p">)</span>
+<span class="nd">@Import</span><span class="p">({</span><span class="n">DatabaseFixture</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">TradeStore</span><span class="p">.</span><span class="na">class</span><span class="p">})</span>
+<span class="kd">class</span> <span class="nc">TradeStoreIT</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">TradeStore</span><span class="w"> </span><span class="n">store</span><span class="p">;</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">JdbcTemplate</span><span class="w"> </span><span class="n">jdbc</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Test</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">duplicateLeavesOriginalSizeIntact</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">assertThat</span><span class="p">(</span><span class="n">store</span><span class="p">.</span><span class="na">insert</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">)).</span><span class="na">isTrue</span><span class="p">();</span>
+<span class="w">        </span><span class="n">assertThat</span><span class="p">(</span><span class="n">store</span><span class="p">.</span><span class="na">insert</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">)).</span><span class="na">isFalse</span><span class="p">();</span>
+<span class="w">        </span><span class="n">assertThat</span><span class="p">(</span><span class="n">jdbc</span><span class="p">.</span><span class="na">queryForObject</span><span class="p">(</span>
+<span class="w">                </span><span class="s">"select lots from trade where ref = ?"</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="s">"T-17"</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><p>This path is small enough to reason about statement by statement.
+Flyway creates the unique reference key. The first insert affects one
+row. A second insert on the same key affects zero rows. The final query
+retrieves 100. Checking only the boolean pair would miss a store that
+changed the quantity as a side effect. If the migration loses its unique
+index, PostgreSQL can no longer match the specified conflict target. A
+mock would still return whichever booleans the test arranged.</p>
+<p>The JDBC slice creates JDBC infrastructure and a test transaction.
+Import the adapter explicitly because a slice narrows component
+scanning. The database fixture starts PostgreSQL and supplies connection
+details through ServiceConnection. Replace.NONE keeps the configured
+database. Flyway sees the application's real migrations on the test
+classpath. Keep schema creation under the same owner as production. A
+separate hand-maintained test schema can preserve columns that
+production has removed. <a href="https://docs.spring.io/spring-boot/3.5/reference/testing/testcontainers.html">Boot
+service connections and container lifecycle</a></p>
+<section id="jdbc-jpa-and-migrations-answer-different-questions" class="level3">
+<h3>JDBC, JPA and migrations answer different questions</h3>
+<p>For Spring Data JPA, use DataJpaTest with the same database fixture
+and replacement setting. Save an entity, call flush(), then clear() on
+the EntityManager before loading again by ID. Flush sends pending SQL,
+exposing many mapping and constraint mistakes. Clear detaches the
+first-level cache, so reading the entity exercises its database
+representation. To verify a column default or computed value precisely,
+read it through JDBC. A deferred constraint or an AFTER_COMMIT listener
+needs a real commit. Flush alone cannot demonstrate either.</p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// JPA variation, inside a @DataJpaTest with a mapped Trade entity</span>
+<span class="n">repository</span><span class="p">.</span><span class="na">save</span><span class="p">(</span><span class="n">trade</span><span class="p">);</span>
+<span class="n">entityManager</span><span class="p">.</span><span class="na">flush</span><span class="p">();</span>
+<span class="n">entityManager</span><span class="p">.</span><span class="na">clear</span><span class="p">();</span>
+<span class="n">assertThat</span><span class="p">(</span><span class="n">repository</span><span class="p">.</span><span class="na">findById</span><span class="p">(</span><span class="n">trade</span><span class="p">.</span><span class="na">getId</span><span class="p">()).</span><span class="na">orElseThrow</span><span class="p">().</span><span class="na">getLots</span><span class="p">())</span>
+<span class="w">    </span><span class="p">.</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</code></pre></figure><p>For a migration that makes a column mandatory, a fresh empty database
+exercises only one path. Start a disposable database at the previous
+migration, insert a representative legacy row, apply the pending
+migrations and query the backfilled value. Then attempt an invalid new
+write. This distinguishes a script that creates the right final schema
+from one that also upgrades real data. For an expected database error,
+isolate it in its own transaction. PostgreSQL typically rejects
+subsequent statements in a failed transaction until rollback.</p>
+</section>
+</section>
+<section id="see-exactly-who-owns-the-transaction" class="level2">
+<h2>See exactly who owns the transaction</h2>
+<p>The JDBC slice and the HTTP test can run identical SQL against
+identical PostgreSQL images and leave different state after the method
+returns. The difference is the transaction that owns the insert.</p>
+<div class="scroll"><table>
+<thead>
+<tr class="header">
+<th>Moment</th>
+<th>JDBC slice with default test transaction</th>
+<th>HTTP test on a random port</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Before the call</td>
+<td>Spring opens a transaction on the test thread</td>
+<td>Test client prepares an HTTP request</td>
+</tr>
+<tr class="even">
+<td>During insert</td>
+<td>JdbcTemplate joins the test transaction</td>
+<td>Server thread borrows its own connection. The lab insert commits in
+autocommit mode</td>
+</tr>
+<tr class="odd">
+<td>Verification</td>
+<td>The test can see its own uncommitted row</td>
+<td>A new SQL read on the test side can see the committed row</td>
+</tr>
+<tr class="even">
+<td>After the test</td>
+<td>Spring rolls back the test transaction</td>
+<td>Server write survives client-side rollback. Remove the test's row
+explicitly</td>
+</tr>
+</tbody>
+</table>
+</div><p>Consider adding a test-level transaction to the random-port test and
+inserting reference data in @BeforeEach. The client-side setup can see
+that data immediately. The server's separate connection may see no
+fixture at all until setup commits. A timeout, missing reference or
+surprising 404 can be a transaction visibility problem. Seed committed
+setup, call HTTP, inspect data from a fresh transaction and clean up by
+the run's unique reference. An in-process MockMvc request may
+participate in the test transaction for synchronous handling, which can
+hide this defect.</p>
+<p>For a focused Spring transactional test you can deliberately cross
+the commit boundary. Inject the normal service, arrange your data, then
+use the following sequence. After end() the original test transaction
+has completed. Cleanup must account for every committed effect,
+including outbox rows. Preemptive timeouts that run code on another
+thread can likewise escape the test-managed transaction. <a href="https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/tx.html">Spring
+test transaction semantics</a></p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// Inside a Spring @Transactional test with TestTransaction imported</span>
+<span class="n">service</span><span class="p">.</span><span class="na">book</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="n">TestTransaction</span><span class="p">.</span><span class="na">flagForCommit</span><span class="p">();</span>
+<span class="n">TestTransaction</span><span class="p">.</span><span class="na">end</span><span class="p">();</span>
+<span class="n">assertThat</span><span class="p">(</span><span class="n">readUsingFreshConnection</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="na">ref</span><span class="p">())).</span><span class="na">isTrue</span><span class="p">();</span>
+</code></pre></figure><section id="a-stronger-variation-with-concurrent-submissions" class="level3">
+<h3>A stronger variation with concurrent submissions</h3>
+<p>Two clients can both read âreference absentâ before either writes. A
+select-then-insert implementation therefore needs a database constraint
+and deliberate collision handling. For the lab's single INSERT with ON
+CONFLICT, use two independent JDBC connections. Let connection A begin a
+transaction and insert T-17 for 100 lots. Leave it open. On a separate
+executor let B attempt the same reference for seven. Commit A, obtain
+B's result with a bounded timeout, then inspect the row using a third
+connection. Expect one insert by A, zero by B and 100 lots. Change one
+decision: roll back A. B can now insert seven lots.</p>
+<p>To prove actual contention, coordinate the start with a latch and
+observe B waiting on a database lock before releasing A. A latch raised
+just before JDBC execution proves only that B's thread ran. Give each
+wait a deadline, set a database statement timeout and release
+connections in finally blocks so a failed assertion cannot strand the
+test. Keep a simpler simultaneous-request test when the required
+property is only one winner. In that test the winning quantity depends
+on ordering. <a href="https://www.postgresql.org/docs/16/transaction-iso.html">PostgreSQL
+transaction isolation</a></p>
+</section>
+</section>
+<section id="prove-the-application-works-over-a-socket" class="level2">
+<h2>Prove the application works over a socket</h2>
+<figure class="code"><figcaption>BookingHttpIT.java</figcaption><pre><code><span class="kn">package</span><span class="w"> </span><span class="nn">guide</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.Map</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.UUID</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.junit.jupiter.api.Test</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.test.context.SpringBootTest</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.test.web.client.TestRestTemplate</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.context.annotation.Import</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.jdbc.core.JdbcTemplate</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.assertj.core.api.Assertions.assertThat</span><span class="p">;</span>
+<span class="kn">import static</span><span class="w"> </span><span class="nn">org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT</span><span class="p">;</span>
+
+<span class="nd">@SpringBootTest</span><span class="p">(</span><span class="n">webEnvironment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RANDOM_PORT</span><span class="p">)</span>
+<span class="nd">@Import</span><span class="p">(</span><span class="n">DatabaseFixture</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="kd">class</span> <span class="nc">BookingHttpIT</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">TestRestTemplate</span><span class="w"> </span><span class="n">http</span><span class="p">;</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">JdbcTemplate</span><span class="w"> </span><span class="n">jdbc</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Test</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">aSecondRequestCannotReplaceTheFirst</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"T-"</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">();</span>
+<span class="w">        </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">http</span><span class="p">.</span><span class="na">postForEntity</span><span class="p">(</span><span class="s">"/trades"</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"ref"</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="s">"lots"</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">),</span><span class="w"> </span><span class="n">Trades</span><span class="p">.</span><span class="na">Receipt</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="w">            </span><span class="n">assertThat</span><span class="p">(</span><span class="n">first</span><span class="p">.</span><span class="na">getStatusCode</span><span class="p">().</span><span class="na">value</span><span class="p">()).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">201</span><span class="p">);</span>
+<span class="w">            </span><span class="n">assertThat</span><span class="p">(</span><span class="n">first</span><span class="p">.</span><span class="na">getBody</span><span class="p">()).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Trades</span><span class="p">.</span><span class="na">Receipt</span><span class="p">(</span><span class="n">ref</span><span class="p">));</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="n">second</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">http</span><span class="p">.</span><span class="na">postForEntity</span><span class="p">(</span><span class="s">"/trades"</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"ref"</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="s">"lots"</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">),</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="w">            </span><span class="n">assertThat</span><span class="p">(</span><span class="n">second</span><span class="p">.</span><span class="na">getStatusCode</span><span class="p">().</span><span class="na">value</span><span class="p">()).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">409</span><span class="p">);</span>
+<span class="w">            </span><span class="n">assertThat</span><span class="p">(</span><span class="n">jdbc</span><span class="p">.</span><span class="na">queryForObject</span><span class="p">(</span>
+<span class="w">                    </span><span class="s">"select lots from trade where ref = ?"</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">))</span>
+<span class="w">                </span><span class="p">.</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">jdbc</span><span class="p">.</span><span class="na">update</span><span class="p">(</span><span class="s">"delete from trade where ref = ?"</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><p>This test starts the embedded server on an available port.
+TestRestTemplate resolves the relative URL against that server. The
+generated reference lets independent runs coexist. Use fixed T-17 in the
+rolled-back slice and a per-test key wherever state can escape. The
+final query doubles as an independent witness. A controller that
+returned a hard-coded 201 before persisting could satisfy a superficial
+smoke test.</p>
+<p>Choose full-context MOCK plus AutoConfigureMockMvc when the question
+is application wiring through MVC. Choose RANDOM_PORT to exercise a real
+HTTP exchange, server routing and cross-thread persistence. Choose NONE
+when testing a scheduled processor or headless command that requires the
+full bean graph. A bare contextLoads method proves the selected graph
+starts. Give it a business assertion if the question concerns behaviour.
+To verify reverse-proxy headers, gateway routing or TLS termination,
+send a small smoke request through that deployed boundary using an
+isolated test identity.</p>
+<p>A useful mutation is to change the store's conflict action to update
+the existing quantity. A web slice with the store stubbed remains green.
+The store integration test should now fail on its return value or row
+assertion, and the HTTP integration test should detect the violated
+duplicate contract. Restore the statement and rerun mvn verify. If both
+integration tests stayed green during the mutation, inspect discovery
+and reports before inspecting the business logic.</p>
+</section>
+<section id="test-outbound-http-and-shared-contracts" class="level2">
+<h2>Test outbound HTTP and shared contracts</h2>
+<p>Suppose booking also needs a desk limit from a risk service. Stubbing
+a Java interface proves how booking reacts to a limit of 100. You still
+need evidence that your adapter calls the correct URL, sets the desk
+header and understands the supplier's JSON. On Boot 3.5, RestClientTest
+can supply a configured RestClient.Builder and MockRestServiceServer.
+Build the application client from that injected builder so the server
+can intercept its requests. The following is a separate adapter example.
+Place both classes in package guide and import the Spring types shown in
+the linked reference.</p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="nd">@Component</span>
+<span class="kd">class</span> <span class="nc">RiskClient</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">record</span> <span class="nc">Limit</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">lots</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">RestClient</span><span class="w"> </span><span class="n">client</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">RiskClient</span><span class="p">(</span><span class="n">RestClient</span><span class="p">.</span><span class="na">Builder</span><span class="w"> </span><span class="n">builder</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">builder</span><span class="p">.</span><span class="na">baseUrl</span><span class="p">(</span><span class="s">"https://risk.example"</span><span class="p">).</span><span class="na">build</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">limit</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">desk</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="na">get</span><span class="p">().</span><span class="na">uri</span><span class="p">(</span><span class="s">"/limits/{desk}"</span><span class="p">,</span><span class="w"> </span><span class="n">desk</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">retrieve</span><span class="p">().</span><span class="na">body</span><span class="p">(</span><span class="n">Limit</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">lots</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="nd">@RestClientTest</span><span class="p">(</span><span class="n">RiskClient</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="kd">class</span> <span class="nc">RiskClientTest</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">RiskClient</span><span class="w"> </span><span class="n">risk</span><span class="p">;</span>
+<span class="w">    </span><span class="nd">@Autowired</span><span class="w"> </span><span class="n">MockRestServiceServer</span><span class="w"> </span><span class="n">server</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Test</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">decodesTheDeskLimit</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">server</span><span class="p">.</span><span class="na">expect</span><span class="p">(</span><span class="n">requestTo</span><span class="p">(</span><span class="s">"https://risk.example/limits/CREDIT"</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">andExpect</span><span class="p">(</span><span class="n">method</span><span class="p">(</span><span class="n">HttpMethod</span><span class="p">.</span><span class="na">GET</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">andRespond</span><span class="p">(</span><span class="n">withSuccess</span><span class="p">(</span><span class="s">"{\"lots\":100}"</span><span class="p">,</span><span class="w"> </span><span class="n">MediaType</span><span class="p">.</span><span class="na">APPLICATION_JSON</span><span class="p">));</span>
+<span class="w">        </span><span class="n">assertThat</span><span class="p">(</span><span class="n">risk</span><span class="p">.</span><span class="na">limit</span><span class="p">(</span><span class="s">"CREDIT"</span><span class="p">)).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<span class="w">        </span><span class="n">server</span><span class="p">.</span><span class="na">verify</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></figure><p>Here requestTo and method are static MockRestRequestMatchers, and
+withSuccess is a MockRestResponseCreators factory. A 429, a 503 and
+malformed JSON should lead to distinct tests if the adapter treats them
+differently. For a socket timeout or connection reset, use a local HTTP
+stub server and the production client transport with explicit deadlines.
+A mock request factory bypasses socket behaviour. Never retry a write
+automatically unless the remote contract makes repetition safe. <a href="https://docs.spring.io/spring-framework/reference/testing/spring-mvc-test-client.html">Spring
+client-side test facilities</a></p>
+<p>A consumer contract records the minimum exchange booking needs. Have
+the provider run that contract against its controller as part of its own
+build, with a known provider state such as âCREDIT has a limit of 100â.
+That catches a provider rename from lots to maxLots even while your
+local stub still serves the old response. A JsonTest using JacksonTester
+is cheaper for a date format, enum spelling or optional field. Use
+literal JSON fixtures from a producer version you actually support,
+especially during rolling upgrades. Assertions that both sides use the
+same freshly generated DTO can miss incompatibility with a consumer
+still on yesterday's version.</p>
+</section>
+<section id="prove-asynchronous-effects-and-kafka-replay" class="level2">
+<h2>Prove asynchronous effects and Kafka replay</h2>
+<p>A booking event introduces three clocks. The publisher receives a
+broker acknowledgement, the consumer handles the record, and a database
+transaction commits the projection. Only the final observation answers
+âcan the desk see the position?â Awaiting the Kafka producer future
+removes one uncertainty but still leaves two. Use a real broker for
+partition assignment, serialisation, listener wiring and offset tests.
+An embedded broker from spring-kafka-test works for focused integration
+tests. A broker container is useful when testing the deployed broker
+distribution or configuration. A plain unit test can cover the handler's
+mapping in milliseconds.</p>
+<section id="an-executable-test-shape-for-an-existing-listener" class="level3">
+<h3>An executable test shape for an existing listener</h3>
+<p>This extension assumes an application with a listener consuming
+string event IDs from an isolated single-partition topic, a
+KafkaTemplate&lt;String,String&gt;, a position projection in PostgreSQL
+and a marker event the listener records. The fixture interprets E-17 as
++100 lots and END-17 as a zero-quantity barrier for the same desk. Each
+test gets an empty topic, a fresh consumer group configured to read from
+the beginning, and an empty projection. The lab download stops at HTTP
+and JDBC. The snippet shows the test body to adapt to your listener,
+with bounded waits on both sending and observing.</p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// The same key routes all three records to the same partition.</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">eventId</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"E-17"</span><span class="p">,</span><span class="w"> </span><span class="s">"E-17"</span><span class="p">,</span><span class="w"> </span><span class="s">"END-17"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">kafka</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span><span class="w"> </span><span class="s">"CREDIT"</span><span class="p">,</span><span class="w"> </span><span class="n">eventId</span><span class="p">).</span><span class="na">get</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">await</span><span class="p">().</span><span class="na">atMost</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">15</span><span class="p">)).</span><span class="na">untilAsserted</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">assertThat</span><span class="p">(</span><span class="n">projection</span><span class="p">.</span><span class="na">hasCommittedMarker</span><span class="p">(</span><span class="s">"END-17"</span><span class="p">)).</span><span class="na">isTrue</span><span class="p">();</span>
+<span class="w">    </span><span class="n">assertThat</span><span class="p">(</span><span class="n">projection</span><span class="p">.</span><span class="na">lots</span><span class="p">(</span><span class="s">"CREDIT"</span><span class="p">)).</span><span class="na">isEqualTo</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></figure><p>The marker matters. A poll for âposition equals 100â can succeed
+after the first record even when the second will increase it to 200.
+With one partition, synchronous ordered processing, no retry-topic
+reordering and a marker committed after earlier effects, seeing END-17
+tells you both copies passed the handler. If handlers dispatch work to a
+pool or failures go to a retry topic, the marker loses that meaning. In
+that design collect completion evidence for both input offsets and
+assert the final position after the pending work drains. Awaitility's
+untilAsserted retries a read-only assertion. Putting a publish operation
+inside the polling block would manufacture extra inputs.</p>
+</section>
+<section id="the-offset-is-another-piece-of-state" class="level3">
+<h3>The offset is another piece of state</h3>
+<div class="scroll"><table>
+<thead>
+<tr class="header">
+<th>Failure window</th>
+<th>Experiment</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Database committed, offset uncommitted</td>
+<td>Stop processing after commit and before acknowledgement, restart
+with the same group</td>
+<td>Redelivery of the original offset, final position 100</td>
+</tr>
+<tr class="even">
+<td>Offset advanced before durable write</td>
+<td>Force processing failure after early acknowledgement in a disposable
+group</td>
+<td>After restart, missing database effect exposes the loss window</td>
+</tr>
+<tr class="odd">
+<td>Invalid record</td>
+<td>Supply a payload that fails the configured deserialiser or
+handler</td>
+<td>Assert configured retry outcome, original key and failure metadata
+on the dead-letter path</td>
+</tr>
+<tr class="even">
+<td>Rebuild into a new projection</td>
+<td>Start a fresh group on retained history or explicitly seek the
+intended offsets</td>
+<td>Expected per-desk totals from known events, independent of the
+original projection</td>
+</tr>
+</tbody>
+</table>
+</div><p>Two sends with one event ID test logical duplicates at different
+offsets. A restart of the same group at the same offset tests broker
+redelivery and recovery configuration. For deduplication, insert the
+processed-event ID and update the position in the same database
+transaction, with a unique constraint on the ID. Force a rollback
+between those steps and prove a retry can still apply the position once.
+A Kafka transaction that covers consumed offsets and produced Kafka
+records does not itself commit a PostgreSQL row. When booking writes a
+database row and emits a message, an outbox design gives you three
+checks: booking and outbox row commit together, the relay eventually
+publishes, and replay leaves a single business effect. <a href="https://docs.spring.io/spring-kafka/reference/3.3/testing.html">Spring
+Kafka testing reference</a></p>
+</section>
+</section>
+<section id="select-specialised-spring-test-tools" class="level2">
+<h2>Select specialised Spring test tools</h2>
+<div class="scroll"><table>
+<thead>
+<tr class="header">
+<th>Situation</th>
+<th>Tool</th>
+<th>Concrete assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Conditional starter or configuration properties</td>
+<td>ApplicationContextRunner</td>
+<td>Set one property and assert the selected bean. Supply a user bean
+and assert auto-configuration backs off</td>
+</tr>
+<tr class="even">
+<td>Reactive controller</td>
+<td>WebFluxTest with WebTestClient</td>
+<td>Assert HTTP status, media type and decoded body, with downstream
+service substituted</td>
+</tr>
+<tr class="odd">
+<td>Reactive service</td>
+<td>Reactor StepVerifier</td>
+<td>Assert demand, emissions and termination, or an expected error. Give
+verification a deadline</td>
+</tr>
+<tr class="even">
+<td>Scheduled job</td>
+<td>Inject Clock and invoke the job's work method directly</td>
+<td>A trade just before the cut-off is processed once. Use one
+integration test for scheduler registration</td>
+</tr>
+<tr class="odd">
+<td>Batch job</td>
+<td>Spring Batch test utilities against an isolated job repository</td>
+<td>Fail after a committed chunk, restart with the same identifying
+parameters and verify completed work is preserved</td>
+</tr>
+<tr class="even">
+<td>Permission-protected service</td>
+<td>Call the Spring-managed proxied bean under two principals</td>
+<td>Denied invocation produces no write, authorised invocation does</td>
+</tr>
+<tr class="odd">
+<td>Structured JSON or schema evolution</td>
+<td>JsonTest or producer/consumer fixture</td>
+<td>Historical payload still decodes and the emitted date, amount and
+enum match the contract</td>
+</tr>
+</tbody>
+</table>
+</div><p>For a conditional bean, a full Boot application can hide the
+dependency you intended to vary. ApplicationContextRunner creates a
+small context per run. Give it only the configuration under examination
+and the properties that choose the branch. Include a negative case.
+Loading only the enabled configuration proves little about what happens
+when the property is absent. <a href="https://docs.spring.io/spring-boot/3.5/reference/features/developing-auto-configuration.html">Boot
+auto-configuration testing</a></p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// Example for a custom RiskAutoConfiguration guarded by risk.enabled</span>
+<span class="kd">var</span><span class="w"> </span><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ApplicationContextRunner</span><span class="p">()</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withConfiguration</span><span class="p">(</span><span class="n">AutoConfigurations</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">RiskAutoConfiguration</span><span class="p">.</span><span class="na">class</span><span class="p">));</span>
+<span class="n">runner</span><span class="p">.</span><span class="na">withPropertyValues</span><span class="p">(</span><span class="s">"risk.enabled=true"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">assertThat</span><span class="p">(</span><span class="n">ctx</span><span class="p">).</span><span class="na">hasSingleBean</span><span class="p">(</span><span class="n">RiskClient</span><span class="p">.</span><span class="na">class</span><span class="p">));</span>
+<span class="n">runner</span><span class="p">.</span><span class="na">withPropertyValues</span><span class="p">(</span><span class="s">"risk.enabled=false"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">assertThat</span><span class="p">(</span><span class="n">ctx</span><span class="p">).</span><span class="na">doesNotHaveBean</span><span class="p">(</span><span class="n">RiskClient</span><span class="p">.</span><span class="na">class</span><span class="p">));</span>
+</code></pre></figure><p>For a reactive delay, assemble the publisher inside the supplier
+passed to withVirtualTime. This allows time-dependent operators created
+there to pick up the virtual scheduler. Advance simulated time and
+verify the signal. Real sockets, external brokers and arbitrary
+executors still use their own clocks.</p>
+<figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="c1">// Requires reactor-test, using reactor.test.StepVerifier</span>
+<span class="n">StepVerifier</span><span class="p">.</span><span class="na">withVirtualTime</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span>
+<span class="w">        </span><span class="n">Mono</span><span class="p">.</span><span class="na">delay</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMinutes</span><span class="p">(</span><span class="mi">5</span><span class="p">)).</span><span class="na">thenReturn</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">expectSubscription</span><span class="p">()</span>
+<span class="w">    </span><span class="p">.</span><span class="na">thenAwait</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMinutes</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">expectNext</span><span class="p">(</span><span class="s">"T-17"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">expectComplete</span><span class="p">()</span>
+<span class="w">    </span><span class="p">.</span><span class="na">verify</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+</code></pre></figure></section>
+<section id="keep-the-suite-fast-isolated-and-observable" class="level2">
+<h2>Keep the suite fast, isolated and observable</h2>
+<p>JUnit test objects, Spring contexts, Docker processes and committed
+rows have different lifetimes. A new test instance may receive the same
+cached Spring singleton as the previous class. Reuse is valuable for
+large suites, provided the bean holds no per-test residue. A
+Spring-managed container bean follows the cached context's lifetime. A
+JUnit-managed static container can stop at the end of its test class
+while another class reuses a context pointed at its old mapped port.
+Give the dependency and its clients compatible lifetimes. With a
+manually managed external service, use DynamicPropertySource to register
+its runtime URL before bean creation.</p>
+<p>Spring's context cache is keyed by configuration, profiles, property
+overrides and context customisers, including bean overrides. Tiny
+per-class variations can force expensive rebuilds. Turn on DEBUG for
+org.springframework.test.context.cache and compare hits and misses over
+an entire JVM run. Consolidate genuinely equivalent fixtures. Use
+DirtiesContext for a test that corrupts context-level state. For one
+leftover database row, remove that row. Separate JVM forks do not share
+the in-memory context cache. <a href="https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html">Spring
+TestContext caching</a></p>
+<p>Parallelise independent pure tests first. For integration tests
+choose per-run references, schemas, topics, group IDs and stub-server
+state to match the resource being isolated. A fresh group on a shared
+topic can consume another test's history. A unique reference cannot
+protect against another class truncating the table. Where isolation is
+intrinsically expensive, serialise just the tests that own that
+resource. A JUnit resource lock coordinates participating tests within a
+Jupiter execution. Separate CI workers require separate resources or an
+external coordination mechanism.</p>
+<section id="ci-execution-and-diagnosis" class="level3">
+<h3>CI execution and diagnosis</h3>
+<p>Run mvn test for feedback during edits and mvn verify on the change
+that would ship. Failsafe's verify goal makes the integration-test
+results affect build success. Calling only integration-test can skip
+that final verdict. Collect target/surefire-reports and
+target/failsafe-reports even on failure. For a container failure retain
+the image name, startup log and the first underlying exception. For
+asynchronous failures record topic, partition, offset and event ID as
+well as thread and time. This lets a developer reconstruct the order of
+observable events. <a href="https://maven.apache.org/surefire/maven-failsafe-plugin/">Maven
+Failsafe lifecycle</a></p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code><span class="c1"># Re-run one slice or one container-backed class</span>
+mvn<span class="w"> </span>-Dtest<span class="o">=</span>TradesWebTest<span class="w"> </span><span class="nb">test</span>
+mvn<span class="w"> </span>-Dit.test<span class="o">=</span>BookingHttpIT<span class="w"> </span>verify
+<span class="c1"># Inspect the effective dependency choices if imports differ</span>
+mvn<span class="w"> </span>dependency:tree
+</code></pre></figure><div class="scroll"><table>
+<thead>
+<tr class="header">
+<th>Symptom</th>
+<th>Discriminating observation</th>
+<th>Repair and verification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MVC returns 403 for every POST</td>
+<td>Does a valid user plus CSRF reach the store?</td>
+<td>Import the intended chain, then exercise both allow and deny
+paths</td>
+</tr>
+<tr class="even">
+<td>Real server cannot see fixture data</td>
+<td>Can a second database connection read the setup before the
+request?</td>
+<td>Commit setup and retry the request</td>
+</tr>
+<tr class="odd">
+<td>Store test passes despite a broken mapping</td>
+<td>Did SQL execute and did a fresh read occur?</td>
+<td>Flush and clear for JPA, inspect an actual row</td>
+</tr>
+<tr class="even">
+<td>Consumer passes alone, doubles when busy</td>
+<td>Did the test wait for both offsets to complete?</td>
+<td>Wait for a meaningful completion condition and assert the final
+business effect</td>
+</tr>
+<tr class="odd">
+<td>Suite passes despite broken IT assertion</td>
+<td>Is that class present in Failsafe XML and was verify run?</td>
+<td>Fix the name or plugin binding, confirm a deliberate failure makes
+CI red</td>
+</tr>
+<tr class="even">
+<td>Tests slow down as classes accumulate</td>
+<td>Context cache misses, fork count or repeated image pulls?</td>
+<td>Measure separately, align equivalent configurations and resource
+lifetimes</td>
+</tr>
+<tr class="odd">
+<td>All later tests just report context startup failure</td>
+<td>What was the first cause in the earliest failing report?</td>
+<td>Fix the original bean, migration or connection failure and rerun the
+smallest affected class</td>
+</tr>
+</tbody>
+</table>
+</div><p>Use code coverage to find untouched paths. A covered line says it
+executed. A mutation such as changing &lt;= to &lt; asks whether the
+assertions distinguish two behaviours. Spend the strongest checks where
+a false green costs most: money amounts, duplicate execution,
+permissions and transaction boundaries. For the booking service, the
+release evidence is concrete: 100 lots are accepted, 101 are rejected, a
+second request cannot replace the first, and an independent database
+read still finds the original quantity.</p>
+</section>
+</section>
+</main></div></body></html>
