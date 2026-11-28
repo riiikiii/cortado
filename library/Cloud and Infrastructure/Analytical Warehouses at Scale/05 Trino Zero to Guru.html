@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Trino Zero to Guru</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-grinder.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style><style>
+table{width:100%} .scroll{max-width:100%} .code{max-width:100%}
+.menu-grid a{min-width:0} h1,h2,h3{overflow-wrap:break-word}
+.mechanism{margin:24px 0;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--surface)}
+.mechanism ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;list-style:none}
+.mechanism li{border-left:4px solid var(--t500);background:var(--surface-2);padding:14px}
+.mechanism strong{display:block;color:var(--t700)}
+@media(prefers-color-scheme:dark){.mechanism strong{color:var(--t300)}}
+@media(max-width:540px){.mechanism ol{grid-template-columns:1fr}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Analytical warehouses &#183; Guide 5 of 5</span></div>
+<div class="hero"><div><h1>Trino Zero to Guru</h1><p>Start with a local SQL service, connect PostgreSQL and Iceberg, then learn the plans, policies and recovery boundaries of a production Trino cluster.</p></div>
+<div class="plate"><small>Worked result</small><div class="trace"><b>Sources</b><span>25 nations &#183; 5 unique region policies</span></div><div class="trace"><b>Join</b><span>Each nation matches one policy</span></div><div class="trace"><b>Result</b><span>5 nations per desk</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">01 Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">02 Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">03 Benchmarking the Warehouse Decision</a><a href="04%20Athena%20Zero%20to%20Guru.html">04 Athena Zero to Guru</a><a href="05%20Trino%20Zero%20to%20Guru.html">05 Trino Zero to Guru</a></div></nav><nav class="menu" aria-label="On this page"><div class="menu-title">On this page</div><div class="menu-grid"><a href="#build-a-query-service-you-can-explain">Build a query service you can explain</a><a href="#understand-catalog-schema-table-and-connector">Understand catalog, schema, table and connector</a><a href="#start-a-reproducible-local-service">Start a reproducible local service</a><a href="#follow-a-federated-plan-to-its-source">Follow a federated plan to its source</a><a href="#connect-the-same-iceberg-table-used-by-athena">Connect the same Iceberg table used by Athena</a><a href="#create-and-maintain-a-trino-owned-table">Create and maintain a Trino-owned table</a><a href="#learn-enough-sql-to-avoid-expensive-mistakes">Learn enough SQL to avoid expensive mistakes</a><a href="#read-the-slowest-stage-before-adding-workers">Read the slowest stage before adding workers</a><a href="#move-from-one-node-to-a-distributed-cluster">Move from one node to a distributed cluster</a><a href="#control-admission-before-concurrency-controls-you">Control admission before concurrency controls you</a><a href="#choose-a-retry-policy-for-the-workload">Choose a retry policy for the workload</a><a href="#use-trino-from-java-and-bi">Use Trino from Java and BI</a><a href="#secure-identities-rows-and-source-access">Secure identities, rows and source access</a><a href="#operate-upgrade-and-recover">Operate, upgrade and recover</a><a href="#compare-trino-with-the-alternatives">Compare Trino with the alternatives</a><a href="#prove-that-you-can-own-the-service">Prove that you can own the service</a></div></nav><main><section id="build-a-query-service-you-can-explain" class="level2">
+<h2>Build a query service you can explain</h2>
+<p>Trino is a distributed SQL engine. A coordinator plans queries and
+workers execute stages that read from configured data sources. The
+source retains the data. A connector translates between Trino and that
+source's metadata, types, access protocol and supported operations. The
+result is useful when an organisation needs interactive SQL over a lake,
+several databases or both.</p>
+<p>This guide targets the documented Trino 484 interface. Pin the
+container and JDBC driver to a reviewed release for deployment. The lab
+assumes Docker Engine with Compose, enough memory for Trino and
+PostgreSQL, and a shell capable of the commands shown. Container images
+supply their own runtime. For bare-metal installation, follow that Trino
+release's exact Java requirement and JVM settings.</p>
+<p>You will first query a generated dataset, then join it to a
+PostgreSQL dimension, connect to the Iceberg trade table, diagnose a
+distributed plan and design a production cluster. The sample data is
+disposable. A source username, TLS policy, worker sizing and production
+password must come from your environment. <a href="https://trino.io/docs/current/installation/deployment.html">Trino
+deployment requirements</a> &#183; <a href="https://trino.io/docs/current/installation/containers.html">Official
+container</a></p>
+</section><figure class="mechanism"><figcaption>Federation exposes two independent data paths</figcaption><ol><li><strong>Coordinator</strong>Resolve TPC-H and PostgreSQL catalogs, plan the join and schedule source work.</li><li><strong>TPC-H workers</strong>Generate nation rows. Each nation supplies a region key.</li><li><strong>PostgreSQL connector</strong>Read five region policies. Push eligible source-local filters into PostgreSQL.</li><li><strong>Join and result</strong>Match on region key and aggregate to five nations per desk. Verify the dimension key is unique.</li></ol></figure>
+<section id="understand-catalog-schema-table-and-connector" class="level2">
+<h2>Understand catalog, schema, table and connector</h2>
+<p>The name lake.athena_learning.trade_current has three parts. lake
+identifies a configured catalog. Its connector is Iceberg.
+athena_learning is the schema, corresponding to the Glue database in
+this example. trade_current is the table. Two catalogs may use the same
+connector with different source databases or roles.</p>
+<p>A coordinator accepts SQL and resolves each name using its catalog.
+Metadata and statistics guide the plan. Workers read splits, join and
+aggregate rows, and send intermediate results through exchanges. A
+connector may push a filter, aggregation or join into the source.
+Otherwise Trino executes that work after reading source rows. This
+distinction decides both speed and the load imposed on operational
+databases.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Unit</th>
+<th>Meaning</th>
+<th>What can constrain it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Query</td>
+<td>One submitted SQL operation and its result</td>
+<td>Admission queue, planning, source limits, client consumption</td>
+</tr>
+<tr class="even">
+<td>Stage</td>
+<td>A fragment of the distributed plan</td>
+<td>Exchanges and the available parallel work</td>
+</tr>
+<tr class="odd">
+<td>Task</td>
+<td>Execution of a stage fragment on a worker</td>
+<td>Memory, CPU, skew and local failure</td>
+</tr>
+<tr class="even">
+<td>Split</td>
+<td>A unit of source input to schedule</td>
+<td>File count, connector split policy and source throughput</td>
+</tr>
+<tr class="odd">
+<td>Driver/operator</td>
+<td>Local pipeline processing pages of rows</td>
+<td>Expensive expressions, blocking joins or aggregates</td>
+</tr>
+<tr class="even">
+<td>Exchange</td>
+<td>Transfer of intermediate data between tasks</td>
+<td>Network, serialisation, partition imbalance or exchange storage</td>
+</tr>
+</tbody>
+</table>
+</div><p>More workers help only when there is divisible work and a resource
+bottleneck they can relieve. A source that returns one serial stream can
+cap the scan. One book representing half the data can dominate one hash
+partition. A small aggregate result can still require a huge exchange if
+the plan joins detailed rows before reducing them.</p>
+</section>
+<section id="start-a-reproducible-local-service" class="level2">
+<h2>Start a reproducible local service</h2>
+<p>Create a new directory with three files. compose.yaml runs a single
+Trino node using its bundled development configuration, plus PostgreSQL
+16. The database contains a tiny region classification that we will join
+to the built-in TPC-H catalog. The ports are bound to loopback for this
+unauthenticated local exercise.</p>
+<figure class="code"><figcaption>YAML</figcaption><pre><code><span class="c1"># compose.yaml</span>
+<span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">postgres</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:16</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">POSTGRES_DB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reference</span>
+<span class="w">      </span><span class="nt">POSTGRES_USER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lab</span>
+<span class="w">      </span><span class="nt">POSTGRES_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local_lab_only</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro</span>
+<span class="w">    </span><span class="nt">healthcheck</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"CMD-SHELL"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"pg_isready</span><span class="nv"> </span><span class="s">-U</span><span class="nv"> </span><span class="s">lab</span><span class="nv"> </span><span class="s">-d</span><span class="nv"> </span><span class="s">reference"</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2s</span>
+<span class="w">      </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3s</span>
+<span class="w">      </span><span class="nt">retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+
+<span class="w">  </span><span class="nt">trino</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">trinodb/trino:484</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"127.0.0.1:8080:8080"</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./postgres.properties:/etc/trino/catalog/postgres.properties:ro</span>
+<span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">postgres</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service_healthy</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="c1">-- init.sql</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">region_policy</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">regionkey</span><span class="w"> </span><span class="nb">bigint</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">desk</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="p">);</span>
+<span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">region_policy</span><span class="w"> </span><span class="k">VALUES</span>
+<span class="w">    </span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="s1">'AFRICA_DESK'</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s1">'AMERICAS_DESK'</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s1">'ASIA_DESK'</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s1">'EUROPE_DESK'</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="s1">'MIDDLE_EAST_DESK'</span><span class="p">);</span></code></pre></figure><figure class="code"><figcaption>PROPERTIES</figcaption><pre><code><span class="c1"># postgres.properties</span>
+<span class="na">connector.name</span><span class="o">=</span><span class="s">postgresql</span>
+<span class="na">connection-url</span><span class="o">=</span><span class="s">jdbc:postgresql://postgres:5432/reference</span>
+<span class="na">connection-user</span><span class="o">=</span><span class="s">lab</span>
+<span class="na">connection-password</span><span class="o">=</span><span class="s">local_lab_only</span></code></pre></figure><figure class="code"><figcaption>BASH</figcaption><pre><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>trino
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>trino<span class="w"> </span>trino<span class="w"> </span>--execute<span class="w"> </span><span class="s2">"SELECT version()"</span>
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>trino<span class="w"> </span>trino</code></pre></figure><p>Wait for startup before opening the CLI. At its prompt run the
+following. The default full image includes the TPC-H catalog. If SHOW
+CATALOGS does not list it in a customised image, create a catalog file
+containing connector.name=tpch and apply that configuration.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SHOW</span><span class="w"> </span><span class="n">CATALOGS</span><span class="p">;</span>
+<span class="k">SHOW</span><span class="w"> </span><span class="n">SCHEMAS</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">tpch</span><span class="p">;</span>
+<span class="k">SHOW</span><span class="w"> </span><span class="n">TABLES</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">tpch</span><span class="p">.</span><span class="n">tiny</span><span class="p">;</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">tpch</span><span class="p">.</span><span class="n">tiny</span><span class="p">.</span><span class="n">nation</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">desk</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">nations</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">tpch</span><span class="p">.</span><span class="n">tiny</span><span class="p">.</span><span class="n">nation</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">n</span>
+<span class="k">JOIN</span><span class="w"> </span><span class="n">postgres</span><span class="p">.</span><span class="k">public</span><span class="p">.</span><span class="n">region_policy</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">p</span>
+<span class="w">  </span><span class="k">ON</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">regionkey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">regionkey</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">desk</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">desk</span><span class="p">;</span></code></pre></figure><p>Expect 25 nations and five nations per desk. PostgreSQL supplies the
+five dimension rows. TPC-H supplies the 25 nation rows. A misspelled
+catalog fails during name resolution. A source connection failure occurs
+after the connector is identified. A duplicate region dimension would
+multiply counts, but the PostgreSQL primary key prevents that here.</p>
+<p>TPC-H generates its data. This checks the SQL and client path without
+needing a lake. It cannot establish real S3 read throughput, compression
+or production file behaviour. Increase the generated scale only after
+confirming your local resource budget. To stop the lab run docker
+compose down. PostgreSQL's initialisation script runs on creation of an
+empty data directory. Changes to init.sql do not reinitialise an already
+running database. <a href="https://trino.io/docs/current/connector/postgresql.html">PostgreSQL
+connector configuration</a> &#183; <a href="https://trino.io/docs/current/connector/tpch.html">TPC-H
+connector</a></p>
+</section>
+<section id="follow-a-federated-plan-to-its-source" class="level2">
+<h2>Follow a federated plan to its source</h2>
+<p>Run these two statements in the CLI. EXPLAIN describes the plan.
+EXPLAIN ANALYZE executes the query and supplies observed work.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">EXPLAIN</span><span class="w"> </span><span class="p">(</span><span class="k">TYPE</span><span class="w"> </span><span class="n">DISTRIBUTED</span><span class="p">)</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">desk</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">tpch</span><span class="p">.</span><span class="n">tiny</span><span class="p">.</span><span class="n">nation</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">n</span>
+<span class="k">JOIN</span><span class="w"> </span><span class="n">postgres</span><span class="p">.</span><span class="k">public</span><span class="p">.</span><span class="n">region_policy</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">p</span>
+<span class="w">  </span><span class="k">ON</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">regionkey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">regionkey</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">regionkey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+
+<span class="k">EXPLAIN</span><span class="w"> </span><span class="k">ANALYZE</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">desk</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">tpch</span><span class="p">.</span><span class="n">tiny</span><span class="p">.</span><span class="n">nation</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">n</span>
+<span class="k">JOIN</span><span class="w"> </span><span class="n">postgres</span><span class="p">.</span><span class="k">public</span><span class="p">.</span><span class="n">region_policy</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">p</span>
+<span class="w">  </span><span class="k">ON</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">regionkey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">regionkey</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">regionkey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span></code></pre></figure><p>The expected countries are FRANCE, GERMANY, ROMANIA, RUSSIA and
+UNITED KINGDOM with EUROPE_DESK. Inspect the filter at each scan and the
+join's distribution. Do not assume the whole cross-catalog join executes
+in PostgreSQL. Trino can push eligible source-local work, but the
+generated TPC-H table does not exist in PostgreSQL.</p>
+<p>The critical question is how many rows cross each boundary. An
+aggregation pushed to PostgreSQL can turn a million-row transfer into
+five rows, while consuming database CPU. A filter with a cast, collation
+difference or unsupported expression may remain in Trino. Inspect the
+actual plan and the SQL observed by the source. A missing operator in
+Trino's plan may indicate source pushdown. It does not mean the work
+disappeared.</p>
+<p>For a recurring join between a large lake fact and a changing
+operational dimension, consider loading a versioned dimension to the
+lake. Choose validity intervals and join each fact to exactly one
+dimension row. A live federation query may read its sources at different
+times. A common SQL endpoint does not establish a shared point-in-time
+snapshot across independent systems. <a href="https://trino.io/docs/current/optimizer/pushdown.html">Pushdown
+behaviour</a></p>
+</section>
+<section id="connect-the-same-iceberg-table-used-by-athena" class="level2">
+<h2>Connect the same Iceberg table used by Athena</h2>
+<p>The previous guide creates athena_learning.trade_current in Glue and
+S3. This section assumes that table exists in eu-west-2. On a Trino
+deployment in that AWS account, add etc/catalog/lake.properties with the
+following settings. In the official image, the catalog directory is
+/etc/trino/catalog. Distribute the configuration according to your
+static-catalog deployment procedure.</p>
+<figure class="code"><figcaption>PROPERTIES</figcaption><pre><code><span class="na">connector.name</span><span class="o">=</span><span class="s">iceberg</span>
+<span class="na">iceberg.catalog.type</span><span class="o">=</span><span class="s">glue</span>
+<span class="na">hive.metastore.glue.region</span><span class="o">=</span><span class="s">eu-west-2</span>
+<span class="na">fs.s3.enabled</span><span class="o">=</span><span class="s">true</span>
+<span class="na">s3.region</span><span class="o">=</span><span class="s">eu-west-2</span></code></pre></figure><p>Use workload identity or an appropriate AWS credential provider
+available to the deployed nodes. A local container does not
+automatically inherit your host's AWS login. Validate catalog access
+from the coordinator and object access from workers. Grant the required
+Glue, S3 and encryption-key permissions. This catalog configuration is
+the connection component, not a complete AWS identity deployment.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SHOW</span><span class="w"> </span><span class="n">TABLES</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">athena_learning</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">trades</span><span class="p">,</span>
+<span class="w">       </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">snapshot_id</span><span class="p">,</span><span class="w"> </span><span class="n">committed_at</span><span class="p">,</span><span class="w"> </span><span class="k">operation</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">athena_learning</span><span class="p">.</span><span class="ss">"trade_current$snapshots"</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">committed_at</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span></code></pre></figure><p>If you completed the Athena book transfer, expect CREDIT &#163;90.00 and
+GILT &#8722;&#163;30.00. Before that transfer, expect GILT &#163;60.00. Capture the
+snapshot ID with the run so both engines compare the same state. Use FOR
+VERSION AS OF with that integer when reproducing the query.</p>
+<p>Start the second engine as a reader. Before allowing it to write,
+validate the table-format version, delete support, catalog locking and
+type precision across every participating engine. Athena's documented
+shared-table contract includes Iceberg v2 and Glue optimistic locking. A
+read succeeding in both engines does not establish safe concurrent
+updates. <a href="https://trino.io/docs/current/object-storage/file-system-s3.html">Trino
+native S3 settings</a> &#183; <a href="https://trino.io/docs/current/connector/iceberg.html">Iceberg
+connector</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Athena
+compatibility</a></p>
+</section>
+<section id="create-and-maintain-a-trino-owned-table" class="level2">
+<h2>Create and maintain a Trino-owned table</h2>
+<p>Use a dedicated schema location to keep the training output separate.
+Substitute an empty owned prefix. This example writes an immutable
+book/day mart from current facts.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">trino_learning</span>
+<span class="k">WITH</span><span class="w"> </span><span class="p">(</span><span class="k">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'s3://YOUR-BUCKET/trino-learning/'</span><span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">trino_learning</span><span class="p">.</span><span class="n">daily_exposure</span>
+<span class="k">WITH</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PARQUET'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">format_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">partitioning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">ARRAY</span><span class="p">[</span><span class="s1">'day(trade_date)'</span><span class="p">]</span>
+<span class="p">)</span><span class="w"> </span><span class="k">AS</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>The source can change immediately after creation. Record its snapshot
+ID in the job manifest and use a pinned read when audit reproducibility
+matters. A table created by CTAS is a new stored result. It has its own
+freshness and retention policy. Treat a plain view as a saved query
+definition whose cost is paid when it is executed, unless a specific
+supported materialisation mechanism has been selected.</p>
+<p>Run maintenance through the table connector. The first statement
+rewrites small files subject to the connector's threshold. The second
+collects statistics for planning.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">trino_learning</span><span class="p">.</span><span class="n">daily_exposure</span>
+<span class="k">EXECUTE</span><span class="w"> </span><span class="n">optimize</span><span class="p">(</span><span class="n">file_size_threshold</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s1">'128MB'</span><span class="p">);</span>
+
+<span class="k">ANALYZE</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">trino_learning</span><span class="p">.</span><span class="n">daily_exposure</span><span class="p">;</span>
+
+<span class="k">SHOW</span><span class="w"> </span><span class="n">STATS</span><span class="w"> </span><span class="k">FOR</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">trino_learning</span><span class="p">.</span><span class="n">daily_exposure</span><span class="p">;</span></code></pre></figure><p>The 128 MB threshold is an example for selecting input files, not a
+universal output size. At larger scale, bound maintenance to supported
+predicates and schedule it away from a peak. Snapshot expiration and
+orphan removal are separate destructive operations. Set retention above
+the longest in-flight reader and retry horizon, and follow the
+connector's minimum-retention settings. Keep one maintenance owner for a
+shared table. Test schema changes against every consumer and compare
+exact decimal and timestamp values across engines. <a href="https://trino.io/docs/current/connector/iceberg.html">Iceberg
+table operations</a></p>
+</section>
+<section id="learn-enough-sql-to-avoid-expensive-mistakes" class="level2">
+<h2>Learn enough SQL to avoid expensive mistakes</h2>
+<p>Use exact decimal values for currency, explicit date ranges, and
+null-aware checks. A join requires a declared cardinality. One trade
+matching two dimension rows doubles its amount. A LEFT JOIN followed by
+a WHERE predicate on a nullable dimension column can eliminate unmatched
+facts. Put the predicate in the ON clause if unmatched facts must
+survive.</p>
+<p>A CTE improves readability but should not be treated as a guaranteed
+cached intermediate. Repeated references can lead to repeated work. If a
+costly common result is reused across jobs, evaluate a persisted curated
+table with a clear refresh rule. Window functions retain row-level data
+until their partition's calculation is complete. A row_number over a
+high-volume history can consume substantially more work than an
+incremental current-state table.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">WITH</span><span class="w"> </span><span class="n">exposure</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">amount</span>
+<span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-01'</span>
+<span class="w">      </span><span class="k">AND</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-12-01'</span>
+<span class="w">    </span><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span>
+<span class="p">)</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount</span><span class="p">,</span>
+<span class="w">       </span><span class="k">sum</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span><span class="w"> </span><span class="n">OVER</span><span class="w"> </span><span class="p">(</span>
+<span class="w">           </span><span class="n">PARTITION</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span>
+<span class="w">           </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_date</span>
+<span class="w">           </span><span class="k">ROWS</span><span class="w"> </span><span class="k">BETWEEN</span><span class="w"> </span><span class="n">UNBOUNDED</span><span class="w"> </span><span class="n">PRECEDING</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="k">CURRENT</span><span class="w"> </span><span class="k">ROW</span>
+<span class="w">       </span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">cumulative_amount</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">exposure</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">;</span></code></pre></figure><p>The window now operates on daily groups. The cumulative figure is a
+sum of dated trade amounts. Label it accordingly. Summing daily
+<em>position snapshots</em> would instead count the same exposure
+repeatedly. SQL can be perfectly valid while the metric grain is
+wrong.</p>
+<p>For a very large detail response, retrieve only required columns and
+define pagination on a stable key and snapshot. Offset pagination can
+become progressively expensive and can shift under changing data. If the
+purpose is a bulk export, write a governed table or dataset using a
+supported connector and deliver it asynchronously. Bound the synchronous
+API to its documented result size.</p>
+</section>
+<section id="read-the-slowest-stage-before-adding-workers" class="level2">
+<h2>Read the slowest stage before adding workers</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Evidence</th>
+<th>Likely cause</th>
+<th>Controlled change</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Many input rows, few output rows</td>
+<td>Filtering happens late or a cast blocks source pushdown</td>
+<td>Rewrite a predicate without changing null/type semantics and compare
+input</td>
+</tr>
+<tr class="even">
+<td>Large repartition exchange</td>
+<td>Both join sides move across workers</td>
+<td>Filter and preaggregate early, verify source statistics and join
+distribution</td>
+</tr>
+<tr class="odd">
+<td>One task has most input</td>
+<td>Hot key or uneven source splits</td>
+<td>Measure key distribution, isolate the hot group or redesign
+aggregation</td>
+</tr>
+<tr class="even">
+<td>High peak memory at a join</td>
+<td>Build side is larger than estimates</td>
+<td>Refresh stats, reduce the build side or test a partitioned plan</td>
+</tr>
+<tr class="odd">
+<td>Workers mostly waiting on a source</td>
+<td>Source latency or throttling</td>
+<td>Check source metrics and connector parallelism before growing
+compute</td>
+</tr>
+<tr class="even">
+<td>Planning dominates</td>
+<td>Too many files, metadata requests or coordinator pressure</td>
+<td>Compact files, inspect catalog latency and reduce query fan-out</td>
+</tr>
+</tbody>
+</table>
+</div><p>A broadcast join replicates the filtered build side to workers. That
+can save movement of a huge probe side when the build side is genuinely
+small. A partitioned join hashes the keys and moves both sides so
+matches meet. Estimate memory after filters and expressions, then
+compare measured task peaks. Dynamic filtering can push build-side
+values toward an eligible scan, with benefit dependent on connector
+support and timing.</p>
+<p>Use session changes as experiments. The following tests a partitioned
+join for the next statements in that session. Save the default plan
+first and reset after the experiment.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SET</span><span class="w"> </span><span class="k">SESSION</span><span class="w"> </span><span class="n">join_distribution_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PARTITIONED'</span><span class="p">;</span>
+<span class="k">EXPLAIN</span><span class="w"> </span><span class="k">ANALYZE</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">desk</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">tpch</span><span class="p">.</span><span class="n">tiny</span><span class="p">.</span><span class="n">nation</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">n</span>
+<span class="k">JOIN</span><span class="w"> </span><span class="n">postgres</span><span class="p">.</span><span class="k">public</span><span class="p">.</span><span class="n">region_policy</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">p</span>
+<span class="w">  </span><span class="k">ON</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">regionkey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">regionkey</span><span class="p">;</span>
+<span class="k">RESET</span><span class="w"> </span><span class="k">SESSION</span><span class="w"> </span><span class="n">join_distribution_type</span><span class="p">;</span></code></pre></figure><p>A five-row dimension is deliberately too small to establish a
+performance win. Use it to learn plan shape, then repeat with real
+filtered cardinalities. Do not promote a forced plan globally because
+one sample improved. The optimizer needs usable statistics and the
+production predicate distribution. <a href="https://trino.io/docs/current/optimizer/cost-based-optimizations.html">Cost-based
+optimisation</a> &#183; <a href="https://trino.io/docs/current/admin/dynamic-filtering.html">Dynamic
+filtering</a></p>
+</section>
+<section id="move-from-one-node-to-a-distributed-cluster" class="level2">
+<h2>Move from one node to a distributed cluster</h2>
+<p>Keep the coordinator focused on coordination in a production-sized
+cluster. Give each node a unique persistent node.id, the same
+environment name and the correct coordinator discovery address. A worker
+must reach data sources as well as other cluster nodes. These
+config.properties fragments show the essential role split. They assume
+you also provide the release's required node.properties and jvm.config,
+catalog files and network configuration.</p>
+<figure class="code"><figcaption>PROPERTIES</figcaption><pre><code><span class="c1"># Coordinator config.properties</span>
+<span class="na">coordinator</span><span class="o">=</span><span class="s">true</span>
+<span class="na">node-scheduler.include-coordinator</span><span class="o">=</span><span class="s">false</span>
+<span class="na">http-server.http.port</span><span class="o">=</span><span class="s">8080</span>
+<span class="na">discovery.uri</span><span class="o">=</span><span class="s">http://trino-coordinator:8080</span></code></pre></figure><figure class="code"><figcaption>PROPERTIES</figcaption><pre><code><span class="c1"># Worker config.properties</span>
+<span class="na">coordinator</span><span class="o">=</span><span class="s">false</span>
+<span class="na">http-server.http.port</span><span class="o">=</span><span class="s">8080</span>
+<span class="na">discovery.uri</span><span class="o">=</span><span class="s">http://trino-coordinator:8080</span></code></pre></figure><p>The HTTP addresses illustrate a private lab. Configure authenticated
+TLS for production client access and the documented internal
+communication security. Keep coordinator and worker releases aligned.
+Ensure effective JVM heap and off-heap needs fit the container or VM
+limit. Memory assigned to queries is only part of process memory. CPU
+limits, heap settings and host capacity all need to agree.</p>
+<p>A coordinator manages running query state. Treat its loss as an
+interruption that clients and jobs must handle. Multiple independent
+coordinators behind a load balancer do not automatically share a running
+query. Use a supported deployment design with correct routing, capacity
+isolation and retry semantics. Scale workers with enough advance
+headroom for startup, catalog access and source limits. Drain before
+removal. Abrupt worker termination may fail active queries depending on
+execution policy.</p>
+<p>Test one worker loss during a scan, one coordinator restart and one
+unavailable source. Observe which query IDs survive, which fail and what
+the client retries. A completed INSERT whose acknowledgement was lost
+creates a different recovery problem from a read failure. Reconcile the
+publication manifest before repeating a write. <a href="https://trino.io/docs/current/installation/deployment.html">Node
+roles and configuration</a> &#183; <a href="https://trino.io/docs/current/admin/graceful-shutdown.html">Graceful
+shutdown</a></p>
+</section>
+<section id="control-admission-before-concurrency-controls-you" class="level2">
+<h2>Control admission before concurrency controls you</h2>
+<p>Resource groups decide how many queries may run or queue and how
+demand competes. A high concurrency limit can make each query slower by
+dividing memory and CPU too widely. Start with a small experiment and
+tune using queue age, throughput and the tail latency of the important
+query classes.</p>
+<p>Create etc/resource-groups.properties on the coordinator, then the
+JSON file it references. The official image path below is /etc/trino.
+These illustrative limits permit six BI queries, two batch queries and
+eight queries total.</p>
+<figure class="code"><figcaption>PROPERTIES</figcaption><pre><code><span class="na">resource-groups.configuration-manager</span><span class="o">=</span><span class="s">file</span>
+<span class="na">resource-groups.config-file</span><span class="o">=</span><span class="s">/etc/trino/resource-groups.json</span></code></pre></figure><figure class="code"><figcaption>JSON</figcaption><pre><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"rootGroups"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"global"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"softMemoryLimit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"80%"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"hardConcurrencyLimit"</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"maxQueued"</span><span class="p">:</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"schedulingPolicy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"weighted"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"subGroups"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bi"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"softMemoryLimit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"40%"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"hardConcurrencyLimit"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"maxQueued"</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"schedulingWeight"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"batch"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"softMemoryLimit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"40%"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"hardConcurrencyLimit"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"maxQueued"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"schedulingWeight"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}],</span>
+<span class="w">  </span><span class="nt">"selectors"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"business-dashboard"</span><span class="p">,</span><span class="w"> </span><span class="nt">"group"</span><span class="p">:</span><span class="w"> </span><span class="s2">"global.bi"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"group"</span><span class="p">:</span><span class="w"> </span><span class="s2">"global.batch"</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span></code></pre></figure><p>Submit a CLI query with --source business-dashboard or set the
+matching JDBC source property. Selectors route matching requests into
+the BI group. Client-supplied source labels are routing metadata. Use
+authenticated user/group policy for trusted production priorities. A
+soft memory limit affects admission while the group is over its
+threshold. It is not a hard reservation guaranteeing those bytes to that
+workload. Separate clusters provide stronger failure and resource
+isolation when sharing still misses objectives.</p>
+<p>Run the same arrival trace before and after applying the rules. A
+shorter BI tail with an excessively long batch backlog may violate
+another commitment. Keep a maximum acceptable queue age and reject or
+defer work deliberately rather than allowing an unbounded backlog. <a href="https://trino.io/docs/current/admin/resource-groups.html">Resource-group
+semantics</a></p>
+</section>
+<section id="choose-a-retry-policy-for-the-workload" class="level2">
+<h2>Choose a retry policy for the workload</h2>
+<p>Interactive queries often benefit from minimal intermediate storage
+overhead. Long ETL queries may benefit from retaining exchanges so a
+failed task can be repeated. Trino's fault-tolerant execution provides
+QUERY and TASK retry policies with specific connector and configuration
+requirements. Task retries need an exchange manager.</p>
+<p>For a batch cluster, add retry-policy=TASK to config.properties and
+configure an exchange manager on all nodes. The following uses S3 for
+temporary exchange data. Supply the approved credential configuration
+for that deployment and validate access from every node.</p>
+<figure class="code"><figcaption>PROPERTIES</figcaption><pre><code><span class="c1"># exchange-manager.properties</span>
+<span class="na">exchange-manager.name</span><span class="o">=</span><span class="s">filesystem</span>
+<span class="na">exchange.base-directories</span><span class="o">=</span><span class="s">s3://YOUR-EXCHANGE-BUCKET/trino-batch/</span>
+<span class="na">exchange.s3.region</span><span class="o">=</span><span class="s">eu-west-2</span></code></pre></figure><p>Measure the extra intermediate reads, writes and storage against the
+amount of lost work prevented. Set a lifecycle policy for abandoned
+temporary data that respects active query duration. Exchange storage is
+separate from authoritative Iceberg table data. Losing a source or
+coordinator can still interrupt useful work. Execution retries do not
+guarantee exactly-once business publication. Protect that with input
+identity, idempotent output and a verified promotion record. <a href="https://trino.io/docs/current/admin/fault-tolerant-execution.html">Fault-tolerant
+execution and supported connectors</a></p>
+</section>
+<section id="use-trino-from-java-and-bi" class="level2">
+<h2>Use Trino from Java and BI</h2>
+<p>Add the following Maven dependency to a Java project. The example
+uses the lab's unauthenticated local endpoint and streams five rows. A
+real endpoint needs its configured TLS and authentication
+parameters.</p>
+<figure class="code"><figcaption>XML</figcaption><pre><code><span class="nt">&lt;dependency&gt;</span>
+<span class="w">  </span><span class="nt">&lt;groupId&gt;</span>io.trino<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">  </span><span class="nt">&lt;artifactId&gt;</span>trino-jdbc<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">  </span><span class="nt">&lt;version&gt;</span>484<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></figure><figure class="code"><figcaption>JAVA</figcaption><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">java.sql.DriverManager</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.Properties</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RegionReport</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">properties</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Properties</span><span class="p">();</span>
+<span class="w">        </span><span class="n">properties</span><span class="p">.</span><span class="na">setProperty</span><span class="p">(</span><span class="s">"user"</span><span class="p">,</span><span class="w"> </span><span class="s">"lab"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">properties</span><span class="p">.</span><span class="na">setProperty</span><span class="p">(</span><span class="s">"source"</span><span class="p">,</span><span class="w"> </span><span class="s">"business-dashboard"</span><span class="p">);</span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">sql</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"""</span>
+<span class="s">            SELECT name</span>
+<span class="s">            FROM tpch.tiny.nation</span>
+<span class="s">            WHERE regionkey = ?</span>
+<span class="s">            ORDER BY name</span>
+<span class="s">            """</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DriverManager</span><span class="p">.</span><span class="na">getConnection</span><span class="p">(</span>
+<span class="w">                    </span><span class="s">"jdbc:trino://localhost:8080/tpch/tiny"</span><span class="p">,</span><span class="w"> </span><span class="n">properties</span><span class="p">);</span>
+<span class="w">             </span><span class="kd">var</span><span class="w"> </span><span class="n">statement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">connection</span><span class="p">.</span><span class="na">prepareStatement</span><span class="p">(</span><span class="n">sql</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">statement</span><span class="p">.</span><span class="na">setLong</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">3L</span><span class="p">);</span>
+<span class="w">            </span><span class="n">statement</span><span class="p">.</span><span class="na">setQueryTimeout</span><span class="p">(</span><span class="mi">30</span><span class="p">);</span>
+<span class="w">            </span><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">statement</span><span class="p">.</span><span class="na">executeQuery</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">rows</span><span class="p">.</span><span class="na">next</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">rows</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="s">"name"</span><span class="p">));</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>Expect the same five European nation names. The prepared statement
+binds a value. Catalog, schema and table identifiers should come from
+reviewed configuration or an allowlist. Use BigDecimal for DECIMAL
+columns in monetary queries. Close statements and results when the
+caller abandons a report. Apply pool limits and deadlines at the service
+layer as well as the driver.</p>
+<p>Trino clients consume query results through the coordinator-facing
+protocol, with version-dependent result delivery features such as
+spooling. A query's database execution time and full client download
+time differ. JDBC fetchSize is not a promise that a large query uses
+little cluster memory. A BI page can issue many overlapping SQL
+statements. Measure page-ready latency with real slicers and user
+entitlements, then aggregate or cache at a documented publication
+version. <a href="https://trino.io/docs/current/client/jdbc.html">JDBC
+configuration and delivery</a></p>
+</section>
+<section id="secure-identities-rows-and-source-access" class="level2">
+<h2>Secure identities, rows and source access</h2>
+<p>Authentication determines the client identity. System and connector
+access controls determine which operations that identity may perform.
+Source credentials determine what the connector can actually read or
+write. A shared source service account can have broader access than any
+individual user. Ensure Trino enforces the required policy before
+delegating to that account.</p>
+<p>Configure HTTPS and the chosen authentication mechanism, then an
+explicit access-control policy and internal node communication security.
+Rotate source secrets and avoid storing them in checked-in catalog
+files. Use supported secret-provider or environment substitution
+mechanisms under the deployment's configuration policy. Test a denied
+catalog, a denied table, a restricted book and an export path with
+ordinary reader accounts. Do not rely on a caller setting the username
+header honestly on an unauthenticated endpoint.</p>
+<p>Record query ID, principal, source label, catalog, success/failure,
+timing and publication watermark. Treat query text and diagnostics as
+potentially sensitive because filters can contain customer identifiers.
+Protect logs and results according to the same data policy. When using
+federation, test the privileges of the actual source account too. <a href="https://trino.io/docs/current/security/overview.html">Trino
+security workflow</a> &#183; <a href="https://trino.io/docs/current/security/built-in-system-access-control.html">System
+access control</a></p>
+</section>
+<section id="operate-upgrade-and-recover" class="level2">
+<h2>Operate, upgrade and recover</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Signal</th>
+<th>Meaning</th>
+<th>Operator action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Queue age rises, execution stable</td>
+<td>Admission cannot keep up with offered demand</td>
+<td>Inspect workload mix and scaling lead time</td>
+</tr>
+<tr class="even">
+<td>Planning rises, workers idle</td>
+<td>Coordinator or metadata path is constrained</td>
+<td>Inspect query fan-out, file count and catalog response time</td>
+</tr>
+<tr class="odd">
+<td>Memory failures repeat for one query class</td>
+<td>Plan or input exceeds available execution budget</td>
+<td>Reproduce skew and cardinality before raising limits</td>
+</tr>
+<tr class="even">
+<td>Source connection/timeouts rise</td>
+<td>Federated dependency is saturated or unavailable</td>
+<td>Limit concurrency and coordinate with source owner</td>
+</tr>
+<tr class="odd">
+<td>Commit succeeds but publisher retries</td>
+<td>Acknowledgement was lost</td>
+<td>Inspect the batch and snapshot before another write</td>
+</tr>
+<tr class="even">
+<td>Correct totals remain stale</td>
+<td>Ingestion or publication has stopped</td>
+<td>Alert on watermark age and recover the publish pipeline</td>
+</tr>
+</tbody>
+</table>
+</div><p>For an upgrade, run a representative corpus including decimal
+calculations, timestamps, null behaviour, connector DDL and access
+denials against a staging cluster. Compare results before timing. Pin
+the release, stage its required Java/runtime and catalog properties
+together, and follow supported restart or rollout behaviour. Never
+assume arbitrary mixed versions form a supported rolling cluster.
+Preserve configuration and audit evidence outside replaceable nodes. The
+lake's catalog and data need their own recovery policy.</p>
+<p>Back up the catalog's authoritative metadata according to its service
+model, protect table files from accidental deletion, and rehearse
+recovery to an isolated prefix or catalog. Keep a raw-history rebuild
+path for business correctness. Test query recovery separately from
+restoring a lost table. They have different state and deadlines.</p>
+</section>
+<section id="compare-trino-with-the-alternatives" class="level2">
+<h2>Compare Trino with the alternatives</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Alternative</th>
+<th>Where it can be a stronger fit</th>
+<th>Where Trino earns a trial</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Athena</td>
+<td>Intermittent S3 analytics with minimal cluster operations</td>
+<td>Warm sustained workloads, connector choice, custom admission and
+deployment control</td>
+</tr>
+<tr class="even">
+<td>PrestoDB</td>
+<td>An established PrestoDB estate with validated tooling</td>
+<td>Compatibility, connector roadmap and operational needs justify
+migration testing. The projects have separate release histories.</td>
+</tr>
+<tr class="odd">
+<td>Spark SQL</td>
+<td>Large transformation pipelines, complex procedural processing and
+engineering workflows</td>
+<td>Interactive SQL and federation over existing sources with a
+dedicated query service</td>
+</tr>
+<tr class="even">
+<td>Databricks SQL</td>
+<td>Managed SQL close to Delta, engineering jobs and governance</td>
+<td>Open deployment and cross-source needs justify owning or buying a
+Trino service</td>
+</tr>
+<tr class="odd">
+<td>Snowflake</td>
+<td>Managed warehouses, workload isolation and a broad governed SQL
+estate</td>
+<td>Direct access to existing open lake tables and connector flexibility
+dominate</td>
+</tr>
+<tr class="even">
+<td>Redshift</td>
+<td>AWS warehouse with curated native hot data</td>
+<td>Broad federation and SQL on compatible open lake tables without
+importing every source</td>
+</tr>
+<tr class="odd">
+<td>Fabric</td>
+<td>Power BI semantic models and Microsoft-integrated operations</td>
+<td>A multi-source SQL service is needed outside that serving model</td>
+</tr>
+<tr class="even">
+<td>BigQuery</td>
+<td>Google-centred managed analytics and slot allocation</td>
+<td>Deployment location and connector freedom are important
+requirements</td>
+</tr>
+<tr class="odd">
+<td>ClickHouse</td>
+<td>High-concurrency analytical serving over an optimised ingested
+dataset</td>
+<td>Diverse lake joins and federation outweigh the need for that
+specialised serving layout</td>
+</tr>
+<tr class="even">
+<td>PostgreSQL</td>
+<td>Transactional writes and indexed point access over a bounded hot
+set</td>
+<td>Large distributed scans or combining several analytical sources</td>
+</tr>
+<tr class="odd">
+<td>DuckDB</td>
+<td>Embedded analysis and one-machine workloads</td>
+<td>A shared remote query service must distribute work across
+workers</td>
+</tr>
+</tbody>
+</table>
+</div><p>Open-source Trino and commercial services built around it can have
+different caching, security, operational and optimisation features.
+Specify the product, edition and release in a comparison. A vendor
+extension is not automatically present in upstream Trino. Likewise,
+moving SQL between Athena, Trino and another warehouse requires testing
+types, functions, writes and transaction boundaries.</p>
+<p>For a business reporting platform, compare at equal correctness,
+freshness and entitlement rules. Count the complete solution's GBP
+costs, including engineering and idle headroom. A separate hot mart can
+be justified for bounded low-latency APIs even when Trino remains the
+main exploration engine. If the whole workload fits one managed database
+and clears the service objectives, extra distributed machinery needs a
+measurable reason. <a href="https://prestodb.io/">PrestoDB project</a> &#183;
+<a href="https://spark.apache.org/docs/latest/sql-programming-guide.html">Spark
+SQL</a> &#183; <a href="https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree">ClickHouse
+MergeTree</a> &#183; <a href="https://docs.snowflake.com/en/user-guide/warehouses-multicluster">Snowflake
+warehouses</a> &#183; <a href="https://cloud.google.com/bigquery/docs/slots">BigQuery
+slots</a></p>
+</section>
+<section id="prove-that-you-can-own-the-service" class="level2">
+<h2>Prove that you can own the service</h2>
+<p>A useful final rehearsal begins with the 27 November GILT exposure at
+&#163;60.00. Apply the move to CREDIT, capture the committed snapshot and
+validate both books through Trino and the business serving path. In
+parallel, run a broad historical scan under the batch resource group and
+replay the morning dashboard arrivals. Restart a worker, interrupt a
+client and deliberately break a source permission in the test
+environment. Explain every resulting state from its query ID, snapshot
+and publication manifest.</p>
+<p>You are ready to select Trino when you can show the required results,
+freshness, p95/p99, recovery and monthly cost under that workload, and
+identify who owns upgrades and incidents. The local fixture's expected
+arithmetic is verified independently. Docker, distributed cluster and
+AWS examples are documentation-checked configurations that require
+execution in your environment. They are not benchmark measurements.</p>
+</section>
+<nav class="menu" aria-label="Adjacent guides"><div class="menu-grid"><a href="04%20Athena%20Zero%20to%20Guru.html">04 Athena Zero to Guru</a></div></nav></main></div></body></html>

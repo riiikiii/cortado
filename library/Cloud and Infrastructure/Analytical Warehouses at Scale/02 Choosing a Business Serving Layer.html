@@ -150,15 +150,24 @@ section > p, section > ul, section > ol {max-width:76ch}
 .hero > *, .trace > *, .menu-grid > * {min-width:0}
 .trace span, a, :not(pre) > code {overflow-wrap:anywhere}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style><style>
+table{width:100%} .scroll{max-width:100%} .code{max-width:100%}
+.menu-grid a{min-width:0} h1,h2,h3{overflow-wrap:break-word}
+.mechanism{margin:24px 0;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--surface)}
+.mechanism ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;list-style:none}
+.mechanism li{border-left:4px solid var(--t500);background:var(--surface-2);padding:14px}
+.mechanism strong{display:block;color:var(--t700)}
+@media(prefers-color-scheme:dark){.mechanism strong{color:var(--t300)}}
+@media(max-width:540px){.mechanism ol{grid-template-columns:1fr}}
 </style></head><body id="top">
-<header><div class="head"><div class="mast"><span>Cloud and infrastructure · Analytical warehouses</span></div>
+<header><div class="head"><div class="mast"><span>Cloud and infrastructure &#183; Analytical warehouses</span></div>
 <div class="hero"><div><h1>Choosing a Business Serving Layer</h1><p>Choose an access path for a dashboard, an analyst and a low-latency API. Compare nine platforms and build a versioned PostgreSQL serving mart.</p></div>
-<div class="plate"><small>Worked case</small><div class="trace"><b>History</b><span>1 PB in an illustrative lake</span></div><div class="trace"><b>Publish</b><span>Batch 42 · GILT · 27 November</span></div><div class="trace"><b>Serve</b><span>One indexed row · £60</span></div></div>
+<div class="plate"><small>Worked case</small><div class="trace"><b>History</b><span>1 PB in an illustrative lake</span></div><div class="trace"><b>Publish</b><span>Batch 42 &#183; GILT &#183; 27 November</span></div><div class="trace"><b>Serve</b><span>One indexed row &#183; &#163;60</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></div><hr><div class="menu-grid"><a href="#decide-what-happens-when-someone-clicks">Decide what happens when someone clicks</a><a href="#match-the-engine-to-the-work">Match the engine to the work</a><a href="#build-the-postgres-alternative-properly">Build the Postgres alternative properly</a><a href="#protect-the-number-at-every-boundary">Protect the number at every boundary</a><a href="#which-pair-deserves-a-pilot">Which pair deserves a pilot?</a></div></nav><main><section id="decide-what-happens-when-someone-clicks" class="level2">
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">01 Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">02 Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">03 Benchmarking the Warehouse Decision</a><a href="04%20Athena%20Zero%20to%20Guru.html">04 Athena Zero to Guru</a><a href="05%20Trino%20Zero%20to%20Guru.html">05 Trino Zero to Guru</a></div><hr><div class="menu-grid"><a href="#decide-what-happens-when-someone-clicks">Decide what happens when someone clicks</a><a href="#match-the-engine-to-the-work">Match the engine to the work</a><a href="#build-the-postgres-alternative-properly">Build the Postgres alternative properly</a><a href="#protect-the-number-at-every-boundary">Protect the number at every boundary</a><a href="#which-pair-deserves-a-pilot">Which pair deserves a pilot?</a></div></nav><main><section id="decide-what-happens-when-someone-clicks" class="level2">
 <h2>Decide what happens when someone clicks</h2>
-<p>Start with two current GBP trades in book GILT, Â£90 and âÂ£30 after a
-correction. A dashboard needs Â£60. A user clicking through needs two
+<p>Start with two current GBP trades in book GILT, &#163;90 and &#8722;&#163;30 after a
+correction. A dashboard needs &#163;60. A user clicking through needs two
 rows and the revision used to produce the number. A good design can
 serve either from a consistent publication. The deployment decision
 turns on how many different questions users may ask and how long they
@@ -174,18 +183,18 @@ can wait for a correction to appear.</p>
 <tbody>
 <tr class="odd">
 <td>Dashboard</td>
-<td>Whole page p95 â¤2 s at the opening burst, data age â¤60 s</td>
+<td>Whole page p95 &#8804;2 s at the opening burst, data age &#8804;60 s</td>
 <td>Precomputed book/day facts via a semantic model or warm
 warehouse</td>
 </tr>
 <tr class="even">
 <td>Price or exposure API</td>
-<td>p99 â¤250 ms end to end for one authorised book/day</td>
+<td>p99 &#8804;250 ms end to end for one authorised book/day</td>
 <td>Indexed serving table and bounded response</td>
 </tr>
 <tr class="odd">
 <td>Analyst</td>
-<td>p95 â¤30 s for selective recent history, exploratory scans can queue
+<td>p95 &#8804;30 s for selective recent history, exploratory scans can queue
 separately</td>
 <td>Warm SQL warehouse or interactive Trino</td>
 </tr>
@@ -243,7 +252,7 @@ supports Iceberg with feature differences.</td>
 <td>Size a warehouse for query work. Isolate workloads and consider
 multi-cluster for concurrency. Suspending compute changes cache and
 resume behaviour.</td>
-<td>Credits Ã contract rate, storage and chargeable services.
+<td>Credits &#215; contract rate, storage and chargeable services.
 Multi-cluster requires an eligible edition. Test peak and quiet
 periods.</td>
 </tr>
@@ -313,12 +322,12 @@ Cloud.</td>
 </tbody>
 </table>
 </div><p><a href="https://docs.snowflake.com/en/user-guide/tables-clustering-micropartitions">Snowflake
-pruning</a> Â· <a href="https://docs.snowflake.com/en/user-guide/warehouses-multicluster">Snowflake
-concurrency and editions</a> Â· <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/data-warehousing">Fabric
-Warehouse</a> Â· <a href="https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior">Databricks
-SQL sizing</a> Â· <a href="https://docs.aws.amazon.com/redshift/latest/dg/c_workload_mngmt_classification.html">Redshift
-workload management</a> Â· <a href="https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree">ClickHouse
-MergeTree</a> Â· <a href="https://cloud.google.com/bigquery/docs/slots">BigQuery
+pruning</a> &#183; <a href="https://docs.snowflake.com/en/user-guide/warehouses-multicluster">Snowflake
+concurrency and editions</a> &#183; <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/data-warehousing">Fabric
+Warehouse</a> &#183; <a href="https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior">Databricks
+SQL sizing</a> &#183; <a href="https://docs.aws.amazon.com/redshift/latest/dg/c_workload_mngmt_classification.html">Redshift
+workload management</a> &#183; <a href="https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree">ClickHouse
+MergeTree</a> &#183; <a href="https://cloud.google.com/bigquery/docs/slots">BigQuery
 slots</a></p>
 <section id="how-a-shortlist-changes-with-the-question" class="level3">
 <h3>How a shortlist changes with the question</h3>
@@ -352,7 +361,7 @@ tables and runtime versions. Choose keys from measured selective
 predicates and account for optimisation work. Tune warehouse size for a
 single difficult query and cluster-count range for bursts, validating
 cold start and scan-heavy long tails separately. <a href="https://docs.databricks.com/aws/en/delta/clustering">Delta liquid
-clustering</a> Â· <a href="https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior">SQL
+clustering</a> &#183; <a href="https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior">SQL
 queuing and scaling</a></p>
 <p><strong>Redshift for sustained AWS SQL.</strong> Start with native
 tables for hot facts and lake queries for occasional history. Inspect a
@@ -377,7 +386,7 @@ booking.</p>
 <section id="build-the-postgres-alternative-properly" class="level2">
 <h2>Build the Postgres alternative properly</h2>
 <p>Consider a managed PostgreSQL instance serving a daily mart from a
-large lake. If the business needs 2,000 active books Ã 250 trading days,
+large lake. If the business needs 2,000 active books &#215; 250 trading days,
 the hot grain is at most 500,000 rows per year at one currency and one
 cut. Adding 1,000 scenarios multiplies that bound to 500 million. Grain
 and dimensionality decide whether this design stays simple. The
@@ -411,7 +420,7 @@ pointer. Run in a disposable schema on PostgreSQL 16+.</p>
 <span class="k">JOIN</span><span class="w"> </span><span class="n">exposure_release</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">batch_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">.</span><span class="n">batch_id</span>
 <span class="k">JOIN</span><span class="w"> </span><span class="n">daily_exposure</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">batch_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">batch_id</span>
 <span class="k">WHERE</span><span class="w"> </span><span class="n">h</span><span class="p">.</span><span class="n">mart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'daily'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">book</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'GILT'</span>
-<span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">;</span></code></pre></figure><p>The identity of the published cut travels with the Â£60. The primary
+<span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">;</span></code></pre></figure><p>The identity of the published cut travels with the &#163;60. The primary
 key supports equality on batch and book followed by a date range. Use
 <code>EXPLAIN (ANALYZE, BUFFERS)</code> on representative data to see
 actual I/O. A sequential scan of the one-row fixture is sensible. Many
@@ -452,7 +461,7 @@ serving tables hold complete versions, copy forward unchanged groups or
 implement a versioned lookup that resolves their previous rows. A head
 pointer to a sparse delta would hide unaffected books.</p>
 <p>For a seconds-level input SLA with a minute-level publication target,
-measure the entire ingestâcommitâpublish loop. If polling, file creation
+measure the entire ingest&#8211;commit&#8211;publish loop. If polling, file creation
 and catalog commits consume most of the budget, trial a
 change-data-capture consumer maintaining the hot view transactionally.
 Commit a source offset or event ID with the mart update, acknowledge
@@ -473,8 +482,8 @@ and isolate the primary, but a single query generally executes on one
 replica and asynchronous replay introduces lag. Read the head and data
 from the same consistent endpoint. HA standby and readable replica
 capabilities vary by managed service and deployment. <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html">PostgreSQL
-partitioning</a> Â· <a href="https://www.postgresql.org/docs/current/indexes-types.html">Index
-types</a> Â· <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html">RDS
+partitioning</a> &#183; <a href="https://www.postgresql.org/docs/current/indexes-types.html">Index
+types</a> &#183; <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html">RDS
 read replicas</a></p>
 <p>Sharding by portfolio helps tenant-scoped reads. A cross-portfolio
 aggregate now needs fan-out, partial sums and a common publication cut
@@ -503,7 +512,7 @@ and API caches. Include identity or entitlement scope and publication ID
 in cache keys.</p>
 <p>Set recovery objectives separately for source history and business
 serving. Keep enough versioned input to rebuild a lost mart. Exercise a
-restore in an isolated destination, reconcile Â£60 and its as-of time,
+restore in an isolated destination, reconcile &#163;60 and its as-of time,
 repoint a test reader and measure elapsed time. A replica can propagate
 a bad release. A reproducible version and a verified last-good pointer
 give operators a distinct rollback route. Preserve previous versions
@@ -522,4 +531,4 @@ warm capacity matters enough to staff it. A shortlist of two comparable
 end-to-end designs is easier to evaluate honestly than nine isolated SQL
 stopwatches.</p>
 </section>
-<nav class="menu" aria-label="Adjacent guides"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></nav></main></div></body></html>
+<nav class="menu" aria-label="Adjacent guides"><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">01 Athena and Trino on a Shared Lake</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">03 Benchmarking the Warehouse Decision</a></div></nav></main></div></body></html>

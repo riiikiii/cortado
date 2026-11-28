@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Athena Zero to Guru</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-siphon.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style><style>
+table{width:100%} .scroll{max-width:100%} .code{max-width:100%}
+.menu-grid a{min-width:0} h1,h2,h3{overflow-wrap:break-word}
+.mechanism{margin:24px 0;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--surface)}
+.mechanism ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;list-style:none}
+.mechanism li{border-left:4px solid var(--t500);background:var(--surface-2);padding:14px}
+.mechanism strong{display:block;color:var(--t700)}
+@media(prefers-color-scheme:dark){.mechanism strong{color:var(--t300)}}
+@media(max-width:540px){.mechanism ol{grid-template-columns:1fr}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Analytical warehouses &#183; Guide 4 of 5</span></div>
+<div class="hero"><div><h1>Athena Zero to Guru</h1><p>Build an analytical data product from raw S3 files to governed Iceberg snapshots, application queries and a measurable business serving path.</p></div>
+<div class="plate"><small>Worked result</small><div class="trace"><b>Raw</b><span>5 deliveries &#183; &#163;290.00 arrival total</span></div><div class="trace"><b>Resolve</b><span>3 current trades &#183; &#163;100.00</span></div><div class="trace"><b>Report</b><span>27 November &#183; GILT &#163;60.00</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">01 Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">02 Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">03 Benchmarking the Warehouse Decision</a><a href="04%20Athena%20Zero%20to%20Guru.html">04 Athena Zero to Guru</a><a href="05%20Trino%20Zero%20to%20Guru.html">05 Trino Zero to Guru</a></div></nav><nav class="menu" aria-label="On this page"><div class="menu-title">On this page</div><div class="menu-grid"><a href="#from-an-empty-workgroup-to-a-reliable-data-product">From an empty workgroup to a reliable data product</a><a href="#learn-the-objects-before-creating-them">Learn the objects before creating them</a><a href="#create-the-workgroup-and-first-dataset">Create the workgroup and first dataset</a><a href="#turn-raw-strings-into-a-business-contract">Turn raw strings into a business contract</a><a href="#materialise-parquet-and-understand-the-scan">Materialise Parquet and understand the scan</a><a href="#add-corrections-with-iceberg">Add corrections with Iceberg</a><a href="#run-athena-safely-from-an-application">Run Athena safely from an application</a><a href="#export-large-results-without-a-giant-client-response">Export large results without a giant client response</a><a href="#tune-the-measured-bottleneck">Tune the measured bottleneck</a><a href="#own-maintenance-and-recovery">Own maintenance and recovery</a><a href="#know-the-boundaries-before-promising-a-service">Know the boundaries before promising a service</a><a href="#compare-the-complete-athena-design">Compare the complete Athena design</a><a href="#graduate-the-lab-into-a-production-contract">Graduate the lab into a production contract</a></div></nav><main><section id="from-an-empty-workgroup-to-a-reliable-data-product" class="level2">
+<h2>From an empty workgroup to a reliable data product</h2>
+<p>Your first task is to answer &#8220;what was the GILT book's GBP exposure
+yesterday?&#8221; from files in S3. Your final task is to publish the answer
+with a reproducible source snapshot, bounded cost and a recovery
+procedure. Athena SQL engine version 3 is the target throughout. The SQL
+belongs to Athena's supported dialect. Commands for standalone Trino
+appear in the following guide.</p>
+<p>You need an AWS account, a chosen Region, permission to use Athena
+and Glue, and an S3 bucket with dedicated lab prefixes. This guide uses
+London, eu-west-2. The examples create resources and run chargeable
+queries in your account. Choose a new database and empty output prefixes
+for each first run. Replace YOUR-BUCKET everywhere before executing. The
+Python client requires Python 3.11+ and boto3 installed in a virtual
+environment. Authentication comes from your normal AWS profile or
+workload role.</p>
+<p>Athena supplies managed query execution. You still own the structure
+and quality of the data, publication rules, permissions, retention and
+workload limits. Athena also offers a Spark execution experience, with a
+different programming and execution model. Here we use SQL because our
+deliverable is an analytical table and its reporting query. <a href="https://docs.aws.amazon.com/athena/latest/ug/what-is.html">Athena
+service overview</a></p>
+</section><figure class="mechanism"><figcaption>One correction has four observable states</figcaption><ol><li><strong>Raw delivery</strong>A revision 3 moves &#163;90 from GILT to CREDIT. Archive the source record.</li><li><strong>Validated batch</strong>Reject conflicting versions and retain one newest payload per trade.</li><li><strong>Committed snapshot</strong>Iceberg exposes the new current rows. GILT is &#8722;&#163;30 and CREDIT is &#163;90.</li><li><strong>Published report</strong>Promote the verified snapshot and watermark together. Both books reflect one cut.</li></ol></figure>
+<section id="learn-the-objects-before-creating-them" class="level2">
+<h2>Learn the objects before creating them</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Object</th>
+<th>Responsibility in this lab</th>
+<th>Failure to recognise</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>S3 raw prefix</td>
+<td>Immutable CSV input for the exercise, with a deliberate duplicate
+correction</td>
+<td>Reuploading changed bytes to the same key destroys the simplest
+replay history</td>
+</tr>
+<tr class="even">
+<td>Glue database and table</td>
+<td>Name, schema and location of the input</td>
+<td>An entry can exist even if its location is empty or
+inaccessible</td>
+</tr>
+<tr class="odd">
+<td>Workgroup</td>
+<td>Engine, result settings, enforcement, metrics and query
+controls</td>
+<td>A client may request settings that the workgroup overrides</td>
+</tr>
+<tr class="even">
+<td>Query ID</td>
+<td>Identity of one asynchronous execution</td>
+<td>Submitting SQL successfully says nothing about its eventual
+success</td>
+</tr>
+<tr class="odd">
+<td>Result prefix</td>
+<td>Output of SQL execution, accessible under its own policy</td>
+<td>Someone with S3 access can read stored results independently of the
+query API</td>
+</tr>
+<tr class="even">
+<td>Iceberg table</td>
+<td>Snapshot-based membership of curated Parquet data</td>
+<td>Listing a directory cannot reconstruct its current state
+reliably</td>
+</tr>
+<tr class="odd">
+<td>Published batch</td>
+<td>Business-approved snapshot and watermark</td>
+<td>A successful SQL statement can still produce an incomplete business
+day</td>
+</tr>
+</tbody>
+</table>
+</div><p>A fully qualified Athena name has catalog, database and table. The
+normal Glue catalog is AwsDataCatalog. Select it in the editor, then
+select your database. Schema-on-read means the engine applies the
+registered interpretation while reading the bytes. A crawler can
+discover likely fields and partitions. For a governed trade table,
+declare the schema deliberately and review changes as code.</p>
+<p>Use separate S3 locations for raw input, curated tables and query
+results. A broad raw location that includes old exports can silently
+count both. Keep sensitive report output subject to the same access
+expectations as the source. Athena API permission and S3 result
+permission are both relevant. <a href="https://docs.aws.amazon.com/athena/latest/APIReference/API_GetQueryResults.html">Query-result
+permissions</a></p>
+</section>
+<section id="create-the-workgroup-and-first-dataset" class="level2">
+<h2>Create the workgroup and first dataset</h2>
+<p>In the Athena console create a workgroup named athena-learning,
+choose SQL and engine version 3, configure a customer-owned result
+location such as s3://YOUR-BUCKET/athena-learning/results/, and enforce
+the workgroup configuration. Enable query metrics and set a
+lab-appropriate per-query scan limit. The examples assume this
+customer-owned result configuration. If your organisation uses managed
+query results, use that mode's documented access and retention
+behaviour.</p>
+<p>Create a dedicated database with the following statement. Run one SQL
+statement per editor execution.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">;</span></code></pre></figure><p>Save the following six lines as trades.csv. All amounts are already
+valued in GBP. Revision 2 fully replaces revision 1 for A. The duplicate
+delivery is intentional. The final row is on a different date so a date
+filter has a visible effect.</p>
+<figure class="code"><figcaption>CSV</figcaption><pre><code>trade_id,revision,trade_date,book,amount_gbp
+A,1,2026-11-27,GILT,100.00
+B,1,2026-11-27,GILT,-30.00
+A,2,2026-11-27,GILT,90.00
+A,2,2026-11-27,GILT,90.00
+C,1,2026-11-28,CREDIT,40.00</code></pre></figure><figure class="code"><figcaption>BASH</figcaption><pre><code>aws<span class="w"> </span>s3<span class="w"> </span>cp<span class="w"> </span>trades.csv<span class="w"> </span>s3://YOUR-BUCKET/athena-learning/raw/run-001/trades.csv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--region<span class="w"> </span>eu-west-2</code></pre></figure><p>Register this simple unquoted CSV layout. The fixture contains no
+commas inside fields, quoted delimiters or embedded newlines. Those
+require a suitable SerDe or an ingestion conversion.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">EXTERNAL</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_raw</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">trade_id</span><span class="w"> </span><span class="n">string</span><span class="p">,</span>
+<span class="w">    </span><span class="n">revision</span><span class="w"> </span><span class="n">string</span><span class="p">,</span>
+<span class="w">    </span><span class="n">trade_date</span><span class="w"> </span><span class="n">string</span><span class="p">,</span>
+<span class="w">    </span><span class="n">book</span><span class="w"> </span><span class="n">string</span><span class="p">,</span>
+<span class="w">    </span><span class="n">amount_gbp</span><span class="w"> </span><span class="n">string</span>
+<span class="p">)</span>
+<span class="k">ROW</span><span class="w"> </span><span class="n">FORMAT</span><span class="w"> </span><span class="n">DELIMITED</span>
+<span class="n">FIELDS</span><span class="w"> </span><span class="n">TERMINATED</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="s1">','</span>
+<span class="n">STORED</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">TEXTFILE</span>
+<span class="k">LOCATION</span><span class="w"> </span><span class="s1">'s3://YOUR-BUCKET/athena-learning/raw/run-001/'</span>
+<span class="n">TBLPROPERTIES</span><span class="w"> </span><span class="p">(</span><span class="s1">'skip.header.line.count'</span><span class="o">=</span><span class="s1">'1'</span><span class="p">);</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">rows_read</span><span class="p">,</span>
+<span class="w">       </span><span class="k">sum</span><span class="p">(</span><span class="n">try_cast</span><span class="p">(</span><span class="n">amount_gbp</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">decimal</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">2</span><span class="p">)))</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">raw_sum</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_raw</span><span class="p">;</span></code></pre></figure><p>Expected output is five data rows and &#163;290.00 across both dates. This
+is an arrival total. The current position must first resolve trade
+versions. If the count is zero, inspect the exact object prefix and
+catalog. A permission failure should produce an error, while a valid
+empty prefix can return zero rows. If the header appears as a trade,
+check the header property. If dates or amounts fail parsing, report the
+bad inputs before promoting a batch.</p>
+</section>
+<section id="turn-raw-strings-into-a-business-contract" class="level2">
+<h2>Turn raw strings into a business contract</h2>
+<p>Create a typed view as the boundary between physical input and domain
+values. TRY_CAST lets you count invalid fields explicitly. It must be
+paired with a publication gate. SUM ignores null amounts, so quietly
+continuing after conversion failures can understate a report.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">VIEW</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_typed</span><span class="w"> </span><span class="k">AS</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span>
+<span class="w">       </span><span class="n">try_cast</span><span class="p">(</span><span class="n">revision</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">bigint</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span>
+<span class="w">       </span><span class="n">try_cast</span><span class="p">(</span><span class="n">trade_date</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">date</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span>
+<span class="w">       </span><span class="n">book</span><span class="p">,</span>
+<span class="w">       </span><span class="n">try_cast</span><span class="p">(</span><span class="n">amount_gbp</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">decimal</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">amount_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_raw</span><span class="p">;</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_typed</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">trade_id</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">OR</span><span class="w"> </span><span class="k">trim</span><span class="p">(</span><span class="n">trade_id</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">''</span>
+<span class="w">   </span><span class="k">OR</span><span class="w"> </span><span class="n">revision</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">OR</span><span class="w"> </span><span class="n">revision</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="k">OR</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NULL</span>
+<span class="w">   </span><span class="k">OR</span><span class="w"> </span><span class="n">book</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">OR</span><span class="w"> </span><span class="k">trim</span><span class="p">(</span><span class="n">book</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">''</span>
+<span class="w">   </span><span class="k">OR</span><span class="w"> </span><span class="n">amount_gbp</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NULL</span><span class="p">;</span></code></pre></figure><p>This returns zero rows for the fixture. Next reject conflicting
+payloads for the same logical version. The exact duplicate of A is
+harmless after DISTINCT. Two versions with identical identity and
+revision but different values indicate a conflict requiring a declared
+resolution policy.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">WITH</span><span class="w"> </span><span class="n">unique_deliveries</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="k">DISTINCT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_typed</span>
+<span class="p">)</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">payload_variants</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">unique_deliveries</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span>
+<span class="k">HAVING</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span></code></pre></figure><p>Only proceed when both checks pass. Rank over the entire valid batch
+before filtering by report date. A revision may move the trade to a new
+date. Filtering first could hide that revision and resurrect an older
+value.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">VIEW</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_latest</span><span class="w"> </span><span class="k">AS</span>
+<span class="k">WITH</span><span class="w"> </span><span class="n">ranked</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">OVER</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">PARTITION</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_id</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">revision</span><span class="w"> </span><span class="k">DESC</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">version_rank</span>
+<span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">SELECT</span><span class="w"> </span><span class="k">DISTINCT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_typed</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">t</span>
+<span class="p">)</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">ranked</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">version_rank</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">trades</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_latest</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>Expected output is GILT, two trades, &#163;60.00. For all dates, the total
+is &#163;100.00 over three trades. SQL nulls, exact decimals and source
+versioning are part of the data product. Choosing a faster file format
+cannot fix a duplicate business fact.</p>
+</section>
+<section id="materialise-parquet-and-understand-the-scan" class="level2">
+<h2>Materialise Parquet and understand the scan</h2>
+<p>CSV requires parsing row text. A columnar format groups values by
+column and records useful statistics. Selecting three columns from a
+wide Parquet file can avoid loading the remaining columns. Predicates
+may skip partitions, files or row groups. Projection and pruning act at
+different levels, so measure actual input bytes for the intended
+query.</p>
+<p>Use CTAS to create a compact immutable baseline. The destination must
+be empty for this first creation. Partition columns appear last in the
+SELECT for this Hive-style table.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_parquet</span>
+<span class="k">WITH</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PARQUET'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">write_compression</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'SNAPPY'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">external_location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'s3://YOUR-BUCKET/athena-learning/parquet/run-001/'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">partitioned_by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">ARRAY</span><span class="p">[</span><span class="s1">'trade_date'</span><span class="p">]</span>
+<span class="p">)</span><span class="w"> </span><span class="k">AS</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_latest</span><span class="p">;</span></code></pre></figure><p>Compare the date-filtered aggregate against the view and the Parquet
+table. Confirm identical rows before comparing bytes. Five rows are too
+small for a performance result. Repeat the same experiment on a
+representative slice with real column widths and partition sizes. A
+LIMIT without a selective predicate does not guarantee a cheap scan. A
+COUNT(*) may use optimisations that your real report cannot use.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Layout choice</th>
+<th>Use when</th>
+<th>Cost or trap to test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Daily partitions</td>
+<td>Date filters are common and daily volume is substantial</td>
+<td>Tiny daily files at low volume add metadata overhead</td>
+</tr>
+<tr class="even">
+<td>Monthly partitions</td>
+<td>Smaller datasets or mostly broad historical queries</td>
+<td>A one-day filter may read more candidate data</td>
+</tr>
+<tr class="odd">
+<td>Sort within partitions</td>
+<td>Repeated filters target book, instrument or timestamp ranges</td>
+<td>Rewriting sorted files costs compute and concurrent writes can
+degrade order</td>
+</tr>
+<tr class="even">
+<td>Bucketed Hive table</td>
+<td>A measured equality workload benefits from compatible bucketing</td>
+<td>Writers and readers must agree on bucket semantics</td>
+</tr>
+<tr class="odd">
+<td>Partition projection</td>
+<td>Predictable Hive-style path values are derivable from rules</td>
+<td>Sparse combinations create empty-path work and other engines may
+need their own partition metadata</td>
+</tr>
+<tr class="even">
+<td>Iceberg transforms</td>
+<td>A table needs snapshots and evolution</td>
+<td>Writers must share a compatible catalog and table-format
+version</td>
+</tr>
+</tbody>
+</table>
+</div><p>Projection computes candidate locations from rules. It removes a
+metadata lookup bottleneck for appropriate layouts. It does not compact
+files or reduce a wide query's required values. Iceberg uses its own
+metadata and hidden transforms. Keep these two partition-management
+approaches distinct when configuring a table. <a href="https://docs.aws.amazon.com/athena/latest/ug/performance-tuning-data-optimization-techniques.html">Athena
+data layout</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html">Partition
+projection</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/create-table-as.html">CTAS
+properties</a></p>
+</section>
+<section id="add-corrections-with-iceberg" class="level2">
+<h2>Add corrections with Iceberg</h2>
+<p>Create the mutable curated table from the validated latest view. Here
+a snapshot commit gives readers an atomic table state. The new
+destination is separate from the earlier Parquet baseline.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">WITH</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">table_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ICEBERG'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_external</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">false</span><span class="p">,</span>
+<span class="w">    </span><span class="k">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'s3://YOUR-BUCKET/athena-learning/iceberg/run-001/'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PARQUET'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">partitioning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">ARRAY</span><span class="p">[</span><span class="s1">'day(trade_date)'</span><span class="p">]</span>
+<span class="p">)</span><span class="w"> </span><span class="k">AS</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_latest</span><span class="p">;</span></code></pre></figure><p>Before changing it, save the latest snapshot ID from the metadata
+table. Then apply A's next complete replacement, moving it to
+CREDIT.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="n">snapshot_id</span><span class="p">,</span><span class="w"> </span><span class="n">committed_at</span><span class="p">,</span><span class="w"> </span><span class="k">operation</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="ss">"trade_current$snapshots"</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">committed_at</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="n">MERGE</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">t</span>
+<span class="k">USING</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">'A'</span><span class="p">,</span><span class="w"> </span><span class="nb">BIGINT</span><span class="w"> </span><span class="s1">'3'</span><span class="p">,</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">,</span>
+<span class="w">            </span><span class="s1">'CREDIT'</span><span class="p">,</span><span class="w"> </span><span class="nb">DECIMAL</span><span class="w"> </span><span class="s1">'90.00'</span><span class="p">)</span>
+<span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="p">)</span>
+<span class="k">ON</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">trade_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">trade_id</span>
+<span class="k">WHEN</span><span class="w"> </span><span class="n">MATCHED</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">revision</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">revision</span><span class="w"> </span><span class="k">THEN</span>
+<span class="w">    </span><span class="k">UPDATE</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">revision</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">revision</span><span class="p">,</span>
+<span class="w">               </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">trade_date</span><span class="p">,</span>
+<span class="w">               </span><span class="n">book</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">book</span><span class="p">,</span>
+<span class="w">               </span><span class="n">amount_gbp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">amount_gbp</span>
+<span class="k">WHEN</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="n">MATCHED</span><span class="w"> </span><span class="k">THEN</span>
+<span class="w">    </span><span class="k">INSERT</span><span class="w"> </span><span class="p">(</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="p">)</span>
+<span class="w">    </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">amount_gbp</span><span class="p">);</span></code></pre></figure><p>Afterward, the 27 November report must show GILT &#8722;&#163;30.00 and CREDIT
+&#163;90.00. The combined amount remains &#163;60.00. Repeating that merge leaves
+the logical result unchanged. Replace the placeholder below with the
+saved integer snapshot ID to observe A in GILT before the change.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">FOR</span><span class="w"> </span><span class="k">VERSION</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="k">OF</span><span class="w"> </span><span class="mi">1234567890123456789</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_id</span><span class="p">;</span></code></pre></figure><p>Iceberg snapshots preserve recorded table states while retained.
+Business-effective dates answer a different axis of time. For
+restatement, keep both effective time and ingestion/revision history. An
+update to one table does not atomically publish every related table. Use
+a batch manifest with the snapshot IDs for facts, reference data and
+rates.</p>
+<p>Resolve each batch to one source row per key before merging. Iceberg
+does not enforce your trade-ID uniqueness rule. Serialize overlapping
+key updates or explicitly handle optimistic conflicts and re-read the
+current version before retry. The equality match above can scan broadly.
+Adding a date predicate is safe only if the source guarantees that it
+cannot exclude an existing trade. Athena documents Glue optimistic
+locking and Iceberg v2 compatibility requirements. Keep every writer and
+maintenance job within that contract. <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Athena
+Iceberg constraints</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-merge-into.html">MERGE
+semantics</a></p>
+</section>
+<section id="run-athena-safely-from-an-application" class="level2">
+<h2>Run Athena safely from an application</h2>
+<p>Execution is asynchronous. Submit, retain the query ID, poll to a
+terminal state, then page through results. A timeout in your application
+does not automatically cancel the service query. A durable job should
+store its request token and query ID before acknowledging work to its
+caller.</p>
+<p>The following complete script executes a small SELECT using the
+enforced workgroup settings. Install boto3, save as report.py and set
+ATHENA_REQUEST_TOKEN to a fresh UUID for a new logical request. Reuse
+that token and identical arguments after a submission retry. Change it
+for an intentional fresh report. The script targets a customer-owned
+result location configured on the workgroup.</p>
+<figure class="code"><figcaption>PYTHON</figcaption><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="n">athena</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
+    <span class="s2">"athena"</span><span class="p">,</span>
+    <span class="n">region_name</span><span class="o">=</span><span class="s2">"eu-west-2"</span><span class="p">,</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="s2">"standard"</span><span class="p">,</span> <span class="s2">"max_attempts"</span><span class="p">:</span> <span class="mi">5</span><span class="p">}),</span>
+<span class="p">)</span>
+
+<span class="n">query</span> <span class="o">=</span> <span class="s2">"""</span>
+<span class="s2">SELECT book, sum(amount_gbp) AS exposure_gbp</span>
+<span class="s2">FROM athena_learning.trade_current</span>
+<span class="s2">WHERE trade_date = DATE '2026-11-27'</span>
+<span class="s2">GROUP BY book ORDER BY book</span>
+<span class="s2">"""</span>
+
+<span class="n">reply</span> <span class="o">=</span> <span class="n">athena</span><span class="o">.</span><span class="n">start_query_execution</span><span class="p">(</span>
+    <span class="n">QueryString</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+    <span class="n">ClientRequestToken</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ATHENA_REQUEST_TOKEN"</span><span class="p">],</span>
+    <span class="n">WorkGroup</span><span class="o">=</span><span class="s2">"athena-learning"</span><span class="p">,</span>
+    <span class="n">QueryExecutionContext</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"Catalog"</span><span class="p">:</span> <span class="s2">"AwsDataCatalog"</span><span class="p">,</span>
+        <span class="s2">"Database"</span><span class="p">:</span> <span class="s2">"athena_learning"</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">ResultReuseConfiguration</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"ResultReuseByAgeConfiguration"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"Enabled"</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+<span class="n">query_id</span> <span class="o">=</span> <span class="n">reply</span><span class="p">[</span><span class="s2">"QueryExecutionId"</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Query ID"</span><span class="p">,</span> <span class="n">query_id</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">deadline</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">+</span> <span class="mi">180</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">execution</span> <span class="o">=</span> <span class="n">athena</span><span class="o">.</span><span class="n">get_query_execution</span><span class="p">(</span>
+        <span class="n">QueryExecutionId</span><span class="o">=</span><span class="n">query_id</span>
+    <span class="p">)[</span><span class="s2">"QueryExecution"</span><span class="p">]</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">execution</span><span class="p">[</span><span class="s2">"Status"</span><span class="p">][</span><span class="s2">"State"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s2">"SUCCEEDED"</span><span class="p">:</span>
+        <span class="k">break</span>
+    <span class="k">if</span> <span class="n">state</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"FAILED"</span><span class="p">,</span> <span class="s2">"CANCELLED"</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">execution</span><span class="p">[</span><span class="s2">"Status"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">deadline</span><span class="p">:</span>
+        <span class="n">athena</span><span class="o">.</span><span class="n">stop_query_execution</span><span class="p">(</span><span class="n">QueryExecutionId</span><span class="o">=</span><span class="n">query_id</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cancellation requested for </span><span class="si">{</span><span class="n">query_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">skip_header</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">pages</span> <span class="o">=</span> <span class="n">athena</span><span class="o">.</span><span class="n">get_paginator</span><span class="p">(</span><span class="s2">"get_query_results"</span><span class="p">)</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span>
+    <span class="n">QueryExecutionId</span><span class="o">=</span><span class="n">query_id</span><span class="p">,</span>
+    <span class="n">PaginationConfig</span><span class="o">=</span><span class="p">{</span><span class="s2">"PageSize"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">pages</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">page</span><span class="p">[</span><span class="s2">"ResultSet"</span><span class="p">][</span><span class="s2">"Rows"</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">skip_header</span><span class="p">:</span>
+            <span class="n">skip_header</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">continue</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">cell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"VarCharValue"</span><span class="p">)</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="s2">"Data"</span><span class="p">]]</span>
+        <span class="n">amount</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">amount</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">execution</span><span class="p">[</span><span class="s2">"Statistics"</span><span class="p">])</span></code></pre></figure><p>The polling loop accepts QUEUED and RUNNING until a terminal state. A
+distributed job should poll with backoff and jitter and retain
+recoverable status externally. This small script demonstrates a deadline
+and cancellation request. Observe the final state before considering
+cancellation complete in an orchestrator. Keep errors and query IDs
+correlated with the caller's batch.</p>
+<p>For user-supplied values, use Athena execution parameters or prepared
+statements within their documented constraints. They use positional
+placeholders and are subject to statement and placement restrictions.
+Identifiers such as table names need an allowlist. Never concatenate
+arbitrary user SQL into an API endpoint. Query result cells are strings,
+so decode dates and decimals explicitly using metadata for
+general-purpose clients. The header handling above applies to this
+SELECT result. DML and manifest results need their own interpretation.
+<a href="https://docs.aws.amazon.com/athena/latest/APIReference/API_StartQueryExecution.html">StartQueryExecution
+and request tokens</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-with-prepared-statements.html">Parameterised
+queries</a></p>
+</section>
+<section id="export-large-results-without-a-giant-client-response" class="level2">
+<h2>Export large results without a giant client response</h2>
+<p>The report API should return a compact result or an asynchronous job
+handle. If the business wants a large file, write a dataset to S3 and
+return the governed export location. Use a new empty export prefix for
+an unpartitioned UNLOAD.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="n">UNLOAD</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span>
+<span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span>
+<span class="p">)</span>
+<span class="k">TO</span><span class="w"> </span><span class="s1">'s3://YOUR-BUCKET/athena-learning/exports/batch-0042/'</span>
+<span class="k">WITH</span><span class="w"> </span><span class="p">(</span><span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PARQUET'</span><span class="p">,</span><span class="w"> </span><span class="n">compression</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'SNAPPY'</span><span class="p">);</span></code></pre></figure><p>Expect multiple objects when output is parallelised. An ORDER BY
+cannot establish a global ordering across separate files. Consume the
+manifest or a completed-export record, then reconcile rows and totals.
+If execution fails, inspect partially created objects before retrying
+into a new prefix. Use a completion marker only after validation. Keep
+export expiry separate from table retention. <a href="https://docs.aws.amazon.com/athena/latest/ug/unload.html">UNLOAD
+behaviour and limits</a></p>
+</section>
+<section id="tune-the-measured-bottleneck" class="level2">
+<h2>Tune the measured bottleneck</h2>
+<p>Record queue time, planning time, execution time, bytes scanned,
+result reuse, client fetch and page-ready time. Planning is included in
+engine execution time in Athena statistics. Sum components only when
+their definitions do not overlap. A warm result-reuse hit has a
+different freshness contract from an executed scan.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Observation</th>
+<th>First action</th>
+<th>Evidence of improvement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Broad scan for a narrow report</td>
+<td>Check partition predicate, selected columns and implicit casts</td>
+<td>Physical scan falls with identical output</td>
+</tr>
+<tr class="even">
+<td>Many tiny files, long planning</td>
+<td>Compact a representative partition</td>
+<td>Lower planning overhead and fewer file opens</td>
+</tr>
+<tr class="odd">
+<td>Huge joined intermediate</td>
+<td>Filter dimensions, validate uniqueness and aggregate at the correct
+grain</td>
+<td>Fewer rows entering the exchange and equal business totals</td>
+</tr>
+<tr class="even">
+<td>One expensive distinct or sort</td>
+<td>Bound the requested detail, evaluate approximate functions only if
+business tolerance allows</td>
+<td>Lower peak work and explicitly documented approximation error</td>
+</tr>
+<tr class="odd">
+<td>Queued morning reports</td>
+<td>Inspect quotas, concurrent jobs and workgroup capacity
+assignment</td>
+<td>Queue age and page-ready p95 fall under the same arrivals</td>
+</tr>
+<tr class="even">
+<td>Fast old answer</td>
+<td>Inspect reuse age and publication watermark</td>
+<td>The new correction becomes visible within the freshness
+objective</td>
+</tr>
+</tbody>
+</table>
+</div><p>A window over every revision is useful for learning and full
+reconstruction. Re-running that window over a petabyte on every click is
+expensive. Maintain the current fact incrementally, materialise repeated
+aggregates, and retain raw history for restatement. Do not hide
+precision changes in a performance tweak. Approximate distinct counts
+may suit exploration. Monetary totals and exact trade counts need the
+specified semantics.</p>
+<p>On-demand Athena scales execution for eligible workloads but has
+service quotas, admission limits and practical query resource limits.
+Capacity reservations give another allocation model to benchmark.
+Workgroups organise usage but do not by themselves establish unlimited
+independent capacity. The smallest fast query still consumes planning,
+authorisation and result handling. Test the real morning burst with
+unrelated research queries running. <a href="https://docs.aws.amazon.com/athena/latest/ug/service-limits.html">Service
+quotas</a> &#183; <a href="https://aws.amazon.com/athena/pricing/">Pricing
+modes</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatistics.html">Query
+statistics</a></p>
+</section>
+<section id="own-maintenance-and-recovery" class="level2">
+<h2>Own maintenance and recovery</h2>
+<p>Compaction rewrites small data files and applies accumulated deletes
+into a more efficient layout. Snapshot expiration shortens the
+recoverable history and can remove files. Schedule them as distinct
+operations with explicit retention. The following compacts the lab
+table. At large scale choose supported partition predicates for bounded
+work.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="n">OPTIMIZE</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="n">REWRITE</span><span class="w"> </span><span class="k">DATA</span><span class="w"> </span><span class="k">USING</span><span class="w"> </span><span class="n">BIN_PACK</span><span class="p">;</span></code></pre></figure><p>Configure retention from your longest reader, failed-job retry
+horizon and audit policy before running VACUUM. Preserve source history
+separately if it must outlive snapshot retention. A seven-day example is
+a policy choice, not a universal default.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">athena_learning</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">SET</span><span class="w"> </span><span class="n">TBLPROPERTIES</span><span class="w"> </span><span class="p">(</span><span class="s1">'vacuum_max_snapshot_age_seconds'</span><span class="o">=</span><span class="s1">'604800'</span><span class="p">);</span></code></pre></figure><p>Execute VACUUM only after confirming that policy is acceptable. Check
+its output and the remaining snapshots. File deletion also requires
+relevant storage permissions. Test recovery by rebuilding a scratch
+table from raw input and comparing the expected &#163;60.00 on 27 November at
+the matching correction cut. Maintain a last-good published snapshot
+pointer so readers can be restored quickly. Snapshot rollback and data
+reconstruction solve different recovery cases. <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-data-optimization.html">Iceberg
+maintenance</a></p>
+<p>Track raw-to-curated lag, latest source watermark, invalid rows,
+version conflicts, duplicate rates, file counts and publication age
+alongside query latency and spend. Alert on a stale correct result as
+well as a failed query. Tag workloads and preserve query history in your
+own operational record for the required period. Use separate identities
+for ingest, maintenance and BI. Test with a restricted reader, because
+an administrator's successful query cannot establish the viewer's
+access.</p>
+</section>
+<section id="know-the-boundaries-before-promising-a-service" class="level2">
+<h2>Know the boundaries before promising a service</h2>
+<p>Athena is suitable for object-store analytics, historical inspection,
+curated SQL transformations and exports. Row-oriented application
+updates with strict millisecond deadlines need a different access path.
+Federation can expose other sources, with source connection, permission
+and latency constraints. Athena uses its own federation mechanism. An
+arbitrary standalone Trino connector cannot simply be installed into an
+Athena workgroup.</p>
+<p>Document limits for your selected Region and engine before
+production. Examples include CTAS and UNLOAD partition fan-out limits,
+query text size, result-row size, timeout and concurrent-query quotas.
+Divide backfills into controlled batches with idempotent output and
+reconciliation. Constraints differ between Hive-style external tables
+and Iceberg. Read the table-format-specific documentation for write
+operations. <a href="https://docs.aws.amazon.com/athena/latest/ug/other-notable-limitations.html">Athena
+limitations</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/federated-queries.html">Federated
+queries</a></p>
+</section>
+<section id="compare-the-complete-athena-design" class="level2">
+<h2>Compare the complete Athena design</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr class="header">
+<th>Alternative</th>
+<th>Prefer it when</th>
+<th>What to benchmark against Athena</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Trino</td>
+<td>Connector control, sustained warm capacity or explicit admission
+policy earns the operational work</td>
+<td>Same Iceberg snapshot, same outputs, cold and warm cases, plus
+cluster and on-call cost</td>
+</tr>
+<tr class="even">
+<td>Redshift</td>
+<td>Recurring joins and reports justify a managed AWS warehouse and
+curated ingestion</td>
+<td>Native hot tables versus Athena summaries, concurrent BI, load and
+maintenance</td>
+</tr>
+<tr class="odd">
+<td>Snowflake</td>
+<td>Governed SQL workloads need independent warehouse compute and
+managed scaling options</td>
+<td>Resume, result-cache effects, concurrency, ingestion and total
+metered services</td>
+</tr>
+<tr class="even">
+<td>Fabric</td>
+<td>Power BI and a shared semantic model dominate the user
+experience</td>
+<td>Actual DAX page, security roles, Direct Lake or Import mode and
+shared capacity pressure</td>
+</tr>
+<tr class="odd">
+<td>Databricks SQL</td>
+<td>Significant Delta/Spark engineering feeds the same analytics
+estate</td>
+<td>Curated table layout, SQL endpoint scaling, job overlap and
+engineering workflow</td>
+</tr>
+<tr class="even">
+<td>BigQuery</td>
+<td>The data estate is centred on Google Cloud or managed slot
+allocation is attractive</td>
+<td>Native versus external data, scan or capacity model and cross-cloud
+transfer</td>
+</tr>
+<tr class="odd">
+<td>Managed PostgreSQL</td>
+<td>Fixed filters hit a modest, indexed hot mart and application
+transactions matter</td>
+<td>The complete incremental publication path, replica lag, p99 lookups
+and recovery</td>
+</tr>
+<tr class="even">
+<td>ClickHouse</td>
+<td>Many users slice recent granular facts with demanding response
+targets</td>
+<td>Corrected events, ordering keys, ingest/merge pressure and arbitrary
+groupings</td>
+</tr>
+<tr class="odd">
+<td>DuckDB</td>
+<td>One process can efficiently inspect local or object-store
+extracts</td>
+<td>Single-node memory, parallelism, client concurrency and the cost of
+moving extracts</td>
+</tr>
+</tbody>
+</table>
+</div><p>There is no universal &#8220;Athena versus Snowflake speed&#8221; number. One
+candidate can answer a cached summary while another reconstructs raw
+revisions. Compare both the best viable business design and a controlled
+equivalent scan. Include licensing, storage, transforms, capacity, data
+transfer and the people required to operate the system. Use a GBP rate
+card for your region and contract. <a href="https://docs.snowflake.com/en/user-guide/warehouses-multicluster">Snowflake
+scaling</a> &#183; <a href="https://learn.microsoft.com/en-us/fabric/fundamentals/direct-lake-overview">Fabric
+Direct Lake</a> &#183; <a href="https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior">Databricks
+SQL scaling</a> &#183; <a href="https://docs.aws.amazon.com/redshift/latest/dg/c_columnar_storage_disk_mem_mgmnt.html">Redshift
+columnar design</a> &#183; <a href="https://cloud.google.com/bigquery/docs/slots">BigQuery slots</a> &#183;
+<a href="https://duckdb.org/docs/stable/">DuckDB overview</a></p>
+</section>
+<section id="graduate-the-lab-into-a-production-contract" class="level2">
+<h2>Graduate the lab into a production contract</h2>
+<p>You have the whole lifecycle once you can land a new batch, reject
+invalid and conflicting records, preserve replay, publish a current
+fact, retrieve an old snapshot, measure a real report and recover after
+an interrupted publication. Run the book-transfer case with the
+publisher stopped just before promotion. Readers should retain the last
+verified cut. On retry, verify the existing staged output or build a
+fresh version before promoting it. The business should see a complete
+before or after view with an explicit watermark.</p>
+<p>The teaching fixture's arithmetic and revision rules are validated
+locally. SQL, AWS API and maintenance examples are checked against
+official documentation but require execution in your AWS account for
+service-level verification. The performance and capacity discussion
+gives experiments to run. It does not report measured vendor
+performance.</p>
+</section>
+<nav class="menu" aria-label="Adjacent guides"><div class="menu-grid"><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">03 Benchmarking the Warehouse Decision</a><a href="05%20Trino%20Zero%20to%20Guru.html">05 Trino Zero to Guru</a></div></nav></main></div></body></html>

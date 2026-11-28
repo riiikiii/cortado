@@ -150,12 +150,21 @@ section > p, section > ul, section > ol {max-width:76ch}
 .hero > *, .trace > *, .menu-grid > * {min-width:0}
 .trace span, a, :not(pre) > code {overflow-wrap:anywhere}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style><style>
+table{width:100%} .scroll{max-width:100%} .code{max-width:100%}
+.menu-grid a{min-width:0} h1,h2,h3{overflow-wrap:break-word}
+.mechanism{margin:24px 0;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--surface)}
+.mechanism ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;list-style:none}
+.mechanism li{border-left:4px solid var(--t500);background:var(--surface-2);padding:14px}
+.mechanism strong{display:block;color:var(--t700)}
+@media(prefers-color-scheme:dark){.mechanism strong{color:var(--t300)}}
+@media(max-width:540px){.mechanism ol{grid-template-columns:1fr}}
 </style></head><body id="top">
-<header><div class="head"><div class="mast"><span>Cloud and infrastructure · Analytical warehouses</span></div>
+<header><div class="head"><div class="mast"><span>Cloud and infrastructure &#183; Analytical warehouses</span></div>
 <div class="hero"><div><h1>Athena and Trino on a Shared Lake</h1><p>Trace a corrected trade from an Iceberg snapshot to a distributed SQL result. Learn which optimisations reduce the work and which only move it.</p></div>
-<div class="plate"><small>Worked case</small><div class="trace"><b>Arrivals</b><span>A £100 · B −£30 · A corrected to £90</span></div><div class="trace"><b>Replay</b><span>A revision 2 arrives twice</span></div><div class="trace"><b>Current</b><span>2 trades · GILT £60</span></div></div>
+<div class="plate"><small>Worked case</small><div class="trace"><b>Arrivals</b><span>A &#163;100 &#183; B &#8722;&#163;30 &#183; A corrected to &#163;90</span></div><div class="trace"><b>Replay</b><span>A revision 2 arrives twice</span></div><div class="trace"><b>Current</b><span>2 trades &#183; GILT &#163;60</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></div><hr><div class="menu-grid"><a href="#start-with-one-corrected-trade">Start with one corrected trade</a><a href="#what-persists-after-the-compute-stops">What persists after the compute stops?</a><a href="#build-the-smallest-shared-lake-table">Build the smallest shared lake table</a><a href="#read-the-same-snapshot-through-trino">Read the same snapshot through Trino</a><a href="#follow-the-bytes-through-a-distributed-query">Follow the bytes through a distributed query</a><a href="#keep-the-lake-fast-after-month-six">Keep the lake fast after month six</a><a href="#when-federation-earns-its-keep">When federation earns its keep</a></div></nav><main><section id="start-with-one-corrected-trade" class="level2">
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">01 Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">02 Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">03 Benchmarking the Warehouse Decision</a><a href="04%20Athena%20Zero%20to%20Guru.html">04 Athena Zero to Guru</a><a href="05%20Trino%20Zero%20to%20Guru.html">05 Trino Zero to Guru</a></div><hr><div class="menu-grid"><a href="#start-with-one-corrected-trade">Start with one corrected trade</a><a href="#what-persists-after-the-compute-stops">What persists after the compute stops?</a><a href="#build-the-smallest-shared-lake-table">Build the smallest shared lake table</a><a href="#read-the-same-snapshot-through-trino">Read the same snapshot through Trino</a><a href="#follow-the-bytes-through-a-distributed-query">Follow the bytes through a distributed query</a><a href="#keep-the-lake-fast-after-month-six">Keep the lake fast after month six</a><a href="#when-federation-earns-its-keep">When federation earns its keep</a></div></nav><main><section id="start-with-one-corrected-trade" class="level2">
 <h2>Start with one corrected trade</h2>
 <p>At 09:00 a portfolio manager opens a dashboard. Yesterday's GBP
 exposure changed after a booking correction. The manager wants the right
@@ -188,10 +197,10 @@ validate the rule before provisioning tables.</p>
 <span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="k">DISTINCT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">events</span><span class="p">)</span><span class="w"> </span><span class="n">e</span>
 <span class="p">)</span>
 <span class="k">SELECT</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
-<span class="k">FROM</span><span class="w"> </span><span class="n">ranked</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">rn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>The answer is <strong>GILT Â£60</strong>. Summing the arrivals gives
-Â£250. Removing the identical replay still gives Â£160 if you retain the
+<span class="k">FROM</span><span class="w"> </span><span class="n">ranked</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">rn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>The answer is <strong>GILT &#163;60</strong>. Summing the arrivals gives
+&#163;250. Removing the identical replay still gives &#163;160 if you retain the
 superseded revision. A reversal at revision 3 with a zero amount would
-leave the book at âÂ£30. Two <em>different</em> rows for the same ID and
+leave the book at &#8722;&#163;30. Two <em>different</em> rows for the same ID and
 revision are a source conflict. Reject the batch or quarantine that key
 before ranking. Arrival time alone cannot resolve it. The
 highest-revision rule assumes the source assigns monotone versions and
@@ -257,8 +266,8 @@ connector configuration, SQL coverage and operational controls. Treat
 multi-engine writing as a compatibility contract covering the catalog,
 concurrency mechanism, table-format version, precision and delete-file
 support. <a href="https://docs.aws.amazon.com/athena/latest/ug/engine-versions-reference-0003.html">Athena
-engine v3</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Athena
-Iceberg limitations</a> Â· <a href="https://trino.io/docs/current/connector/iceberg.html">Trino
+engine v3</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Athena
+Iceberg limitations</a> &#183; <a href="https://trino.io/docs/current/connector/iceberg.html">Trino
 Iceberg connector</a></p>
 </section>
 <section id="build-the-smallest-shared-lake-table" class="level2">
@@ -299,15 +308,15 @@ charges.</p>
 
 <span class="k">SELECT</span><span class="w"> </span><span class="n">snapshot_id</span><span class="p">,</span><span class="w"> </span><span class="n">committed_at</span><span class="p">,</span><span class="w"> </span><span class="k">operation</span>
 <span class="k">FROM</span><span class="w"> </span><span class="n">wh_lab</span><span class="p">.</span><span class="ss">"trade_current$snapshots"</span>
-<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">committed_at</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span></code></pre></figure><p>Expected report before the merge is two trades and Â£70. Afterwards it
-is two and Â£60. Rerunning the merge keeps the report at Â£60. Test an
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">committed_at</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span></code></pre></figure><p>Expected report before the merge is two trades and &#163;70. Afterwards it
+is two and &#163;60. Rerunning the merge keeps the report at &#163;60. Test an
 older revision arriving afterwards. Its version predicate fails and the
 published values survive. Inspect snapshot history, capture the
 pre-correction snapshot ID and read it with
 <code>SELECT * FROM wh_lab.trade_current FOR VERSION AS OF &lt;snapshot_id&gt;</code>,
 substituting the integer. Time travel reconstructs the table as recorded
-then. A separate effective date is still needed to answer âwhat was
-yesterday's position, restated using today's corrections?â</p>
+then. A separate effective date is still needed to answer &#8220;what was
+yesterday's position, restated using today's corrections?&#8221;</p>
 <p>For a real microbatch, stage the raw deliveries durably, deduplicate
 exact replays, reject conflicting versions, then select one newest
 revision per key <strong>across the batch</strong> before the merge.
@@ -320,7 +329,7 @@ a trade between dates or books requires rebuilding both affected
 aggregates. Clean up the disposable table only after verifying ownership
 of its dedicated prefix. Athena dropping an Iceberg table removes its
 data. <a href="https://docs.aws.amazon.com/athena/latest/ug/create-table-as.html">Athena
-CTAS</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-merge-into.html">Athena
+CTAS</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-merge-into.html">Athena
 transactional MERGE</a></p>
 </section>
 <section id="read-the-same-snapshot-through-trino" class="level2">
@@ -339,7 +348,7 @@ deployment's restart procedure.</p>
 <span class="na">s3.region</span><span class="o">=</span><span class="s">eu-west-2</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
 <span class="k">FROM</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">wh_lab</span><span class="p">.</span><span class="n">trade_current</span>
 <span class="k">WHERE</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span>
-<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>After the merge, both engines should show GILT Â£60 with no data copy.
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>After the merge, both engines should show GILT &#163;60 with no data copy.
 If Trino cannot see the table, check catalog account and Region. If it
 can list tables but a scan fails, verify object and encryption-key
 access for the worker identity. Before permitting both engines to write,
@@ -347,7 +356,7 @@ pin Iceberg v2 and verify AWS Glue optimistic locking across writers.
 Athena's documented compatibility requires that locking mechanism. Keep
 table maintenance under one owner. A successful cross-engine read proves
 much less than concurrent write safety. <a href="https://trino.io/docs/current/object-storage/file-system-s3.html">Trino
-S3 configuration</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Glue
+S3 configuration</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Glue
 and Iceberg constraints</a></p>
 </section>
 <section id="follow-the-bytes-through-a-distributed-query" class="level2">
@@ -460,8 +469,8 @@ coordinator pressure and test worker loss during a large scan. Task
 retries require the relevant fault-tolerant configuration, exchange
 storage and connector support. Separate clusters give stronger failure
 isolation at additional idle cost. <a href="https://aws.amazon.com/athena/pricing/">Athena capacity and scan
-charging</a> Â· <a href="https://trino.io/docs/current/admin/resource-groups.html">Trino
-resource groups</a> Â· <a href="https://trino.io/docs/current/admin/fault-tolerant-execution.html">Trino
+charging</a> &#183; <a href="https://trino.io/docs/current/admin/resource-groups.html">Trino
+resource groups</a> &#183; <a href="https://trino.io/docs/current/admin/fault-tolerant-execution.html">Trino
 fault-tolerant execution</a></p>
 </section>
 <section id="when-federation-earns-its-keep" class="level2">
@@ -483,4 +492,4 @@ If most questions are identical aggregates with a strict response
 deadline, move that work off the request path. The next guide designs
 that boundary.</p>
 </section>
-<nav class="menu" aria-label="Adjacent guides"><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a></nav></main></div></body></html>
+<nav class="menu" aria-label="Adjacent guides"><div class="menu-grid"><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">02 Choosing a Business Serving Layer</a></div></nav></main></div></body></html>

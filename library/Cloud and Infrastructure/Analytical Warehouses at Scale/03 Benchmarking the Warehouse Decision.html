@@ -150,12 +150,21 @@ section > p, section > ul, section > ol {max-width:76ch}
 .hero > *, .trace > *, .menu-grid > * {min-width:0}
 .trace span, a, :not(pre) > code {overflow-wrap:anywhere}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style><style>
+table{width:100%} .scroll{max-width:100%} .code{max-width:100%}
+.menu-grid a{min-width:0} h1,h2,h3{overflow-wrap:break-word}
+.mechanism{margin:24px 0;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--surface)}
+.mechanism ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;list-style:none}
+.mechanism li{border-left:4px solid var(--t500);background:var(--surface-2);padding:14px}
+.mechanism strong{display:block;color:var(--t700)}
+@media(prefers-color-scheme:dark){.mechanism strong{color:var(--t300)}}
+@media(max-width:540px){.mechanism ol{grid-template-columns:1fr}}
 </style></head><body id="top">
-<header><div class="head"><div class="mast"><span>Cloud and infrastructure · Analytical warehouses</span></div>
+<header><div class="head"><div class="mast"><span>Cloud and infrastructure &#183; Analytical warehouses</span></div>
 <div class="hero"><div><h1>Benchmarking the Warehouse Decision</h1><p>Test the opening burst, a late correction and a concurrent historical rebuild. Use measured service levels and a GBP cost model to choose a design.</p></div>
-<div class="plate"><small>Worked case</small><div class="trace"><b>Demand</b><span>120 people × 8 visuals in 10 s</span></div><div class="trace"><b>Load</b><span>96 requests/s before reuse</span></div><div class="trace"><b>Gate</b><span>Whole-page p95 ≤2 s under burst</span></div></div>
+<div class="plate"><small>Worked case</small><div class="trace"><b>Demand</b><span>120 people &#215; 8 visuals in 10 s</span></div><div class="trace"><b>Load</b><span>96 requests/s before reuse</span></div><div class="trace"><b>Gate</b><span>Whole-page p95 &#8804;2 s under burst</span></div></div>
 </div></div></header>
-<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></div><hr><div class="menu-grid"><a href="#build-a-workload-card-before-booking-capacity">Build a workload card before booking capacity</a><a href="#run-four-query-families-on-the-same-publication">Run four query families on the same publication</a><a href="#collect-timing-evidence-you-can-explain">Collect timing evidence you can explain</a><a href="#put-pounds-against-the-service-target">Put pounds against the service target</a><a href="#interpret-failure-and-make-a-decision">Interpret failure and make a decision</a></div></nav><main><section id="build-a-workload-card-before-booking-capacity" class="level2">
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">01 Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">02 Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">03 Benchmarking the Warehouse Decision</a><a href="04%20Athena%20Zero%20to%20Guru.html">04 Athena Zero to Guru</a><a href="05%20Trino%20Zero%20to%20Guru.html">05 Trino Zero to Guru</a></div><hr><div class="menu-grid"><a href="#build-a-workload-card-before-booking-capacity">Build a workload card before booking capacity</a><a href="#run-four-query-families-on-the-same-publication">Run four query families on the same publication</a><a href="#collect-timing-evidence-you-can-explain">Collect timing evidence you can explain</a><a href="#put-pounds-against-the-service-target">Put pounds against the service target</a><a href="#interpret-failure-and-make-a-decision">Interpret failure and make a decision</a></div></nav><main><section id="build-a-workload-card-before-booking-capacity" class="level2">
 <h2>Build a workload card before booking capacity</h2>
 <p>The decision is whether a platform can publish a <em>correct</em>
 corrected position and keep it fast during a burst while history gets
@@ -208,7 +217,7 @@ Observe actual fan-out.</td>
 </tr>
 <tr class="odd">
 <td>API</td>
-<td>Book/day lookup p99 â¤250 ms. Return batch, watermark and
+<td>Book/day lookup p99 &#8804;250 ms. Return batch, watermark and
 amount.</td>
 <td>A precomputed primary-key lookup has a fundamentally different work
 budget from ad hoc SQL.</td>
@@ -228,8 +237,8 @@ long tail</td>
 </tr>
 </tbody>
 </table>
-</div><p>In steady state Little's law gives average in-flight work â arrival
-rate Ã average end-to-end time. At 96 requests/s and 1.5 s mean
+</div><p>In steady state Little's law gives average in-flight work &#8776; arrival
+rate &#215; average end-to-end time. At 96 requests/s and 1.5 s mean
 residence time, about 144 requests are in flight. This is a sizing
 check, not a p95 calculation or a count of physical workers. A
 ten-second opening burst is transient. Drive the recorded arrival trace,
@@ -274,20 +283,20 @@ throttling. Never extrapolate p99 linearly from row count.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>A revision 1 = Â£100, B revision 1 = âÂ£30</td>
-<td>GILT Â£70, two current trades</td>
+<td>A revision 1 = &#163;100, B revision 1 = &#8722;&#163;30</td>
+<td>GILT &#163;70, two current trades</td>
 </tr>
 <tr class="even">
-<td>A revision 2 = Â£90 arrives twice</td>
-<td>GILT Â£60, two current trades</td>
+<td>A revision 2 = &#163;90 arrives twice</td>
+<td>GILT &#163;60, two current trades</td>
 </tr>
 <tr class="odd">
 <td>A revision 1 arrives again</td>
-<td>Still Â£60</td>
+<td>Still &#163;60</td>
 </tr>
 <tr class="even">
-<td>A revision 3 moves to book CREDIT at Â£90</td>
-<td>GILT âÂ£30, CREDIT Â£90, combined Â£60</td>
+<td>A revision 3 moves to book CREDIT at &#163;90</td>
+<td>GILT &#8722;&#163;30, CREDIT &#163;90, combined &#163;60</td>
 </tr>
 <tr class="odd">
 <td>A revision 3 arrives with a different amount at the same
@@ -304,7 +313,7 @@ retains the reconciliation trail.</td>
 </table>
 </div><p>For the full run compare keyed counts and decimal totals at
 book/date/currency plus deterministic samples of trade lineage. An
-invariant such as âglobal sum unchangedâ misses a trade posted to the
+invariant such as &#8220;global sum unchanged&#8221; misses a trade posted to the
 wrong portfolio. Measure correction visibility for a viewer of the old
 book and one of the new book. Measure all counters at a fixed cut. Rows
 moving while candidates are sampled create false differences.</p>
@@ -326,7 +335,7 @@ result reuse for the fresh-run baseline. Athena may otherwise serve a
 prior eligible result within the configured age. Record reuse separately
 as a legitimate production case only if its staleness contract meets the
 business target. <a href="https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatistics.html">Athena
-statistics fields</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/reusing-query-results.html">Athena
+statistics fields</a> &#183; <a href="https://docs.aws.amazon.com/athena/latest/ug/reusing-query-results.html">Athena
 result reuse</a></p>
 <div class="scroll" tabindex="0" role="region" aria-label="Collect timing evidence you can explain comparison table"><table>
 <thead>
@@ -412,34 +421,34 @@ arithmetic rather than vendor pricing.</p>
 <tbody>
 <tr class="odd">
 <td>On-demand scans</td>
-<td>2,000 requests/day Ã 5 GB Ã 30 Ã· 1,000</td>
+<td>2,000 requests/day &#215; 5 GB &#215; 30 &#247; 1,000</td>
 <td>300 TB/month</td>
 </tr>
 <tr class="even">
 <td>Assumed scan charge</td>
-<td>300 TB Ã Â£4/TB</td>
-<td>Â£1,200/month</td>
+<td>300 TB &#215; &#163;4/TB</td>
+<td>&#163;1,200/month</td>
 </tr>
 <tr class="odd">
 <td>Preaggregate construction</td>
-<td>1 TB/day Ã 30 Ã Â£4/TB</td>
-<td>Â£120/month</td>
+<td>1 TB/day &#215; 30 &#215; &#163;4/TB</td>
+<td>&#163;120/month</td>
 </tr>
 <tr class="even">
 <td>Serving tier plus build scans</td>
-<td>Â£650/month + Â£120</td>
-<td>Â£770/month</td>
+<td>&#163;650/month + &#163;120</td>
+<td>&#163;770/month</td>
 </tr>
 <tr class="odd">
 <td>Equal cost in this simplified model</td>
-<td>Â£770 Ã· (Â£4 Ã 0.005 TB/query) Ã· 30</td>
+<td>&#163;770 &#247; (&#163;4 &#215; 0.005 TB/query) &#247; 30</td>
 <td>About 1,284 queries/day</td>
 </tr>
 </tbody>
 </table>
-</div><p>At 2,000 queries/day the simplified saving is Â£430/month. If the
+</div><p>At 2,000 queries/day the simplified saving is &#163;430/month. If the
 average scan falls from 5 GB to 0.5 GB, the original reports cost
-Â£120/month at the same volume, reversing the comparison. If the serving
+&#163;120/month at the same volume, reversing the comparison. If the serving
 tier is mandatory for the latency target, a lower scan bill alone cannot
 win. If the build processes 1 TB <em>each minute</em> to meet freshness,
 its cost changes by orders of magnitude. Benchmark an incremental
@@ -537,4 +546,4 @@ examples target the documented interfaces. The service targets, dataset
 sizes, rates and timings used for sizing are illustrative. No vendor
 benchmark results are claimed.</p>
 </section>
-<nav class="menu" aria-label="Adjacent guides"><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a></nav></main></div></body></html>
+<nav class="menu" aria-label="Adjacent guides"><div class="menu-grid"><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">02 Choosing a Business Serving Layer</a><a href="04%20Athena%20Zero%20to%20Guru.html">04 Athena Zero to Guru</a></div></nav></main></div></body></html>
