@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise OMS Engineering: Java 25, Spring Boot 4, Gradle 9, Hazelcast 5.7 &amp; Kafka 4.4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          },
+          colors: {
+            obsidian: {
+              bg: '#0b0f19',
+              card: '#111827',
+              elevated: '#161f33',
+              border: '#1e293b',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg-canvas: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-code: #0f172a;
+      --border-subtle: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --accent-cyan: #0284c7;
+    }
+    html.dark {
+      --bg-canvas: #0b0f19;
+      --bg-card: #111827;
+      --bg-code: #090d16;
+      --border-subtle: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --accent-cyan: #38bdf8;
+    }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.72;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    html:not(.dark) ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+
+    /* Prose typography */
+    .prose-guide h2 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .prose-guide h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      margin-top: 1.85rem;
+      margin-bottom: 0.75rem;
+    }
+    .prose-guide p {
+      margin-bottom: 1.15rem;
+      color: var(--text-secondary);
+    }
+    html.dark .prose-guide p { color: #cbd5e1; }
+    .prose-guide ul, .prose-guide ol {
+      margin-bottom: 1.25rem;
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+    }
+    html.dark .prose-guide ul, html.dark .prose-guide ol { color: #cbd5e1; }
+    .prose-guide li { margin-bottom: 0.45rem; }
+    .prose-guide code:not(pre code) {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.375rem;
+      background: rgba(56, 189, 248, 0.12);
+      color: #0284c7;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    html.dark .prose-guide code:not(pre code) {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.22);
+    }
+
+    /* Code blocks */
+    .code-shell {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.5);
+    }
+    .code-header {
+      background: #0f1626;
+      border-bottom: 1px solid #1e293b;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .code-pre {
+      margin: 0;
+      padding: 1.1rem 1.25rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: #e2e8f0;
+      tab-size: 2;
+    }
+    /* Syntax tokens */
+    .tok-kw { color: #c084fc; font-weight: 500; }
+    .tok-type { color: #38bdf8; }
+    .tok-str { color: #34d399; }
+    .tok-num { color: #fbbf24; }
+    .tok-com { color: #64748b; font-style: italic; }
+    .tok-ann { color: #f472b6; }
+    .tok-key { color: #7dd3fc; }
+
+    /* Interactive SVG nodes */
+    .arch-node {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .arch-node:hover { filter: brightness(1.18); }
+    .arch-node.active rect, .arch-node.active ellipse {
+      stroke: #38bdf8 !important;
+      stroke-width: 2.5px !important;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
+    }
+
+    /* Packet animation */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+    }
+    .sim-active { animation: pulseGlow 1.5s infinite; }
+
+    /* Print styling */
+    @media print {
+      aside, header, .no-print { display: none !important; }
+      main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+      .guide-section { display: block !important; page-break-after: always; }
+      body { background: white !important; color: black !important; }
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-sky-500/30 selection:text-sky-200">
+
+  <!-- Reading Progress Bar (Top Fixed) -->
+  <div class="fixed top-0 left-0 right-0 h-1 z-50 bg-slate-200 dark:bg-slate-800/80 no-print">
+    <div id="reading-progress-bar" class="h-full bg-gradient-to-r from-sky-400 via-violet-400 to-emerald-400 w-0 transition-all duration-150"></div>
+  </div>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="mobile-overlay" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+
+  <!-- Left Persistent Sidebar -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-[#0d121f] border-r border-slate-200 dark:border-slate-800 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col no-print">
+    <!-- Brand Header -->
+    <div class="p-5 border-b border-slate-200 dark:border-slate-800">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center text-white font-mono font-bold text-sm shadow-lg shadow-sky-500/20">
+            OMS
+          </div>
+          <div>
+            <div class="font-bold text-sm tracking-tight text-slate-900 dark:text-white leading-tight">Enterprise OMS</div>
+            <div class="text-[11px] font-mono text-sky-600 dark:text-sky-400">Java 25 • Boot 4 • Kafka 4.4</div>
+          </div>
+        </div>
+        <button onclick="toggleMobileSidebar(false)" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
+      </div>
+
+      <!-- Series Progress Bar -->
+      <div class="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between text-xs mb-1.5">
+          <span class="font-semibold text-slate-700 dark:text-slate-300">Series Progress</span>
+          <span id="sidebar-progress-text" class="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">0 / 8 (0%)</span>
+        </div>
+        <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+          <div id="sidebar-progress-fill" class="h-full bg-gradient-to-r from-emerald-400 to-sky-400 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Quick Filter / Search -->
+      <div class="mt-3 relative">
+        <input id="sidebar-search" type="text" placeholder="Filter guides &amp; topics..." oninput="filterGuides(this.value)"
+          class="w-full pl-8 pr-3 py-2 text-xs rounded-lg bg-slate-100 dark:bg-[#111827] border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-sky-500 transition" />
+        <span class="absolute left-2.5 top-2 text-slate-400 text-xs">⌕</span>
+      </div>
+    </div>
+
+    <!-- Navigation List -->
+    <nav id="sidebar-nav" class="flex-1 overflow-y-auto p-3 space-y-1">
+      <!-- Populated dynamically by JS -->
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="p-4 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+      <span class="font-mono">Edition: 2026 LTS</span>
+      <button onclick="resetProgress()" class="text-rose-500 hover:underline font-medium">Reset Progress</button>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <div class="lg:pl-80 min-h-screen flex flex-col">
+    <!-- Sticky Top Bar -->
+    <header class="sticky top-1 z-30 bg-white/85 dark:bg-[#0b0f19]/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 py-3 flex items-center justify-between gap-4 no-print">
+      <div class="flex items-center gap-3 min-w-0">
+        <button onclick="toggleMobileSidebar(true)" class="lg:hidden p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+          ☰
+        </button>
+        <div class="truncate">
+          <div class="text-[11px] font-mono uppercase tracking-wider text-sky-600 dark:text-sky-400 font-semibold" id="top-breadcrumb-num">GUIDE 01 OF 08</div>
+          <div class="text-sm font-semibold text-slate-900 dark:text-white truncate" id="top-breadcrumb-title">Architecture, Domain Modeling &amp; Local Infrastructure</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          ⏱ ~2h 15m Full Series
+        </span>
+        <button onclick="window.print()" title="Print or Save as PDF" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition">
+          ⎙ Print / Export
+        </button>
+        <button id="theme-toggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-300 border border-slate-200 dark:border-slate-700 transition" title="Toggle Dark/Light Mode">
+          ☀
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Reading Container -->
+    <main class="flex-1 w-full max-w-[900px] mx-auto px-4 sm:px-8 py-10 prose-guide">
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 01: ARCHITECTURE, DOMAIN MODELING & LOCAL INFRASTRUCTURE        -->
+      <!-- ===================================================================== -->
+      <article id="guide-1" class="guide-section">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 01</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 15 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Architecture &amp; Infra</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            Architecture, Domain Modeling &amp; Local Infrastructure
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            Welcome to the definitive production engineering series for building a fault-tolerant, distributed <strong>Order Management System (OMS)</strong>. Across 8 deep-dive guides, we will architect, code, and harden a multi-module microservices platform using <strong>Java 25 LTS</strong>, <strong>Spring Boot 4.1.3</strong>, <strong>Gradle 9.9.3</strong>, <strong>Hazelcast 5.7</strong>, and <strong>Apache Kafka 4.4 (KRaft)</strong>.
+          </p>
+        </div>
+
+        <h2>1.1 Microservices Topology &amp; Bounded Contexts</h2>
+        <p>
+          An enterprise OMS cannot rely on synchronous REST chains for order fulfillment. If <code>inventory-service</code> or <code>payment-service</code> experiences a 4-second GC pause or transient network partition, synchronous calls cascade into thread-pool exhaustion and dropped revenue. Instead, we decompose the system into four cohesive modules communicating asynchronously via <strong>Kafka 4.4</strong> and accelerated at the read/idempotency edge by <strong>Hazelcast 5.7</strong>:
+        </p>
+        <ul class="list-disc">
+          <li><strong><code>order-service</code> (API + Saga Orchestrator):</strong> Owns the Order aggregate, enforces edge idempotency via Hazelcast, persists orders + outbox events atomically in PostgreSQL, and drives the Order Fulfillment Saga.</li>
+          <li><strong><code>inventory-service</code> (Stock Reservation + Locking):</strong> Manages SKU stock levels with pessimistic/optimistic concurrency control, executes atomic reservations, and supports commutative compensating releases.</li>
+          <li><strong><code>payment-service</code> (Ledger Settlement):</strong> Processes customer charges against an append-only ledger with strict idempotency guarantees and emits settlement outcomes.</li>
+          <li><strong><code>common-events</code> (Shared Sealed Contracts):</strong> Pure Java 25 library containing <code>sealed interface OmsEvent</code>, versioned <code>EventEnvelope</code> records, and zero Spring dependencies.</li>
+        </ul>
+
+        <!-- Interactive SVG Architecture Diagram -->
+        <div class="my-8 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-5 shadow-xl">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <div class="text-xs font-mono uppercase tracking-wider text-sky-500 font-semibold">Interactive Architecture Explorer</div>
+              <div class="text-sm font-semibold text-slate-800 dark:text-slate-100">Click any service, database, Kafka topic, or Hazelcast node to inspect SLAs &amp; failure modes</div>
+            </div>
+            <span class="text-xs font-mono px-2.5 py-1 rounded bg-sky-500/10 text-sky-500 border border-sky-500/20">Click to Inspect</span>
+          </div>
+
+          <div class="w-full overflow-x-auto">
+            <svg viewBox="0 0 820 390" class="w-full min-w-[640px] h-auto select-none" id="arch-svg">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+                </marker>
+                <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+                </marker>
+              </defs>
+
+              <!-- Connection Lines -->
+              <g stroke="#475569" stroke-width="1.75" fill="none">
+                <!-- Client to Order -->
+                <path d="M 110 85 L 185 85" marker-end="url(#arrow-cyan)" stroke="#38bdf8" />
+                <!-- Order to Hazelcast -->
+                <path d="M 275 55 L 275 25 L 555 25 L 555 50" stroke-dasharray="4 3" marker-end="url(#arrow)" />
+                <!-- Order to Order DB -->
+                <path d="M 245 125 L 245 170" marker-end="url(#arrow)" />
+                <!-- Order DB Outbox to Kafka -->
+                <path d="M 315 200 L 385 200" stroke="#10b981" stroke-width="2" marker-end="url(#arrow)" />
+                <!-- Kafka to Inventory -->
+                <path d="M 495 175 L 560 140" marker-end="url(#arrow)" />
+                <!-- Kafka to Payment -->
+                <path d="M 495 225 L 560 280" marker-end="url(#arrow)" />
+                <!-- Inventory to Inv DB -->
+                <path d="M 650 140 L 705 140" marker-end="url(#arrow)" />
+                <!-- Payment to Pay DB -->
+                <path d="M 650 285 L 705 285" marker-end="url(#arrow)" />
+              </g>
+
+              <!-- Node: API Client -->
+              <g class="arch-node" data-node="client" onclick="selectArchNode('client')">
+                <rect x="15" y="55" width="95" height="60" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+                <text x="62" y="82" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="700" font-family="Inter">API Gateway</text>
+                <text x="62" y="99" text-anchor="middle" fill="#94a3b8" font-size="9.5" font-family="JetBrains Mono">REST / HTTP2</text>
+              </g>
+
+              <!-- Node: Order Service -->
+              <g class="arch-node active" data-node="order-service" onclick="selectArchNode('order-service')">
+                <rect x="185" y="55" width="155" height="70" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+                <text x="262" y="82" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="700" font-family="Inter">order-service</text>
+                <text x="262" y="99" text-anchor="middle" fill="#cbd5e1" font-size="9.5" font-family="JetBrains Mono">API + Saga Orchestrator</text>
+                <text x="262" y="114" text-anchor="middle" fill="#64748b" font-size="9" font-family="JetBrains Mono">Java 25 • Virtual Threads</text>
+              </g>
+
+              <!-- Node: Hazelcast -->
+              <g class="arch-node" data-node="hazelcast" onclick="selectArchNode('hazelcast')">
+                <rect x="465" y="50" width="180" height="58" rx="12" fill="#1e1b4b" stroke="#a78bfa" stroke-width="1.5" />
+                <text x="555" y="75" text-anchor="middle" fill="#c4b5fd" font-size="12" font-weight="700" font-family="Inter">Hazelcast 5.7 Cluster</text>
+                <text x="555" y="93" text-anchor="middle" fill="#a78bfa" font-size="9.5" font-family="JetBrains Mono">Near Cache + Idempotency</text>
+              </g>
+
+              <!-- Node: Order DB + Outbox -->
+              <g class="arch-node" data-node="order-db" onclick="selectArchNode('order-db')">
+                <rect x="175" y="170" width="140" height="65" rx="10" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />
+                <text x="245" y="196" text-anchor="middle" fill="#6ee7b7" font-size="11.5" font-weight="700" font-family="Inter">PostgreSQL 17</text>
+                <text x="245" y="213" text-anchor="middle" fill="#a7f3d0" font-size="9.5" font-family="JetBrains Mono">orders + outbox_events</text>
+              </g>
+
+              <!-- Node: Kafka 4.4 -->
+              <g class="arch-node" data-node="kafka" onclick="selectArchNode('kafka')">
+                <rect x="385" y="160" width="110" height="82" rx="12" fill="#451a03" stroke="#f59e0b" stroke-width="1.5" />
+                <text x="440" y="192" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="700" font-family="Inter">Kafka 4.4</text>
+                <text x="440" y="209" text-anchor="middle" fill="#fde68a" font-size="9.5" font-family="JetBrains Mono">KRaft Native</text>
+                <text x="440" y="225" text-anchor="middle" fill="#fbbf24" font-size="8.5" font-family="JetBrains Mono">6 Topics + DLTs</text>
+              </g>
+
+              <!-- Node: Inventory Service -->
+              <g class="arch-node" data-node="inventory-service" onclick="selectArchNode('inventory-service')">
+                <rect x="560" y="120" width="130" height="65" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+                <text x="625" y="146" text-anchor="middle" fill="#38bdf8" font-size="11.5" font-weight="700" font-family="Inter">inventory-service</text>
+                <text x="625" y="163" text-anchor="middle" fill="#cbd5e1" font-size="9" font-family="JetBrains Mono">Locking + Stock</text>
+              </g>
+
+              <!-- Node: Inventory DB -->
+              <g class="arch-node" data-node="inventory-db" onclick="selectArchNode('inventory-db')">
+                <rect x="705" y="120" width="100" height="65" rx="10" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />
+                <text x="755" y="148" text-anchor="middle" fill="#6ee7b7" font-size="11" font-weight="700" font-family="Inter">PG 17</text>
+                <text x="755" y="165" text-anchor="middle" fill="#a7f3d0" font-size="9" font-family="JetBrains Mono">inventory_db</text>
+              </g>
+
+              <!-- Node: Payment Service -->
+              <g class="arch-node" data-node="payment-service" onclick="selectArchNode('payment-service')">
+                <rect x="560" y="255" width="130" height="65" rx="12" fill="#0f172a" stroke="#f43f5e" stroke-width="1.5" />
+                <text x="625" y="281" text-anchor="middle" fill="#fb7185" font-size="11.5" font-weight="700" font-family="Inter">payment-service</text>
+                <text x="625" y="298" text-anchor="middle" fill="#cbd5e1" font-size="9" font-family="JetBrains Mono">Ledger Settlement</text>
+              </g>
+
+              <!-- Node: Payment DB -->
+              <g class="arch-node" data-node="payment-db" onclick="selectArchNode('payment-db')">
+                <rect x="705" y="255" width="100" height="65" rx="10" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />
+                <text x="755" y="283" text-anchor="middle" fill="#6ee7b7" font-size="11" font-weight="700" font-family="Inter">PG 17</text>
+                <text x="755" y="300" text-anchor="middle" fill="#a7f3d0" font-size="9" font-family="JetBrains Mono">payment_db</text>
+              </g>
+
+              <!-- Legend -->
+              <text x="15" y="365" fill="#64748b" font-size="10" font-family="JetBrains Mono">Solid Line: Synchronous / Durable Write   |   Dashed: Sub-ms Cache Lookup   |   Green: Outbox Relay / CDC</text>
+            </svg>
+          </div>
+
+          <!-- Inspector Panel -->
+          <div id="arch-inspector" class="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-[#090d16] border border-slate-200 dark:border-slate-800">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <h2>1.2 2026 Verified Tech Stack Matrix</h2>
+        <div class="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-slate-100 dark:bg-[#111827] text-slate-700 dark:text-slate-300 font-mono text-xs uppercase">
+              <tr>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Component</th>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Version</th>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Key Production Capabilities</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#0d121f]">
+              <tr>
+                <td class="p-3 font-semibold text-slate-900 dark:text-white">Java LTS</td>
+                <td class="p-3 font-mono text-sky-600 dark:text-sky-400">25 LTS</td>
+                <td class="p-3 text-slate-600 dark:text-slate-300">Virtual Threads (JEP 491 pin-free synchronized), Scoped Values, Compact Object Headers (<code>-XX:+UseCompactObjectHeaders</code>).</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-slate-900 dark:text-white">Spring Boot</td>
+                <td class="p-3 font-mono text-sky-600 dark:text-sky-400">4.1.3</td>
+                <td class="p-3 text-slate-600 dark:text-slate-300">Spring Framework 7, Jackson 3 (<code>tools.jackson</code>), Hibernate 7.1, JSpecify nullability, modular starters.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-slate-900 dark:text-white">Gradle</td>
+                <td class="p-3 font-mono text-sky-600 dark:text-sky-400">9.9.3</td>
+                <td class="p-3 text-slate-600 dark:text-slate-300">Kotlin DSL, Version Catalogs, Configuration Cache enabled by default, Java 25 Toolchains.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-slate-900 dark:text-white">Hazelcast</td>
+                <td class="p-3 font-mono text-violet-600 dark:text-violet-400">5.7.0</td>
+                <td class="p-3 text-slate-600 dark:text-slate-300">Client-Server topology, Compact Serialization, L1 Near Cache, atomic <code>IMap</code> &amp; <code>EntryProcessor</code>.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-slate-900 dark:text-white">Apache Kafka</td>
+                <td class="p-3 font-mono text-amber-600 dark:text-amber-400">4.4.0</td>
+                <td class="p-3 text-slate-600 dark:text-slate-300">100% KRaft native (zero ZooKeeper), KIP-848 next-gen consumer rebalance protocol, idempotent producers.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-slate-900 dark:text-white">PostgreSQL &amp; Lombok</td>
+                <td class="p-3 font-mono text-emerald-600 dark:text-emerald-400">PG 17 / 1.18.38</td>
+                <td class="p-3 text-slate-600 dark:text-slate-300">JSONB, <code>FOR UPDATE SKIP LOCKED</code>, logical replication for Debezium; Lombok compile-time boilerplate elimination.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>1.3 Local Production-Grade Infrastructure (Docker Compose)</h2>
+        <p>
+          Every microservice owns its own isolated PostgreSQL database (strictly enforcing the <em>Database-per-Service</em> pattern). Below is the complete <code>docker-compose.yml</code> launching PostgreSQL 17 (with <code>wal_level=logical</code> enabled for Debezium CDC), Kafka 4.4 in KRaft mode, Kafka UI, Hazelcast 5.7 + Management Center, and Debezium Connect.
+        </p>
+
+        <div class="code-shell" data-lang="yaml" data-file="docker-compose.yml">
+<pre class="code-pre">services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: oms-postgres
+    environment:
+      POSTGRES_USER: oms_admin
+      POSTGRES_PASSWORD: oms_secret_password
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_replication_slots=10"
+      - "-c"
+      - "max_wal_senders=10"
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./infra/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oms_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:4.4.0
+    container_name: oms-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:29092,CONTROLLER://:29093,EXTERNAL://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: oms-kafka-ui
+    depends_on: [kafka]
+    ports:
+      - "8089:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: oms-local-kraft
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  hazelcast:
+    image: hazelcast/hazelcast:5.7.0
+    container_name: oms-hazelcast
+    ports:
+      - "5701:5701"
+    environment:
+      HZ_CLUSTERNAME: oms-cluster
+      JAVA_OPTS: "-Xms512m -Xmx512m"
+
+  hazelcast-mc:
+    image: hazelcast/management-center:5.7.0
+    container_name: oms-hazelcast-mc
+    depends_on: [hazelcast]
+    ports:
+      - "8090:8080"
+    environment:
+      MC_DEFAULT_CLUSTER: oms-cluster
+      MC_DEFAULT_CLUSTER_MEMBERS: hazelcast
+
+  debezium-connect:
+    image: quay.io/debezium/connect:3.0
+    container_name: oms-debezium
+    depends_on: [kafka, postgres]
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: oms_connect_configs
+      OFFSET_STORAGE_TOPIC: oms_connect_offsets
+      STATUS_STORAGE_TOPIC: oms_connect_statuses</pre>
+        </div>
+
+        <div class="code-shell" data-lang="sql" data-file="infra/init-dbs.sql">
+<pre class="code-pre">-- Strict Database-per-Service isolation on a single local PostgreSQL 17 instance
+CREATE DATABASE order_db;
+CREATE DATABASE inventory_db;
+CREATE DATABASE payment_db;</pre>
+        </div>
+      </article>
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 02: MULTI-MODULE GRADLE 9 BUILD ENGINEERING                     -->
+      <!-- ===================================================================== -->
+      <article id="guide-2" class="guide-section hidden">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 02</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 15 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-violet-500/15 text-violet-600 dark:text-violet-400">Gradle 9 &amp; Boot 4</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            Multi-Module Gradle 9 Build Engineering
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            Legacy Gradle builds suffer from copy-pasted <code>subprojects {}</code> blocks that break Gradle's Configuration Cache and cause version drift. In Gradle 9.9.3, the gold standard is a <strong>Version Catalog</strong> (<code>libs.versions.toml</code>) paired with <strong>Convention Plugins</strong> inside <code>build-logic</code>.
+          </p>
+        </div>
+
+        <h2>2.1 Monorepo Directory Structure</h2>
+        <div class="code-shell" data-lang="bash" data-file="Project Layout">
+<pre class="code-pre">enterprise-oms/
+├── build-logic/
+│   ├── settings.gradle.kts
+│   ├── build.gradle.kts
+│   └── src/main/kotlin/
+│       └── oms.spring-service.gradle.kts   # Shared Java 25 + Boot 4 + Lombok convention
+├── gradle/
+│   └── libs.versions.toml                  # Single source of truth for all versions
+├── common-events/                          # Pure Java 25 sealed event contracts
+│   └── build.gradle.kts
+├── order-service/                          # Port 8081: API + Saga Orchestrator + Outbox
+│   └── build.gradle.kts
+├── inventory-service/                      # Port 8082: Stock Locking + Compensation
+│   └── build.gradle.kts
+├── payment-service/                        # Port 8083: Ledger Settlement
+│   └── build.gradle.kts
+├── docker-compose.yml
+└── settings.gradle.kts</pre>
+        </div>
+
+        <h2>2.2 Root Settings &amp; Version Catalog</h2>
+        <div class="code-shell" data-lang="kotlin" data-file="settings.gradle.kts">
+<pre class="code-pre">pluginManagement {
+    includeBuild("build-logic")
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+    }
+}
+
+rootProject.name = "enterprise-oms"
+
+include(
+    "common-events",
+    "order-service",
+    "inventory-service",
+    "payment-service"
+)</pre>
+        </div>
+
+        <div class="code-shell" data-lang="yaml" data-file="gradle/libs.versions.toml">
+<pre class="code-pre">[versions]
+java = "25"
+spring-boot = "4.1.3"
+spring-dependency-management = "1.1.7"
+hazelcast = "5.7.0"
+lombok = "1.18.38"
+testcontainers = "1.20.4"
+awaitility = "4.2.2"
+
+[libraries]
+# Spring Boot 4.1.3 Modular Starters
+spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
+spring-boot-starter-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-opentelemetry = { module = "org.springframework.boot:spring-boot-starter-opentelemetry" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+
+# Infrastructure & Data
+postgresql = { module = "org.postgresql:postgresql" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
+hazelcast-client = { module = "com.hazelcast:hazelcast", version.ref = "hazelcast" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+
+# Testing
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }</pre>
+        </div>
+
+        <!-- Spring Boot 4 Breaking Changes Callout -->
+        <div class="my-6 p-5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <div class="flex items-center gap-2 font-mono text-xs uppercase tracking-wider font-bold text-amber-600 dark:text-amber-400 mb-2">
+            ⚠ Spring Boot 4.1 Breaking Changes Checklist
+          </div>
+          <ul class="list-disc text-sm space-y-1.5 mb-0 text-slate-700 dark:text-slate-300">
+            <li><strong>Jackson 3 Package Rename:</strong> <code>com.fasterxml.jackson.*</code> is replaced by <code>tools.jackson.databind.json.JsonMapper</code> (immutable builder pattern, no checked <code>JsonProcessingException</code>).</li>
+            <li><strong>Explicit Flyway Starter:</strong> Adding only <code>flyway-core</code> no longer auto-configures migrations; you <em>must</em> include <code>spring-boot-starter-flyway</code> or migrations silently skip!</li>
+            <li><strong>Test Mocking:</strong> <code>@MockBean</code> and <code>@SpyBean</code> are removed; use Spring Framework 7's <code>@MockitoBean</code> and <code>@MockitoSpyBean</code>.</li>
+            <li><strong>JSpecify Nullability:</strong> Spring Framework 7 adopts <code>org.jspecify.annotations.Nullable</code> and <code>@NullMarked</code> across core APIs.</li>
+          </ul>
+        </div>
+
+        <h2>2.3 Convention Plugin &amp; Clean Service Build File</h2>
+        <div class="code-shell" data-lang="kotlin" data-file="build-logic/src/main/kotlin/oms.spring-service.gradle.kts">
+<pre class="code-pre">plugins {
+    java
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
+tasks.withType&lt;JavaCompile&gt;().configureEach {
+    options.encoding = "UTF-8"
+    options.compilerArgs.addAll(listOf("-parameters", "-Xlint:unchecked"))
+}
+
+tasks.withType&lt;Test&gt;().configureEach {
+    useJUnitPlatform()
+    // Java 25 Compact Object Headers reduce heap footprint by 10-20%
+    jvmArgs("-XX:+UseCompactObjectHeaders", "-XX:+UseZGC")
+}
+
+val libs = extensions.getByType&lt;VersionCatalogsExtension&gt;().named("libs")
+
+dependencies {
+    // Proper Lombok wiring for both main and test source sets
+    compileOnly(libs.findLibrary("lombok").get())
+    annotationProcessor(libs.findLibrary("lombok").get())
+    testCompileOnly(libs.findLibrary("lombok").get())
+    testAnnotationProcessor(libs.findLibrary("lombok").get())
+
+    implementation(libs.findLibrary("spring-boot-starter-actuator").get())
+    implementation(libs.findLibrary("spring-boot-starter-opentelemetry").get())
+
+    testImplementation(libs.findLibrary("spring-boot-starter-test").get())
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}</pre>
+        </div>
+
+        <div class="code-shell" data-lang="kotlin" data-file="order-service/build.gradle.kts">
+<pre class="code-pre">plugins {
+    id("oms.spring-service")
+}
+
+dependencies {
+    implementation(project(":common-events"))
+
+    implementation(libs.spring.boot.starter.webmvc)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.flyway)
+    implementation(libs.spring.boot.starter.kafka)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.hazelcast.client)
+
+    runtimeOnly(libs.postgresql)
+    runtimeOnly(libs.flyway.postgresql)
+
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation(libs.awaitility)
+}</pre>
+        </div>
+      </article>
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 03: DOMAIN LAYER, LOMBOK MASTERY & DATABASE PERSISTENCE         -->
+      <!-- ===================================================================== -->
+      <article id="guide-3" class="guide-section hidden">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 03</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 20 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">JPA, Lombok &amp; Flyway</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            Domain Layer, Lombok Mastery &amp; Database Persistence
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            Lombok and Hibernate 7 are a powerful pair—or a production outage waiting to happen. Misusing <code>@Data</code> on JPA entities causes <code>LazyInitializationException</code> in logs, triggers N+1 queries inside <code>toString()</code>, and corrupts <code>HashSet</code> collections when database-generated IDs mutate.
+          </p>
+        </div>
+
+        <h2>3.1 Lombok + JPA: Anti-Patterns vs. Production</h2>
+        <!-- Tabbed Code Panel -->
+        <div class="my-6 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-[#111827]" data-tabs="lombok-compare">
+          <div class="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0d121f]">
+            <button onclick="switchTab('lombok-compare', 'bad')" data-tab-btn="bad" class="tab-btn px-4 py-2.5 text-xs font-mono font-semibold border-b-2 border-rose-500 text-rose-500 bg-rose-500/5">
+              ❌ Anti-Pattern (@Data on Entity)
+            </button>
+            <button onclick="switchTab('lombok-compare', 'good')" data-tab-btn="good" class="tab-btn px-4 py-2.5 text-xs font-mono font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-300">
+              ✅ Production-Grade Lombok + JPA
+            </button>
+          </div>
+          <div data-tab-panel="bad" class="p-4">
+            <p class="text-sm text-rose-500 dark:text-rose-400 mb-3 font-medium">
+              Why this breaks in production: <code>@Data</code> generates <code>equals/hashCode</code> over all fields (including lazy <code>@OneToMany</code> collections and mutable <code>@Id</code>) and a <code>toString()</code> that forces lazy loading outside a transaction.
+            </p>
+            <div class="code-shell !my-0" data-lang="java" data-file="BadOrderEntity.java">
+<pre class="code-pre">@Data // ❌ NEVER use @Data on @Entity!
+@Entity
+public class BadOrderEntity {
+    @Id @GeneratedValue
+    private UUID id; // ❌ hashCode() changes after persist() -> lost in HashSet!
+
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    private List&lt;OrderLineItemEntity&gt; items; // ❌ toString() triggers LazyInitializationException!
+}</pre>
+            </div>
+          </div>
+          <div data-tab-panel="good" class="p-4 hidden">
+            <p class="text-sm text-emerald-600 dark:text-emerald-400 mb-3 font-medium">
+              Production Pattern: Use <code>@Getter</code>, <code>@NoArgsConstructor(access = AccessLevel.PROTECTED)</code>, explicit <code>@ToString(onlyExplicitlyIncluded = true)</code>, and Hibernate-proxy-safe <code>equals/hashCode</code> using a constant class hashCode.
+            </p>
+            <div class="code-shell !my-0" data-lang="java" data-file="OrderEntity.java">
+<pre class="code-pre">@Entity
+@Table(name = "orders")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(onlyExplicitlyIncluded = true)
+public class OrderEntity {
+    @Id
+    @ToString.Include
+    private UUID id; // Assigned in Java (UUIDv7/v4) before persist -> stable identity!
+
+    @Version
+    private Long version;
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class&lt;?&gt; oEffective = o instanceof HibernateProxy p ? p.getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class&lt;?&gt; thisEffective = this instanceof HibernateProxy p ? p.getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffective != oEffective) return false;
+        OrderEntity that = (OrderEntity) o;
+        return getId() != null &amp;&amp; Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy p
+            ? p.getHibernateLazyInitializer().getPersistentClass().hashCode()
+            : getClass().hashCode();
+    }
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <h2>3.2 Flyway SQL Migrations (Money, UUIDs &amp; Partial Indexes)</h2>
+        <p>
+          Never use <code>DOUBLE</code> or <code>FLOAT</code> for financial amounts—IEEE 754 binary floating-point cannot represent <code>0.10</code> accurately. We use <code>NUMERIC(19,4)</code>, UUID primary keys, and a PostgreSQL <strong>partial index</strong> on <code>outbox_events</code> where <code>status = 'PENDING'</code> so the relay scans only unprocessed rows in O(log n) time.
+        </p>
+
+        <div class="code-shell" data-lang="sql" data-file="order-service/src/main/resources/db/migration/V1__create_orders_schema.sql">
+<pre class="code-pre">CREATE TABLE orders (
+    id              UUID PRIMARY KEY,
+    customer_id     UUID NOT NULL,
+    idempotency_key VARCHAR(128) NOT NULL UNIQUE,
+    status          VARCHAR(32) NOT NULL,
+    total_amount    NUMERIC(19, 4) NOT NULL CHECK (total_amount &gt;= 0),
+    currency        CHAR(3) NOT NULL DEFAULT 'USD',
+    failure_reason  TEXT,
+    version         BIGINT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE order_line_items (
+    id          UUID PRIMARY KEY,
+    order_id    UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    sku         VARCHAR(64) NOT NULL,
+    quantity    INT NOT NULL CHECK (quantity &gt; 0),
+    unit_price  NUMERIC(19, 4) NOT NULL CHECK (unit_price &gt;= 0)
+);
+
+CREATE INDEX idx_orders_customer_created ON orders (customer_id, created_at DESC);
+CREATE INDEX idx_line_items_order_id ON order_line_items (order_id);</pre>
+        </div>
+
+        <div class="code-shell" data-lang="sql" data-file="order-service/src/main/resources/db/migration/V2__create_outbox_and_processed_events.sql">
+<pre class="code-pre">CREATE TABLE outbox_events (
+    id             UUID PRIMARY KEY,
+    aggregate_type VARCHAR(64) NOT NULL,
+    aggregate_id   VARCHAR(64) NOT NULL,
+    event_type     VARCHAR(128) NOT NULL,
+    topic          VARCHAR(128) NOT NULL,
+    payload        JSONB NOT NULL,
+    trace_parent   VARCHAR(128),
+    status         VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    published_at   TIMESTAMPTZ
+);
+
+-- Partial index keeps outbox polling ultra-fast even with millions of historical rows
+CREATE INDEX idx_outbox_pending ON outbox_events (created_at ASC)
+    WHERE status = 'PENDING';
+
+CREATE TABLE processed_events (
+    event_id     UUID PRIMARY KEY,
+    consumer_grp VARCHAR(128) NOT NULL,
+    processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);</pre>
+        </div>
+
+        <h2>3.3 Domain Entities, State Machine &amp; Java 25 Record DTOs</h2>
+        <div class="code-shell" data-lang="java" data-file="order-service/src/main/java/com/oms/order/domain/OrderStatus.java">
+<pre class="code-pre">package com.oms.order.domain;
+
+import java.util.EnumSet;
+import java.util.Set;
+
+public enum OrderStatus {
+    PENDING,
+    STOCK_RESERVED,
+    PAID,
+    COMPLETED,
+    CANCELLING,
+    CANCELLED;
+
+    public boolean canTransitionTo(OrderStatus next) {
+        return switch (this) {
+            case PENDING        -> EnumSet.of(STOCK_RESERVED, CANCELLED).contains(next);
+            case STOCK_RESERVED -> EnumSet.of(PAID, CANCELLING).contains(next);
+            case PAID           -> EnumSet.of(COMPLETED, CANCELLING).contains(next);
+            case CANCELLING     -> next == CANCELLED;
+            case COMPLETED, CANCELLED -> false;
+        };
+    }
+}</pre>
+        </div>
+
+        <div class="code-shell" data-lang="java" data-file="order-service/src/main/java/com/oms/order/api/OrderDtos.java">
+<pre class="code-pre">package com.oms.order.api;
+
+import com.oms.order.domain.OrderStatus;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+public final class OrderDtos {
+    public record CreateOrderRequest(
+        @NotNull UUID customerId,
+        @NotBlank @Size(max = 128) String idempotencyKey,
+        @NotEmpty List&lt;@Valid LineItemRequest&gt; items
+    ) {}
+
+    public record LineItemRequest(
+        @NotBlank String sku,
+        @Positive int quantity,
+        @NotNull @DecimalMin("0.01") BigDecimal unitPrice
+    ) {}
+
+    public record OrderResponse(
+        UUID orderId,
+        UUID customerId,
+        OrderStatus status,
+        BigDecimal totalAmount,
+        String currency,
+        Instant createdAt
+    ) {}
+}</pre>
+        </div>
+
+        <h2>3.4 Production <code>application.yml</code> (HikariCP, OSIV Off &amp; Virtual Threads)</h2>
+        <p>
+          Two silent throughput killers in Spring Boot are <strong>Open-Session-In-View (OSIV)</strong>—which holds a database connection open during JSON serialization—and oversized HikariCP pools. Following PostgreSQL's optimal formula <code>connections = (cpu_cores * 2) + effective_spindle_count</code>, a 4-vCPU container should use a pool of ~10–15 connections, never 100.
+        </p>
+
+        <div class="code-shell" data-lang="yaml" data-file="order-service/src/main/resources/application.yml">
+<pre class="code-pre">spring:
+  application:
+    name: order-service
+  threads:
+    virtual:
+      enabled: true # Java 25 Virtual Threads for Tomcat + @Async + Kafka listeners
+  datasource:
+    url: jdbc:postgresql://localhost:5432/order_db
+    username: oms_admin
+    password: oms_secret_password
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      connection-timeout: 3000
+      leak-detection-threshold: 10000
+  jpa:
+    open-in-view: false # CRITICAL: Prevents holding DB connections during HTTP I/O
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+        query.fail_on_pagination_over_collection_fetch: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: false</pre>
+        </div>
+      </article>
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 04: TRANSACTIONS, CONCURRENCY & LOCKING DEEP DIVE               -->
+      <!-- ===================================================================== -->
+      <article id="guide-4" class="guide-section hidden">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 04</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 15 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-rose-500/15 text-rose-600 dark:text-rose-400">Concurrency &amp; ACID</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            Transactions, Concurrency &amp; Locking Deep Dive
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            During a flash sale, 500 concurrent requests may attempt to reserve the last 3 units of a SKU. Without disciplined transaction boundaries and row-level locking, your OMS will oversell inventory or exhaust its HikariCP connection pool in seconds.
+          </p>
+        </div>
+
+        <h2>4.1 Spring <code>@Transactional</code> Proxy Mechanics</h2>
+        <ul class="list-disc">
+          <li><strong>The Self-Invocation Trap:</strong> Spring creates a CGLIB proxy around your bean. Calling <code>this.innerTransactionalMethod()</code> from another method in the <em>same</em> class bypasses the proxy completely—no transaction is started! Always extract to a separate collaborator bean.</li>
+          <li><strong>Rollback Rules:</strong> By default, Spring rolls back on <code>RuntimeException</code> and <code>Error</code>, but <em>commits</em> on checked exceptions. Use <code>@Transactional(rollbackFor = Exception.class)</code> when checked exceptions represent business failures.</li>
+          <li><strong><code>@Transactional(readOnly = true)</code>:</strong> Sets Hibernate's flush mode to <code>MANUAL</code>, skips dirty-checking snapshots (saving significant heap/CPU), and hints JDBC drivers to route to read replicas.</li>
+        </ul>
+
+        <h3>Propagation Matrix</h3>
+        <div class="overflow-x-auto my-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-left text-xs sm:text-sm border-collapse">
+            <thead class="bg-slate-100 dark:bg-[#111827] font-mono text-slate-700 dark:text-slate-300">
+              <tr>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Propagation</th>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Behavior</th>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">OMS Use Case</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#0d121f]">
+              <tr><td class="p-3 font-mono text-sky-500">REQUIRED (Default)</td><td class="p-3">Joins existing TX or starts a new one.</td><td class="p-3">Standard order + outbox atomic write.</td></tr>
+              <tr><td class="p-3 font-mono text-amber-500">REQUIRES_NEW</td><td class="p-3">Suspends outer TX; acquires a <strong>2nd DB connection</strong>.</td><td class="p-3">Audit logs that must commit even if outer TX rolls back (watch pool exhaustion!).</td></tr>
+              <tr><td class="p-3 font-mono text-violet-500">MANDATORY</td><td class="p-3">Throws exception if no active TX exists.</td><td class="p-3"><code>OutboxService.append()</code>—enforces caller atomic boundary.</td></tr>
+              <tr><td class="p-3 font-mono text-emerald-500">SUPPORTS</td><td class="p-3">Runs in TX if present, else non-transactional.</td><td class="p-3">Read-only lookup utilities.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>4.2 Interactive PostgreSQL Isolation Levels Matrix</h2>
+        <div class="my-6 p-5 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800">
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="selectIsolation('rc')" id="iso-btn-rc" class="iso-btn px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-sky-500 text-white">READ COMMITTED (PG Default)</button>
+            <button onclick="selectIsolation('rr')" id="iso-btn-rr" class="iso-btn px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">REPEATABLE READ</button>
+            <button onclick="selectIsolation('ser')" id="iso-btn-ser" class="iso-btn px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">SERIALIZABLE (SSI)</button>
+          </div>
+          <div id="iso-details" class="text-sm"></div>
+        </div>
+
+        <h2>4.3 Preventing Overselling: Optimistic vs. Pessimistic Locking</h2>
+        <p>
+          In <code>inventory-service</code>, we implement <strong>Optimistic Locking</strong> (<code>@Version</code>) for normal traffic (zero lock contention) and <strong>Pessimistic Locking</strong> (<code>SELECT ... FOR UPDATE</code> with a 2-second timeout) for hot-SKU flash sales where optimistic retries would thrash the CPU.
+        </p>
+
+        <div class="code-shell" data-lang="java" data-file="inventory-service/src/main/java/com/oms/inventory/InventoryReservationService.java">
+<pre class="code-pre">package com.oms.inventory;
+
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.Optional;
+
+public interface InventoryRepository extends JpaRepository&lt;InventoryItemEntity, String&gt; {
+
+    // Pessimistic row-level exclusive lock with 2s timeout to prevent deadlock stalls
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000"))
+    @Query("SELECT i FROM InventoryItemEntity i WHERE i.sku = :sku")
+    Optional&lt;InventoryItemEntity&gt; findBySkuForUpdate(String sku);
+}
+
+@Service
+@RequiredArgsConstructor
+public class InventoryReservationService {
+
+    private final InventoryRepository inventoryRepository;
+
+    // Strategy A: Pessimistic Lock (Best for high-contention flash-sale SKUs)
+    @Transactional
+    public void reserveStockPessimistic(String sku, int quantity) {
+        InventoryItemEntity item = inventoryRepository.findBySkuForUpdate(sku)
+            .orElseThrow(() -> new IllegalArgumentException("Unknown SKU: " + sku));
+
+        if (item.getAvailableQty() &lt; quantity) {
+            throw new InsufficientStockException(sku, item.getAvailableQty(), quantity);
+        }
+        item.reserve(quantity); // Mutates managed entity -> flushed on commit
+    }
+
+    // Strategy B: Optimistic Lock with bounded retry (Best for low-contention catalog)
+    public void reserveStockOptimistic(String sku, int quantity) {
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt &lt;= maxAttempts; attempt++) {
+            try {
+                attemptOptimisticReserve(sku, quantity);
+                return;
+            } catch (ObjectOptimisticLockingFailureException ex) {
+                if (attempt == maxAttempts) throw ex;
+            }
+        }
+    }
+
+    @Transactional
+    protected void attemptOptimisticReserve(String sku, int quantity) {
+        InventoryItemEntity item = inventoryRepository.findById(sku)
+            .orElseThrow(() -> new IllegalArgumentException("Unknown SKU: " + sku));
+        item.reserve(quantity); // Hibernate checks: UPDATE ... WHERE sku=? AND version=?
+    }
+}</pre>
+        </div>
+
+        <!-- Critical Architecture Warning -->
+        <div class="my-6 p-5 rounded-xl bg-rose-500/10 border border-rose-500/30">
+          <div class="font-mono text-xs uppercase tracking-wider font-bold text-rose-500 mb-2">
+            🔥 Concurrency Warning: Never Perform Network I/O Inside @Transactional
+          </div>
+          <p class="text-sm text-slate-700 dark:text-slate-300 mb-2">
+            Suppose your HikariCP pool has <strong>15 connections</strong>. If a <code>@Transactional</code> method calls a payment gateway HTTP API taking <strong>300ms</strong>, your maximum theoretical throughput collapses to <code>15 / 0.3s = 50 req/sec</code>—even if your CPU is 95% idle!
+          </p>
+          <p class="text-sm text-slate-700 dark:text-slate-300 mb-0">
+            <strong>Rule:</strong> Keep database transactions under <code>15ms</code>. Perform all Kafka publishing and external HTTP calls <em>outside</em> the transaction (or via the Transactional Outbox in Guide 07).
+          </p>
+        </div>
+      </article>
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 05: HAZELCAST 5.7 DISTRIBUTED CACHING, NEAR CACHE & IDEMPOTENCY -->
+      <!-- ===================================================================== -->
+      <article id="guide-5" class="guide-section hidden">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 05</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 20 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-violet-500/15 text-violet-600 dark:text-violet-400">Hazelcast 5.7</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            Hazelcast 5.7 Distributed Caching, Near Cache &amp; Idempotency
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            In production microservices, we run Hazelcast 5.7 in <strong>Client-Server topology</strong>—never Embedded. Why? When Kubernetes autoscales <code>order-service</code> pods up or down, an embedded Hazelcast cluster would trigger constant partition migrations and GC pauses. Decoupling the Hazelcast data grid lets microservices scale elastically in seconds.
+          </p>
+        </div>
+
+        <h2>5.1 Hazelcast 271-Partition Distribution &amp; L1 Near Cache</h2>
+        <div class="my-6 p-5 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800">
+          <svg viewBox="0 0 780 230" class="w-full h-auto">
+            <!-- Order Service Pod + Near Cache -->
+            <rect x="15" y="25" width="215" height="175" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+            <text x="122" y="50" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="700" font-family="Inter">order-service Pod (JVM)</text>
+            <rect x="32" y="70" width="180" height="55" rx="8" fill="#1e1b4b" stroke="#a78bfa" stroke-width="1.5" />
+            <text x="122" y="93" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="700" font-family="Inter">L1 Near Cache (In-Heap)</text>
+            <text x="122" y="110" text-anchor="middle" fill="#94a3b8" font-size="9.5" font-family="JetBrains Mono">~0.01ms Hit • InvalidateOnChange</text>
+            <rect x="32" y="138" width="180" height="44" rx="8" fill="#1e293b" stroke="#475569" />
+            <text x="122" y="164" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono">Hazelcast Smart Client</text>
+
+            <!-- Smart Routing Arrows -->
+            <path d="M 230 155 L 330 70" stroke="#38bdf8" stroke-width="1.75" stroke-dasharray="4 3" fill="none" />
+            <path d="M 230 160 L 330 160" stroke="#10b981" stroke-width="1.75" fill="none" />
+            <text x="280" y="148" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">hash(key) % 271</text>
+
+            <!-- Cluster Box -->
+            <rect x="330" y="15" width="435" height="200" rx="14" fill="#090d16" stroke="#334155" stroke-width="1.5" />
+            <text x="547" y="38" text-anchor="middle" fill="#f8fafc" font-size="11.5" font-weight="700" font-family="Inter">Hazelcast 5.7 Cluster (271 Virtual Partitions)</text>
+
+            <!-- Member 1 -->
+            <rect x="350" y="55" width="190" height="140" rx="10" fill="#111827" stroke="#a78bfa" stroke-width="1.5" />
+            <text x="445" y="78" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="700">Member 1</text>
+            <rect x="365" y="92" width="160" height="36" rx="6" fill="#064e3b" stroke="#10b981" />
+            <text x="445" y="114" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="JetBrains Mono">Primary: P0..P135</text>
+            <rect x="365" y="140" width="160" height="36" rx="6" fill="#1e293b" stroke="#64748b" />
+            <text x="445" y="162" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">Backup: P136..P270</text>
+
+            <!-- Member 2 -->
+            <rect x="560" y="55" width="190" height="140" rx="10" fill="#111827" stroke="#a78bfa" stroke-width="1.5" />
+            <text x="655" y="78" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="700">Member 2</text>
+            <rect x="575" y="92" width="160" height="36" rx="6" fill="#064e3b" stroke="#10b981" />
+            <text x="655" y="114" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="JetBrains Mono">Primary: P136..P270</text>
+            <rect x="575" y="140" width="160" height="36" rx="6" fill="#1e293b" stroke="#64748b" />
+            <text x="655" y="162" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">Backup: P0..P135</text>
+          </svg>
+        </div>
+
+        <h2>5.2 Smart Client Config &amp; Zero-Reflection Compact Serialization</h2>
+        <p>
+          Standard Java <code>Serializable</code> is slow, bloated, and brittle across deployments. Hazelcast's <strong>Compact Serialization</strong> is zero-reflection, schema-evolved, and ~5x faster and smaller on the wire.
+        </p>
+
+        <div class="code-shell" data-lang="java" data-file="order-service/src/main/java/com/oms/order/cache/OrderSnapshotCompactSerializer.java">
+<pre class="code-pre">package com.oms.order.cache;
+
+import com.hazelcast.nio.serialization.compact.*;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+public record OrderSnapshot(UUID orderId, UUID customerId, String status, BigDecimal totalAmount) {}
+
+public class OrderSnapshotCompactSerializer implements CompactSerializer&lt;OrderSnapshot&gt; {
+    @Override
+    public OrderSnapshot read(CompactReader reader) {
+        return new OrderSnapshot(
+            UUID.fromString(reader.readString("orderId")),
+            UUID.fromString(reader.readString("customerId")),
+            reader.readString("status"),
+            reader.readDecimal("totalAmount")
+        );
+    }
+
+    @Override
+    public void write(CompactWriter writer, OrderSnapshot snapshot) {
+        writer.writeString("orderId", snapshot.orderId().toString());
+        writer.writeString("customerId", snapshot.customerId().toString());
+        writer.writeString("status", snapshot.status());
+        writer.writeDecimal("totalAmount", snapshot.totalAmount());
+    }
+
+    @Override
+    public String getTypeName() { return "oms.OrderSnapshot"; }
+
+    @Override
+    public Class&lt;OrderSnapshot&gt; getCompactClass() { return OrderSnapshot.class; }
+}</pre>
+        </div>
+
+        <div class="code-shell" data-lang="java" data-file="order-service/src/main/java/com/oms/order/cache/HazelcastClientConfig.java">
+<pre class="code-pre">package com.oms.order.cache;
+
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.config.*;
+import com.hazelcast.core.HazelcastInstance;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class HazelcastClientConfig {
+
+    @Bean(destroyMethod = "shutdown")
+    public HazelcastInstance hazelcastInstance(
+            @Value("${oms.hazelcast.cluster-name:oms-cluster}") String clusterName,
+            @Value("${oms.hazelcast.addresses:localhost:5701}") String[] addresses) {
+
+        ClientConfig config = new ClientConfig();
+        config.setClusterName(clusterName);
+        config.getNetworkConfig()
+              .addAddress(addresses)
+              .setSmartRouting(true); // Routes directly to partition owner
+
+        config.getConnectionStrategyConfig()
+              .setReconnectMode(ReconnectMode.ASYNC);
+
+        // Register Compact Serializer
+        config.getSerializationConfig()
+              .getCompactSerializationConfig()
+              .addSerializer(new OrderSnapshotCompactSerializer());
+
+        // L1 Near Cache for hot read-mostly order snapshots
+        NearCacheConfig nearCache = new NearCacheConfig("oms-orders")
+            .setInMemoryFormat(InMemoryFormat.OBJECT)
+            .setInvalidateOnChange(true) // Cluster pushes invalidation on mutation
+            .setTimeToLiveSeconds(300)
+            .setEvictionConfig(new EvictionConfig()
+                .setSize(10_000)
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                .setEvictionPolicy(EvictionPolicy.LRU));
+
+        config.addNearCacheConfig(nearCache);
+        return HazelcastClient.newHazelcastClient(config);
+    }
+}</pre>
+        </div>
+
+        <h2>5.3 Edge Idempotency Guard &amp; Atomic EntryProcessor</h2>
+        <div class="code-shell" data-lang="java" data-file="order-service/src/main/java/com/oms/order/cache/DistributedIdempotencyGuard.java">
+<pre class="code-pre">package com.oms.order.cache;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
+import org.springframework.stereotype.Component;
+import java.util.concurrent.TimeUnit;
+
+@Component
+public class DistributedIdempotencyGuard {
+
+    private final IMap&lt;String, String&gt; idempotencyMap;
+
+    public DistributedIdempotencyGuard(HazelcastInstance hazelcast) {
+        this.idempotencyMap = hazelcast.getMap("oms-idempotency-keys");
+    }
+
+    /**
+     * Atomically claims an idempotency key in sub-millisecond time.
+     * Returns true if this request is the first to claim the key.
+     */
+    public boolean tryClaim(String idempotencyKey) {
+        String existing = idempotencyMap.putIfAbsent(idempotencyKey, "IN_PROGRESS", 24, TimeUnit.HOURS);
+        return existing == null;
+    }
+
+    public void markCompleted(String idempotencyKey, String orderId) {
+        idempotencyMap.set(idempotencyKey, orderId, 24, TimeUnit.HOURS);
+    }
+}</pre>
+        </div>
+
+        <div class="my-6 p-5 rounded-xl bg-violet-500/10 border border-violet-500/30">
+          <div class="font-mono text-xs uppercase tracking-wider font-bold text-violet-500 mb-2">
+            🛡 Production Resilience: Split-Brain, Eviction &amp; Cache Stampede
+          </div>
+          <ul class="list-disc text-sm space-y-1.5 mb-0 text-slate-700 dark:text-slate-300">
+            <li><strong>Split-Brain Protection:</strong> Configure a minimum quorum (e.g., <code>minimum-cluster-size: 2</code> on a 3-node cluster) so an isolated minority node refuses writes rather than diverging.</li>
+            <li><strong>Cache Stampede Mitigation:</strong> When a popular key expires, use <code>IMap.executeOnKey(key, entryProcessor)</code> or single-flight locking so only <em>one</em> thread queries PostgreSQL while others await the refreshed entry.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 06: EVENT-DRIVEN BACKBONE WITH APACHE KAFKA 4.4                 -->
+      <!-- ===================================================================== -->
+      <article id="guide-6" class="guide-section hidden">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 06</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 20 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400">Kafka 4.4 KRaft</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            Event-Driven Backbone with Apache Kafka 4.4
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            Apache Kafka 4.4 runs 100% natively on <strong>KRaft</strong> (zero ZooKeeper) and introduces the <strong>KIP-848</strong> next-generation consumer rebalance protocol, eliminating stop-the-world rebalance storms when pods deploy.
+          </p>
+        </div>
+
+        <h2>6.1 Topic Design &amp; Partition Ordering</h2>
+        <p>
+          Kafka guarantees strict ordering <strong>only within a single partition</strong>. By setting the Kafka message key to <code>orderId.toString()</code> on every command and event, all lifecycle events for a given order land on the exact same partition and are processed sequentially.
+        </p>
+
+        <div class="overflow-x-auto my-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-left text-xs sm:text-sm border-collapse">
+            <thead class="bg-slate-100 dark:bg-[#111827] font-mono text-slate-700 dark:text-slate-300">
+              <tr>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Topic Name</th>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Partitions</th>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Key</th>
+                <th class="p-3 border-b border-slate-200 dark:border-slate-800">Producer → Consumer</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#0d121f] font-mono text-xs">
+              <tr><td class="p-3 text-amber-500">oms.inventory.commands</td><td class="p-3">12</td><td class="p-3">orderId</td><td class="p-3 font-sans">order-service → inventory-service</td></tr>
+              <tr><td class="p-3 text-emerald-500">oms.inventory.events</td><td class="p-3">12</td><td class="p-3">orderId</td><td class="p-3 font-sans">inventory-service → order-service</td></tr>
+              <tr><td class="p-3 text-amber-500">oms.payment.commands</td><td class="p-3">12</td><td class="p-3">orderId</td><td class="p-3 font-sans">order-service → payment-service</td></tr>
+              <tr><td class="p-3 text-emerald-500">oms.payment.events</td><td class="p-3">12</td><td class="p-3">orderId</td><td class="p-3 font-sans">payment-service → order-service</td></tr>
+              <tr><td class="p-3 text-rose-500">*.dlt (Dead Letter)</td><td class="p-3">3</td><td class="p-3">orderId</td><td class="p-3 font-sans">Failed after retries → Alerting / Replay</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>6.2 Java 25 Sealed Event Contracts (<code>common-events</code>)</h2>
+        <div class="code-shell" data-lang="java" data-file="common-events/src/main/java/com/oms/events/OmsEvent.java">
+<pre class="code-pre">package com.oms.events;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+public record EventEnvelope&lt;T extends OmsEvent&gt;(
+    UUID eventId,
+    UUID correlationId,
+    UUID causationId,
+    int schemaVersion,
+    Instant occurredAt,
+    T payload
+) {}
+
+public sealed interface OmsEvent permits
+    OmsEvent.ReserveStockCommand,
+    OmsEvent.StockReservedEvent,
+    OmsEvent.StockReservationFailedEvent,
+    OmsEvent.ReleaseStockCommand,
+    OmsEvent.ProcessPaymentCommand,
+    OmsEvent.PaymentCompletedEvent,
+    OmsEvent.PaymentFailedEvent {
+
+    UUID orderId();
+
+    record LineItem(String sku, int quantity) {}
+
+    record ReserveStockCommand(UUID orderId, List&lt;LineItem&gt; items) implements OmsEvent {}
+    record StockReservedEvent(UUID orderId) implements OmsEvent {}
+    record StockReservationFailedEvent(UUID orderId, String reason) implements OmsEvent {}
+    record ReleaseStockCommand(UUID orderId, List&lt;LineItem&gt; items, String reason) implements OmsEvent {}
+
+    record ProcessPaymentCommand(UUID orderId, UUID customerId, BigDecimal amount, String currency) implements OmsEvent {}
+    record PaymentCompletedEvent(UUID orderId, UUID transactionId) implements OmsEvent {}
+    record PaymentFailedEvent(UUID orderId, String reason) implements OmsEvent {}
+}</pre>
+        </div>
+
+        <h2>6.3 Resilient Consumer with <code>@RetryableTopic</code> &amp; Two-Tier Idempotency</h2>
+        <p>
+          Kafka guarantees <strong>at-least-once</strong> delivery. Network blips or consumer crashes before offset commit will redeliver the same message. We defend with <strong>Two-Tier Idempotency</strong>: a sub-millisecond Hazelcast check to drop obvious duplicates, backed by a PostgreSQL <code>processed_events</code> primary-key constraint inside the exact same business transaction.
+        </p>
+
+        <div class="code-shell" data-lang="java" data-file="inventory-service/src/main/java/com/oms/inventory/kafka/InventoryCommandConsumer.java">
+<pre class="code-pre">package com.oms.inventory.kafka;
+
+import com.oms.events.EventEnvelope;
+import com.oms.events.OmsEvent;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.*;
+import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class InventoryCommandConsumer {
+
+    private final ProcessedEventRepository processedEventRepo;
+    private final InventoryReservationService reservationService;
+
+    @RetryableTopic(
+        attempts = "4",
+        backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000),
+        topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
+        dltTopicSuffix = ".dlt"
+    )
+    @KafkaListener(topics = "oms.inventory.commands", groupId = "inventory-service")
+    @Transactional
+    public void onCommand(EventEnvelope&lt;OmsEvent&gt; envelope, Acknowledgment ack) {
+        // Tier-2 Durable Idempotency: INSERT ... ON CONFLICT DO NOTHING
+        int inserted = processedEventRepo.insertIfAbsent(envelope.eventId(), "inventory-service");
+        if (inserted == 0) {
+            log.info("Duplicate eventId={} skipped idempotently", envelope.eventId());
+            ack.acknowledge();
+            return;
+        }
+
+        // Java 25 Exhaustive Pattern Matching over Sealed Interface
+        switch (envelope.payload()) {
+            case OmsEvent.ReserveStockCommand cmd -> reservationService.handleReserve(cmd);
+            case OmsEvent.ReleaseStockCommand cmd -> reservationService.handleRelease(cmd);
+            default -> log.warn("Ignoring unrelated event type: {}", envelope.payload().getClass());
+        }
+
+        ack.acknowledge(); // Manual commit only after DB transaction succeeds
+    }
+
+    @DltHandler
+    public void handleDlt(EventEnvelope&lt;OmsEvent&gt; envelope) {
+        log.error("CRITICAL: Message routed to DLT! eventId={}, orderId={}",
+            envelope.eventId(), envelope.payload().orderId());
+    }
+}</pre>
+        </div>
+      </article>
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 07: THE TRANSACTIONAL OUTBOX PATTERN (SOLVING DUAL-WRITES)      -->
+      <!-- ===================================================================== -->
+      <article id="guide-7" class="guide-section hidden">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 07</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 20 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Transactional Outbox</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            The Transactional Outbox Pattern (Solving Dual-Writes)
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            If your service saves an Order to PostgreSQL and then calls <code>kafkaTemplate.send()</code>, you have a <strong>Dual-Write Bug</strong>. If the JVM crashes 2 milliseconds after PostgreSQL commits—before Kafka acknowledges—the order exists in your database forever, but no downstream service ever learns about it.
+          </p>
+        </div>
+
+        <!-- INTERACTIVE SIMULATOR #1: DUAL-WRITE VS TRANSACTIONAL OUTBOX -->
+        <div class="my-8 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-5 shadow-xl">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <div class="text-xs font-mono uppercase tracking-wider text-emerald-500 font-semibold">Interactive Simulator #1</div>
+              <div class="text-base font-bold text-slate-900 dark:text-white">Dual-Write Crash vs. Transactional Outbox Recovery</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="runOutboxSim('naive')" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-rose-500 hover:bg-rose-600 text-white transition">
+                💥 Run Naive Dual-Write + Crash
+              </button>
+              <button onclick="runOutboxSim('outbox')" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition">
+                ✅ Run Outbox + Crash &amp; Recover
+              </button>
+              <button onclick="resetOutboxSim()" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 transition">
+                ↺ Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- Visual Pipeline -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4 text-center">
+            <div id="osim-api" class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#090d16] transition">
+              <div class="text-xs font-mono text-slate-400">1. API Pod</div>
+              <div class="font-bold text-sm mt-1">order-service</div>
+              <div id="osim-api-state" class="text-[11px] font-mono mt-1 text-slate-500">IDLE</div>
+            </div>
+            <div id="osim-db" class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#090d16] transition">
+              <div class="text-xs font-mono text-slate-400">2. PostgreSQL</div>
+              <div class="font-bold text-sm mt-1">orders + outbox</div>
+              <div id="osim-db-state" class="text-[11px] font-mono mt-1 text-slate-500">EMPTY</div>
+            </div>
+            <div id="osim-relay" class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#090d16] transition">
+              <div class="text-xs font-mono text-slate-400">3. Relay / CDC</div>
+              <div class="font-bold text-sm mt-1">Outbox Relay</div>
+              <div id="osim-relay-state" class="text-[11px] font-mono mt-1 text-slate-500">STANDBY</div>
+            </div>
+            <div id="osim-kafka" class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#090d16] transition">
+              <div class="text-xs font-mono text-slate-400">4. Broker</div>
+              <div class="font-bold text-sm mt-1">Kafka 4.4</div>
+              <div id="osim-kafka-state" class="text-[11px] font-mono mt-1 text-slate-500">0 EVENTS</div>
+            </div>
+          </div>
+
+          <!-- Live Log Console -->
+          <div id="osim-log" class="h-36 overflow-y-auto p-3 rounded-xl bg-[#090d16] border border-slate-800 font-mono text-xs text-slate-300 space-y-1">
+            <div class="text-slate-500">// Select a scenario above to simulate a JVM crash mid-flight...</div>
+          </div>
+        </div>
+
+        <h2>7.1 Atomic Order + Outbox Persistence</h2>
+        <div class="code-shell" data-lang="java" data-file="order-service/src/main/java/com/oms/order/application/OrderApplicationService.java">
+<pre class="code-pre">package com.oms.order.application;
+
+import com.oms.events.OmsEvent;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.json.JsonMapper;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class OrderApplicationService {
+
+    private final OrderRepository orderRepository;
+    private final OutboxRepository outboxRepository;
+    private final JsonMapper jsonMapper; // Spring Boot 4 / Jackson 3
+
+    @Transactional
+    public OrderEntity createOrder(CreateOrderRequest req) {
+        // 1. Persist Order Aggregate
+        OrderEntity order = OrderEntity.createPending(req);
+        orderRepository.save(order);
+
+        // 2. Append Outbox Event inside the EXACT SAME PostgreSQL transaction
+        var command = new OmsEvent.ReserveStockCommand(order.getId(), order.toEventLineItems());
+        OutboxEventEntity outbox = OutboxEventEntity.pending(
+            "Order",
+            order.getId().toString(),
+            "ReserveStockCommand",
+            "oms.inventory.commands",
+            jsonMapper.writeValueAsString(command)
+        );
+        outboxRepository.save(outbox);
+
+        // Both commit atomically or both roll back. Zero dual-writes!
+        return order;
+    }
+}</pre>
+        </div>
+
+        <h2>7.2 Relay Implementation: Polling vs. Debezium CDC</h2>
+        <!-- Tabbed Relay Panel -->
+        <div class="my-6 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-[#111827]" data-tabs="relay-compare">
+          <div class="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0d121f]">
+            <button onclick="switchTab('relay-compare', 'polling')" data-tab-btn="polling" class="tab-btn px-4 py-2.5 text-xs font-mono font-semibold border-b-2 border-sky-500 text-sky-500 bg-sky-500/5">
+              Option A: Polling Relay (FOR UPDATE SKIP LOCKED)
+            </button>
+            <button onclick="switchTab('relay-compare', 'cdc')" data-tab-btn="cdc" class="tab-btn px-4 py-2.5 text-xs font-mono font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-300">
+              Option B: Debezium CDC (Sub-50ms WAL Tailing)
+            </button>
+          </div>
+          <div data-tab-panel="polling" class="p-4">
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+              Zero extra infrastructure. Uses PostgreSQL's <code>FOR UPDATE SKIP LOCKED</code> so multiple <code>order-service</code> pods can poll concurrently without ever claiming the same outbox row.
+            </p>
+            <div class="code-shell !my-0" data-lang="java" data-file="order-service/src/main/java/com/oms/order/outbox/OutboxPollingRelay.java">
+<pre class="code-pre">@Component
+@RequiredArgsConstructor
+public class OutboxPollingRelay {
+
+    private final OutboxRepository outboxRepository;
+    private final KafkaTemplate&lt;String, String&gt; kafkaTemplate;
+
+    @Scheduled(fixedDelay = 250)
+    @Transactional
+    public void relayPendingEvents() {
+        // SELECT * FROM outbox_events WHERE status = 'PENDING'
+        // ORDER BY created_at ASC LIMIT 100 FOR UPDATE SKIP LOCKED
+        List&lt;OutboxEventEntity&gt; batch = outboxRepository.claimNextBatch(100);
+
+        for (OutboxEventEntity event : batch) {
+            kafkaTemplate.send(event.getTopic(), event.getAggregateId(), event.getPayload())
+                         .join(); // Wait for broker ack before marking PUBLISHED
+            event.markPublished();
+        }
+    }
+}</pre>
+            </div>
+          </div>
+          <div data-tab-panel="cdc" class="p-4 hidden">
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+              Zero database polling load and sub-50ms latency. Debezium tails PostgreSQL's Write-Ahead Log (WAL) and uses the <code>EventRouter</code> Single Message Transform (SMT) to route each outbox row straight to its Kafka topic.
+            </p>
+            <div class="code-shell !my-0" data-lang="json" data-file="infra/debezium-outbox-connector.json">
+<pre class="code-pre">{
+  "name": "oms-order-outbox-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "oms_admin",
+    "database.password": "oms_secret_password",
+    "database.dbname": "order_db",
+    "table.include.list": "public.outbox_events",
+    "plugin.name": "pgoutput",
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "transforms.outbox.route.by.field": "topic",
+    "transforms.outbox.route.topic.replacement": "${routedByValue}",
+    "transforms.outbox.table.field.event.key": "aggregate_id",
+    "transforms.outbox.table.field.event.payload": "payload"
+  }
+}</pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ===================================================================== -->
+      <!-- GUIDE 08: DISTRIBUTED SAGAS, COMPENSATION, TESTING & PROD READINESS   -->
+      <!-- ===================================================================== -->
+      <article id="guide-8" class="guide-section hidden">
+        <div class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">GUIDE 08</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">⏱ 25 min read</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Sagas &amp; Production</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-4">
+            Distributed Sagas, Compensation, Testing &amp; Production Readiness
+          </h1>
+          <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            Distributed ACID transactions (2PC/XA) do not scale across microservices. Instead, we use an <strong>Orchestrated Saga</strong>: a sequence of local transactions where every forward step has a corresponding <strong>Compensating Transaction</strong> to semantically undo its effect if a downstream step fails.
+          </p>
+        </div>
+
+        <!-- INTERACTIVE SIMULATOR #2: ORDER SAGA ORCHESTRATOR -->
+        <div class="my-8 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-5 shadow-xl">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <div class="text-xs font-mono uppercase tracking-wider text-violet-500 font-semibold">Interactive Simulator #2</div>
+              <div class="text-base font-bold text-slate-900 dark:text-white">Order Saga Orchestrator &amp; Compensation Engine</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="saga-scenario" onchange="resetSagaSim()" class="px-3 py-1.5 rounded-lg text-xs font-mono bg-slate-100 dark:bg-[#090d16] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                <option value="happy">1. Happy Path (All Succeed)</option>
+                <option value="nostock">2. Out of Stock → Instant Cancel</option>
+                <option value="payfail">3. Payment Declined → Compensate Stock</option>
+                <option value="ooo">4. Out-of-Order Release (Tombstone)</option>
+              </select>
+              <button onclick="stepSagaSim()" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-sky-500 hover:bg-sky-600 text-white transition">▶ Step</button>
+              <button onclick="autoPlaySagaSim()" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-violet-500 hover:bg-violet-600 text-white transition">⏩ Auto-Play</button>
+              <button onclick="resetSagaSim()" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 transition">↺ Reset</button>
+            </div>
+          </div>
+
+          <!-- Saga State Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
+            <div id="saga-card-order" class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#090d16]">
+              <div class="text-xs font-mono text-sky-500 font-semibold">OrderSagaOrchestrator</div>
+              <div id="saga-state-order" class="font-mono text-sm font-bold mt-1 text-slate-800 dark:text-white">READY</div>
+            </div>
+            <div id="saga-card-inv" class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#090d16]">
+              <div class="text-xs font-mono text-emerald-500 font-semibold">InventoryService (SKU-42)</div>
+              <div id="saga-state-inv" class="font-mono text-sm font-bold mt-1 text-slate-800 dark:text-white">AVAILABLE: 10</div>
+            </div>
+            <div id="saga-card-pay" class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#090d16]">
+              <div class="text-xs font-mono text-rose-500 font-semibold">PaymentService</div>
+              <div id="saga-state-pay" class="font-mono text-sm font-bold mt-1 text-slate-800 dark:text-white">IDLE</div>
+            </div>
+          </div>
+
+          <!-- Saga Event Log -->
+          <div id="saga-log" class="h-44 overflow-y-auto p-3 rounded-xl bg-[#090d16] border border-slate-800 font-mono text-xs text-slate-300 space-y-1.5">
+            <div class="text-slate-500">// Click "Step" or "Auto-Play" to trace commands, events, and compensating transactions...</div>
+          </div>
+        </div>
+
+        <h2>8.1 Saga Orchestrator &amp; Out-of-Order Tombstone Compensation</h2>
+        <div class="code-shell" data-lang="java" data-file="order-service/src/main/java/com/oms/order/saga/OrderSagaOrchestrator.java">
+<pre class="code-pre">package com.oms.order.saga;
+
+import com.oms.events.OmsEvent;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class OrderSagaOrchestrator {
+
+    private final OrderRepository orderRepository;
+    private final OutboxService outboxService;
+
+    @Transactional
+    public void onStockReserved(OmsEvent.StockReservedEvent event) {
+        OrderEntity order = orderRepository.findByIdOrThrow(event.orderId());
+        order.transitionTo(OrderStatus.STOCK_RESERVED);
+
+        // Forward Step 2: Charge Payment via Transactional Outbox
+        outboxService.enqueue("oms.payment.commands", order.getId().toString(),
+            new OmsEvent.ProcessPaymentCommand(
+                order.getId(), order.getCustomerId(), order.getTotalAmount(), order.getCurrency()
+            ));
+    }
+
+    @Transactional
+    public void onPaymentFailed(OmsEvent.PaymentFailedEvent event) {
+        OrderEntity order = orderRepository.findByIdOrThrow(event.orderId());
+        order.transitionTo(OrderStatus.CANCELLING);
+        order.setFailureReason(event.reason());
+
+        // Backward Compensation: Release reserved inventory
+        outboxService.enqueue("oms.inventory.commands", order.getId().toString(),
+            new OmsEvent.ReleaseStockCommand(
+                order.getId(), order.toEventLineItems(), "Payment failed: " + event.reason()
+            ));
+    }
+
+    @Transactional
+    public void onPaymentCompleted(OmsEvent.PaymentCompletedEvent event) {
+        OrderEntity order = orderRepository.findByIdOrThrow(event.orderId());
+        order.transitionTo(OrderStatus.COMPLETED);
+    }
+}</pre>
+        </div>
+
+        <h2>8.2 End-to-End Integration Test (Testcontainers + Spring Boot 4)</h2>
+        <div class="code-shell" data-lang="java" data-file="order-service/src/test/java/com/oms/order/OrderSagaIntegrationTest.java">
+<pre class="code-pre">package com.oms.order;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.KafkaContainer;
+import java.time.Duration;
+import static org.awaitility.Awaitility.await;
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
+class OrderSagaIntegrationTest {
+
+    @Container @ServiceConnection
+    static PostgreSQLContainer&lt;?&gt; postgres = new PostgreSQLContainer&lt;&gt;("postgres:17-alpine");
+
+    @Container @ServiceConnection
+    static KafkaContainer kafka = new KafkaContainer("apache/kafka:4.4.0");
+
+    @Autowired OrderApplicationService orderService;
+    @Autowired OrderRepository orderRepository;
+    @MockitoBean ExternalFraudClient fraudClient; // Spring Boot 4 replacement for @MockBean
+
+    @Test
+    void shouldPersistOrderAndPublishOutboxEventAtomically() {
+        var order = orderService.createOrder(TestFixtures.validOrderRequest());
+
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            var reloaded = orderRepository.findById(order.getId()).orElseThrow();
+            assertThat(reloaded.getStatus()).isEqualTo(OrderStatus.PENDING);
+        });
+    }
+}</pre>
+        </div>
+
+        <h2>8.3 Interactive 12-Point Production Launch Checklist</h2>
+        <div class="my-6 p-5 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-4">
+            <div class="font-bold text-slate-900 dark:text-white">Pre-Flight Production Readiness Score</div>
+            <span id="checklist-score" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">0 / 12 Ready</span>
+          </div>
+          <div id="prod-checklist" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </article>
+
+      <!-- Previous / Next Guide Footer Navigation -->
+      <footer class="mt-14 pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 no-print">
+        <button id="btn-prev-guide" onclick="navigateRelative(-1)" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] hover:border-sky-500 text-sm font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed">
+          ← Previous Guide
+        </button>
+        <button id="btn-mark-complete" onclick="toggleCurrentComplete()" class="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-semibold transition">
+          ✓ Mark Guide Complete
+        </button>
+        <button id="btn-next-guide" onclick="navigateRelative(1)" class="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed">
+          Next Guide →
+        </button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- INTERACTIVE ENGINE & STATE MANAGEMENT                                   -->
+  <!-- ======================================================================= -->
+  <script>
+    const GUIDES = [
+      { id: 1, num: '01', title: 'Architecture, Domain & Infra', time: '15m', tags: 'topology docker kafka hazelcast postgres' },
+      { id: 2, num: '02', title: 'Multi-Module Gradle 9 Build', time: '15m', tags: 'gradle toml convention plugin boot 4' },
+      { id: 3, num: '03', title: 'Domain, Lombok & Persistence', time: '20m', tags: 'lombok jpa flyway hikari virtual threads' },
+      { id: 4, num: '04', title: 'Transactions & Locking Deep Dive', time: '15m', tags: 'transactional isolation optimistic pessimistic' },
+      { id: 5, num: '05', title: 'Hazelcast 5.7 & Idempotency', time: '20m', tags: 'hazelcast near cache compact serializer' },
+      { id: 6, num: '06', title: 'Event Backbone: Kafka 4.4', time: '20m', tags: 'kafka kraft sealed events retryabletopic dlt' },
+      { id: 7, num: '07', title: 'Transactional Outbox Pattern', time: '20m', tags: 'outbox dual write polling debezium cdc' },
+      { id: 8, num: '08', title: 'Sagas, Testing & Prod Readiness', time: '25m', tags: 'saga compensation testcontainers checklist' }
+    ];
+
+    let activeGuideId = 1;
+    let completedGuides = JSON.parse(localStorage.getItem('oms_completed_guides') || '[]');
+    let prodChecks = JSON.parse(localStorage.getItem('oms_prod_checks') || '[]');
+
+    // Architecture Inspector Data
+    const ARCH_NODES = {
+      'client': { title: 'API Gateway / Client', role: 'Terminates TLS, enforces rate limits, and forwards Idempotency-Key headers.', sla: 'P99 < 50ms', failure: 'Retries 502/504 safely using the same Idempotency-Key.' },
+      'order-service': { title: 'order-service (Java 25 + Spring Boot 4)', role: 'Owns Order aggregate, enforces Hazelcast edge idempotency, writes Outbox atomically, and orchestrates the Order Saga.', sla: 'P99 < 35ms (write)', failure: 'Stateless pods; if a pod crashes mid-saga, another pod resumes from PostgreSQL + Kafka.' },
+      'hazelcast': { title: 'Hazelcast 5.7 Client-Server Cluster', role: 'Sub-millisecond L1 Near Cache for hot order reads and atomic IMap.putIfAbsent() for duplicate request blocking.', sla: 'P99 < 1ms', failure: 'Degrades gracefully to PostgreSQL unique constraint on idempotency_key.' },
+      'order-db': { title: 'PostgreSQL 17 (order_db)', role: 'Durable ACID store for orders, order_line_items, outbox_events, and processed_events.', sla: '99.99% HA', failure: 'Synchronous standby replica + WAL archiving.' },
+      'kafka': { title: 'Apache Kafka 4.4 (KRaft Native)', role: 'Durable partitioned event log connecting microservices with strict per-orderId ordering.', sla: 'Zero data loss (acks=all)', failure: 'RF=3, min.insync.replicas=2, non-blocking retry topics + DLT.' },
+      'inventory-service': { title: 'inventory-service', role: 'Reserves and releases SKU stock using pessimistic/optimistic locking and tombstone compensation.', sla: 'Zero oversells', failure: 'Two-tier idempotency prevents double stock deduction on redelivery.' },
+      'inventory-db': { title: 'PostgreSQL 17 (inventory_db)', role: 'Isolated database owning SKU quantities and reservation tombstones.', sla: 'ACID row locks', failure: 'Lock timeout (2s) prevents cascading thread starvation.' },
+      'payment-service': { title: 'payment-service', role: 'Executes customer ledger settlement and emits PaymentCompleted or PaymentFailed events.', sla: 'Exactly-once ledger', failure: 'Payment decline triggers OrderSagaOrchestrator compensation.' },
+      'payment-db': { title: 'PostgreSQL 17 (payment_db)', role: 'Append-only double-entry financial ledger.', sla: 'Immutable audit', failure: 'Unique constraint on order_id prevents double charging.' }
+    };
+
+    // Isolation Levels Data
+    const ISOLATION_DATA = {
+      rc: { name: 'READ COMMITTED (PostgreSQL Default)', dirty: '✅ Prevented', nonrep: '⚠ Possible', phantom: '⚠ Possible', skew: '⚠ Possible', note: 'Best balance of throughput and safety when paired with explicit SELECT ... FOR UPDATE on hot rows.' },
+      rr: { name: 'REPEATABLE READ (MVCC Snapshot)', dirty: '✅ Prevented', nonrep: '✅ Prevented', phantom: '✅ Prevented (in PG)', skew: '⚠ Possible', note: 'PostgreSQL implements Snapshot Isolation; concurrent updates to the same row throw serialization errors that must be retried.' },
+      ser: { name: 'SERIALIZABLE (SSI)', dirty: '✅ Prevented', nonrep: '✅ Prevented', phantom: '✅ Prevented', skew: '✅ Prevented', note: 'Strongest guarantee (prevents Write Skew), but requires application-level retry loops on SQLSTATE 40001.' }
+    };
+
+    const PROD_CHECKLIST_ITEMS = [
+      'spring.jpa.open-in-view: false verified',
+      'Java 25 Virtual Threads enabled & no synchronized I/O pinning',
+      'HikariCP pool sized to (cores * 2) + spindles',
+      'Kafka acks=all & enable.idempotence=true configured',
+      'Manual Kafka AckMode.MANUAL_IMMEDIATE enabled',
+      'Outbox table daily partitioning & cleanup job scheduled',
+      'Two-tier consumer idempotency (Hazelcast + PG unique key)',
+      'W3C traceparent propagated across Outbox → Kafka headers',
+      'server.shutdown: graceful with 30s drain timeout',
+      'Dead Letter Topic (.dlt) alerting wired to PagerDuty/Slack',
+      'Hazelcast Compact Serialization enabled (no Java Serializable)',
+      'Testcontainers Saga integration tests passing in CI'
+    ];
+
+    // Initialize App
+    function init() {
+      renderSidebar();
+      enhanceCodeBlocks();
+      selectArchNode('order-service');
+      selectIsolation('rc');
+      renderChecklist();
+      openGuide(1, false);
+      window.addEventListener('scroll', updateScrollProgress);
+    }
+
+    function renderSidebar(filter = '') {
+      const nav = document.getElementById('sidebar-nav');
+      const q = filter.trim().toLowerCase();
+      nav.innerHTML = GUIDES.filter(g => !q || g.title.toLowerCase().includes(q) || g.tags.includes(q))
+        .map(g => {
+          const isDone = completedGuides.includes(g.id);
+          const isActive = g.id === activeGuideId;
+          return `
+            <div onclick="openGuide(${g.id})" class="group flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition ${isActive ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-transparent'}">
+              <input type="checkbox" ${isDone ? 'checked' : ''} onclick="event.stopPropagation(); toggleComplete(${g.id})"
+                class="w-4 h-4 rounded accent-emerald-500 cursor-pointer shrink-0" />
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[10px] font-mono uppercase tracking-wider opacity-75">Guide ${g.num}</span>
+                  <span class="text-[10px] font-mono opacity-60">${g.time}</span>
+                </div>
+                <div class="text-xs font-semibold truncate">${g.title}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      updateProgressUI();
+    }
+
+    function filterGuides(val) { renderSidebar(val); }
+
+    function openGuide(id, scrollTop = true) {
+      activeGuideId = id;
+      document.querySelectorAll('.guide-section').forEach(el => el.classList.add('hidden'));
+      const target = document.getElementById('guide-' + id);
+      if (target) target.classList.remove('hidden');
+
+      const g = GUIDES.find(x => x.id === id);
+      document.getElementById('top-breadcrumb-num').textContent = `GUIDE ${g.num} OF 08`;
+      document.getElementById('top-breadcrumb-title').textContent = g.title;
+
+      document.getElementById('btn-prev-guide').disabled = id === 1;
+      document.getElementById('btn-next-guide').disabled = id === GUIDES.length;
+      updateCompleteBtn();
+      renderSidebar(document.getElementById('sidebar-search').value);
+      toggleMobileSidebar(false);
+      if (scrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function navigateRelative(delta) {
+      const next = activeGuideId + delta;
+      if (next >= 1 && next <= GUIDES.length) openGuide(next);
+    }
+
+    function toggleComplete(id) {
+      if (completedGuides.includes(id)) {
+        completedGuides = completedGuides.filter(x => x !== id);
+      } else {
+        completedGuides.push(id);
+      }
+      localStorage.setItem('oms_completed_guides', JSON.stringify(completedGuides));
+      updateProgressUI();
+      updateCompleteBtn();
+      renderSidebar(document.getElementById('sidebar-search').value);
+    }
+
+    function toggleCurrentComplete() { toggleComplete(activeGuideId); }
+
+    function updateCompleteBtn() {
+      const btn = document.getElementById('btn-mark-complete');
+      const done = completedGuides.includes(activeGuideId);
+      btn.textContent = done ? '✓ Completed (Undo)' : '✓ Mark Guide Complete';
+    }
+
+    function updateProgressUI() {
+      const pct = Math.round((completedGuides.length / GUIDES.length) * 100);
+      document.getElementById('sidebar-progress-text').textContent = `${completedGuides.length} / ${GUIDES.length} (${pct}%)`;
+      document.getElementById('sidebar-progress-fill').style.width = pct + '%';
+    }
+
+    function resetProgress() {
+      completedGuides = [];
+      prodChecks = [];
+      localStorage.removeItem('oms_completed_guides');
+      localStorage.removeItem('oms_prod_checks');
+      renderSidebar();
+      renderChecklist();
+      updateCompleteBtn();
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      document.getElementById('theme-toggle').textContent = isDark ? '☀' : '☾';
+    }
+
+    function toggleMobileSidebar(open) {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('mobile-overlay');
+      if (open) {
+        sb.classList.remove('-translate-x-full');
+        ov.classList.remove('hidden');
+      } else {
+        sb.classList.add('-translate-x-full');
+        ov.classList.add('hidden');
+      }
+    }
+
+    function updateScrollProgress() {
+      const h = document.documentElement;
+      const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight || 1)) * 100;
+      document.getElementById('reading-progress-bar').style.width = Math.min(100, Math.max(0, pct)) + '%';
+    }
+
+    // Tabs
+    function switchTab(group, tabKey) {
+      const container = document.querySelector(`[data-tabs="${group}"]`);
+      container.querySelectorAll('[data-tab-panel]').forEach(p => {
+        p.classList.toggle('hidden', p.getAttribute('data-tab-panel') !== tabKey);
+      });
+      container.querySelectorAll('[data-tab-btn]').forEach(b => {
+        const active = b.getAttribute('data-tab-btn') === tabKey;
+        b.classList.toggle('border-sky-500', active);
+        b.classList.toggle('text-sky-500', active);
+        b.classList.toggle('border-transparent', !active);
+        b.classList.toggle('text-slate-500', !active);
+      });
+    }
+
+    // Architecture Inspector
+    function selectArchNode(key) {
+      document.querySelectorAll('.arch-node').forEach(n => n.classList.toggle('active', n.dataset.node === key));
+      const d = ARCH_NODES[key];
+      document.getElementById('arch-inspector').innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+          <div class="font-bold text-sm text-sky-600 dark:text-sky-400">${d.title}</div>
+          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">SLA: ${d.sla}</span>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 mb-1.5"><strong>Responsibility:</strong> ${d.role}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-0"><strong>Failure Mode:</strong> ${d.failure}</p>
+      `;
+    }
+
+    // Isolation Levels
+    function selectIsolation(key) {
+      ['rc', 'rr', 'ser'].forEach(k => {
+        const btn = document.getElementById('iso-btn-' + k);
+        const active = k === key;
+        btn.className = `iso-btn px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition ${active ? 'bg-sky-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`;
+      });
+      const d = ISOLATION_DATA[key];
+      document.getElementById('iso-details').innerHTML = `
+        <div class="font-bold text-slate-900 dark:text-white mb-2">${d.name}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 font-mono text-xs">
+          <div class="p-2 rounded bg-slate-100 dark:bg-[#090d16]">Dirty Read<br/><strong>${d.dirty}</strong></div>
+          <div class="p-2 rounded bg-slate-100 dark:bg-[#090d16]">Non-Repeatable<br/><strong>${d.nonrep}</strong></div>
+          <div class="p-2 rounded bg-slate-100 dark:bg-[#090d16]">Phantom Read<br/><strong>${d.phantom}</strong></div>
+          <div class="p-2 rounded bg-slate-100 dark:bg-[#090d16]">Write Skew<br/><strong>${d.skew}</strong></div>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 mb-0">${d.note}</p>
+      `;
+    }
+
+    // Code Block Enhancer (Header + Copy Button + Lightweight Syntax Highlighting)
+    function enhanceCodeBlocks() {
+      document.querySelectorAll('.code-shell').forEach(shell => {
+        const lang = shell.dataset.lang || 'code';
+        const file = shell.dataset.file || 'snippet';
+        const pre = shell.querySelector('pre');
+        const rawText = pre.textContent;
+
+        const header = document.createElement('div');
+        header.className = 'code-header';
+        header.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold bg-sky-500/20 text-sky-400">${lang}</span>
+            <span class="text-xs font-mono text-slate-300 truncate">${file}</span>
+          </div>
+          <button class="copy-btn px-2.5 py-1 rounded-md text-[11px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+            Copy Code
+          </button>
+        `;
+        shell.insertBefore(header, pre);
+
+        header.querySelector('.copy-btn').addEventListener('click', function () {
+          const ta = document.createElement('textarea');
+          ta.value = rawText;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          this.textContent = '✓ Copied!';
+          this.classList.add('text-emerald-400', 'border-emerald-500/50');
+          setTimeout(() => {
+            this.textContent = 'Copy Code';
+            this.classList.remove('text-emerald-400', 'border-emerald-500/50');
+          }, 1600);
+        });
+
+        pre.innerHTML = highlightCode(rawText, lang);
+      });
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function highlightCode(code, lang) {
+      let html = escapeHtml(code);
+      // Comments
+      html = html.replace(/(\/\/[^\n]*|--[^\n]*|#[^\n]*)/g, '<span class="tok-com">$1</span>');
+      // Strings
+      html = html.replace(/(&quot;[^&]*?&quot;|"[^"\n]*?")/g, '<span class="tok-str">$1</span>');
+      // Annotations
+      html = html.replace(/(@[A-Za-z0-9_]+)/g, '<span class="tok-ann">$1</span>');
+      // Keywords
+      const kws = /\b(package|import|public|private|protected|class|interface|sealed|permits|record|enum|final|static|void|return|if|else|for|switch|case|default|try|catch|throw|new|implements|extends|var|val|CREATE|TABLE|INDEX|WHERE|SELECT|FROM|PRIMARY|KEY|NOT|NULL|REFERENCES|ON|DELETE|CASCADE|CHECK|DEFAULT|UNIQUE|DATABASE|plugins|dependencies|implementation|runtimeOnly|testImplementation)\b/g;
+      html = html.replace(kws, '<span class="tok-kw">$1</span>');
+      return html;
+    }
+
+    // SIMULATOR #1: Dual-Write vs Transactional Outbox
+    let osimTimers = [];
+    function resetOutboxSim() {
+      osimTimers.forEach(clearTimeout);
+      osimTimers = [];
+      ['api', 'db', 'relay', 'kafka'].forEach(k => {
+        document.getElementById('osim-' + k).classList.remove('sim-active', 'border-rose-500', 'border-emerald-500', 'border-sky-500');
+      });
+      document.getElementById('osim-api-state').textContent = 'IDLE';
+      document.getElementById('osim-db-state').textContent = 'EMPTY';
+      document.getElementById('osim-relay-state').textContent = 'STANDBY';
+      document.getElementById('osim-kafka-state').textContent = '0 EVENTS';
+      document.getElementById('osim-log').innerHTML = '<div class="text-slate-500">// Ready. Choose a simulation mode above.</div>';
+    }
+
+    function logOsim(msg, cls = 'text-slate-300') {
+      const el = document.getElementById('osim-log');
+      el.innerHTML += `<div class="${cls}">${msg}</div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function runOutboxSim(mode) {
+      resetOutboxSim();
+      document.getElementById('osim-log').innerHTML = '';
+      if (mode === 'naive') {
+        logOsim('[0ms] POST /orders received by order-service', 'text-sky-400');
+        document.getElementById('osim-api-state').textContent = 'PROCESSING';
+        osimTimers.push(setTimeout(() => {
+          logOsim('[12ms] PostgreSQL COMMIT: Order #901 saved.', 'text-emerald-400');
+          document.getElementById('osim-db-state').textContent = 'ORDER #901';
+          document.getElementById('osim-db').classList.add('border-emerald-500');
+        }, 600));
+        osimTimers.push(setTimeout(() => {
+          logOsim('[14ms] 💥 JVM OOM CRASH before kafkaTemplate.send() completes!', 'text-rose-400 font-bold');
+          document.getElementById('osim-api-state').textContent = 'CRASHED 💥';
+          document.getElementById('osim-api').classList.add('border-rose-500');
+        }, 1400));
+        osimTimers.push(setTimeout(() => {
+          logOsim('[RESULT] ❌ DATA INCONSISTENCY: Order #901 stuck in DB forever; Kafka has 0 events!', 'text-rose-400');
+        }, 2200));
+      } else {
+        logOsim('[0ms] POST /orders received by order-service', 'text-sky-400');
+        document.getElementById('osim-api-state').textContent = 'TX BEGIN';
+        osimTimers.push(setTimeout(() => {
+          logOsim('[11ms] PostgreSQL ATOMIC COMMIT: Order #902 + OutboxEvent (PENDING)', 'text-emerald-400');
+          document.getElementById('osim-db-state').textContent = 'ORDER + OUTBOX';
+          document.getElementById('osim-db').classList.add('border-emerald-500');
+        }, 600));
+        osimTimers.push(setTimeout(() => {
+          logOsim('[13ms] 💥 API Pod crashes immediately after commit!', 'text-amber-400');
+          document.getElementById('osim-api-state').textContent = 'CRASHED 💥';
+          document.getElementById('osim-api').classList.add('border-rose-500');
+        }, 1300));
+        osimTimers.push(setTimeout(() => {
+          logOsim('[250ms] Outbox Relay claims PENDING row (FOR UPDATE SKIP LOCKED)', 'text-sky-400');
+          document.getElementById('osim-relay-state').textContent = 'PUBLISHING...';
+          document.getElementById('osim-relay').classList.add('border-sky-500');
+        }, 2100));
+        osimTimers.push(setTimeout(() => {
+          logOsim('[265ms] ✅ Kafka 4.4 ACK received! Outbox row marked PUBLISHED. Zero lost events!', 'text-emerald-400 font-bold');
+          document.getElementById('osim-relay-state').textContent = 'PUBLISHED';
+          document.getElementById('osim-kafka-state').textContent = '1 EVENT ✅';
+          document.getElementById('osim-kafka').classList.add('border-emerald-500');
+        }, 2900));
+      }
+    }
+
+    // SIMULATOR #2: Order Saga Orchestrator
+    const SAGA_SCENARIOS = {
+      happy: [
+        { order: 'PENDING', inv: 'AVAILABLE: 10', pay: 'IDLE', log: '[Step 1] Order created -> Outbox emits ReserveStockCommand (qty=2)' },
+        { order: 'STOCK_RESERVED', inv: 'AVAILABLE: 8 (Res: 2)', pay: 'IDLE', log: '[Step 2] Inventory locked SKU-42 -> emits StockReservedEvent' },
+        { order: 'STOCK_RESERVED', inv: 'AVAILABLE: 8 (Res: 2)', pay: 'CHARGING $199', log: '[Step 3] Orchestrator emits ProcessPaymentCommand ($199.00)' },
+        { order: 'COMPLETED ✅', inv: 'AVAILABLE: 8 (Sold: 2)', pay: 'SETTLED ✅', log: '[Step 4] PaymentCompletedEvent received -> Order COMPLETED!' }
+      ],
+      nostock: [
+        { order: 'PENDING', inv: 'AVAILABLE: 1', pay: 'IDLE', log: '[Step 1] Order created -> Outbox emits ReserveStockCommand (qty=5)' },
+        { order: 'PENDING', inv: 'INSUFFICIENT ❌', pay: 'IDLE', log: '[Step 2] Inventory rejects (1 < 5) -> emits StockReservationFailedEvent' },
+        { order: 'CANCELLED ❌', inv: 'AVAILABLE: 1', pay: 'IDLE', log: '[Step 3] Orchestrator cancels order immediately. No payment attempted.' }
+      ],
+      payfail: [
+        { order: 'PENDING', inv: 'AVAILABLE: 10', pay: 'IDLE', log: '[Step 1] Order created -> emits ReserveStockCommand (qty=2)' },
+        { order: 'STOCK_RESERVED', inv: 'AVAILABLE: 8 (Res: 2)', pay: 'IDLE', log: '[Step 2] Inventory reserves 2 units -> emits StockReservedEvent' },
+        { order: 'STOCK_RESERVED', inv: 'AVAILABLE: 8 (Res: 2)', pay: 'DECLINED ❌', log: '[Step 3] Payment card declined -> emits PaymentFailedEvent' },
+        { order: 'CANCELLING ↩', inv: 'RELEASING +2', pay: 'DECLINED ❌', log: '[Step 4] COMPENSATION: Orchestrator emits ReleaseStockCommand' },
+        { order: 'CANCELLED ✅', inv: 'AVAILABLE: 10 ↩', pay: 'DECLINED ❌', log: '[Step 5] Inventory restored to 10! Saga compensated cleanly.' }
+      ],
+      ooo: [
+        { order: 'CANCELLING ↩', inv: 'AVAILABLE: 10', pay: 'IDLE', log: '[Step 1] Network delay! ReleaseStockCommand arrives BEFORE ReserveStockCommand!' },
+        { order: 'CANCELLING ↩', inv: 'TOMBSTONE SAVED 🛡', pay: 'IDLE', log: '[Step 2] Inventory records cancellation tombstone for orderId.' },
+        { order: 'CANCELLED ✅', inv: 'LATE RESERVE IGNORED', pay: 'IDLE', log: '[Step 3] Late ReserveStockCommand arrives -> sees tombstone -> safely discarded!' }
+      ]
+    };
+
+    let sagaStepIdx = 0;
+    let sagaAutoTimer = null;
+
+    function resetSagaSim() {
+      clearInterval(sagaAutoTimer);
+      sagaStepIdx = 0;
+      document.getElementById('saga-state-order').textContent = 'READY';
+      document.getElementById('saga-state-inv').textContent = 'AVAILABLE: 10';
+      document.getElementById('saga-state-pay').textContent = 'IDLE';
+      document.getElementById('saga-log').innerHTML = '<div class="text-slate-500">// Click "Step" or "Auto-Play" to run scenario...</div>';
+    }
+
+    function stepSagaSim() {
+      const scenario = SAGA_SCENARIOS[document.getElementById('saga-scenario').value];
+      if (sagaStepIdx >= scenario.length) {
+        clearInterval(sagaAutoTimer);
+        return;
+      }
+      if (sagaStepIdx === 0) document.getElementById('saga-log').innerHTML = '';
+      const s = scenario[sagaStepIdx++];
+      document.getElementById('saga-state-order').textContent = s.order;
+      document.getElementById('saga-state-inv').textContent = s.inv;
+      document.getElementById('saga-state-pay').textContent = s.pay;
+      const logEl = document.getElementById('saga-log');
+      logEl.innerHTML += `<div class="text-sky-300">${s.log}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function autoPlaySagaSim() {
+      resetSagaSim();
+      stepSagaSim();
+      sagaAutoTimer = setInterval(stepSagaSim, 1000);
+    }
+
+    // Production Launch Checklist
+    function renderChecklist() {
+      const container = document.getElementById('prod-checklist');
+      container.innerHTML = PROD_CHECKLIST_ITEMS.map((item, idx) => {
+        const checked = prodChecks.includes(idx);
+        return `
+          <label class="flex items-start gap-2.5 p-2.5 rounded-xl border ${checked ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090d16]'} cursor-pointer transition">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleProdCheck(${idx})" class="mt-0.5 w-4 h-4 accent-emerald-500 rounded shrink-0" />
+            <span class="text-xs ${checked ? 'line-through opacity-70' : 'text-slate-700 dark:text-slate-300'}">${item}</span>
+          </label>
+        `;
+      }).join('');
+      document.getElementById('checklist-score').textContent = `${prodChecks.length} / ${PROD_CHECKLIST_ITEMS.length} Ready`;
+    }
+
+    function toggleProdCheck(idx) {
+      if (prodChecks.includes(idx)) prodChecks = prodChecks.filter(x => x !== idx);
+      else prodChecks.push(idx);
+      localStorage.setItem('oms_prod_checks', JSON.stringify(prodChecks));
+      renderChecklist();
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
