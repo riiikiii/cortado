@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Benchmarking the Warehouse Decision</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-tasting-flight.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Cloud and infrastructure · Analytical warehouses</span></div>
+<div class="hero"><div><h1>Benchmarking the Warehouse Decision</h1><p>Test the opening burst, a late correction and a concurrent historical rebuild. Use measured service levels and a GBP cost model to choose a design.</p></div>
+<div class="plate"><small>Worked case</small><div class="trace"><b>Demand</b><span>120 people × 8 visuals in 10 s</span></div><div class="trace"><b>Load</b><span>96 requests/s before reuse</span></div><div class="trace"><b>Gate</b><span>Whole-page p95 ≤2 s under burst</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></div><hr><div class="menu-grid"><a href="#build-a-workload-card-before-booking-capacity">Build a workload card before booking capacity</a><a href="#run-four-query-families-on-the-same-publication">Run four query families on the same publication</a><a href="#collect-timing-evidence-you-can-explain">Collect timing evidence you can explain</a><a href="#put-pounds-against-the-service-target">Put pounds against the service target</a><a href="#interpret-failure-and-make-a-decision">Interpret failure and make a decision</a></div></nav><main><section id="build-a-workload-card-before-booking-capacity" class="level2">
+<h2>Build a workload card before booking capacity</h2>
+<p>The decision is whether a platform can publish a <em>correct</em>
+corrected position and keep it fast during a burst while history gets
+restated. Start with two implementations of the same report. Design A
+keeps full history in S3/Iceberg, uses Athena to derive facts and
+publishes a book/day mart. Design B uses the most relevant managed
+warehouse from the previous guide, with equivalent ingestion, history
+and BI output. Add Trino reading the same Iceberg snapshot as a
+controlled engine comparison if its operational model is a serious
+candidate.</p>
+<p>Use agreed business targets when available. The following invented
+workload is a starting contract. Record the exact region, engine or
+service tier, edition, client and driver, table layout, file counts,
+entitlement rules, auto-scaling range and pricing agreement. A service
+name alone cannot reproduce a measurement.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Build a workload card before booking capacity comparison table"><table>
+<thead>
+<tr class="header">
+<th>Input to the pilot</th>
+<th>Example</th>
+<th>Why it changes the answer</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>History and growth</td>
+<td>1 PB compressed over 1,000 days, 1 TB/day steady, a 3 TB catch-up
+day</td>
+<td>Backfills, file compaction and retention change both storage and
+compute.</td>
+</tr>
+<tr class="even">
+<td>Distribution</td>
+<td>One book contributes 35% of recent facts. Test it alongside small
+books.</td>
+<td>Uniform random data hides skew, memory pressure and hot keys.</td>
+</tr>
+<tr class="odd">
+<td>Updates</td>
+<td>2% corrected trades, exact replays, late older revisions and book
+transfers</td>
+<td>Measure correctness, target scan, amplification and publication
+lag.</td>
+</tr>
+<tr class="even">
+<td>BI arrivals</td>
+<td>120 users open one eight-visual page within 10 seconds</td>
+<td>Roughly 96 visual requests/s before caching, batching or retries.
+Observe actual fan-out.</td>
+</tr>
+<tr class="odd">
+<td>API</td>
+<td>Book/day lookup p99 â¤250 ms. Return batch, watermark and
+amount.</td>
+<td>A precomputed primary-key lookup has a fundamentally different work
+budget from ad hoc SQL.</td>
+</tr>
+<tr class="even">
+<td>Freshness</td>
+<td>Corrected event visible to all entitled consumers within 60 s at
+p95</td>
+<td>A fast stale cache fails. Measure source commit to visible
+output.</td>
+</tr>
+<tr class="odd">
+<td>Batch and exploration</td>
+<td>Two-hour restatement overlapping reporting, analyst filters with a
+long tail</td>
+<td>Exposes noisy neighbours and oversubscription.</td>
+</tr>
+</tbody>
+</table>
+</div><p>In steady state Little's law gives average in-flight work â arrival
+rate Ã average end-to-end time. At 96 requests/s and 1.5 s mean
+residence time, about 144 requests are in flight. This is a sizing
+check, not a p95 calculation or a count of physical workers. A
+ten-second opening burst is transient. Drive the recorded arrival trace,
+watch the queue drain, and size for the deadline observed by the last
+users.</p>
+</section>
+<section id="run-four-query-families-on-the-same-publication" class="level2">
+<h2>Run four query families on the same publication</h2>
+<ol type="1">
+<li><strong>Point read.</strong> Bind batch, book and date and retrieve
+a single exposure row through the real API. Measure client, pool wait,
+database and serialisation time. Run already-open and newly established
+connections separately.</li>
+<li><strong>Dashboard.</strong> Replay the eight real visual queries or
+the BI page itself against the same publication. Vary filters by role,
+hot book, small book and date. Record complete page-ready time and
+individual query IDs.</li>
+<li><strong>Interactive slice.</strong> On current trade facts,
+aggregate a week by book, then drill into a selective book/day and fetch
+a bounded number of rows. Vary date width and sort order. Test one
+unforeseen grouping missing from the mart.</li>
+<li><strong>Historical recompute.</strong> From raw revisions, select
+the latest valid trade per ID at a pinned source cut, join the
+effective-dated reference set and aggregate five years. Persist the
+output and reconcile. Include the write and publish step in batch
+duration.</li>
+</ol>
+<p>Use three data scales when feasible: a hand-checkable fixture, a
+representative time slice with genuine skew and file sizes, and a
+production-scale or contractually realistic rehearsal. If only 1% can be
+tested, state which thresholds remain untested. A join fitting in memory
+at 1% can spill at full scale and a broad scan can hit source
+throttling. Never extrapolate p99 linearly from row count.</p>
+<section id="a-small-oracle-every-candidate-must-pass" class="level3">
+<h3>A small oracle every candidate must pass</h3>
+<div class="scroll" tabindex="0" role="region" aria-label="Run four query families on the same publication comparison table"><table>
+<thead>
+<tr class="header">
+<th>Event or failure</th>
+<th>Expected published observation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A revision 1 = Â£100, B revision 1 = âÂ£30</td>
+<td>GILT Â£70, two current trades</td>
+</tr>
+<tr class="even">
+<td>A revision 2 = Â£90 arrives twice</td>
+<td>GILT Â£60, two current trades</td>
+</tr>
+<tr class="odd">
+<td>A revision 1 arrives again</td>
+<td>Still Â£60</td>
+</tr>
+<tr class="even">
+<td>A revision 3 moves to book CREDIT at Â£90</td>
+<td>GILT âÂ£30, CREDIT Â£90, combined Â£60</td>
+</tr>
+<tr class="odd">
+<td>A revision 3 arrives with a different amount at the same
+version</td>
+<td>Conflict flagged and publication held or key quarantined under the
+agreed policy</td>
+</tr>
+<tr class="even">
+<td>Publisher stops after loading a new batch and before promotion</td>
+<td>Readers remain on the last verified batch. Retry publishes once and
+retains the reconciliation trail.</td>
+</tr>
+</tbody>
+</table>
+</div><p>For the full run compare keyed counts and decimal totals at
+book/date/currency plus deterministic samples of trade lineage. An
+invariant such as âglobal sum unchangedâ misses a trade posted to the
+wrong portfolio. Measure correction visibility for a viewer of the old
+book and one of the new book. Measure all counters at a fixed cut. Rows
+moving while candidates are sampled create false differences.</p>
+</section>
+</section>
+<section id="collect-timing-evidence-you-can-explain" class="level2">
+<h2>Collect timing evidence you can explain</h2>
+<p>For Athena record the query ID, engine version, workgroup, output row
+count and execution statistics. Given AWS CLI access to inspect a
+completed query, replace the ID below. The command reads metadata for an
+existing execution.</p>
+<figure class="code"><figcaption>AWS CLI</figcaption><pre><code>aws<span class="w"> </span>athena<span class="w"> </span>get-query-execution<span class="w"> </span>--query-execution-id<span class="w"> </span><span class="s2">"</span><span class="nv">$QUERY_ID</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">'QueryExecution.{state:Status.State,engine:EngineVersion.EffectiveEngineVersion,stats:Statistics}'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>json</code></pre></figure><p>Separate queue, engine execution, planning, bytes scanned, total
+service elapsed time and the result-reuse flag. Planning is a component
+of engine execution time. Adding both double counts. The service total
+does not include all client fetch and rendering time. Explicitly disable
+result reuse for the fresh-run baseline. Athena may otherwise serve a
+prior eligible result within the configured age. Record reuse separately
+as a legitimate production case only if its staleness contract meets the
+business target. <a href="https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatistics.html">Athena
+statistics fields</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/reusing-query-results.html">Athena
+result reuse</a></p>
+<div class="scroll" tabindex="0" role="region" aria-label="Collect timing evidence you can explain comparison table"><table>
+<thead>
+<tr class="header">
+<th>Platform</th>
+<th>Evidence to collect for a slow page</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Trino</td>
+<td>Query ID, queue and planning times, stage input and output, blocked
+time, peak memory, task skew, remote source time, worker count. Compare
+actual plan with estimated cardinalities.</td>
+</tr>
+<tr class="even">
+<td>Snowflake</td>
+<td>Query history and profile, queue versus execution, partitions
+scanned/total, local or remote spill, warehouse resume, cluster count
+and result reuse.</td>
+</tr>
+<tr class="odd">
+<td>Fabric</td>
+<td>Power BI Performance Analyzer visual timings and DAX, semantic model
+mode, SQL Query Insights where SQL executes, Capacity Metrics during
+refresh and query overlap.</td>
+</tr>
+<tr class="even">
+<td>Databricks SQL</td>
+<td>Query history and profile, queue, spill, scan bytes and files,
+warehouse size and clusters. Correlate with concurrent engineering jobs
+and cold starts.</td>
+</tr>
+<tr class="odd">
+<td>Redshift</td>
+<td>Query history and plan, WLM queue, redistribution/skew, temp spill
+and capacity. Inspect native and external reads separately.</td>
+</tr>
+<tr class="even">
+<td>PostgreSQL</td>
+<td>pg_stat_statements aggregates, sampled EXPLAIN ANALYZE with BUFFERS,
+connection pool wait, I/O latency, replica lag and WAL growth during
+load.</td>
+</tr>
+</tbody>
+</table>
+</div><p>Run each candidate in four labelled states: idle or suspended
+startup, warm compute with varied predicates, eligible repeated result,
+and the opening burst during a backfill. Some managed caches cannot be
+forcibly emptied. Describe the controls used and label uncontrolled
+cache state. Use identical source cuts, query answers, time windows and
+cost boundaries. Report both equally tuned native implementations and a
+shared-file scan where relevant. The first compares viable solutions.
+The second isolates engine and connector effects. A precomputed mart
+versus a raw recomputation answers a different architecture
+question.</p>
+<p>Use an open-loop driver that schedules requests against the intended
+arrivals. A client that waits for each slow reply before firing the next
+quietly reduces offered load when the system struggles. Preserve
+intended start, actual start, finish, timeout and cancellation in the
+log. Use enough client workers to avoid making the driver the
+bottleneck. Repeat across multiple opening windows, keep timed-out
+requests in the denominator, and show success rates and latency
+percentiles by query family. A p99 from 30 queries says little about the
+tail. Also report requested vs achieved throughput, the maximum queue
+age and time to recover after the burst.</p>
+</section>
+<section id="put-pounds-against-the-service-target" class="level2">
+<h2>Put pounds against the service target</h2>
+<p>Use current contract rates in GBP for the deployment region, with the
+same VAT treatment and exchange-rate assumption for every vendor. The
+figures below are deliberately <strong>hypothetical</strong>, use
+decimal TB and GB, and exclude tax. They illustrate break-even
+arithmetic rather than vendor pricing.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Put pounds against the service target comparison table"><table>
+<thead>
+<tr class="header">
+<th>Illustrative month, 30 days</th>
+<th>Calculation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>On-demand scans</td>
+<td>2,000 requests/day Ã 5 GB Ã 30 Ã· 1,000</td>
+<td>300 TB/month</td>
+</tr>
+<tr class="even">
+<td>Assumed scan charge</td>
+<td>300 TB Ã Â£4/TB</td>
+<td>Â£1,200/month</td>
+</tr>
+<tr class="odd">
+<td>Preaggregate construction</td>
+<td>1 TB/day Ã 30 Ã Â£4/TB</td>
+<td>Â£120/month</td>
+</tr>
+<tr class="even">
+<td>Serving tier plus build scans</td>
+<td>Â£650/month + Â£120</td>
+<td>Â£770/month</td>
+</tr>
+<tr class="odd">
+<td>Equal cost in this simplified model</td>
+<td>Â£770 Ã· (Â£4 Ã 0.005 TB/query) Ã· 30</td>
+<td>About 1,284 queries/day</td>
+</tr>
+</tbody>
+</table>
+</div><p>At 2,000 queries/day the simplified saving is Â£430/month. If the
+average scan falls from 5 GB to 0.5 GB, the original reports cost
+Â£120/month at the same volume, reversing the comparison. If the serving
+tier is mandatory for the latency target, a lower scan bill alone cannot
+win. If the build processes 1 TB <em>each minute</em> to meet freshness,
+its cost changes by orders of magnitude. Benchmark an incremental
+refresh, and count compaction, writes, reads and late-data repair. <a href="https://aws.amazon.com/athena/pricing/">Athena pricing
+dimensions</a></p>
+<p>For each candidate add storage and retained snapshots, requests,
+replication, network and cross-cloud transfer, catalog, compute for
+transformations and maintenance, BI licences, idle or reserved capacity,
+support and realistic engineering time. For self-run Trino include
+worker and coordinator hours, HA design, upgrades and incident cover.
+For managed Postgres include IOPS, HA, backups and restore drills. For
+Snowflake multiply metered credits by the contracted GBP rate. For
+Fabric attribute incremental capacity and show shared-cost allocation
+separately. For Databricks distinguish serverless billing from
+configurations that also charge cloud infrastructure. Quote cost per
+1,000 <strong>successful, timely, fresh</strong> business requests plus
+the complete monthly budget. Show both peak-capacity cost and quiet-hour
+cost.</p>
+</section>
+<section id="interpret-failure-and-make-a-decision" class="level2">
+<h2>Interpret failure and make a decision</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Interpret failure and make a decision comparison table"><table>
+<thead>
+<tr class="header">
+<th>Observation</th>
+<th>First experiment</th>
+<th>How the decision changes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SQL fast, page slow</td>
+<td>Correlate visual waterfall, data transfer, model calculation and
+last rendered visual.</td>
+<td>Tune the model, bound results or precompute report grain before
+adding SQL compute.</td>
+</tr>
+<tr class="even">
+<td>Query fast alone, high queue during burst</td>
+<td>Isolate BI and backfill, then rerun identical arrivals.</td>
+<td>If queues disappear, buy isolation or schedule capacity. If a single
+query still misses, optimise its plan.</td>
+</tr>
+<tr class="odd">
+<td>Low scan bytes, high planning time</td>
+<td>Compact the same logical dataset and retest with unchanged
+filters.</td>
+<td>Better file layout can remove the need for a larger cluster.</td>
+</tr>
+<tr class="even">
+<td>Worker tail and huge exchange</td>
+<td>Measure largest key and task input, reduce build side or
+preaggregate before joining.</td>
+<td>Increase capacity after checking skew. Doubling workers may leave
+the hot key on one worker.</td>
+</tr>
+<tr class="odd">
+<td>Warm results fast, correction invisible</td>
+<td>Disable reuse, pin the new batch and time publication, replica
+catch-up and BI refresh independently.</td>
+<td>Shorten or version caches, change refresh mode or move publication
+to the incremental path.</td>
+</tr>
+<tr class="even">
+<td>Protecting p99 is expensive under ad hoc load</td>
+<td>Route fixed lookups to the mart and retain a warehouse for flexible
+slicing.</td>
+<td>A hybrid can win if recovery and policy parity also pass.</td>
+</tr>
+</tbody>
+</table>
+</div><p>Apply hard gates before scoring: correct as-of results and
+entitlements, freshness, p95 page and p99 API under the agreed burst,
+batch deadline, restore objective and budget ceiling. Record each as
+pass, fail or unmeasured with a link to the run. Compare monthly GBP and
+operational work only among candidates that clear the gates. Under a
+near tie, test the assumption most likely to reverse the choice, such as
+doubling concurrent users, a new grouping dimension or moving the source
+to another cloud.</p>
+<p><strong>A defensible initial architecture for this example</strong>
+keeps full history on S3/Iceberg, uses Athena for research and rebuilds,
+and serves the book/day dashboard from a versioned aggregate. Benchmark
+managed Postgres if interactions remain bounded lookups. Benchmark
+Fabric with the real report if Power BI owns the experience, or
+Redshift/Snowflake/Databricks SQL when users routinely invent large new
+groupings. Replace Athena with warm Trino only after demonstrating a
+gain in the query classes or controls that matter. Promote the simplest
+architecture meeting the hard gates. The decision record should name the
+losing workload for each rejected design and the change that would
+justify revisiting it.</p>
+<p><strong>Verification boundary.</strong> The portable revision query
+and the replay, stale-revision and book-transfer cases were checked
+locally with SQLite. AWS, Trino, PostgreSQL and managed-warehouse
+examples target the documented interfaces. The service targets, dataset
+sizes, rates and timings used for sizing are illustrative. No vendor
+benchmark results are claimed.</p>
+</section>
+<nav class="menu" aria-label="Adjacent guides"><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a></nav></main></div></body></html>

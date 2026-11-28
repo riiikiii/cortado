@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Choosing a Business Serving Layer</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-grinder.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Cloud and infrastructure · Analytical warehouses</span></div>
+<div class="hero"><div><h1>Choosing a Business Serving Layer</h1><p>Choose an access path for a dashboard, an analyst and a low-latency API. Compare nine platforms and build a versioned PostgreSQL serving mart.</p></div>
+<div class="plate"><small>Worked case</small><div class="trace"><b>History</b><span>1 PB in an illustrative lake</span></div><div class="trace"><b>Publish</b><span>Batch 42 · GILT · 27 November</span></div><div class="trace"><b>Serve</b><span>One indexed row · £60</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></div><hr><div class="menu-grid"><a href="#decide-what-happens-when-someone-clicks">Decide what happens when someone clicks</a><a href="#match-the-engine-to-the-work">Match the engine to the work</a><a href="#build-the-postgres-alternative-properly">Build the Postgres alternative properly</a><a href="#protect-the-number-at-every-boundary">Protect the number at every boundary</a><a href="#which-pair-deserves-a-pilot">Which pair deserves a pilot?</a></div></nav><main><section id="decide-what-happens-when-someone-clicks" class="level2">
+<h2>Decide what happens when someone clicks</h2>
+<p>Start with two current GBP trades in book GILT, Â£90 and âÂ£30 after a
+correction. A dashboard needs Â£60. A user clicking through needs two
+rows and the revision used to produce the number. A good design can
+serve either from a consistent publication. The deployment decision
+turns on how many different questions users may ask and how long they
+can wait for a correction to appear.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Decide what happens when someone clicks comparison table"><table>
+<thead>
+<tr class="header">
+<th>Consumer</th>
+<th>Example service objective, to agree with the business</th>
+<th>First access path to test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dashboard</td>
+<td>Whole page p95 â¤2 s at the opening burst, data age â¤60 s</td>
+<td>Precomputed book/day facts via a semantic model or warm
+warehouse</td>
+</tr>
+<tr class="even">
+<td>Price or exposure API</td>
+<td>p99 â¤250 ms end to end for one authorised book/day</td>
+<td>Indexed serving table and bounded response</td>
+</tr>
+<tr class="odd">
+<td>Analyst</td>
+<td>p95 â¤30 s for selective recent history, exploratory scans can queue
+separately</td>
+<td>Warm SQL warehouse or interactive Trino</td>
+</tr>
+<tr class="even">
+<td>Research and audit</td>
+<td>Full-history restatement finishes within a 2-hour batch window with
+reproducible totals</td>
+<td>Isolated distributed scan on durable history</td>
+</tr>
+</tbody>
+</table>
+</div><p>These are proposed targets, not measured capabilities. A warehouse
+returning the first row in 200 ms may still take ten seconds to fetch a
+detailed result. A report with eight visuals may issue eight or more
+requests. The end user experiences the time until the last required
+visual is usable. Measure it with real authentication and entitlement
+filters.</p>
+</section>
+<section id="match-the-engine-to-the-work" class="level2">
+<h2>Match the engine to the work</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Match the engine to the work comparison table"><table>
+<thead>
+<tr class="header">
+<th>Candidate</th>
+<th>Data and write model</th>
+<th>Latency and scale controls</th>
+<th>Operating and cost question</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Athena SQL</td>
+<td>S3 tables registered in a catalog. Iceberg supports snapshots and
+engine-v3 transactional MERGE.</td>
+<td>Prune partitions, project columns, aggregate ahead, organise
+workgroups, test reserved capacity and queues.</td>
+<td>Scanned bytes in on-demand mode or allocated capacity, plus storage,
+requests and supporting services. Excellent baseline for intermittent
+reads.</td>
+</tr>
+<tr class="even">
+<td>Trino on your compute</td>
+<td>Distributed SQL over connectors. Writes and pushdown depend on
+connector and underlying store.</td>
+<td>Warm workers, sizing, admission groups and separate clusters. A
+shared coordinator and large exchanges can limit scaling.</td>
+<td>Infrastructure, idle headroom, on-call, upgrades, exchange storage
+and support. Valuable if you exercise the added control.</td>
+</tr>
+<tr class="odd">
+<td>Snowflake</td>
+<td>Native columnar tables use micro-partitions with metadata for
+pruning. Separate virtual warehouses can access shared data. Also
+supports Iceberg with feature differences.</td>
+<td>Size a warehouse for query work. Isolate workloads and consider
+multi-cluster for concurrency. Suspending compute changes cache and
+resume behaviour.</td>
+<td>Credits Ã contract rate, storage and chargeable services.
+Multi-cluster requires an eligible edition. Test peak and quiet
+periods.</td>
+</tr>
+<tr class="even">
+<td>Microsoft Fabric</td>
+<td>T-SQL Warehouse over OneLake, Lakehouse Delta tables and a Power BI
+semantic model are distinct surfaces. The Lakehouse SQL analytics
+endpoint principally serves reads of lake tables.</td>
+<td>Test Warehouse SQL and the actual DAX report independently. Import,
+DirectQuery and Direct Lake put different work on the request path.</td>
+<td>Capacity consumption shared with other workloads, storage and
+licensing. Measure semantic-model memory and peak contention.</td>
+</tr>
+<tr class="odd">
+<td>Databricks SQL</td>
+<td>Delta tables over object storage, governed through Unity Catalog
+where configured. Spark pipelines and SQL warehouses can share curated
+tables.</td>
+<td>Photon execution, layout and file skipping, warehouse size,
+cluster-count bounds and serverless scheduling. Separate jobs and SQL
+endpoints.</td>
+<td>Include SQL compute, jobs, storage and applicable cloud charges for
+the chosen deployment. Value increases with substantial engineering or
+ML workloads.</td>
+</tr>
+<tr class="even">
+<td>Amazon Redshift</td>
+<td>AWS-native columnar MPP warehouse with local managed tables and
+external lake access. Load hot facts or summaries into the
+warehouse.</td>
+<td>Distribution determines where joins execute. Sort order enables
+block skipping. Test workload management, concurrency scaling or
+Serverless capacity.</td>
+<td>Node-hours or Serverless compute, storage and eligible extra
+services. A natural comparator when identity, data and users already
+live on AWS.</td>
+</tr>
+<tr class="odd">
+<td>Managed PostgreSQL</td>
+<td>Transactional row store with constraints, indexes, partitions, views
+and read replicas. You design and publish the marts.</td>
+<td>Fast selective access can coexist with painful history scans. Test
+buffer hit rate, I/O, vacuum, replica lag and pool saturation.</td>
+<td>HA, instance, IOPS, backup, replicas and engineering time. Strong
+when the hot result is small and well indexed.</td>
+</tr>
+<tr class="even">
+<td>ClickHouse</td>
+<td>Columnar MergeTree family with immutable parts, background merges
+and a sparse primary index guided by sort order.</td>
+<td>Time-and-book ordered facts, projections or preaggregation, shard
+distribution and replicas. Test merge backlog during ingest.</td>
+<td>Managed service or cluster plus replicas, duplicated data and
+correction logic. Candidate for sustained low-latency, high-volume
+analytical slicing.</td>
+</tr>
+<tr class="odd">
+<td>BigQuery</td>
+<td>Managed analytical storage and external tables, partitioning and
+clustering. Jobs execute in distributed slots.</td>
+<td>Partition pruning, materialisation, reservations and workload
+assignments. Check slot contention under bursts.</td>
+<td>On-demand analysis or capacity pricing, storage and transfers.
+Especially relevant when substantial data already resides on Google
+Cloud.</td>
+</tr>
+</tbody>
+</table>
+</div><p><a href="https://docs.snowflake.com/en/user-guide/tables-clustering-micropartitions">Snowflake
+pruning</a> Â· <a href="https://docs.snowflake.com/en/user-guide/warehouses-multicluster">Snowflake
+concurrency and editions</a> Â· <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/data-warehousing">Fabric
+Warehouse</a> Â· <a href="https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior">Databricks
+SQL sizing</a> Â· <a href="https://docs.aws.amazon.com/redshift/latest/dg/c_workload_mngmt_classification.html">Redshift
+workload management</a> Â· <a href="https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree">ClickHouse
+MergeTree</a> Â· <a href="https://cloud.google.com/bigquery/docs/slots">BigQuery
+slots</a></p>
+<section id="how-a-shortlist-changes-with-the-question" class="level3">
+<h3>How a shortlist changes with the question</h3>
+<p><strong>Snowflake for a governed SQL estate.</strong> Give reporting
+and research separate warehouses. If one uncached historical query
+spills heavily, try a larger warehouse and inspect its query profile. If
+each query is already fast in isolation but 100 arrive together and
+queue, trial concurrent clusters or scheduled capacity. Clustering a
+frequently filtered large table can reduce partitions scanned, while
+reclustering incurs ongoing work. Validate a representative new filter
+value after resume. An identical cached dashboard query can conceal both
+poor pruning and startup latency.</p>
+<p><strong>Fabric for a Power BI estate.</strong> Import materialises a
+model during refresh and makes query latency largely a model question.
+DirectQuery pushes work towards the source on interaction. Direct Lake
+can load needed Delta columns into memory for the semantic model.
+Framing, memory headroom, model design and cardinality matter. Direct
+Lake on SQL endpoints can fall back to DirectQuery in specified cases.
+Direct Lake on OneLake has different behaviour. Record the exact model
+mode, security configuration and observed execution path for each
+benchmark. A fast SQL query does not establish a fast DAX measure. Where
+entitlements apply by portfolio, run the actual viewer role and measure
+the whole report with its relationships and slicers. <a href="https://learn.microsoft.com/en-us/fabric/fundamentals/direct-lake-overview">Direct
+Lake modes and behaviour</a></p>
+<p><strong>Databricks for a mixed engineering and analytics
+estate.</strong> Use a job to translate raw revisions into governed
+Delta facts and expose a separate SQL warehouse to the BI connector.
+Materialising the expensive history join once can matter more than
+changing SQL engines. Liquid clustering is a layout option for suitable
+tables and runtime versions. Choose keys from measured selective
+predicates and account for optimisation work. Tune warehouse size for a
+single difficult query and cluster-count range for bursts, validating
+cold start and scan-heavy long tails separately. <a href="https://docs.databricks.com/aws/en/delta/clustering">Delta liquid
+clustering</a> Â· <a href="https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior">SQL
+queuing and scaling</a></p>
+<p><strong>Redshift for sustained AWS SQL.</strong> Start with native
+tables for hot facts and lake queries for occasional history. Inspect a
+join plan before selecting distribution keys. Distributing by book can
+colocate a book-level join while putting an outsized book on one slice.
+Test automatic distribution and the real skewed key distribution.
+Compression and sort order help repeated date filters. Run the same
+workload against Athena plus summaries. Include maintenance, ingestion
+and the second copy in the comparison. <a href="https://docs.aws.amazon.com/redshift/latest/dg/c_columnar_storage_disk_mem_mgmnt.html">Redshift
+columnar storage</a></p>
+<p><strong>ClickHouse for fast drill-down.</strong> A summary keyed only
+by book cannot answer an unexpected breakdown by instrument. A columnar
+serving database can keep finer-grained facts and aggregate them quickly
+when sort keys and filters align. MergeTree primary indexes are sparse.
+A declared primary key there does not by itself enforce unique trades.
+Feed version-aware changes, and verify how duplicates and corrections
+appear before background merges complete. Use a transactional system of
+record if the application must synchronously confirm a unique
+booking.</p>
+</section>
+</section>
+<section id="build-the-postgres-alternative-properly" class="level2">
+<h2>Build the Postgres alternative properly</h2>
+<p>Consider a managed PostgreSQL instance serving a daily mart from a
+large lake. If the business needs 2,000 active books Ã 250 trading days,
+the hot grain is at most 500,000 rows per year at one currency and one
+cut. Adding 1,000 scenarios multiplies that bound to 500 million. Grain
+and dimensionality decide whether this design stays simple. The
+following PostgreSQL SQL uses a batch-specific snapshot and one small
+pointer. Run in a disposable schema on PostgreSQL 16+.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">exposure_release</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">batch_id</span><span class="w"> </span><span class="nb">bigint</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">source_asof</span><span class="w"> </span><span class="n">timestamptz</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">daily_exposure</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">batch_id</span><span class="w"> </span><span class="nb">bigint</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">exposure_release</span><span class="p">,</span>
+<span class="w">    </span><span class="n">trade_date</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">book</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">amount_gbp</span><span class="w"> </span><span class="nb">numeric</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">batch_id</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">)</span>
+<span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">serving_head</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">mart</span><span class="w"> </span><span class="nb">text</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">batch_id</span><span class="w"> </span><span class="nb">bigint</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">exposure_release</span>
+<span class="p">);</span>
+<span class="k">BEGIN</span><span class="p">;</span>
+<span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">exposure_release</span><span class="w"> </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="s1">'2026-11-27 09:00:00+00'</span><span class="p">);</span>
+<span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">daily_exposure</span><span class="w"> </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w"> </span><span class="mi">60</span><span class="p">);</span>
+<span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">serving_head</span><span class="w"> </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">'daily'</span><span class="p">,</span><span class="w"> </span><span class="mi">42</span><span class="p">)</span>
+<span class="k">ON</span><span class="w"> </span><span class="n">CONFLICT</span><span class="w"> </span><span class="p">(</span><span class="n">mart</span><span class="p">)</span><span class="w"> </span><span class="k">DO</span><span class="w"> </span><span class="k">UPDATE</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">batch_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EXCLUDED</span><span class="p">.</span><span class="n">batch_id</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">serving_head</span><span class="p">.</span><span class="n">batch_id</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">EXCLUDED</span><span class="p">.</span><span class="n">batch_id</span><span class="p">;</span>
+<span class="k">COMMIT</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">amount_gbp</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">source_asof</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">batch_id</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">serving_head</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">h</span>
+<span class="k">JOIN</span><span class="w"> </span><span class="n">exposure_release</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">batch_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">.</span><span class="n">batch_id</span>
+<span class="k">JOIN</span><span class="w"> </span><span class="n">daily_exposure</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">batch_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">batch_id</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">h</span><span class="p">.</span><span class="n">mart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'daily'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">book</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'GILT'</span>
+<span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">;</span></code></pre></figure><p>The identity of the published cut travels with the Â£60. The primary
+key supports equality on batch and book followed by a date range. Use
+<code>EXPLAIN (ANALYZE, BUFFERS)</code> on representative data to see
+actual I/O. A sequential scan of the one-row fixture is sensible. Many
+requests for one book need a connection pool and bounded transactions.
+Many broad scans on a primary can evict useful pages and compete with
+writers.</p>
+<p>For large loads, stage a complete version under an immutable batch ID
+and validate counts, exact totals and source watermark before advancing
+the pointer in a short transaction. Keep unpublished batches
+inaccessible to BI roles. On retry, check whether the existing batch has
+the same source manifest and checksum, then resume or acknowledge it.
+The sample's primary keys intentionally reject blind replay. Allocate
+batch IDs in source publication order. If concurrent producers could
+label older source data with a higher ID, compare the verified source
+sequence under a lock. If a dashboard issues several queries, read the
+batch ID once and bind it into every query. Otherwise a publication
+between visuals can yield two individually valid cuts.</p>
+<section id="connect-the-lake-to-the-serving-mart" class="level3">
+<h3>Connect the lake to the serving mart</h3>
+<p>Give the publisher a durable input tuple: batch ID, previous
+snapshot, new snapshot, event-sequence upper bound and metric-definition
+version. The landing job archives source events before acknowledging
+progress. An orchestrator seals the batch after the Iceberg commit and
+records its snapshot ID. A SQL job reads that specific snapshot and
+emits a staging result at the agreed report grain. The loader streams
+the staged rows into Postgres using a bulk operation such as COPY.
+Compare row counts and per-currency totals to the source manifest.
+Promote only a validated release.</p>
+<p>At small grain, compute a complete fresh mart per publication. At
+larger grain an incremental policy must name every affected key. Suppose
+A moves from GILT to CREDIT on the same day. Reading only the new value
+identifies CREDIT but misses GILT. Use a before-image or the prior
+snapshot to collect both old and new keys. Recompute their totals from
+the new pinned cut. For a removed final trade, explicitly remove the old
+group or publish a zero according to the reporting contract. A missing
+group in an incremental file cannot itself delete a stale row. If the
+serving tables hold complete versions, copy forward unchanged groups or
+implement a versioned lookup that resolves their previous rows. A head
+pointer to a sparse delta would hide unaffected books.</p>
+<p>For a seconds-level input SLA with a minute-level publication target,
+measure the entire ingestâcommitâpublish loop. If polling, file creation
+and catalog commits consume most of the budget, trial a
+change-data-capture consumer maintaining the hot view transactionally.
+Commit a source offset or event ID with the mart update, acknowledge
+delivery afterwards, and make replay harmless. Periodically reconcile
+hot totals to a pinned lake snapshot at the same source watermark. This
+adds a second implementation of the metric. It earns its place only if
+the simpler microbatch path misses the agreed freshness deadline.</p>
+</section>
+<section id="when-a-managed-database-becomes-a-warehouse-project" class="level3">
+<h3>When a managed database becomes a warehouse project</h3>
+<p>A single Postgres server can parallelise eligible scans. Range
+partitioning lets pruning skip months and simplifies retention. A B-tree
+serves selective lookups, BRIN can cheaply summarise large physical
+ranges correlated with time, and neither accelerates an unfiltered sum
+of most values by making the rows disappear. Every additional index adds
+write and maintenance cost. Read replicas can spread independent queries
+and isolate the primary, but a single query generally executes on one
+replica and asynchronous replay introduces lag. Read the head and data
+from the same consistent endpoint. HA standby and readable replica
+capabilities vary by managed service and deployment. <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html">PostgreSQL
+partitioning</a> Â· <a href="https://www.postgresql.org/docs/current/indexes-types.html">Index
+types</a> Â· <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html">RDS
+read replicas</a></p>
+<p>Sharding by portfolio helps tenant-scoped reads. A cross-portfolio
+aggregate now needs fan-out, partial sums and a common publication cut
+across shards. You own rebalancing, retry semantics, skew, schema
+rollout, recovery and cross-shard reconciliation unless a selected
+distributed service provides them. Compare that engineering cost with a
+managed MPP warehouse before implementing it. If the entire working
+dataset fits a managed relational instance and meets the burst test with
+headroom, a Postgres-only deployment may be the simplest winner. Add a
+lake when retention, replay or scans earn it. Add a serving replica or
+analytical engine only when its measured benefit covers the extra
+publication path.</p>
+</section>
+</section>
+<section id="protect-the-number-at-every-boundary" class="level2">
+<h2>Protect the number at every boundary</h2>
+<p>Tie the published batch to input offsets or object manifests,
+snapshot IDs for each source table, valuation rules and the
+security-policy version. Joining two individually consistent snapshots
+still requires a shared business cut. Test a book transfer between two
+permission domains with ordinary viewer accounts. Source entitlements
+may not survive copying to another engine or exporting query results.
+Use least-privileged writer and reader roles, scope result buckets and
+encryption keys, and enforce equivalent row policies in BI, SQL, exports
+and API caches. Include identity or entitlement scope and publication ID
+in cache keys.</p>
+<p>Set recovery objectives separately for source history and business
+serving. Keep enough versioned input to rebuild a lost mart. Exercise a
+restore in an isolated destination, reconcile Â£60 and its as-of time,
+repoint a test reader and measure elapsed time. A replica can propagate
+a bad release. A reproducible version and a verified last-good pointer
+give operators a distinct rollback route. Preserve previous versions
+long enough for pinned reports to finish.</p>
+</section>
+<section id="which-pair-deserves-a-pilot" class="level2">
+<h2>Which pair deserves a pilot?</h2>
+<p>For S3-first history and a small fixed set of hot aggregates, pilot
+Athena/Iceberg plus indexed Postgres or a BI model. For many
+unpredictable interactive groupings, pilot a managed analytical
+warehouse with equivalent summaries and direct drill-down. For Power
+BI-heavy organisations, include Fabric with the actual semantic model.
+For substantial existing Delta/Spark transformation, include Databricks
+SQL. Trial self-operated Trino when connector flexibility or sustained
+warm capacity matters enough to staff it. A shortlist of two comparable
+end-to-end designs is easier to evaluate honestly than nine isolated SQL
+stopwatches.</p>
+</section>
+<nav class="menu" aria-label="Adjacent guides"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></nav></main></div></body></html>

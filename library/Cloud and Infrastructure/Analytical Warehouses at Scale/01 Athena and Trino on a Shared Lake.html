@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>Athena and Trino on a Shared Lake</title><style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f2ebe1; --surface-3:#e6dccf;
+  --ink:#211813; --text:#382a22; --muted:#705f54; --line:#e3d7c8;
+  --t900:#1b3b3a; --t800:#225452; --t700:#2b6b68; --t600:#3d8580; --t500:#5ea099;
+  --t400:#87bbb2; --t300:#a3c1ad; --t200:#cbe0d5; --t100:#e3f0ea; --t50:#f2f8f5;
+  --coral:#b85633; --coral-bg:#fdf2ec; --coral-line:#efc8b4;
+  --code-bg:#1c1512; --code-text:#f3eae0; --code-line:#332721;
+  --link:#2b6b68;
+  --shadow:0 1px 2px rgba(33,24,19,.06), 0 6px 20px rgba(33,24,19,.07);
+  --radius:14px;
+  --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif:ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14100e; --surface:#1d1714; --surface-2:#261e1a; --surface-3:#322722;
+    --ink:#f7efe6; --text:#e3d6c8; --muted:#a69587; --line:#3a2e27;
+    --coral:#ee8c68; --coral-bg:#2b1812; --coral-line:#5b3022;
+    --code-bg:#0f0b09; --code-line:#2a201b;
+    --link:#9ccac0;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 22px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:16px}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased}
+@media (max-width:480px){body{font-size:17px}}
+a{color:var(--link); text-decoration-thickness:1px; text-underline-offset:3px}
+a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--t500); outline-offset:3px}
+::selection{background:var(--t200); color:var(--t900)}
+header{position:relative; overflow:hidden; color:#fbf6f0; background-color:#1c1410; background-image:linear-gradient(104deg, rgba(22,15,11,.90) 0%, rgba(28,19,14,.74) 46%, rgba(29,63,61,.44) 100%), url('../../assets/impasto-siphon.webp'); background-size:cover; background-position:center right; border-bottom:3px solid rgba(163,193,173,.42)}
+header .net{position:absolute; inset:0; display:none; pointer-events:none; width:100%; height:100%}
+.head{position:relative; max-width:760px; margin:auto; padding:22px 22px 42px}
+.mast{display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:12px; color:var(--t200); letter-spacing:.12em; font:700 12px/1.5 var(--mono); text-transform:uppercase}
+.hero{display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:center; padding-top:30px}
+h1,h2,h3{color:var(--ink); line-height:1.2}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,6.5vw,54px); line-height:1.05; letter-spacing:-.01em; margin:0; color:#fff}
+h1 em{color:var(--t300); font-style:italic}
+.hero p{color:#ece0d4; font-size:18.5px; line-height:1.55; margin:16px 0 0}
+.plate{background:rgba(20,14,11,.66); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:16px 18px; backdrop-filter:blur(6px)}
+.plate small,.tag,figcaption,.menu b,.erd span,.sim small,.download{font-family:var(--mono)}
+.plate small{color:var(--t200); font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:700}
+.trace{display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; border-top:1px solid rgba(255,255,255,.14); font:13px/1.45 var(--mono); color:#fbf6f0}
+.trace:first-of-type{margin-top:10px}
+.trace b{color:var(--t300)}
+.shell{max-width:740px; margin:auto; padding:28px 22px 80px}
+.menu{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin:0 0 28px; box-shadow:var(--shadow)}
+.menu-title{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+.menu-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px}
+.menu b{display:block; font-family:var(--sans); font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--t700); margin:0 0 6px}
+@media (prefers-color-scheme: dark){ .menu b{color:var(--t300)} }
+.menu a{display:block; text-decoration:none; color:var(--text); font-size:14.5px; line-height:1.35; border-radius:8px; padding:5px 8px}
+.menu a:hover{color:var(--ink); background:var(--surface-2)}
+.tag{display:inline-block; font-family:var(--sans); font-size:12.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--t700); background:var(--t100); border-radius:8px; padding:3px 9px; margin-bottom:8px}
+@media (prefers-color-scheme: dark){ .tag{background:var(--surface-3); color:var(--t300)} }
+main{min-width:0}
+section{border-top:1px solid var(--line); padding:32px 0 36px; scroll-margin-top:16px}
+section:first-child{border-top:0; padding-top:8px}
+h2{font-family:var(--serif); font-size:31px; line-height:1.2; font-weight:700; letter-spacing:-.005em; margin:4px 0 10px}
+h3{font-size:21px; line-height:1.25; margin:28px 0 8px}
+p{margin:0 0 16px}
+strong{color:var(--ink)}
+.deck{font-size:19.5px; color:var(--ink); margin-bottom:18px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:20px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:15.5px; line-height:1.45; text-align:left}
+td,th{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--surface-2); color:var(--ink); font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650; color:var(--ink); min-width:105px}
+aside,.sim{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--t500); border-radius:12px; padding:16px 18px 14px; margin:22px 0; box-shadow:var(--shadow)}
+aside p{margin:6px 0 0}
+details{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 16px; margin:14px 0; box-shadow:var(--shadow)}
+summary{cursor:pointer; color:var(--ink); font-weight:700; overflow-wrap:anywhere}
+details[open]>summary{margin-bottom:10px}
+.code{margin:20px 0; background:var(--code-bg); color:var(--code-text); border:1px solid var(--code-line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow)}
+.code figcaption{background:#271e19; color:#a3c1ad; border-bottom:1px solid var(--code-line); padding:7px 14px; font-size:12.5px; letter-spacing:.04em}
+@media (prefers-color-scheme: dark){ .code figcaption{background:#16100e} }
+.code pre{margin:0; padding:14px 16px 16px; overflow:auto; font:13.4px/1.6 var(--mono)}
+.code pre code{font:inherit; background:none; border:0; padding:0; color:inherit}
+p code,td code,li code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; overflow-wrap:anywhere}
+.erd{display:flex; align-items:center; justify-content:space-around; gap:12px; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin:20px 0}
+.erd div{flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.erd b,.erd span{display:block; padding:4px 12px}
+.erd b{background:var(--t700); color:#fff; padding:8px 12px}
+.erd span{font-size:13px; color:var(--text)}
+.erd strong{color:var(--t600); white-space:nowrap}
+@media (prefers-color-scheme: dark){ .erd strong{color:var(--t300)} }
+.download{display:inline-block; padding:10px 16px; background:var(--t700); color:#fff; text-decoration:none; border-radius:10px; font-family:var(--sans); font-weight:650; font-size:15px}
+.download:hover{background:var(--t800)}
+.sim label{display:block; font-weight:700; color:var(--ink)}
+.sim output{color:var(--t700); font-family:var(--mono); font-weight:700}
+@media (prefers-color-scheme: dark){ .sim output{color:var(--t300)} }
+.sim input{width:100%; accent-color:var(--t600); height:36px}
+.meters{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0; font-size:14px}
+.meters b{display:block; font-family:var(--serif); font-size:36px; color:var(--ink); line-height:1.1}
+.meters i{display:block; height:8px; border-radius:999px; background:linear-gradient(90deg,var(--t500),var(--t700)); min-width:4px; margin:6px 0}
+.sim small{color:var(--muted)}
+.ref,.source{font-size:15px}
+.code .k,.code .kd,.code .kn,.code .kt,.code .kr{color:#8cc7bc; font-weight:600}
+.code .s,.code .s1,.code .s2,.code .sa{color:#f2c97d}
+.code .c,.code .c1,.code .cm{color:#9e8b7d; font-style:italic}
+.code .mi,.code .m{color:#f0b37e}
+.code .nd,.code .nf{color:#f29e7e}
+.code .nt{color:#8cc7bc}
+.code .na{color:#d6eee8}
+footer{max-width:740px; margin:0 auto; padding:24px 22px 60px; border-top:1px solid var(--line); text-align:right; font-size:14.5px; color:var(--muted)}
+footer a{color:var(--link)}
+@media(max-width:700px){.hero{grid-template-columns:1fr; padding-top:24px; gap:20px}.erd{flex-direction:column}.erd div{width:100%}th,td{padding:8px 10px}.scroll table{min-width:480px}.meters{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{body{font-size:10pt;background:white;color:black}.menu,footer,.download,input,header .net{display:none}.shell,.hero{display:block;max-width:100%}.plate{display:none}.code pre{white-space:pre-wrap}.code,aside,tr,.erd{break-inside:avoid}header{background:white;color:#111}.hero p,h1,h1 em{color:#111}h2,h3{break-after:avoid}.scroll{overflow:visible}section{padding:12px 0}}
+
+.hero h1, header#title-block-header h1.title, header h1 { text-shadow: 0 2px 16px rgba(15,10,8,.55); }
+
+/* Full-width responsive layout */
+.wrap, .layout, .shell, .head, .hero-in, .hero-inner, main, footer, .footer .shell, .foot .wrap, footer .wrap {
+  max-width: 100% !important;
+  width: 100%;
+}
+main, .wrap, .shell, .layout, .head, .mast, footer, header.hero, .hero {
+  padding-inline: clamp(20px, 3vw, 48px);
+}
+.wrap main, .layout main, .shell main,
+.hero .wrap, .hero .shell, .mast .wrap, .mast .shell,
+.head .mast, .head .hero,
+footer .wrap, .footer .shell, .foot .wrap,
+.hero .hero-in, .hero .hero-inner {
+  padding-inline: 0;
+}
+header#title-block-header { padding-inline: clamp(20px, 3vw, 48px) !important; }
+.level { margin-inline: 0; border-radius: 18px; }
+.hero p.lede, .hero .lede, .lede, .subtitle, .level p { max-width: 75ch; }
+.map { max-width: 960px; }
+figure svg { max-height: 520px; width: auto; max-width: 100%; margin-inline: auto; }
+
+/* Complete Pygments token palette for Coffee + Cambridge Blue/Teal */
+.code .kc{color:#8cc7bc; font-weight:600}
+.code .nb{color:#a3c1ad}
+.code .nc,.code .nn{color:#fbf6f0; font-weight:600}
+.code .nv{color:#d6eee8}
+.code .l,.code .l-Scalar,.code .l-Scalar-Plain{color:#f2c97d}
+.code .o,.code .ow,.code .p,.code .p-Indicator{color:#cbe0d5}
+.code .n,.code .w{color:inherit}
+
+section > p, section > ul, section > ol {max-width:76ch}
+.hero > *, .trace > *, .menu-grid > * {min-width:0}
+.trace span, a, :not(pre) > code {overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style></head><body id="top">
+<header><div class="head"><div class="mast"><span>Cloud and infrastructure · Analytical warehouses</span></div>
+<div class="hero"><div><h1>Athena and Trino on a Shared Lake</h1><p>Trace a corrected trade from an Iceberg snapshot to a distributed SQL result. Learn which optimisations reduce the work and which only move it.</p></div>
+<div class="plate"><small>Worked case</small><div class="trace"><b>Arrivals</b><span>A £100 · B −£30 · A corrected to £90</span></div><div class="trace"><b>Replay</b><span>A revision 2 arrives twice</span></div><div class="trace"><b>Current</b><span>2 trades · GILT £60</span></div></div>
+</div></div></header>
+<div class="shell"><nav class="menu" aria-label="Reading order"><div class="menu-title">Analytical warehouses at scale</div><div class="menu-grid"><a href="01%20Athena%20and%20Trino%20on%20a%20Shared%20Lake.html">1. Athena and Trino on a Shared Lake</a><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a><a href="03%20Benchmarking%20the%20Warehouse%20Decision.html">3. Benchmarking the Warehouse Decision</a></div><hr><div class="menu-grid"><a href="#start-with-one-corrected-trade">Start with one corrected trade</a><a href="#what-persists-after-the-compute-stops">What persists after the compute stops?</a><a href="#build-the-smallest-shared-lake-table">Build the smallest shared lake table</a><a href="#read-the-same-snapshot-through-trino">Read the same snapshot through Trino</a><a href="#follow-the-bytes-through-a-distributed-query">Follow the bytes through a distributed query</a><a href="#keep-the-lake-fast-after-month-six">Keep the lake fast after month six</a><a href="#when-federation-earns-its-keep">When federation earns its keep</a></div></nav><main><section id="start-with-one-corrected-trade" class="level2">
+<h2>Start with one corrected trade</h2>
+<p>At 09:00 a portfolio manager opens a dashboard. Yesterday's GBP
+exposure changed after a booking correction. The manager wants the right
+figure immediately. A researcher wants to explain the change across five
+years of trades. Both need the same history, but the amount of work each
+request should trigger is radically different. This series assumes
+familiarity with SQL, object storage and a BI client. You will build a
+small ledger, trace a distributed query, choose a serving design and
+specify an acceptance test.</p>
+<p>A warehouse needs a defined <strong>grain</strong> (what one row
+means). Here a raw row is an immutable revision of a trade. A current
+fact is one accepted revision per trade. A business aggregate is one
+signed GBP amount per book and trade date. Amounts are integer pounds
+for the lab. A production cross-currency report needs exact decimal
+amounts, identified FX rates and a valuation timestamp. Summing mixed
+currencies silently gives a meaningless answer.</p>
+<p>Run this read-only query in the Athena SQL editor on engine version
+3, or in a Trino SQL client. A configured Athena workgroup needs a
+usable query-results destination. The example uses literals so you can
+validate the rule before provisioning tables.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">WITH</span><span class="w"> </span><span class="n">events</span><span class="p">(</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">'A'</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">),</span>
+<span class="w">           </span><span class="p">(</span><span class="s1">'B'</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">30</span><span class="p">),</span>
+<span class="w">           </span><span class="p">(</span><span class="s1">'A'</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w">  </span><span class="mi">90</span><span class="p">),</span>
+<span class="w">           </span><span class="p">(</span><span class="s1">'A'</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w">  </span><span class="mi">90</span><span class="p">)</span>
+<span class="p">),</span><span class="w"> </span><span class="n">ranked</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">OVER</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">PARTITION</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_id</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">revision</span><span class="w"> </span><span class="k">DESC</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">rn</span>
+<span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="k">DISTINCT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">events</span><span class="p">)</span><span class="w"> </span><span class="n">e</span>
+<span class="p">)</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">ranked</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">rn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>The answer is <strong>GILT Â£60</strong>. Summing the arrivals gives
+Â£250. Removing the identical replay still gives Â£160 if you retain the
+superseded revision. A reversal at revision 3 with a zero amount would
+leave the book at âÂ£30. Two <em>different</em> rows for the same ID and
+revision are a source conflict. Reject the batch or quarantine that key
+before ranking. Arrival time alone cannot resolve it. The
+highest-revision rule assumes the source assigns monotone versions and
+sends complete replacement records.</p>
+</section>
+<section id="what-persists-after-the-compute-stops" class="level2">
+<h2>What persists after the compute stops?</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="What persists after the compute stops? comparison table"><table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Concrete object</th>
+<th>What its presence proves</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>S3 object storage</td>
+<td>Immutable objects under a table prefix</td>
+<td>The bytes exist. Listing files cannot tell you which revision
+belongs in a report.</td>
+</tr>
+<tr class="even">
+<td>Parquet file format</td>
+<td>Column chunks grouped into row groups</td>
+<td>A reader can project columns and may skip groups using statistics. A
+file alone provides no table transaction.</td>
+</tr>
+<tr class="odd">
+<td>Iceberg table format</td>
+<td>Metadata, snapshots, manifest lists and manifests</td>
+<td>A committed snapshot identifies the live data and delete files. Old
+files may still be needed by a reader.</td>
+</tr>
+<tr class="even">
+<td>Glue Data Catalog</td>
+<td>Named table and metadata pointer</td>
+<td>A compatible engine can discover the table and resolve the committed
+metadata. Permissions still govern access.</td>
+</tr>
+<tr class="odd">
+<td>Query engine</td>
+<td>Athena workgroup or Trino cluster</td>
+<td>Plans and executes SQL. A second engine can open the same compatible
+table without duplicating all its data.</td>
+</tr>
+<tr class="even">
+<td>Business contract</td>
+<td>Published batch, as-of time, metric definition and entitlements</td>
+<td>A user can identify what the number means and what data they are
+authorised to see.</td>
+</tr>
+</tbody>
+</table>
+</div><p>With a Hive-style external table over a directory, the path and
+partition registrations tell the engine where to look. With Iceberg, the
+committed metadata determines membership. Copying a Parquet file into an
+Iceberg directory does not add rows to its snapshot. Conversely,
+deleting a file by hand can break perfectly valid time-travel queries.
+Make retention and compaction table-aware. Athena engine v3 integrates
+work from Trino and Presto. Upstream Trino has its own releases,
+connector configuration, SQL coverage and operational controls. Treat
+multi-engine writing as a compatibility contract covering the catalog,
+concurrency mechanism, table-format version, precision and delete-file
+support. <a href="https://docs.aws.amazon.com/athena/latest/ug/engine-versions-reference-0003.html">Athena
+engine v3</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Athena
+Iceberg limitations</a> Â· <a href="https://trino.io/docs/current/connector/iceberg.html">Trino
+Iceberg connector</a></p>
+</section>
+<section id="build-the-smallest-shared-lake-table" class="level2">
+<h2>Build the smallest shared lake table</h2>
+<p>Use a scratch Glue database named <code>wh_lab</code> in the same AWS
+Region as the workgroup. In the Athena editor select that database and
+the AWS data catalog. Create the database first with
+<code>CREATE DATABASE wh_lab</code> if authorised. Substitute a new
+empty prefix in an S3 bucket you control. The lab identity needs catalog
+create/update, S3 data and results access, encryption-key access where
+applicable, and any Lake Formation grants your setup requires. Run the
+next statements individually. Cloud queries and retained files can incur
+charges.</p>
+<figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">wh_lab</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">WITH</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">table_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ICEBERG'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_external</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">false</span><span class="p">,</span>
+<span class="w">    </span><span class="k">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'s3://YOUR-BUCKET/wh-lab/run-001/current/'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PARQUET'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">partitioning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">ARRAY</span><span class="p">[</span><span class="s1">'day(trade_date)'</span><span class="p">]</span>
+<span class="p">)</span><span class="w"> </span><span class="k">AS</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="p">(</span><span class="k">VALUES</span>
+<span class="w">    </span><span class="p">(</span><span class="s1">'A'</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="s1">'B'</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">30</span><span class="p">)</span>
+<span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="p">);</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="n">MERGE</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">wh_lab</span><span class="p">.</span><span class="n">trade_current</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">t</span>
+<span class="k">USING</span><span class="w"> </span><span class="p">(</span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">'A'</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s1">'GILT'</span><span class="p">,</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span><span class="p">,</span><span class="w"> </span><span class="mi">90</span><span class="p">))</span>
+<span class="w">      </span><span class="k">AS</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="p">)</span>
+<span class="k">ON</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">trade_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">trade_id</span>
+<span class="k">WHEN</span><span class="w"> </span><span class="n">MATCHED</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">revision</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">revision</span><span class="w"> </span><span class="k">THEN</span>
+<span class="w">    </span><span class="k">UPDATE</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">revision</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">book</span><span class="p">,</span>
+<span class="w">        </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">amount_gbp</span>
+<span class="k">WHEN</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="n">MATCHED</span><span class="w"> </span><span class="k">THEN</span>
+<span class="w">    </span><span class="k">INSERT</span><span class="w"> </span><span class="p">(</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">amount_gbp</span><span class="p">)</span>
+<span class="w">    </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">trade_id</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">amount_gbp</span><span class="p">);</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">trades</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">wh_lab</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">trade_date</span><span class="p">,</span><span class="w"> </span><span class="n">book</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">snapshot_id</span><span class="p">,</span><span class="w"> </span><span class="n">committed_at</span><span class="p">,</span><span class="w"> </span><span class="k">operation</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">wh_lab</span><span class="p">.</span><span class="ss">"trade_current$snapshots"</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">committed_at</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span></code></pre></figure><p>Expected report before the merge is two trades and Â£70. Afterwards it
+is two and Â£60. Rerunning the merge keeps the report at Â£60. Test an
+older revision arriving afterwards. Its version predicate fails and the
+published values survive. Inspect snapshot history, capture the
+pre-correction snapshot ID and read it with
+<code>SELECT * FROM wh_lab.trade_current FOR VERSION AS OF &lt;snapshot_id&gt;</code>,
+substituting the integer. Time travel reconstructs the table as recorded
+then. A separate effective date is still needed to answer âwhat was
+yesterday's position, restated using today's corrections?â</p>
+<p>For a real microbatch, stage the raw deliveries durably, deduplicate
+exact replays, reject conflicting versions, then select one newest
+revision per key <strong>across the batch</strong> before the merge.
+Iceberg does not enforce a trade-ID uniqueness constraint. Serialise
+overlapping writes to the same business keys or reconcile after a
+conflicting commit before retry. The query's equality on trade ID can
+require a large target scan. Add a date predicate only when the source
+contract guarantees it cannot hide an existing row. A correction moving
+a trade between dates or books requires rebuilding both affected
+aggregates. Clean up the disposable table only after verifying ownership
+of its dedicated prefix. Athena dropping an Iceberg table removes its
+data. <a href="https://docs.aws.amazon.com/athena/latest/ug/create-table-as.html">Athena
+CTAS</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-merge-into.html">Athena
+transactional MERGE</a></p>
+</section>
+<section id="read-the-same-snapshot-through-trino" class="level2">
+<h2>Read the same snapshot through Trino</h2>
+<p>On an existing Trino 484 cluster using static catalogs, configure the
+AWS account and Region that hold the lab table. The following is the
+catalog file <code>etc/catalog/lake.properties</code> for a London
+deployment. Use the cluster's workload role and a read-only policy for
+this comparison. All nodes need the appropriate catalog configuration,
+credentials and network path to Glue and S3. Apply the change using the
+deployment's restart procedure.</p>
+<figure class="code"><figcaption>etc/catalog/lake.properties</figcaption><pre><code><span class="na">connector.name</span><span class="o">=</span><span class="s">iceberg</span>
+<span class="na">iceberg.catalog.type</span><span class="o">=</span><span class="s">glue</span>
+<span class="na">hive.metastore.glue.region</span><span class="o">=</span><span class="s">eu-west-2</span>
+<span class="na">fs.s3.enabled</span><span class="o">=</span><span class="s">true</span>
+<span class="na">s3.region</span><span class="o">=</span><span class="s">eu-west-2</span></code></pre></figure><figure class="code"><figcaption>SQL</figcaption><pre><code><span class="k">SELECT</span><span class="w"> </span><span class="n">book</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">amount_gbp</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">exposure_gbp</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">lake</span><span class="p">.</span><span class="n">wh_lab</span><span class="p">.</span><span class="n">trade_current</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">trade_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2026-11-27'</span>
+<span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">book</span><span class="p">;</span></code></pre></figure><p>After the merge, both engines should show GILT Â£60 with no data copy.
+If Trino cannot see the table, check catalog account and Region. If it
+can list tables but a scan fails, verify object and encryption-key
+access for the worker identity. Before permitting both engines to write,
+pin Iceberg v2 and verify AWS Glue optimistic locking across writers.
+Athena's documented compatibility requires that locking mechanism. Keep
+table maintenance under one owner. A successful cross-engine read proves
+much less than concurrent write safety. <a href="https://trino.io/docs/current/object-storage/file-system-s3.html">Trino
+S3 configuration</a> Â· <a href="https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html">Glue
+and Iceberg constraints</a></p>
+</section>
+<section id="follow-the-bytes-through-a-distributed-query" class="level2">
+<h2>Follow the bytes through a distributed query</h2>
+<p>In self-operated Trino the coordinator parses SQL, resolves catalog
+metadata and creates a plan. Workers execute tasks for the stages. A
+split represents a portion of source work. A local aggregation can
+reduce many input rows to partial sums per book. An exchange sends
+partial groups to workers responsible for completing them. The client
+consumes the final rows. A thousand workers cannot remove the cost of
+returning ten million detailed rows through a BI client. Use an export
+or paginated drill-down when the deliverable really is detail. <a href="https://trino.io/docs/current/overview/concepts.html">Trino
+execution terminology</a></p>
+<p>Imagine 1 PB of compressed facts across 1,000 equally sized days. A
+one-day predicate can reduce candidate data to 1 TB. If the requested
+columns occupy 12% of those bytes, the simple model gives 120 GB before
+row-group skipping, metadata or deletes. At a hypothetical sustained
+aggregate read rate of 6 GB/s, those reads alone occupy about 20 s. This
+is a sizing illustration with decimal units. Network exchange, planning,
+skew, caching and overlap alter elapsed time. Storing a petabyte says
+almost nothing about a dashboard that reads one precomputed row.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Follow the bytes through a distributed query comparison table"><table>
+<thead>
+<tr class="header">
+<th>Operator decision</th>
+<th>Why it helps</th>
+<th>How to distinguish the failure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Partition pruning</td>
+<td>Skip entire time slices using a predicate the connector
+recognises.</td>
+<td>Compare input and scan plan for a single aligned day and a wide
+range. A highly selective filter applied after a scan changes output
+rows without saving the input read.</td>
+</tr>
+<tr class="even">
+<td>Row-group skipping</td>
+<td>Sorted or clustered values tighten file statistics. Projection
+avoids reading unused columns.</td>
+<td>Compare sorted and shuffled layouts with the same predicate, columns
+and cache state. Compare physical bytes, not final row count.</td>
+</tr>
+<tr class="odd">
+<td>Broadcast join</td>
+<td>Replicate a small filtered dimension to each worker to avoid
+repartitioning a large fact.</td>
+<td>Measure build-side bytes after filtering. A dimension that outgrows
+per-worker memory changes the preferred plan.</td>
+</tr>
+<tr class="even">
+<td>Partitioned join</td>
+<td>Hash both sides on the join key and send matching keys to the same
+partition.</td>
+<td>Inspect exchange bytes and the slowest task. One dominant key can
+leave most workers idle near completion.</td>
+</tr>
+<tr class="odd">
+<td>Dynamic filtering</td>
+<td>Eligible joins can feed build-side values into the probe-side
+scan.</td>
+<td>Inspect the real plan and connector support. A filter that arrives
+after most splits have been read saves little.</td>
+</tr>
+<tr class="even">
+<td>Partial aggregate</td>
+<td>Group locally before the exchange.</td>
+<td>Compare partial rows out to rows in. Grouping by a near-unique trade
+ID offers little reduction.</td>
+</tr>
+</tbody>
+</table>
+</div><p>Start with <code>EXPLAIN</code> on the date-filtered report. Then run
+<code>EXPLAIN ANALYZE</code> on a bounded slice in Trino to inspect
+actual rows, timings and task variability. It executes the statement. In
+Athena capture query statistics and bytes scanned from the result
+details. Compare with a wider date range using the same selected
+columns. Two tiny fixture rows establish business logic only. Use
+production-shaped partitions, file counts and key skew for plan
+conclusions.</p>
+</section>
+<section id="keep-the-lake-fast-after-month-six" class="level2">
+<h2>Keep the lake fast after month six</h2>
+<p>A batch writing 100 tiny objects each minute creates 144,000 objects
+a day. At constant data volume, opening these files and planning splits
+can dominate reading them. Compact active partitions using table-aware
+maintenance. Test file sizes in the hundreds of MiB against real
+parallelism and update frequency. One vast file for a tiny daily slice
+can also limit available work. Choose a coarse time transform first,
+then measure whether a second dimension improves pruning enough to
+offset smaller files. A partition per trade creates a metadata
+problem.</p>
+<p>Corrections can leave delete files and fragmented data. Monitor
+planning time, file counts and bytes per file, delete-to-data ratio,
+actual filtered rows, queue time and p95 execution separately. Rewriting
+files consumes capacity, while expiring snapshots reduces the recovery
+horizon. Retain snapshots for your longest reader and investigation
+window, and store durable raw history when audit retention exceeds
+snapshot retention. Separate maintenance windows or capacity from the
+opening dashboard burst.</p>
+<p>Athena workgroups organise settings, limits and accounting. Check
+regional active-query quotas and queue age. Use scan limits and
+workgroup-level metrics, and evaluate capacity reservations where a
+predictable burst warrants allocated compute. In Trino, choose your
+deployment and worker size, keep catalog credentials and object access
+consistent across workers, govern admission via resource groups, monitor
+coordinator pressure and test worker loss during a large scan. Task
+retries require the relevant fault-tolerant configuration, exchange
+storage and connector support. Separate clusters give stronger failure
+isolation at additional idle cost. <a href="https://aws.amazon.com/athena/pricing/">Athena capacity and scan
+charging</a> Â· <a href="https://trino.io/docs/current/admin/resource-groups.html">Trino
+resource groups</a> Â· <a href="https://trino.io/docs/current/admin/fault-tolerant-execution.html">Trino
+fault-tolerant execution</a></p>
+</section>
+<section id="when-federation-earns-its-keep" class="level2">
+<h2>When federation earns its keep</h2>
+<p>A Trino catalog can expose Postgres reference data alongside an
+Iceberg fact. On a small lookup, predicate and projection pushdown can
+make a cross-source query convenient. On a broad join, the database may
+transfer millions of rows, consume its connection budget and read at a
+different instant from the lake snapshot. Look at both the Trino plan
+and the source database's observed query. If the join is recurring or
+audited, land a versioned dimension in the lake and join by business key
+and validity interval. Verify each fact matches exactly one dimension
+row. Two overlapping intervals would double exposure even with flawless
+trade deduplication.</p>
+<p>Choose Athena as the first lake baseline when the sources live in S3
+and bursts are irregular. Pilot a warm Trino cluster when connector
+control, admission policy or sustained load justify owning the cluster.
+If most questions are identical aggregates with a strict response
+deadline, move that work off the request path. The next guide designs
+that boundary.</p>
+</section>
+<nav class="menu" aria-label="Adjacent guides"><a href="02%20Choosing%20a%20Business%20Serving%20Layer.html">2. Choosing a Business Serving Layer</a></nav></main></div></body></html>
